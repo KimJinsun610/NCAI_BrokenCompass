@@ -1,0 +1,77 @@
+# =====================================================================
+# NCAI_BrokenCompass - Git LFS 설정
+# 자세한 운영 규칙은 Docs/형상관리_매뉴얼.md 참고
+# =====================================================================
+
+# --- 텍스처 / 이미지 ---
+*.png filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpeg filter=lfs diff=lfs merge=lfs -text
+*.tga filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
+*.tiff filter=lfs diff=lfs merge=lfs -text
+*.psd filter=lfs diff=lfs merge=lfs -text
+*.psb filter=lfs diff=lfs merge=lfs -text
+*.exr filter=lfs diff=lfs merge=lfs -text
+*.hdr filter=lfs diff=lfs merge=lfs -text
+*.bmp filter=lfs diff=lfs merge=lfs -text
+
+# --- 3D 모델 ---
+*.fbx filter=lfs diff=lfs merge=lfs -text
+*.obj filter=lfs diff=lfs merge=lfs -text
+*.blend filter=lfs diff=lfs merge=lfs -text
+*.max filter=lfs diff=lfs merge=lfs -text
+*.ma filter=lfs diff=lfs merge=lfs -text
+*.mb filter=lfs diff=lfs merge=lfs -text
+*.dae filter=lfs diff=lfs merge=lfs -text
+*.3ds filter=lfs diff=lfs merge=lfs -text
+
+# --- 오디오 ---
+*.wav filter=lfs diff=lfs merge=lfs -text
+*.mp3 filter=lfs diff=lfs merge=lfs -text
+*.ogg filter=lfs diff=lfs merge=lfs -text
+*.aiff filter=lfs diff=lfs merge=lfs -text
+*.flac filter=lfs diff=lfs merge=lfs -text
+
+# --- 비디오 ---
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.mov filter=lfs diff=lfs merge=lfs -text
+*.avi filter=lfs diff=lfs merge=lfs -text
+*.webm filter=lfs diff=lfs merge=lfs -text
+
+# --- 폰트 ---
+*.ttf filter=lfs diff=lfs merge=lfs -text
+*.otf filter=lfs diff=lfs merge=lfs -text
+
+# --- 압축파일 ---
+*.zip filter=lfs diff=lfs merge=lfs -text
+*.rar filter=lfs diff=lfs merge=lfs -text
+*.7z filter=lfs diff=lfs merge=lfs -text
+
+# --- 네이티브 플러그인 / 바이너리 라이브러리 ---
+*.dll filter=lfs diff=lfs merge=lfs -text
+*.so filter=lfs diff=lfs merge=lfs -text
+*.a filter=lfs diff=lfs merge=lfs -text
+*.aar filter=lfs diff=lfs merge=lfs -text
+
+# --- DCC 툴 전용 포맷 (Substance 등) ---
+*.sbsar filter=lfs diff=lfs merge=lfs -text
+*.spp filter=lfs diff=lfs merge=lfs -text
+
+# =====================================================================
+# Unity YAML(텍스트 직렬화) 파일: LFS로 넣지 않고 텍스트 유지
+# -> diff/merge 도구 사용 가능, 대신 동시 수정 충돌 방지를 위해
+#    lockable 설정 (병합이 어려운 대상이므로 작업 전 `git lfs lock` 권장)
+# =====================================================================
+*.unity text lockable
+*.prefab text lockable
+
+# 기타 YAML 계열 에셋은 일반 텍스트로 취급 (diff 가능하도록 유지)
+*.mat text
+*.asset text
+*.controller text
+*.anim text
+*.meta text
+
+# C# 스크립트는 C# 전용 diff 알고리즘 사용
+*.cs text diff=csharp

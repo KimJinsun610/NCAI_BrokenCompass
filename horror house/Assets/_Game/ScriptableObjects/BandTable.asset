@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: debeca9fc599b254f8a3b382f1a34513, type: 3}
+  m_Name: BandTable
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.BandTableSO
+  _rows:
+  - Kelvin: 6500
+    Intensity: 1
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+  - Kelvin: 4500
+    Intensity: 0.9
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+  - Kelvin: 3200
+    Intensity: 0.75
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+  - Kelvin: 2000
+    Intensity: 0.55
+    Tint: {r: 1, g: 1, b: 1, a: 1}
+  - Kelvin: 1200
+    Intensity: 0.15
+    Tint: {r: 1, g: 0.45, b: 0.35, a: 1}
+  _spaces:
+  - Space: 1
+    LitCountPerBand: 0800000006000000040000000200000000000000
+  - Space: 2
+    LitCountPerBand: 0400000003000000020000000100000000000000
+  - Space: 3
+    LitCountPerBand: 0800000006000000040000000200000000000000
+  - Space: 4
+    LitCountPerBand: 0800000006000000040000000200000000000000
+  - Space: 5
+    LitCountPerBand: 0400000003000000020000000100000001000000

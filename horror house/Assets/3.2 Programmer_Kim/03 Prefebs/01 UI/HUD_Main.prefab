@@ -120,7 +120,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1809851995960142249}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 7788393723222784951}
+        m_TargetAssemblyTypeName: HUDActions, Assembly-CSharp
+        m_MethodName: LoadScene
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: DemoScene
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &137453730476348243
 GameObject:
   m_ObjectHideFlags: 0
@@ -133,8 +145,9 @@ GameObject:
   - component: {fileID: 402139713367893722}
   - component: {fileID: 4336065824563649263}
   - component: {fileID: 8905874081753748693}
+  - component: {fileID: 7788393723222784951}
   m_Layer: 5
-  m_Name: HUD_MainCanvas
+  m_Name: HUD_Main
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -226,6 +239,19 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &7788393723222784951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 137453730476348243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e57b45bb4380af49ad7cd229f3ef8e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HUDActions
+  resumeButton: {fileID: 0}
 --- !u!1 &1971428698835541714
 GameObject:
   m_ObjectHideFlags: 0
@@ -393,8 +419,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 150
-  m_fontSizeBase: 150
+  m_fontSize: 110
+  m_fontSizeBase: 110
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -558,7 +584,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 4654944244689443525}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 7788393723222784951}
+        m_TargetAssemblyTypeName: HUDActions, Assembly-CSharp
+        m_MethodName: QuitGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &6973110545129466231
 GameObject:
   m_ObjectHideFlags: 0

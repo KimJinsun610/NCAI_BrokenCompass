@@ -24,6 +24,12 @@ public class HUDActions : MonoBehaviour
         SceneManager.LoadScene(sceneName);
     }
 
+    // 시작 버튼의 OnClick()에서 호출 — 로딩 씬을 거쳐 Play 씬으로 이동 (Play 씬은 SceneFlowConfig에서 지정)
+    public void StartGame()
+    {
+        SceneFlow.GoTo(GameScene.Play);
+    }
+
     // 종료 버튼의 OnClick()에서 직접 호출
     public void QuitGame()
     {

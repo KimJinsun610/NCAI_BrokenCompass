@@ -39,6 +39,9 @@ public class LoadingController : MonoBehaviour
 
     private IEnumerator Start()
     {
+        // 로딩 중에는 커서를 숨긴다 (메인 메뉴 · 결과창에서 보이던 커서가 남지 않게)
+        Cursor.visible = false;
+
         string targetPath = SceneFlow.ConsumePendingScene();
         if (string.IsNullOrEmpty(targetPath) && SceneFlow.Config != null)
         {

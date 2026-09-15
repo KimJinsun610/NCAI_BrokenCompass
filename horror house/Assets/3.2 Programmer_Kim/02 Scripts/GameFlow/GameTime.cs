@@ -3,8 +3,9 @@ using UnityEngine;
 
 /// <summary>
 /// 근무 시간 시계. 시작 시각부터 종료 시각까지 흐르고, 종료 시각이 되면 ShiftEnded를 발생시킨다.
-/// 기본값: 0:00(12시간제 표기로 12:00) → 1:00, 현실보다 10배 빠르게 (현실 6분).
+/// 기본값: 0:00(12시간제 표기로 12:00) → 1:00, 현실보다 20배 빠르게 (인게임 1시간 = 현실 3분).
 /// Time.deltaTime 기준이라 일시정지(timeScale 0) 중에는 시계도 멈춘다.
+/// DayIntro 같은 연출이 SetRunning(false)로 잠시 멈춰 둘 수 있다.
 /// </summary>
 public class GameTime : MonoBehaviour
 {
@@ -16,8 +17,8 @@ public class GameTime : MonoBehaviour
     [SerializeField, Range(0, 59)] private int endMinute = 0;
 
     [Header("속도")]
-    [Tooltip("현실 1초 동안 흐르는 게임 시간(초). 10 = 10배속")]
-    [SerializeField, Min(0.1f)] private float timeMultiplier = 10f;
+    [Tooltip("현실 1초 동안 흐르는 게임 시간(초). 20 = 20배속 (인게임 1시간 = 현실 3분)")]
+    [SerializeField, Min(0.1f)] private float timeMultiplier = 20f;
 
     [Header("표시")]
     [Tooltip("켜면 12시간제(0시 → 12:00, 13시 → 1:00), 끄면 24시간제(00:00)")]
@@ -33,12 +34,16 @@ public class GameTime : MonoBehaviour
 
     public bool IsEnded => ended;
 
+    /// <summary>시계가 흐르는 중인지. 연출 등으로 멈춰 두면 false.</summary>
+    public bool IsRunning => running;
+
     private const float SecondsPerDay = 24f * 60f * 60f;
 
     private float currentSeconds;
     private float endSeconds;
     private int lastShownMinute = -1;
     private bool ended;
+    private bool running = true;
 
     private void Awake()
     {
@@ -54,7 +59,7 @@ public class GameTime : MonoBehaviour
 
     private void Update()
     {
-        if (ended) return;
+        if (ended || !running) return;
 
         currentSeconds += Time.deltaTime * timeMultiplier;
         if (currentSeconds >= endSeconds)
@@ -67,6 +72,12 @@ public class GameTime : MonoBehaviour
         }
 
         RefreshText(false);
+    }
+
+    /// <summary>시계를 멈추거나(false) 다시 흐르게(true) 한다.</summary>
+    public void SetRunning(bool value)
+    {
+        running = value;
     }
 
     /// <summary>테스트용: 다음 프레임에 종료 시각으로 건너뛴다 (정상 종료 경로를 그대로 탄다).</summary>

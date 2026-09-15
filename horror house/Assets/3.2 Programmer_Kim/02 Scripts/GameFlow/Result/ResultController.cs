@@ -6,12 +6,21 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 결과창. GameSession의 직전 결과를 표시하고, 순차 연출이 끝나면 버튼을 활성화한다.
-/// 연출 순서: 페이드 인 → 제목 → 요약 → 공포 축 막대 → 위반 로그 한 줄씩 → 버튼.
-/// 연출 중 아무 키나 클릭하면 즉시 전부 표시한다.
+/// 결과창 흐름.
+///  1) 근무 일지(DutyLogView) — 빨간 줄이 다 그어지면 확인
+///  2) 확인 후: Day 1~4 → 다음 날 / 사망 → Day 1 / Day 5 근무 완료 → 수치 결산 화면
+/// 수치 결산 연출 순서: 페이드 인 → 제목 → 요약 → 공포 축 막대 → 위반 로그 한 줄씩 → 버튼.
+/// 수치 결산 연출 중 아무 키나 클릭하면 즉시 전부 표시한다.
 /// </summary>
 public class ResultController : MonoBehaviour
 {
+    [Header("근무 일지 (먼저 표시)")]
+    [SerializeField] private DutyLogView dutyLog;
+    [Tooltip("수치 결산 화면 루트. Day 5 근무 완료 때만 근무 일지 다음에 표시한다.")]
+    [SerializeField] private GameObject summaryRoot;
+    [Tooltip("근무 일지 → 수치 결산으로 넘어갈 때 검게 가리는 시간(초)")]
+    [SerializeField, Min(0f)] private float panelSwitchDuration = 0.5f;
+
     [Header("텍스트")]
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text statsText;
@@ -56,6 +65,7 @@ public class ResultController : MonoBehaviour
     [SerializeField] private FakeDayData previewData = new FakeDayData();
 
     private DayResult result;
+    private bool summaryPhase;
     private bool skipRequested;
     private bool sequenceDone;
     private bool leaving;
@@ -84,6 +94,35 @@ public class ResultController : MonoBehaviour
 
         Bind();
         PrepareHidden();
+
+        // 수치는 마지막 날 근무를 마쳤을 때만 보여 준다
+        bool showSummary = result.Outcome == DayOutcome.Completed && result.Summary.Day >= GameSession.FinalDay;
+
+        if (dutyLog != null)
+        {
+            if (summaryRoot != null) summaryRoot.SetActive(false);
+            dutyLog.gameObject.SetActive(true);
+
+            bool confirmed = false;
+            dutyLog.Confirmed += () => confirmed = true;
+            dutyLog.Show(result, GameSession.FinalDay);
+
+            yield return Animate(fade, 1f, 0f, fadeDuration);
+            yield return dutyLog.PlayStrikes();
+            while (!confirmed) yield return null;
+
+            if (!showSummary)
+            {
+                OnNextClicked();
+                yield break;
+            }
+
+            yield return Animate(fade, 0f, 1f, panelSwitchDuration);
+            dutyLog.gameObject.SetActive(false);
+            if (summaryRoot != null) summaryRoot.SetActive(true);
+        }
+
+        summaryPhase = true;
 
         yield return Animate(fade, 1f, 0f, fadeDuration);
         yield return Animate(headerGroup, 0f, 1f, revealDuration);
@@ -116,14 +155,14 @@ public class ResultController : MonoBehaviour
 
     private void Update()
     {
-        // anyKeyDown은 마우스 버튼도 포함한다
-        if (!sequenceDone && !skipRequested && Input.anyKeyDown)
+        // anyKeyDown은 마우스 버튼도 포함한다. 근무 일지 단계의 스킵은 DutyLogView가 따로 처리한다.
+        if (summaryPhase && !sequenceDone && !skipRequested && Input.anyKeyDown)
         {
             skipRequested = true;
         }
     }
 
-    /// <summary>"다음 근무" / "처음부터" 버튼</summary>
+    /// <summary>근무 일지 확인(Day 1~4, 사망) 또는 수치 결산의 "다음 근무 / 처음부터" 버튼</summary>
     public void OnNextClicked()
     {
         if (leaving) return;

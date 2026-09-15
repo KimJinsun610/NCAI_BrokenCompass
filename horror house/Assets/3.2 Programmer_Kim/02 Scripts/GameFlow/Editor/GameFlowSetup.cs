@@ -41,6 +41,8 @@ public static class GameFlowSetup
         }
 
         SetupTestScene();
+        DayIntroSetup.AddToPlaySystems(PlaySystemsPrefabPath);
+        PlayFadeSetup.AddToPlaySystems(PlaySystemsPrefabPath);
         AddTimeTextToHudPlay();
 
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ResultScenePath) == null)
@@ -51,6 +53,7 @@ public static class GameFlowSetup
         {
             Debug.Log($"[GameFlowSetup] 결과 씬이 이미 있어 생성을 건너뜁니다: {ResultScenePath}");
         }
+        DutyLogSetup.AddToResultScene(ResultScenePath);
 
         SceneFlowConfig config = AssetDatabase.LoadAssetAtPath<SceneFlowConfig>(ConfigPath);
         if (config != null)

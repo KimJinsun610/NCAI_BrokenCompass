@@ -27,6 +27,7 @@ public class HUDActions : MonoBehaviour
     // 시작 버튼의 OnClick()에서 호출 — 로딩 씬을 거쳐 Play 씬으로 이동 (Play 씬은 SceneFlowConfig에서 지정)
     public void StartGame()
     {
+        GameSession.StartNewRun(); // Day 1부터 새로 시작
         SceneFlow.GoTo(GameScene.Play);
     }
 

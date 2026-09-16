@@ -55,24 +55,16 @@ namespace NightDuty
     /// </para>
     /// <para>
     /// 구간 폭은 균일하지 않다: Band0=0~24, Band1=25~49, Band2=50~74,
-    /// Band3=75~89(15칸), Band4=90~100(11칸).
-    /// <see cref="Bands.RedThreshold"/>(=75)는 "조명이 붉게 보인다면"으로 시작하는
-    /// 근무수칙이 참조하는 임계이며, 손전등과는 무관하게 조도 축 값으로만 판정한다.
-    /// 50~74(3200K)는 붉게 보이지만 붉음으로 치지 않는 회색지대로 의도된 것이다.
+    /// Band3=75~89(15칸), Band4=90~99(10칸). 100은 종료 잠금이다.
     /// </para>
     /// <para>
     /// 등 개수의 기획 확정값:
     /// Band0 복도 8 / 교실 8 / 화장실 4 / 과학실 4,
     /// Band1 6 / 6 / 3 / 3, Band2 4 / 4 / 2 / 2, Band3 2 / 2 / 1 / 1,
-    /// Band4 0 / 0 / 0 / <b>1</b>.
+    /// Band4 0 / 0 / 0 / 0 (전 공간 등 0개 + 붉은 잔광).
     /// </para>
     /// <para>
-    /// <b>과학실 Band4가 0이 아니라 1인 것은 의도된 예외다.</b>
-    /// 근무수칙 7번이 "손전등을 끄고 점검하십시오"이고 1번이
-    /// "인체 모형이 제자리에 있는지 확인하십시오"(응시 1초)인데,
-    /// 완전 암흑이면 판정은 통과하지만 플레이어는 아무것도 볼 수 없다.
-    /// 그래서 모형 실루엣만 겨우 드러나는 붉은 잔광 한 등을 남긴다.
-    /// 이 1은 버그가 아니므로 0으로 "고치지" 말 것.
+    /// 이전 판의 「과학실 Band4 = 1」 예외는 확정 기획서(2026-09-12)에서 폐기됐다.
     /// </para>
     /// </remarks>
     [CreateAssetMenu(menuName = "NightDuty/Band Table", fileName = "BandTable")]
@@ -218,18 +210,18 @@ namespace NightDuty
 
             _rows[0] = MakeRow(6500f, 1.00f, Color.white);   // Band0 : 6500K 백색
             _rows[1] = MakeRow(4500f, 0.90f, Color.white);   // Band1 : 4500K 옅은 노랑
-            _rows[2] = MakeRow(3200f, 0.75f, Color.white);   // Band2 : 3200K 주황(붉게 보이나 붉음은 아님)
-            _rows[3] = MakeRow(2000f, 0.55f, Color.white);   // Band3 : 2000K 적갈, RedThreshold 진입
-            _rows[4] = MakeRow(1200f, 0.15f, new Color(1f, 0.45f, 0.35f)); // Band4 : 진한 빨강
+            _rows[2] = MakeRow(3200f, 0.75f, Color.white);   // Band2 : 3200K 주황
+            _rows[3] = MakeRow(2000f, 0.55f, Color.white);   // Band3 : 2000K 적갈
+            _rows[4] = MakeRow(1200f, 0.15f, new Color(1f, 0.45f, 0.35f)); // Band4 : 붉은 잔광 (90~99)
 
             _spaces = new SpaceLightCount[5];
             _spaces[0] = MakeSpace(SpaceId.Corridor, 8, 6, 4, 2, 0);
             _spaces[1] = MakeSpace(SpaceId.Toilet, 4, 3, 2, 1, 0);
             _spaces[2] = MakeSpace(SpaceId.Classroom_1_1, 8, 6, 4, 2, 0);
             _spaces[3] = MakeSpace(SpaceId.Classroom_1_3, 8, 6, 4, 2, 0);
-            // 과학실 Band4만 1: 손전등을 끈 채 인체 모형을 응시해야 하는 수칙 때문에
-            // 완전 암흑을 피하고 실루엣용 붉은 잔광 한 등을 남긴다. 의도된 예외다.
-            _spaces[4] = MakeSpace(SpaceId.ScienceRoom, 4, 3, 2, 1, 1);
+            // 확정 기획서(2026-09-12): 전 공간 Band4 = 등 0개 + 붉은 잔광. 과학실 예외(1개)는 폐기됐다.
+            // 이 값을 바꾼 뒤에는 NightDuty ▸ 조도 표 기획값으로 되돌리기로 BandTable.asset을 다시 써야 한다.
+            _spaces[4] = MakeSpace(SpaceId.ScienceRoom, 4, 3, 2, 1, 0);
         }
 
         /// <summary>행 배열이 사용 가능한 상태인지 검사한다.</summary>

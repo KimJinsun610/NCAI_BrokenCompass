@@ -10,7 +10,9 @@ namespace NightDuty
     /// 연출 코드가 구간을 판정할 때는 <c>Bands.Of</c>가 아니라 <c>BandResolver</c>를 거쳐야 한다.
     /// </para>
     /// <para>
-    /// 구간 폭은 균일하지 않다: 0~24 / 25~49 / 50~74 / 75~89 / 90~100.
+    /// 구간 폭은 균일하지 않다: 0~24 / 25~49 / 50~74 / 75~89 / 90~99.
+    /// <b>100은 구간이 아니라 종료 잠금이다.</b> <c>Of(100)</c>은 표현 편의상 Band4를 돌려주지만,
+    /// 100 도달 처리(종료 신호 1회, 이후 델타 중단)는 <c>FearAxisSystem</c>이 별도 경로로 맡는다.
     /// 경계 숫자는 아래 <c>LowerBounds</c> 표 한 곳에만 존재한다 — if 사슬로 흩뿌리지 말 것.
     /// </para>
     /// </summary>
@@ -19,25 +21,27 @@ namespace NightDuty
         /// <summary>축 값의 하한(포함).</summary>
         public const int Min = 0;
 
-        /// <summary>축 값의 상한(포함).</summary>
+        /// <summary>축 값의 상한(포함). 이 값에 도달하면 종료 잠금이다.</summary>
         public const int Max = 100;
 
         /// <summary>
-        /// 조도 축 75 이상 = "붉게 보인다" 판정 임계. 근무수칙 다수가 이 값을 참조한다.
-        /// 손전등 상태와 무관하게 조도 축 값만으로 평가한다.
-        /// 50~74(3200K)는 붉어 보이지만 붉음 판정에는 들지 않는 회색지대로 일부러 남겨 둔 구간이다.
+        /// <b>폐기 예정.</b> 확정 기획서(2026-09-12)에는 공통 「붉게 보인다」 임계가 없다.
+        /// 수칙의 발동 자격은 카드마다 가진 구간 범위(<c>RuleSO</c>의 eligible 구간)로 판단한다.
+        /// 다른 코드가 아직 참조하고 있을 수 있어 바로 지우지 않고 경고로 표시해 둔다.
+        /// 새 코드에서 쓰지 말 것.
         /// </summary>
+        [System.Obsolete("확정 기획서에 없는 값입니다. RuleSO의 eligible 구간을 쓰십시오.")]
         public const int RedThreshold = 75;
 
         /// <summary>구간 개수.</summary>
         public const int Count = 5;
 
         /// <summary>
-        /// 각 구간의 하한(포함)과, 마지막에 <see cref="Max"/> + 1 센티널.
-        /// 구간 i의 범위는 [ LowerBounds[i], LowerBounds[i + 1] - 1 ] 이다.
+        /// 각 구간의 하한(포함)과, 마지막에 <see cref="Max"/> 센티널.
+        /// 구간 i의 범위는 [ LowerBounds[i], LowerBounds[i + 1] - 1 ] 이다. 따라서 Band4는 90~99이고 100은 어느 구간의 범위에도 들지 않는다.
         /// 범위를 바꾸려면 오직 이 배열만 고치면 된다.
         /// </summary>
-        private static readonly int[] LowerBounds = { 0, 25, 50, 75, 90, Max + 1 };
+        private static readonly int[] LowerBounds = { 0, 25, 50, 75, 90, Max };
 
         /// <summary>
         /// 값이 속한 구간을 돌려준다. 히스테리시스 없음.

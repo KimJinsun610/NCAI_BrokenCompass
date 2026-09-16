@@ -28,7 +28,7 @@ namespace NightDuty
         [SerializeField, Tooltip("기다릴 신호 종류")]
         private SignalKind _kind;
 
-        [SerializeField, Tooltip("대상 ID. 비우면 카드의 대상 목록, *이면 아무 대상")]
+        [SerializeField, Tooltip("대상 ID. 비우면 카드의 대상 목록, *이면 아무 대상, @trigger면 이 사건을 시작시킨 대상")]
         private string _targetId = string.Empty;
 
         [SerializeField, Tooltip("공간 신호(진입·이탈·점검 완료)의 공간. None이면 아무 공간")]
@@ -93,7 +93,7 @@ namespace NightDuty
                 return true;
             }
 
-            return TargetMatch.Matches(_targetId, card, signal.TargetId);
+            return TargetMatch.Matches(_targetId, card, signal.TargetId, state);
         }
 
         /// <inheritdoc/>

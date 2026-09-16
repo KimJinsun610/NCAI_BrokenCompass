@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 
-// EditMode 테스트가 RuleSO의 테스트용 구성 메서드(internal)를 쓸 수 있게 한다.
-// 플레이어 빌드에는 테스트 어셈블리가 포함되지 않으므로 런타임 영향은 없다.
+// EditMode 테스트와 에디터 도구가 RuleSO·편성표의 코드 구성 메서드(internal)를 쓸 수 있게 한다.
+// 두 어셈블리 모두 에디터 전용이라 플레이어 빌드에는 포함되지 않는다.
 [assembly: InternalsVisibleTo("NightDuty.Tests.EditMode")]
+[assembly: InternalsVisibleTo("NightDuty.Editor")]

@@ -12,7 +12,7 @@ namespace NightDuty
     [ConditionMenu("근접/반경 안 진입")]
     public sealed class ProximityCondition : ICondition
     {
-        [SerializeField, Tooltip("바닥 기준점 ID. 비우면 카드의 대상 목록")]
+        [SerializeField, Tooltip("바닥 기준점 ID. 비우면 카드의 대상 목록, @trigger면 시작 대상")]
         private string _anchorId = string.Empty;
 
         [SerializeField, Tooltip("금지 반경(m). 0 이하면 카드의 반경을 쓴다")]
@@ -43,7 +43,7 @@ namespace NightDuty
                 return false;
             }
 
-            if (!TargetMatch.Matches(_anchorId, card, signal.TargetId))
+            if (!TargetMatch.Matches(_anchorId, card, signal.TargetId, state))
             {
                 return false;
             }

@@ -1,0 +1,416 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8fdbad38b568d64c87ebfbd96373b48, type: 3}
+  m_Name: SpaceAnomalyTable
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.SpaceAnomalyTableSO
+  _cells:
+  - Space: 1
+    Axis: 0
+    Band: 0
+    Label: "\uC2E4\uC81C \uBB38\xB7\uBC1C\uC18C\uB9AC\uC640 \uAE30\uBCF8 \uD658\uACBD\uC74C"
+    Cues:
+    - amb.base
+  - Space: 1
+    Axis: 0
+    Band: 1
+    Label: "\uC55E\uCABD \uC9C0\uC815 \uBB38 \uB2EB\uD798 1\uD68C"
+    Cues:
+    - door.close.front
+  - Space: 1
+    Axis: 0
+    Band: 2
+    Label: "\uC55E\uCABD \uB2EB\uD798 \uB4A4 \uC9C0\uB098\uC628 \uBB38 \uB2EB\uD798
+      1\uD68C"
+    Cues:
+    - door.close.front
+    - door.close.back
+  - Space: 1
+    Axis: 0
+    Band: 3
+    Label: "\uB4A4\uCABD \uB2EB\uD798 \uC55E\uC5D0 \uC190\uC7A1\uC774 \uB193\uB294
+      \uC18C\uB9AC \uCD94\uAC00"
+    Cues:
+    - door.close.front
+    - handle.back
+    - door.close.back
+  - Space: 1
+    Axis: 0
+    Band: 4
+    Label: "\uB4A4\uCABD \uC18C\uB9AC \uB2E8\uC11C \uC720\uC9C0, \uC9C0\uC815 \uBB38
+      \uBB34\uC74C \uAC1C\uBC29 1\uD68C"
+    Cues:
+    - door.close.front
+    - handle.back
+    - door.close.back
+    - door.open.silent
+  - Space: 1
+    Axis: 1
+    Band: 0
+    Label: "\uB4F1 8\uAC1C, 6500K \uBC31\uC0C9"
+    Cues: []
+  - Space: 1
+    Axis: 1
+    Band: 1
+    Label: "\uB4F1 6\uAC1C, 4500K \uC605\uC740 \uB178\uB791"
+    Cues: []
+  - Space: 1
+    Axis: 1
+    Band: 2
+    Label: "\uB4F1 4\uAC1C, 3200K \uC8FC\uD669"
+    Cues: []
+  - Space: 1
+    Axis: 1
+    Band: 3
+    Label: "\uB4F1 2\uAC1C, 2000K \uC801\uAC08"
+    Cues: []
+  - Space: 1
+    Axis: 1
+    Band: 4
+    Label: "\uB4F1 0\uAC1C, \uBD89\uC740 \uC794\uAD11"
+    Cues: []
+  - Space: 1
+    Axis: 2
+    Band: 0
+    Label: "\uC9C0\uC815 \uD1B5\uD589\uC5D0\uC11C \uBB38 \uC790\uB3D9 \uAC1C\uBC29
+      1\uD68C"
+    Cues:
+    - door.auto_open
+  - Space: 1
+    Axis: 2
+    Band: 1
+    Label: "\uC911\uC559 \uC0C1\uC790 1\uAC1C, \uBCBD \uCABD \uC548\uC804 \uD1B5\uB85C
+      \uC720\uC9C0"
+    Cues:
+    - box.center
+  - Space: 1
+    Axis: 2
+    Band: 2
+    Label: "\uC0C1\uC790 \uC0C1\uD0DC \uC720\uC9C0 (\uBAA8\uD615\uC740 \uC870\uC6B0
+      \uADDC\uC57D\uC73C\uB85C \uBCC4\uB3C4)"
+    Cues:
+    - box.center
+  - Space: 1
+    Axis: 2
+    Band: 3
+    Label: "\uAE30\uC874 \uCC9C\uC7A5 \uC870\uAC01 \uB099\uD558 1\uD68C, \uB099\uD558
+      \uC601\uC5ED\uC740 \uC6B0\uD68C \uAC00\uB2A5"
+    Cues:
+    - box.center
+    - debris.fall
+  - Space: 1
+    Axis: 2
+    Band: 4
+    Label: "\uAE30\uC874 \uB098\uBB34\xB7\uD480 \uBB36\uC74C \uCD94\uAC00, \uD1B5\uB85C\uB294
+      \uB0A8\uAE40"
+    Cues:
+    - box.center
+    - debris.fall
+    - tree.grass
+  - Space: 3
+    Axis: 0
+    Band: 0
+    Label: "1-1 \uBB38\uBC16\uC5D0\uC11C \uBD84\uD544 3\uD68D, \uD558\uB8E8 1\uD68C"
+    Cues:
+    - chalk.3
+  - Space: 3
+    Axis: 0
+    Band: 1
+    Label: "\uBD84\uD544 \uB2E8\uC11C \uC720\uC9C0, \uC2E4\uB0B4 \uC9C0\uC6B0\uAC1C
+      \uD138\uAE30 \uC18C\uB9AC 1\uD68C"
+    Cues:
+    - chalk.3
+    - eraser
+  - Space: 3
+    Axis: 0
+    Band: 2
+    Label: "\uC810\uAC80 \uD6C4 \uD1F4\uC2E4 \uB54C \uB4B7\uC904 \uCC45\uC0C1 \uD0C0\uACA9\uC74C
+      1\uD68C"
+    Cues:
+    - desk.hit
+  - Space: 3
+    Axis: 0
+    Band: 3
+    Label: "\uBCC4\uB3C4 \uBC29\uBB38\uC758 \uC785\uAD6C\uC5D0\uC11C \uCE60\uD310
+      \uAE01\uAE30 + \uAD50\uD0C1 \uC758\uC790 \uB9C8\uCC30\uC74C"
+    Cues:
+    - board.scratch
+    - chair.scrape
+  - Space: 3
+    Axis: 0
+    Band: 4
+    Label: "\uCE60\uD310 \uC18C\uB9AC \uC885\uB8CC \uB4A4 \uAD50\uD0C1 \uB9C8\uCC30\uC74C
+      \uD55C \uAD6C\uC808 \uCD94\uAC00"
+    Cues:
+    - board.scratch
+    - chair.scrape
+    - chair.scrape.phrase
+  - Space: 3
+    Axis: 1
+    Band: 0
+    Label: "\uB4F1 8\uAC1C, 6500K \uBC31\uC0C9"
+    Cues: []
+  - Space: 3
+    Axis: 1
+    Band: 1
+    Label: "\uB4F1 6\uAC1C, 4500K \uC605\uC740 \uB178\uB791"
+    Cues: []
+  - Space: 3
+    Axis: 1
+    Band: 2
+    Label: "\uB4F1 4\uAC1C, 3200K \uC8FC\uD669"
+    Cues: []
+  - Space: 3
+    Axis: 1
+    Band: 3
+    Label: "\uB4F1 2\uAC1C, 2000K \uC801\uAC08"
+    Cues: []
+  - Space: 3
+    Axis: 1
+    Band: 4
+    Label: "\uB4F1 0\uAC1C, \uBD89\uC740 \uC794\uAD11"
+    Cues: []
+  - Space: 3
+    Axis: 2
+    Band: 0
+    Label: "\uC815\uC0C1 \uCC45\uC0C1 \uBC29\uD5A5"
+    Cues:
+    - desks.normal
+  - Space: 3
+    Axis: 2
+    Band: 1
+    Label: "\uB4A4\uCABD \uC9C0\uC815 \uCC45\uC0C1\xB7\uC758\uC790 \uD55C \uBB36\uC74C\uC774
+      \uCD9C\uC785\uBB38\uC744 \uD5A5\uD568"
+    Cues:
+    - desks.normal
+    - desks.turned.one
+  - Space: 3
+    Axis: 2
+    Band: 2
+    Label: "\uD68C\uC804 \uC88C\uC11D \uC720\uC9C0"
+    Cues:
+    - desks.normal
+    - desks.turned.one
+  - Space: 3
+    Axis: 2
+    Band: 3
+    Label: "\uD574\uB2F9 \uC5F4\uC758 \uAE30\uC874 \uC758\uC790 \uBC29\uD5A5 \uBCC0\uACBD"
+    Cues:
+    - desks.normal
+    - desks.turned.one
+    - chairs.turned.row
+  - Space: 3
+    Axis: 2
+    Band: 4
+    Label: "\uB2E4\uB978 \uC5F4\uAE4C\uC9C0 \uBC29\uD5A5 \uBCC0\uD654, \uCC45\uC0C1
+      \uC218\xB7\uC548\uC804 \uD1B5\uB85C \uC720\uC9C0"
+    Cues:
+    - desks.normal
+    - desks.turned.one
+    - chairs.turned.row
+    - chairs.turned.others
+  - Space: 5
+    Axis: 0
+    Band: 0
+    Label: "\uC720\uD6A8 \uC810\uAC80 \uD6C4 \uD1F4\uC2E4\uD560 \uB54C \uC720\uB9AC
+      \uD30C\uC190\uC74C 1\uD68C"
+    Cues:
+    - glass.break
+  - Space: 5
+    Axis: 0
+    Band: 1
+    Label: "\uC9C0\uC815 \uC720\uB9AC \uAE30\uAD6C \uC811\uCD09\uC74C \uCD94\uAC00"
+    Cues:
+    - glass.break
+    - glass.touch
+  - Space: 5
+    Axis: 0
+    Band: 2
+    Label: "\uAC19\uC740 \uC2E4\uD5D8\uB300\uC5D0\uC11C \uC9E7\uC740 \uAE01\uD798
+      \uCD94\uAC00"
+    Cues:
+    - glass.break
+    - glass.touch
+    - glass.scrape
+  - Space: 5
+    Axis: 0
+    Band: 3
+    Label: "\uC811\uCD09\uC74C \uC704\uCE58\uB97C \uC2E4\uD5D8\uB300 \uC544\uB798\uCABD\uC73C\uB85C
+      \uC870\uC815"
+    Cues:
+    - glass.break
+    - glass.touch.under
+    - glass.scrape.under
+  - Space: 5
+    Axis: 0
+    Band: 4
+    Label: "\uD1F4\uC2E4 \uD30C\uC190\uC74C \uB4A4 \uBB34\uAC70\uC6B4 \uBB3C\uCCB4
+      \uB193\uB294 \uC18C\uB9AC 1\uD68C"
+    Cues:
+    - glass.break
+    - heavy.drop
+    - glass.touch.under
+    - glass.scrape.under
+  - Space: 5
+    Axis: 1
+    Band: 0
+    Label: "\uB4F1 4\uAC1C, 6500K \uBC31\uC0C9"
+    Cues: []
+  - Space: 5
+    Axis: 1
+    Band: 1
+    Label: "\uB4F1 3\uAC1C, 4500K \uC605\uC740 \uB178\uB791"
+    Cues: []
+  - Space: 5
+    Axis: 1
+    Band: 2
+    Label: "\uB4F1 2\uAC1C, 3200K \uC8FC\uD669"
+    Cues: []
+  - Space: 5
+    Axis: 1
+    Band: 3
+    Label: "\uB4F1 1\uAC1C, 2000K \uC801\uAC08"
+    Cues: []
+  - Space: 5
+    Axis: 1
+    Band: 4
+    Label: "\uB4F1 0\uAC1C, \uBD89\uC740 \uC794\uAD11"
+    Cues: []
+  - Space: 5
+    Axis: 2
+    Band: 0
+    Label: "\uAE30\uC874 \uC2E4\uD5D8\uB300\xB7\uAE30\uAD6C \uC815\uC0C1 \uBC30\uCE58"
+    Cues:
+    - lab.normal
+  - Space: 5
+    Axis: 2
+    Band: 1
+    Label: "\uC77C\uBC18 \uC18C\uD488 \uBC30\uCE58 \uC720\uC9C0"
+    Cues:
+    - lab.normal
+  - Space: 5
+    Axis: 2
+    Band: 2
+    Label: "\uC77C\uBC18 \uC18C\uD488 \uBC30\uCE58 \uC720\uC9C0"
+    Cues:
+    - lab.normal
+  - Space: 5
+    Axis: 2
+    Band: 3
+    Label: "\uC77C\uBC18 \uC18C\uD488 \uBC30\uCE58 \uC720\uC9C0"
+    Cues:
+    - lab.normal
+  - Space: 5
+    Axis: 2
+    Band: 4
+    Label: "\uC77C\uBC18 \uC18C\uD488 \uBC30\uCE58 \uC720\uC9C0 (\uBAA8\uD615 \uC704\uCE58\uB294
+      S-A\xB7S-B \uC7A5\uBA74\uC73C\uB85C \uBCC4\uB3C4)"
+    Cues:
+    - lab.normal
+  - Space: 2
+    Axis: 0
+    Band: 0
+    Label: "\uAE30\uBCF8 \uD658\uACBD\uC74C"
+    Cues:
+    - amb.base
+  - Space: 2
+    Axis: 0
+    Band: 1
+    Label: "\uC548\uCABD \uCE78 \uBB3C \uB0B4\uB9BC 1\uD68C"
+    Cues:
+    - flush.inner
+  - Space: 2
+    Axis: 0
+    Band: 2
+    Label: "\uBCC4\uB3C4 \uBC29\uBB38\uC5D0\uC11C \uC138\uBA74\uB300 \uCABD '\uADFC\uBB34\uC790\uB2D8'
+      \uD638\uCE6D"
+    Cues:
+    - call.worker
+  - Space: 2
+    Axis: 0
+    Band: 3
+    Label: "\uBB3C \uB0B4\uB9BC \uB05D\uC5D0 \uC190\uC7A1\uC774 \uC18C\uB9AC \uCD94\uAC00"
+    Cues:
+    - flush.inner
+    - handle.after_flush
+  - Space: 2
+    Axis: 0
+    Band: 4
+    Label: "\uBB3C \uB0B4\uB9BC \uB4A4 \uB2EB\uD78C \uCE78 \uC704\uCE58\uC5D0\uC11C
+      \uB4E4\uC228 1\uD68C (\uB2EB\uD78C \uCE78 \uC5C6\uC73C\uBA74 \uC0DD\uB7B5)"
+    Cues:
+    - flush.inner
+    - handle.after_flush
+    - breath.closed_stall
+  - Space: 2
+    Axis: 1
+    Band: 0
+    Label: "\uB4F1 4\uAC1C, 6500K \uBC31\uC0C9"
+    Cues: []
+  - Space: 2
+    Axis: 1
+    Band: 1
+    Label: "\uB4F1 3\uAC1C, 4500K \uC605\uC740 \uB178\uB791"
+    Cues: []
+  - Space: 2
+    Axis: 1
+    Band: 2
+    Label: "\uB4F1 2\uAC1C, 3200K \uC8FC\uD669"
+    Cues: []
+  - Space: 2
+    Axis: 1
+    Band: 3
+    Label: "\uB4F1 1\uAC1C, 2000K \uC801\uAC08"
+    Cues: []
+  - Space: 2
+    Axis: 1
+    Band: 4
+    Label: "\uB4F1 0\uAC1C, \uBD89\uC740 \uC794\uAD11"
+    Cues: []
+  - Space: 2
+    Axis: 2
+    Band: 0
+    Label: "\uC785\uAD6C \uCABD \uAC1C\uD3D0\uD615 \uCE78 \uC790\uB3D9 \uAC1C\uBC29
+      1\uD68C"
+    Cues:
+    - stalls.base
+    - stall.entry.auto_open
+  - Space: 2
+    Axis: 2
+    Band: 1
+    Label: "\uC548\uCABD \uCE78\uC774 \uC774\uBBF8 \uC5F4\uB9B0 \uC0C1\uD0DC \uCD94\uAC00"
+    Cues:
+    - stalls.base
+    - stall.inner.open
+  - Space: 2
+    Axis: 2
+    Band: 2
+    Label: "\uC77C\uBC18 \uCE78 \uC0C1\uD0DC \uC720\uC9C0"
+    Cues:
+    - stalls.base
+    - stall.inner.open
+  - Space: 2
+    Axis: 2
+    Band: 3
+    Label: "\uAC1C\uD3D0\uD615 \uC810\uAC80\uCE78 \uB450 \uACF3 \uBAA8\uB450 \uC5F4\uB9B0
+      \uC0C1\uD0DC (T1 \uC81C\uC678)"
+    Cues:
+    - stalls.base
+    - stall.inner.open
+    - stall.entry.open
+  - Space: 2
+    Axis: 2
+    Band: 4
+    Label: "\uB3D9\uC77C"
+    Cues:
+    - stalls.base
+    - stall.inner.open
+    - stall.entry.open

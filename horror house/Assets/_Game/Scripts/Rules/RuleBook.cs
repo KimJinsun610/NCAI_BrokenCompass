@@ -43,6 +43,7 @@ namespace NightDuty
         private readonly FearAxisSystem _axes;
         private readonly BandResolver _bands;
         private bool _shortTermStartedThisVisit;
+        private RuleWatcher _visitQuotaHolder;
         private bool _nightEnded;
 
         /// <summary>그날 덱 순서의 감시 목록.</summary>
@@ -134,6 +135,7 @@ namespace NightDuty
             if (signal.Kind == SignalKind.SpaceEntered)
             {
                 _shortTermStartedThisVisit = false;
+                _visitQuotaHolder = null;
             }
 
             // 1) 진행 중 카드 관찰. 이 신호를 본 카드는 표시해 두고 2)에서 같은 신호로 다시 시작하지 않는다.
@@ -153,6 +155,13 @@ namespace NightDuty
                     {
                         return;
                     }
+                }
+                else if (w.State == CardState.Waiting && w == _visitQuotaHolder)
+                {
+                    // 유효하지 않은 시도로 취소된 사건은 이번 방문의 신규 사건 몫을 돌려준다.
+                    // (예: H3 — 유예 안에 입구로 되돌아간 뒤 다시 들어오면 새로 시작해야 한다)
+                    _shortTermStartedThisVisit = false;
+                    _visitQuotaHolder = null;
                 }
             }
 
@@ -178,9 +187,10 @@ namespace NightDuty
                     }
 
                     _shortTermStartedThisVisit = true;
+                    _visitQuotaHolder = w;
                 }
 
-                w.Start(World);
+                w.Start(World, signal.TargetId);
             }
 
             // 3) 구간 반영 보류 갱신.

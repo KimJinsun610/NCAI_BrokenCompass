@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8816b6fab6f8d4da7083ac9a2a4eb9, type: 3}
+  m_Name: H3
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
+  _cardId: H3
+  _space: 1
+  _playerText: "\uBCF5\uB3C4\uB97C \uC9C0\uB0A0 \uB54C\uB294 \uC190\uC804\uB4F1\uC744
+    \uAEBC \uC8FC\uC2ED\uC2DC\uC624. \uBD88\uBE5B\uC740 \uADFC\uBB34\uC790\uBCF4\uB2E4
+    \uC55E\uC11C \uAC77\uC2B5\uB2C8\uB2E4."
+  _isLongTerm: 0
+  _useEligibleBand: 0
+  _eligibleAxis: 0
+  _eligibleFrom: 0
+  _eligibleTo: 4
+  _triggerKind: 22
+  _triggerId: corridor.passage
+  _triggerSpace: 0
+  _targetIds:
+  - corridor.passage
+  _successCondition:
+    rid: 6144270366874271826
+  _failureCondition:
+    rid: 6144270366874271827
+  _cancelCondition:
+    rid: 6144270366874271828
+  _settleAt: 0
+  _successDelta: 2
+  _failureAxis: 1
+  _failureDelta: 12
+  _radius: 0
+  _graceSeconds: 2
+  _gazeSeconds: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 6144270366874271826
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 24
+        _targetId: corridor.passage
+        _space: 0
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271827
+      type: {class: FlashlightCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _whenOn: 1
+        _graceSeconds: -1
+    - rid: 6144270366874271828
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 23
+        _targetId: corridor.passage
+        _space: 0
+        _flag: 0
+        _playerOnly: 1

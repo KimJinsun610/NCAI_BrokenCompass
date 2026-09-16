@@ -28,6 +28,9 @@ namespace NightDuty
         /// <summary>미판정·잠금 사유(개발 로그용).</summary>
         public string Reason { get; private set; }
 
+        /// <summary>이 사건을 시작시킨 신호의 대상 ID.</summary>
+        public string TriggerTargetId { get; private set; } = string.Empty;
+
         /// <summary>진행 중인 단기 사건인지. 진행 중에는 그 공간의 구간 반영을 미룬다.</summary>
         public bool IsActiveShortTerm
         {
@@ -62,7 +65,7 @@ namespace NightDuty
                 return Card.TriggerSpace == SpaceId.None || signal.Space == Card.TriggerSpace;
             }
 
-            return TargetMatch.Matches(Card.TriggerId, Card, signal.TargetId);
+            return TargetMatch.Matches(Card.TriggerId, Card, signal.TargetId, null);
         }
 
         /// <summary>
@@ -70,15 +73,25 @@ namespace NightDuty
         /// </summary>
         public void Start(JudgeWorld world)
         {
+            Start(world, string.Empty);
+        }
+
+        /// <summary>
+        /// 진행 중으로 전환한다. <paramref name="triggerTargetId"/>는 시작 신호의 대상 ID이며,
+        /// 조건 대상 <c>@trigger</c>가 이 값과 비교된다.
+        /// </summary>
+        public void Start(JudgeWorld world, string triggerTargetId)
+        {
             if (State != CardState.Waiting)
             {
                 return;
             }
 
-            _successState = new ConditionState();
-            _failureState = new ConditionState();
-            _cancelState = new ConditionState();
+            _successState = new ConditionState { TriggerTargetId = triggerTargetId };
+            _failureState = new ConditionState { TriggerTargetId = triggerTargetId };
+            _cancelState = new ConditionState { TriggerTargetId = triggerTargetId };
             _successMet = false;
+            TriggerTargetId = triggerTargetId ?? string.Empty;
 
             if (Card.SuccessCondition != null)
             {

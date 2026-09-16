@@ -43,6 +43,9 @@ namespace NightDuty
         /// <summary>한 번 성립하면 유지되는 표시(복합 조건용).</summary>
         public bool Latched;
 
+        /// <summary>이 사건을 시작시킨 신호의 대상 ID. 조건 대상 <c>@trigger</c>가 이 값과 비교된다.</summary>
+        public string TriggerTargetId;
+
         private List<ConditionState> _children;
 
         /// <summary>복합 조건의 i번째 자식 상태. 없으면 만든다.</summary>
@@ -58,7 +61,9 @@ namespace NightDuty
                 _children.Add(new ConditionState());
             }
 
-            return _children[index];
+            ConditionState child = _children[index];
+            child.TriggerTargetId = TriggerTargetId;
+            return child;
         }
 
         /// <summary>초 단위를 밀리초 정수로 바꾼다.</summary>

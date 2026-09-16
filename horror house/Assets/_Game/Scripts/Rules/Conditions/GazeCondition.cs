@@ -19,7 +19,7 @@ namespace NightDuty
     [ConditionMenu("응시/대상 연속 응시")]
     public sealed class GazeCondition : ICondition
     {
-        [SerializeField, Tooltip("응시 대상 ID. 비우면 카드의 대상 목록")]
+        [SerializeField, Tooltip("응시 대상 ID. 비우면 카드의 대상 목록, @trigger면 시작 대상")]
         private string _targetId = string.Empty;
 
         [SerializeField, Tooltip("필요한 연속 응시 시간(초). 0 이하면 카드의 응시 시간")]
@@ -67,7 +67,7 @@ namespace NightDuty
                 return false;
             }
 
-            bool onTarget = !string.IsNullOrEmpty(signal.TargetId) && TargetMatch.Matches(_targetId, card, signal.TargetId);
+            bool onTarget = !string.IsNullOrEmpty(signal.TargetId) && TargetMatch.Matches(_targetId, card, signal.TargetId, state);
             if (!onTarget)
             {
                 state.TimerMs = 0;

@@ -43,6 +43,7 @@ public static class GameFlowSetup
         SetupTestScene();
         DayIntroSetup.AddToPlaySystems(PlaySystemsPrefabPath);
         PlayFadeSetup.AddToPlaySystems(PlaySystemsPrefabPath);
+        DeathScreenSetup.Setup();
         AddTimeTextToHudPlay();
 
         if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ResultScenePath) == null)

@@ -24,11 +24,17 @@ public class HUDActions : MonoBehaviour
         SceneManager.LoadScene(sceneName);
     }
 
-    // 시작 버튼의 OnClick()에서 호출 — 로딩 씬을 거쳐 Play 씬으로 이동 (Play 씬은 SceneFlowConfig에서 지정)
+    // 시작 버튼의 OnClick()에서 호출 — 계약서 씬으로 이동. 서명 후 출근하기를 누르면 로딩을 거쳐 Play 씬으로 간다
     public void StartGame()
     {
         GameSession.StartNewRun(); // Day 1부터 새로 시작
-        SceneFlow.GoTo(GameScene.Play);
+        SceneFlow.GoTo(GameScene.Contract, false);
+    }
+
+    // 사망 화면의 Restart 버튼 — 로딩을 거쳐 메인으로
+    public void GoToMain()
+    {
+        SceneFlow.GoTo(GameScene.Main);
     }
 
     // 종료 버튼의 OnClick()에서 직접 호출

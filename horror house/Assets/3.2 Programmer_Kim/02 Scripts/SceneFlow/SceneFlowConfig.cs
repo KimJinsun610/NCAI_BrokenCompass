@@ -13,6 +13,8 @@ public class SceneFlowConfig : ScriptableObject
     [ScenePath, SerializeField] private string playScene;
     [ScenePath, SerializeField, Tooltip("결과창 씬. 아직 없으면 비워 둔다.")]
     private string resultScene;
+    [ScenePath, SerializeField, Tooltip("메인의 시작 버튼 뒤, Day 1 전에 보여 주는 계약서 씬")]
+    private string contractScene;
 
     public string GetPath(GameScene scene)
     {
@@ -22,6 +24,7 @@ public class SceneFlowConfig : ScriptableObject
             case GameScene.Loading: return loadingScene;
             case GameScene.Play: return playScene;
             case GameScene.Result: return resultScene;
+            case GameScene.Contract: return contractScene;
             default: return null;
         }
     }

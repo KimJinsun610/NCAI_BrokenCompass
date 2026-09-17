@@ -77,6 +77,7 @@ public static class SceneFlowSetup
         AddToBuildSettings(config.GetPath(GameScene.Play), false);
 
         WireMainStartButton();
+        ContractSceneSetup.Setup();
 
         AssetDatabase.SaveAssets();
         Debug.Log("[SceneFlowSetup] 세팅 완료");

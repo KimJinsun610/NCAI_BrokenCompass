@@ -60,6 +60,12 @@ public sealed class AxisTestAnomalyRig : MonoBehaviour
     private readonly HashSet<string> _shownLayout = new HashSet<string>();
 
     private IFearAxisReader _reader;
+
+    /// <summary>지금 축을 공급하는 쪽. 판정 디버그 패널이 판정 코어 모드면 회차 축을 읽는다.</summary>
+    private IFearAxisReader Reader
+    {
+        get { return NightRunDebugPanel.CoreMode ? NightRun.Axes : _reader; }
+    }
     private GameObject _propRoot;
     private Coroutine _sequence;
     private Material _markerMat;
@@ -125,7 +131,12 @@ public sealed class AxisTestAnomalyRig : MonoBehaviour
     {
         if (space != _space || axis == FearAxis.Trust) return;
         _bands[(int)axis] = to;
-        if (from == to) return; // 기준값 재방송
+        if (from == to)
+        {
+            // 기준값 재방송(축 공급원 전환 등): 소리는 내지 않고 배치 소품만 맞춘다.
+            if (axis == FearAxis.Layout) ApplyLayout(to, false);
+            return;
+        }
 
         Note(AxisNames[(int)axis] + " B" + (int)from + "→B" + (int)to + "  " + Label(axis, to));
 
@@ -155,7 +166,7 @@ public sealed class AxisTestAnomalyRig : MonoBehaviour
 
         for (int i = 0; i < 3; i++)
         {
-            _bands[i] = _reader != null ? _reader.GetBand((FearAxis)i) : Band.Band0;
+            _bands[i] = Reader != null ? Reader.GetBand((FearAxis)i) : Band.Band0;
         }
 
         BuildProps(space);
@@ -164,8 +175,20 @@ public sealed class AxisTestAnomalyRig : MonoBehaviour
 
         if (lights != null)
         {
-            gameObject.SendMessage("PushAll", SendMessageOptions.DontRequireReceiver);
-            lights.ReapplyCurrent();
+            if (NightRunDebugPanel.CoreMode)
+            {
+                // 판정 코어 모드: 꺼진 슬라이더가 끼어들지 않게, 조명에 회차 조도 구간을 직접 넣는다.
+                Band illum = _bands[(int)FearAxis.Illuminance];
+                lights.OnBandChanged(FearAxis.Illuminance, illum, illum);
+            }
+            else
+            {
+#if UNITY_EDITOR || NIGHTDUTY_DEBUG
+                DebugAxisDriver driver = _reader as DebugAxisDriver;
+                if (driver != null && driver.isActiveAndEnabled) driver.PushAll();
+#endif
+                lights.ReapplyCurrent();
+            }
         }
 
         Note("공간 전환: " + SpaceName(space));
@@ -829,6 +852,14 @@ public sealed class AxisTestAnomalyRig : MonoBehaviour
 
     private GUIStyle _wrap;
     private GUIStyle _small;
+
+    // IMGUI는 Layout과 입력 이벤트에서 컨트롤 수가 같아야 한다. 버튼 동작은 여기에 넣었다가 Update에서 실행한다.
+    private readonly List<Action> _pending = new List<Action>();
+
+    private void Later(Action action)
+    {
+        _pending.Add(action);
+    }
     private bool _collapsed;
     private bool _showLog = true;
     private Vector2 _logScroll;
@@ -838,8 +869,27 @@ public sealed class AxisTestAnomalyRig : MonoBehaviour
 
     private void Update()
     {
+#if ENABLE_LEGACY_INPUT_MANAGER
         // F1: 패널 숨기기/보이기 (게임 뷰에 포커스가 있을 때)
         if (Input.GetKeyDown(KeyCode.F1)) _showOverlay = !_showOverlay;
+#endif
+
+        if (_pending.Count > 0)
+        {
+            Action[] actions = _pending.ToArray();
+            _pending.Clear();
+            for (int i = 0; i < actions.Length; i++)
+            {
+                try
+                {
+                    actions[i]();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e, this);
+                }
+            }
+        }
     }
 
     private void OnGUI()
@@ -852,64 +902,79 @@ public sealed class AxisTestAnomalyRig : MonoBehaviour
         }
 
         // 게임 뷰가 작으면 패널 전체를 줄인다. 너비는 화면의 절반, 높이는 화면 안에 들어가게.
-        float scale = Mathf.Min(Screen.width * 0.5f / PanelWidth, (Screen.height - 20f) / PanelHeight);
-        scale = Mathf.Clamp(scale, 0.4f, 1.5f);
+        // 오른쪽에 판정 디버그 패널이 있으므로 화면 너비의 45%까지만 쓴다.
+        float scale = Mathf.Min(Screen.width * 0.45f / PanelWidth, (Screen.height - 20f) / PanelHeight);
+        scale = Mathf.Clamp(scale, 0.4f, 1.1f);
         Matrix4x4 saved = GUI.matrix;
         GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), Vector2.zero);
 
-        float maxH = (Screen.height - 20f) / scale;
-        GUILayout.BeginArea(new Rect(10f / scale, 10f / scale, PanelWidth, maxH));
-        GUILayout.BeginVertical(GUI.skin.box);
-
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("◀", GUILayout.Width(32))) Step(-1);
-        GUILayout.Label(SpaceName(_space), _wrap, GUILayout.Width(80));
-        if (GUILayout.Button("▶", GUILayout.Width(32))) Step(1);
-        GUILayout.FlexibleSpace();
-        if (GUILayout.Button(_collapsed ? "펼치기" : "접기", GUILayout.Width(56))) _collapsed = !_collapsed;
-        if (GUILayout.Button("숨김(F1)", GUILayout.Width(70))) _showOverlay = false;
-        GUILayout.EndHorizontal();
-
-        for (int i = 0; i < 3; i++)
+        try
         {
-            FearAxis axis = (FearAxis)i;
-            int value = _reader != null ? _reader.GetValue(axis) : 0;
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(AxisNames[i] + " " + value + " · B" + (int)_bands[i], _wrap, GUILayout.Width(100));
-#if UNITY_EDITOR || NIGHTDUTY_DEBUG
-            DebugAxisDriver driver = _reader as DebugAxisDriver;
-            if (driver != null)
-            {
-                if (GUILayout.Button("−", GUILayout.Width(26))) driver.SetAxis(axis, PrevLower(value));
-                if (GUILayout.Button("+", GUILayout.Width(26))) driver.SetAxis(axis, NextLower(value));
-            }
-#endif
-            if (!_collapsed) GUILayout.Label(Label(axis, _bands[i]), _small, GUILayout.Width(PanelWidth - 190f));
-            GUILayout.EndHorizontal();
-        }
+            float maxH = (Screen.height - 20f) / scale;
+            GUILayout.BeginArea(new Rect(10f / scale, 10f / scale, PanelWidth, maxH));
+            GUILayout.BeginVertical(GUI.skin.box);
 
-        if (!_collapsed)
-        {
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("청각 다시 재생")) PlayAuditory(_bands[(int)FearAxis.Auditory]);
-            if (GUILayout.Button("배치 사건 다시")) ReplayLayout();
-            if (GUILayout.Button(_showLog ? "기록 ▲" : "기록 ▼", GUILayout.Width(64))) _showLog = !_showLog;
+            if (GUILayout.Button("◀", GUILayout.Width(32))) Later(() => Step(-1));
+            GUILayout.Label(SpaceName(_space), _wrap, GUILayout.Width(80));
+            if (GUILayout.Button("▶", GUILayout.Width(32))) Later(() => Step(1));
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(_collapsed ? "펼치기" : "접기", GUILayout.Width(56))) Later(() => _collapsed = !_collapsed);
+            if (GUILayout.Button("숨김(F1)", GUILayout.Width(70))) Later(() => _showOverlay = false);
             GUILayout.EndHorizontal();
 
-            if (_showLog)
+            for (int i = 0; i < 3; i++)
             {
-                _logScroll = GUILayout.BeginScrollView(_logScroll, GUILayout.Height(110));
-                for (int i = _log.Count - 1; i >= 0; i--)   // 최신이 위
+                FearAxis axis = (FearAxis)i;
+                int value = Reader != null ? Reader.GetValue(axis) : 0;
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(AxisNames[i] + " " + value + " · B" + (int)_bands[i], _wrap, GUILayout.Width(100));
+    #if UNITY_EDITOR || NIGHTDUTY_DEBUG
+                DebugAxisDriver driver = _reader as DebugAxisDriver;
+                if (NightRunDebugPanel.CoreMode)
                 {
-                    GUILayout.Label(_log[i], _small);
+                    // 판정 코어 축은 내려가지 않는다(감쇠 없음). 올리기만 한다.
+                    GUI.enabled = false;
+                    GUILayout.Button("−", GUILayout.Width(26));
+                    GUI.enabled = true;
+                    if (GUILayout.Button("+", GUILayout.Width(26))) Later(() => NightRun.DebugAddAxis(axis, NextLower(value) - value));
                 }
-                GUILayout.EndScrollView();
+                else if (driver != null)
+                {
+                    if (GUILayout.Button("−", GUILayout.Width(26))) Later(() => driver.SetAxis(axis, PrevLower(value)));
+                    if (GUILayout.Button("+", GUILayout.Width(26))) Later(() => driver.SetAxis(axis, NextLower(value)));
+                }
+    #endif
+                if (!_collapsed) GUILayout.Label(Label(axis, _bands[i]), _small, GUILayout.Width(PanelWidth - 190f));
+                GUILayout.EndHorizontal();
             }
-        }
 
-        GUILayout.EndVertical();
-        GUILayout.EndArea();
-        GUI.matrix = saved;
+            if (!_collapsed)
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("청각 다시 재생")) Later(() => PlayAuditory(_bands[(int)FearAxis.Auditory]));
+                if (GUILayout.Button("배치 사건 다시")) Later(() => ReplayLayout());
+                if (GUILayout.Button(_showLog ? "기록 ▲" : "기록 ▼", GUILayout.Width(64))) Later(() => _showLog = !_showLog);
+                GUILayout.EndHorizontal();
+
+                if (_showLog)
+                {
+                    _logScroll = GUILayout.BeginScrollView(_logScroll, GUILayout.Height(110));
+                    for (int i = _log.Count - 1; i >= 0; i--)   // 최신이 위
+                    {
+                        GUILayout.Label(_log[i], _small);
+                    }
+                    GUILayout.EndScrollView();
+                }
+            }
+
+            GUILayout.EndVertical();
+            GUILayout.EndArea();
+        }
+        finally
+        {
+            GUI.matrix = saved;
+        }
     }
 
     private void Step(int dir)

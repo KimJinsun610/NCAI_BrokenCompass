@@ -72,8 +72,17 @@ namespace NightDuty
         /// <summary>태블릿(Tab) 상태가 바뀌었다. Flag = 열림.</summary>
         TabChanged = 60,
 
-        /// <summary>근무 종료 요청이 수락됐다. 보통은 신호 대신 <see cref="RuleBook.EndNight"/>를 직접 호출한다.</summary>
-        NightEndAccepted = 70
+        /// <summary>
+        /// 근무 종료 요청이 수락됐다. 클라이언트는 보내지 않는다 — <see cref="RuleBook.EndNight"/>가 진행 중 카드에
+        /// 덱 순서로 한 번씩 전달한다(「밤 종료 때 의무가 남았으면 위반」 같은 조건용).
+        /// </summary>
+        NightEndAccepted = 70,
+
+        /// <summary>
+        /// 하룻밤 판정이 시작됐다(덱 전달 직후 한 번). <see cref="RuleBook.BeginNight"/>이 보낸다.
+        /// 「덱에 들어오면 밤 시작부터 감시」하는 <b>장기</b> 카드(C6)의 시작 신호다. 대상·공간 없음.
+        /// </summary>
+        NightBegan = 71
     }
 
     /// <summary>조작 출처. 연출이 움직인 문을 플레이어 조작으로 세지 않기 위해 구분한다.</summary>

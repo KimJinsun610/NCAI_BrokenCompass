@@ -255,19 +255,41 @@ namespace NightDuty
                 errors.Add(id + ": 준수 조건이 없습니다.");
             }
 
-            if (_failureCondition == null)
+            // 준수 전용 카드(S1 — 위반 없음, 미완료는 업무 미완료): 위반 조건 없음 + 위반 델타 0.
+            bool complianceOnly = _failureCondition == null && _failureDelta == 0;
+
+            if (_failureCondition == null && !complianceOnly)
             {
-                errors.Add(id + ": 위반 조건이 없습니다.");
+                errors.Add(id + ": 위반 조건이 없습니다(위반이 없는 카드는 위반 델타를 0으로 두십시오).");
             }
 
-            if (_failureAxis == FearAxis.Trust)
+            if (_failureCondition != null && _failureAxis == FearAxis.Trust)
             {
                 errors.Add(id + ": 위반 축은 신뢰일 수 없습니다(신뢰는 준수로만 오릅니다).");
             }
 
-            if (_successDelta <= 0 || _failureDelta <= 0)
+            if (_successDelta <= 0 || (!complianceOnly && _failureDelta <= 0))
             {
                 errors.Add(id + ": 델타는 양수여야 합니다(축은 줄지 않습니다).");
+            }
+
+            if (_triggerKind == SignalKind.NightBegan)
+            {
+                if (!_isLongTerm)
+                {
+                    errors.Add(id + ": 밤 시작 신호로 시작하는 카드는 장기여야 합니다(방문 몫 규칙과 섞이지 않게).");
+                }
+
+                // 밤 시작 카드는 시작 기회가 밤 시작 한 번뿐이다. 자격 구간이나 취소 조건이 있으면 조용히 미판정이 된다.
+                if (_useEligibleBand)
+                {
+                    errors.Add(id + ": 밤 시작 카드에는 자격 구간을 쓸 수 없습니다(시작 기회가 한 번뿐입니다).");
+                }
+
+                if (_cancelCondition != null)
+                {
+                    errors.Add(id + ": 밤 시작 카드에는 취소 조건을 쓸 수 없습니다(대기로 돌아가면 다시 시작하지 않습니다).");
+                }
             }
 
             if (_useEligibleBand && _eligibleFrom > _eligibleTo)

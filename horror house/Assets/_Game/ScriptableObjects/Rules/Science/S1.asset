@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8816b6fab6f8d4da7083ac9a2a4eb9, type: 3}
+  m_Name: S1
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
+  _cardId: S1
+  _space: 5
+  _playerText: "\uCCAB \uADFC\uBB34\uC77C\uC5D0\uB294 \uACFC\uD559\uC2E4 \uBCF4\uAD00
+    \uC704\uCE58\uC758 \uC778\uCCB4 \uBAA8\uD615\uACFC \uB208\uC744 \uB9DE\uCD98
+    \uB4A4 \uC21C\uCC30\uC744 \uC2DC\uC791\uD558\uC2ED\uC2DC\uC624. \uBAA8\uD615\uB3C4
+    \uAC19\uC740 \uC21C\uAC04\uC5D0 \uB2F9\uC2E0\uC744 \uD655\uC778\uD569\uB2C8\uB2E4."
+  _isLongTerm: 0
+  _useEligibleBand: 0
+  _eligibleAxis: 0
+  _eligibleFrom: 0
+  _eligibleTo: 4
+  _triggerKind: 20
+  _triggerId: 
+  _triggerSpace: 0
+  _targetIds:
+  - science.model.sa.face
+  _successCondition:
+    rid: 6144270366874271861
+  _failureCondition:
+    rid: -2
+  _cancelCondition:
+    rid: 6144270366874271862
+  _settleAt: 0
+  _successDelta: 3
+  _failureAxis: 2
+  _failureDelta: 0
+  _radius: 0
+  _graceSeconds: 0
+  _gazeSeconds: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 6144270366874271861
+      type: {class: GazeCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _targetId: 
+        _seconds: 1
+        _graceSeconds: 0
+    - rid: 6144270366874271862
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 21
+        _targetId: 
+        _space: 5
+        _flag: 0
+        _playerOnly: 1

@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8816b6fab6f8d4da7083ac9a2a4eb9, type: 3}
+  m_Name: S3
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
+  _cardId: S3
+  _space: 5
+  _playerText: "\uC720\uB9AC \uAE30\uAD6C\uB07C\uB9AC \uBD80\uB52A\uD788\uB294 \uC18C\uB9AC\uAC00
+    \uB098\uB294 \uC2E4\uD5D8\uB300\uAC00 \uC788\uB294\uB370, \uADF8 \uAE30\uAD6C\uB4E4\uC740
+    \uC11C\uB85C \uB2FF\uC744 \uC218 \uC5C6\uB294 \uAC04\uACA9\uC73C\uB85C \uACE0\uC815\uB418\uC5B4
+    \uC788\uB2E4\uBA74, \uB2E4\uAC00\uAC00\uC9C0 \uB9C8\uC2ED\uC2DC\uC624. \uB0B4\uC6A9\uBB3C\uC740
+    \uBAA8\uB450 \uBE44\uC6E0\uC2B5\uB2C8\uB2E4. \uBE44\uC6B4 \uB4A4\uC5D0\uB3C4
+    \uC548\uC5D0\uC11C \uBB34\uC5B8\uAC00 \uC6C0\uC9C1\uC785\uB2C8\uB2E4."
+  _isLongTerm: 0
+  _useEligibleBand: 1
+  _eligibleAxis: 0
+  _eligibleFrom: 1
+  _eligibleTo: 4
+  _triggerKind: 30
+  _triggerId: science.bench.glass.clink
+  _triggerSpace: 0
+  _targetIds:
+  - science.bench.glass
+  _successCondition:
+    rid: 6144270366874271865
+  _failureCondition:
+    rid: 6144270366874271866
+  _cancelCondition:
+    rid: 6144270366874271867
+  _settleAt: 0
+  _successDelta: 2
+  _failureAxis: 0
+  _failureDelta: 12
+  _radius: 1.5
+  _graceSeconds: 0
+  _gazeSeconds: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 6144270366874271865
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 25
+        _targetId: 
+        _space: 5
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271866
+      type: {class: ProximityCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _anchorId: 
+        _radius: 0
+    - rid: 6144270366874271867
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 21
+        _targetId: 
+        _space: 5
+        _flag: 0
+        _playerOnly: 1

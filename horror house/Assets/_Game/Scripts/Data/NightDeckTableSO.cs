@@ -67,6 +67,17 @@ namespace NightDuty
             return result;
         }
 
+        /// <summary>에디터 도구용: 일차 칸의 카드 배열 복사본(빈 칸 포함). 없으면 빈 배열.</summary>
+        internal RuleSO[] RawCardsOf(int dayIndex)
+        {
+            if (_days == null || dayIndex < 0 || dayIndex >= _days.Length || _days[dayIndex] == null || _days[dayIndex].Cards == null)
+            {
+                return new RuleSO[0];
+            }
+
+            return (RuleSO[])_days[dayIndex].Cards.Clone();
+        }
+
         /// <summary>에디터 도구가 표를 채울 때 쓴다.</summary>
         internal void SetDays(DayDeck[] days)
         {

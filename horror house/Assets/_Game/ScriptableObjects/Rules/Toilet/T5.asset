@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8816b6fab6f8d4da7083ac9a2a4eb9, type: 3}
+  m_Name: T5
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
+  _cardId: T5
+  _space: 2
+  _playerText: "\uB2EB\uD78C \uCE78 \uC544\uB798\uB85C \uBE5B\uC774 \uC0C8\uC5B4\uB098\uC628\uB2E4\uBA74,
+    \uC190\uC804\uB4F1\uC744 \uB044\uACE0 \uACF5\uC6A9\uBD80 \uC810\uAC80\uC744 \uB9C8\uCE58\uC2ED\uC2DC\uC624.
+    \uBB38\uC744 \uC5F4\uC5B4 \uD655\uC778\uD558\uC2E4 \uD544\uC694\uB294 \uC5C6\uC2B5\uB2C8\uB2E4.
+    \uADF8 \uC548\uC5D0\uC11C\uB294 \uBC14\uAE65\uC774 \uC5B4\uB450\uC6B4 \uD3B8\uC774
+    \uB0AB\uB2E4\uACE0 \uD569\uB2C8\uB2E4."
+  _isLongTerm: 0
+  _useEligibleBand: 1
+  _eligibleAxis: 1
+  _eligibleFrom: 2
+  _eligibleTo: 4
+  _triggerKind: 31
+  _triggerId: 
+  _triggerSpace: 0
+  _targetIds:
+  - toilet.stall.light
+  _successCondition:
+    rid: 6144270366874271892
+  _failureCondition:
+    rid: 6144270366874271893
+  _cancelCondition:
+    rid: 6144270366874271894
+  _settleAt: 0
+  _successDelta: 2
+  _failureAxis: 1
+  _failureDelta: 12
+  _radius: 0
+  _graceSeconds: 2
+  _gazeSeconds: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 6144270366874271892
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 25
+        _targetId: 
+        _space: 2
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271893
+      type: {class: FlashlightCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _whenOn: 1
+        _graceSeconds: -1
+    - rid: 6144270366874271894
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 21
+        _targetId: 
+        _space: 2
+        _flag: 0
+        _playerOnly: 1

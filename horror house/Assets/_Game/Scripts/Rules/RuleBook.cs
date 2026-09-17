@@ -45,6 +45,7 @@ namespace NightDuty
         private bool _shortTermStartedThisVisit;
         private RuleWatcher _visitQuotaHolder;
         private bool _nightEnded;
+        private bool _nightBegun;
 
         /// <summary>그날 덱 순서의 감시 목록.</summary>
         public IReadOnlyList<RuleWatcher> Watchers { get { return _watchers; } }
@@ -95,6 +96,7 @@ namespace NightDuty
                     RuleReferenceCheck.FindMissing(card, registeredIds, missing);
                     if (missing.Count > 0)
                     {
+                        // 생성 중이라 Settled 구독자가 아직 없다. 이 미판정은 Results에만 남는다.
                         string reason = "대상 참조 누락: " + string.Join(", ", missing);
                         watcher.MarkUndetermined(reason);
                         _results.Add(new RuleResult(card.CardId, CardState.Undetermined, FearAxis.Trust, 0, card.Space, reason));
@@ -121,6 +123,18 @@ namespace NightDuty
             if (signal.Kind == SignalKind.TabChanged)
             {
                 World.Apply(signal);
+                return;
+            }
+
+            if (signal.Kind == SignalKind.NightBegan)
+            {
+                BeginNight();
+                return;
+            }
+
+            if (signal.Kind == SignalKind.NightEndAccepted)
+            {
+                // 밤 종료 신호는 EndNight만 만든다. 외부에서 들어온 것은 무시한다.
                 return;
             }
 
@@ -198,6 +212,37 @@ namespace NightDuty
         }
 
         /// <summary>
+        /// 하룻밤 판정 시작. 밤 시작 신호(<see cref="SignalKind.NightBegan"/>)로 시작하는 장기 카드를
+        /// 덱 순서로 진행 중으로 바꾼다. 여러 번 불러도 한 번만 동작한다. Tab 여부와 무관하다.
+        /// </summary>
+        public void BeginNight()
+        {
+            if (_nightBegun || _nightEnded)
+            {
+                return;
+            }
+
+            _nightBegun = true;
+
+            if (_axes.IsLocked)
+            {
+                LockAll();
+                return;
+            }
+
+            for (int i = 0; i < _watchers.Count; i++)
+            {
+                RuleWatcher w = _watchers[i];
+                if (w.State != CardState.Waiting || w.Card.TriggerKind != SignalKind.NightBegan || !w.Card.IsEligible(_axes))
+                {
+                    continue;
+                }
+
+                w.Start(World, string.Empty);
+            }
+        }
+
+        /// <summary>
         /// 근무 종료 요청이 수락된 뒤 호출한다(수락 조건 — 필수 점검과 오늘 조우 완료 — 은 호출자가 확인).
         /// 남은 수칙을 덱 순서로 정산한다. 도중에 100에 닿으면 멈춘다.
         /// </summary>
@@ -216,9 +261,23 @@ namespace NightDuty
                 return;
             }
 
+            // 카드마다 덱 순서로: ① 진행 중이면 밤 종료 신호를 관찰(「종료 때 의무가 남았으면 위반」 등, Tab 무관)
+            //                     ② 그 신호로 정산되지 않았으면 기존 밤 종료 정산(준수 기록 → 준수, 그 밖 → 미판정)
+            JudgeSignal end = new JudgeSignal(SignalKind.NightEndAccepted, SpaceId.None, string.Empty, ActionSource.Direction, false, 0f);
             for (int i = 0; i < _watchers.Count; i++)
             {
-                if (_watchers[i].SettleAtNightEnd(out RuleResult result))
+                RuleWatcher w = _watchers[i];
+                if (w.State == CardState.Active && w.Observe(end, World, out RuleResult byEnd))
+                {
+                    if (!Commit(byEnd))
+                    {
+                        return;
+                    }
+
+                    continue;
+                }
+
+                if (w.SettleAtNightEnd(out RuleResult result))
                 {
                     if (!Commit(result))
                     {
@@ -295,6 +354,24 @@ namespace NightDuty
             for (int i = 0; i < _watchers.Count; i++)
             {
                 _watchers[i].Lock();
+            }
+
+            // 종료 잠금 뒤에는 판정이 멈추므로 구간 보류도 남기지 않는다.
+            if (_bands != null)
+            {
+                ReleaseAllHolds();
+            }
+        }
+
+        /// <summary>
+        /// 이 밤을 버린다(끝나지 않은 채 새 밤을 시작할 때). 남은 판정은 정산하지 않고, 구간 보류만 푼다.
+        /// </summary>
+        public void Abandon()
+        {
+            _nightEnded = true;
+            if (_bands != null)
+            {
+                ReleaseAllHolds();
             }
         }
 

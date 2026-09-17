@@ -133,7 +133,7 @@ namespace NightDuty
         }
 
         /// <summary>대상 ID가 의미 있는 신호인지. 공간·시간·손전등·Tab 신호는 대상이 없다.</summary>
-        internal static bool UsesTarget(SignalKind kind)
+        public static bool UsesTarget(SignalKind kind)
         {
             switch (kind)
             {
@@ -145,6 +145,7 @@ namespace NightDuty
                 case SignalKind.FlashlightChanged:
                 case SignalKind.TabChanged:
                 case SignalKind.NightEndAccepted:
+                case SignalKind.NightBegan:
                     return false;
                 default:
                     return true;

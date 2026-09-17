@@ -47,6 +47,21 @@ namespace NightDuty
         public string TriggerTargetId;
 
         private List<ConditionState> _children;
+        private HashSet<string> _ids;
+
+        /// <summary>ID 집합(문별 의무 장부 등). 처음 쓸 때 만든다.</summary>
+        public HashSet<string> Ids
+        {
+            get
+            {
+                if (_ids == null)
+                {
+                    _ids = new HashSet<string>();
+                }
+
+                return _ids;
+            }
+        }
 
         /// <summary>복합 조건의 i번째 자식 상태. 없으면 만든다.</summary>
         public ConditionState Child(int index)

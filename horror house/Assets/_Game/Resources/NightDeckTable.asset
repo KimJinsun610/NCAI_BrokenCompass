@@ -20,3 +20,24 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 7eb9d1ac1dcf7114880d2c8a33264bb9, type: 2}
     - {fileID: 11400000, guid: 798bbdacc5e12cd4681d030a7bb3e813, type: 2}
     - {fileID: 11400000, guid: cccbeeaf184c8924c8d589d525f0ba99, type: 2}
+  - Cards:
+    - {fileID: 11400000, guid: 4a2476ba047296d42babc36c79b5c232, type: 2}
+    - {fileID: 11400000, guid: 2467fe27e4d31fb4485a8a85fe44174a, type: 2}
+    - {fileID: 11400000, guid: bcd023082aecac246bc5eaa9fe19dca0, type: 2}
+    - {fileID: 11400000, guid: 60270f5388e5b0b4b85d7eab730e89d9, type: 2}
+    - {fileID: 11400000, guid: 7d90d18f64dd2ec44ab58c550338153b, type: 2}
+    - {fileID: 11400000, guid: b04eae0f68f04264d8f9c5ec95b9d833, type: 2}
+  - Cards:
+    - {fileID: 11400000, guid: 10611357afe3ca740a8b23f379331589, type: 2}
+    - {fileID: 11400000, guid: 0775440d5091c834aa2042763397be3e, type: 2}
+    - {fileID: 11400000, guid: 3acd3895de6f6574db527a54955910f3, type: 2}
+    - {fileID: 11400000, guid: 63aaffd6436fdda44ac99d1074f97ecd, type: 2}
+    - {fileID: 11400000, guid: 706ba217a3df4974a9a14977ed54e024, type: 2}
+    - {fileID: 11400000, guid: 0dcfad348e5cb5a42868ca4e031a147f, type: 2}
+  - Cards:
+    - {fileID: 11400000, guid: 4bbf4fd0ef1bda34598e6c279762bf09, type: 2}
+    - {fileID: 11400000, guid: 004598d3b1a4a09458f59b37bde676aa, type: 2}
+    - {fileID: 11400000, guid: eb4c641825909c143ba668552212ee9c, type: 2}
+    - {fileID: 11400000, guid: 6d336b33ea73b01418ce15be6ff55501, type: 2}
+    - {fileID: 11400000, guid: cdcb7092d9990fc4e8ecebc64aa553cc, type: 2}
+    - {fileID: 11400000, guid: cadb03c84e88d6b4c993abd595db437b, type: 2}

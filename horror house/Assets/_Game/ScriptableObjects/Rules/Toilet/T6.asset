@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8816b6fab6f8d4da7083ac9a2a4eb9, type: 3}
+  m_Name: T6
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
+  _cardId: T6
+  _space: 2
+  _playerText: "\uC810\uAC80\uCE78\uC774 \uBAA8\uB450 \uC5F4\uB9B0 \uAC83\uC744 \uBCF4\uC558\uB2E4\uBA74,
+    \uADF8\uB0A0\uC740 \uC5B4\uB290 \uCE78\uB3C4 \uBB38\uD131 \uC548\uC73C\uB85C
+    \uB4E4\uC5B4\uAC00\uC9C0 \uB9C8\uC2ED\uC2DC\uC624. \uB450 \uCE78\uC774 \uB3D9\uC2DC\uC5D0
+    \uC5F4\uB9AC\uB294 \uB0A0\uC740 \uD754\uCE58 \uC54A\uC2B5\uB2C8\uB2E4. \uADF8\uB7F0
+    \uB0A0 \uC548\uC744 \uB4E4\uC5EC\uB2E4\uBCF8 \uADFC\uBB34\uC790\uAC00 \uBB34\uC5C7\uC744
+    \uBCF4\uC558\uB294\uC9C0\uB294, \uAE30\uB85D\uC5D0 \uC5C6\uC2B5\uB2C8\uB2E4."
+  _isLongTerm: 1
+  _useEligibleBand: 0
+  _eligibleAxis: 0
+  _eligibleFrom: 0
+  _eligibleTo: 4
+  _triggerKind: 31
+  _triggerId: toilet.stalls.bothopen
+  _triggerSpace: 0
+  _targetIds:
+  - toilet.stall.outer.inside
+  - toilet.stall.inner.inside
+  _successCondition:
+    rid: 6144270366874271895
+  _failureCondition:
+    rid: 6144270366874271896
+  _cancelCondition:
+    rid: -2
+  _settleAt: 1
+  _successDelta: 2
+  _failureAxis: 2
+  _failureDelta: 15
+  _radius: 0
+  _graceSeconds: 0
+  _gazeSeconds: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 6144270366874271895
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 25
+        _targetId: 
+        _space: 2
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271896
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 22
+        _targetId: 
+        _space: 0
+        _flag: 0
+        _playerOnly: 1

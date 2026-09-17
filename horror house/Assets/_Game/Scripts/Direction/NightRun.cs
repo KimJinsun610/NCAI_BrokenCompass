@@ -19,7 +19,9 @@ namespace NightDuty
     /// <para>
     /// 아직 없는 것: 덱 배정 규칙(DayDirector) — 지금은 <see cref="NightDeckTableSO"/> 임시 편성표를 쓴다.
     /// 조우·문자·역설 정산, 종료 요청 수락 조건(필수 점검·오늘 조우 완료) — 조우 시스템이 생기기 전까지 요청은 항상 수락한다.
-    /// 씬 대상 등록부 — 생기기 전까지 참조 검사를 건너뛴다.
+    /// 대상 참조 검사: <see cref="RegisteredTargets"/>를 직접 넣었으면(null이 아니면) 그것을, 아니면 씬의 <see cref="JudgeTargetRegistry"/>를 쓴다.
+    /// <see cref="RegisteredTargets"/>가 null이고 등록부에도 ID가 없으면 검사를 건너뛴다.
+    /// 등록부는 밤 시작 순간 <b>켜져 있는</b> 표식만 담는다.
     /// </para>
     /// </summary>
     public static class NightRun
@@ -40,8 +42,14 @@ namespace NightDuty
         /// </summary>
         public static Func<int, IReadOnlyList<RuleSO>> DeckOverride { get; set; }
 
-        /// <summary>씬 대상 등록부. null이면 참조 검사를 건너뛴다.</summary>
+        /// <summary>
+        /// 대상 ID 목록을 직접 지정한다(테스트·도구). null이면 <see cref="JudgeTargetRegistry"/>를 쓰고,
+        /// 등록부도 비어 있으면 참조 검사를 건너뛴다.
+        /// </summary>
         public static ICollection<string> RegisteredTargets { get; set; }
+
+        /// <summary>이번 밤 시작 때 실제로 쓴 대상 ID 목록. 검사를 건너뛰었으면 null.</summary>
+        public static ICollection<string> TargetsInUse { get; private set; }
 
         /// <summary>현재 일차(1부터). 회차 시작 전에는 0.</summary>
         public static int Day { get; private set; }
@@ -106,10 +114,12 @@ namespace NightDuty
             ViolationMinutesToday.Clear();
             InspectedToday.Clear();
             _lastSummary = default;
+            TargetsInUse = null;
         }
 
         /// <summary>
         /// 하룻밤을 시작한다. Play 씬이 시작될 때 부른다.
+        /// <para>씬의 <see cref="JudgeTarget"/>가 모두 켜진 뒤(보통 Start 이후)에 불러야 대상 참조 검사가 맞다.</para>
         /// </summary>
         /// <param name="day">일차(1부터).</param>
         /// <param name="clockMinutes">현재 게임 시각(0:00 기준 분)을 돌려주는 함수. 위반 시각 기록에 쓴다. null이면 -1로 기록.</param>
@@ -121,6 +131,7 @@ namespace NightDuty
             {
                 Debug.LogWarning("[NightRun] 이전 밤이 끝나지 않은 채 새 밤을 시작합니다. 이전 밤의 남은 판정은 버립니다.");
                 _book.Settled -= OnSettled;
+                _book.Abandon();
             }
 
             Day = Mathf.Max(1, day);
@@ -129,8 +140,10 @@ namespace NightDuty
             InspectedToday.Clear();
 
             IReadOnlyList<RuleSO> deck = LoadDeck(Day);
-            _book = new RuleBook(deck, _axes, _bands, RegisteredTargets);
+            TargetsInUse = ResolveTargets();
+            _book = new RuleBook(deck, _axes, _bands, TargetsInUse);
             _book.Settled += OnSettled;
+            _book.BeginNight();   // 밤 시작부터 감시하는 장기 카드(C6)를 시작한다.
 
             // 씬이 새로 열렸으므로 연출에 현재 구간을 from == to로 한 번 알린다.
             _bands.BroadcastAll();
@@ -233,6 +246,41 @@ namespace NightDuty
             _axes.Apply(axis, remain, "debug", space);
         }
 
+        /// <summary>
+        /// 디버그: 축에 양수 델타를 더한다(감쇠 없음 규칙 그대로 음수는 무시). 구간 자격을 시험할 때 쓴다.
+        /// 에디터·디버그 빌드에서만 쓴다.
+        /// </summary>
+        public static void DebugAddAxis(FearAxis axis, int delta)
+        {
+            EnsureRun();
+            if (delta <= 0)
+            {
+                return;
+            }
+
+            SpaceId space = _book != null ? _book.World.CurrentSpace : SpaceId.None;
+            _axes.Apply(axis, delta, "debug", space);
+        }
+
+        /// <summary>
+        /// 디버그: 지금 구간을 연출에 다시 방송한다(from == to). 축 공급원을 판정 코어로 바꿀 때 쓴다.
+        /// </summary>
+        public static void DebugRebroadcast()
+        {
+            EnsureRun();
+            _bands.BroadcastAll();
+        }
+
+        private static ICollection<string> ResolveTargets()
+        {
+            if (RegisteredTargets != null)
+            {
+                return new HashSet<string>(RegisteredTargets);
+            }
+
+            return JudgeTargetRegistry.Count > 0 ? JudgeTargetRegistry.Snapshot() : null;
+        }
+
         private static void OnSettled(RuleResult result)
         {
             if (result.State != CardState.Violated)
@@ -309,6 +357,7 @@ namespace NightDuty
             _lastSummary = default;
             DeckOverride = null;
             RegisteredTargets = null;
+            TargetsInUse = null;
         }
     }
 }

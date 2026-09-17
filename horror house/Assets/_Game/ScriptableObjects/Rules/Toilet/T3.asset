@@ -1,0 +1,109 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8816b6fab6f8d4da7083ac9a2a4eb9, type: 3}
+  m_Name: T3
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
+  _cardId: T3
+  _space: 2
+  _playerText: "\uC548\uCABD \uC810\uAC80\uCE78\uC5D0 \uBB34\uC5B8\uAC00 \uC11C \uC788\uB2E4\uBA74,
+    \uCE78 \uBB38\uC744 \uB2EB\uACE0 \uB2E4\uC2DC \uC5F4\uC9C0 \uC54A\uC740 \uCC44
+    \uD654\uC7A5\uC2E4 \uBC16\uC73C\uB85C \uB098\uC624\uC2ED\uC2DC\uC624. \uBE44\uD488\uC774
+    \uB4E4\uC5B4 \uC788\uB294 \uCE78\uB3C4 \uC0AC\uC6A9 \uC911\uC778 \uCE78\uC73C\uB85C
+    \uBD84\uB958\uD569\uB2C8\uB2E4. \uC0AC\uC6A9\uC774 \uB05D\uB098\uBA74 \uC800\uD76C\uAC00
+    \uD68C\uC218\uD558\uACA0\uC2B5\uB2C8\uB2E4."
+  _isLongTerm: 0
+  _useEligibleBand: 0
+  _eligibleAxis: 0
+  _eligibleFrom: 0
+  _eligibleTo: 4
+  _triggerKind: 50
+  _triggerId: scene.ta
+  _triggerSpace: 0
+  _targetIds:
+  - toilet.stall.inner
+  _successCondition:
+    rid: 6144270366874271882
+  _failureCondition:
+    rid: 6144270366874271883
+  _cancelCondition:
+    rid: -2
+  _settleAt: 0
+  _successDelta: 3
+  _failureAxis: 2
+  _failureDelta: 15
+  _radius: 0
+  _graceSeconds: 0
+  _gazeSeconds: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 6144270366874271882
+      type: {class: AllOfCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _conditions:
+        - rid: 6144270366874271884
+        - rid: 6144270366874271885
+    - rid: 6144270366874271883
+      type: {class: AnyOfCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _conditions:
+        - rid: 6144270366874271886
+        - rid: 6144270366874271887
+    - rid: 6144270366874271884
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 11
+        _targetId: 
+        _space: 0
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271885
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 21
+        _targetId: 
+        _space: 2
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271886
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 10
+        _targetId: 
+        _space: 0
+        _flag: 2
+        _playerOnly: 1
+    - rid: 6144270366874271887
+      type: {class: BeforeCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _event:
+          rid: 6144270366874271888
+        _guard:
+          rid: 6144270366874271889
+    - rid: 6144270366874271888
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 21
+        _targetId: 
+        _space: 2
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271889
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 11
+        _targetId: 
+        _space: 0
+        _flag: 0
+        _playerOnly: 1

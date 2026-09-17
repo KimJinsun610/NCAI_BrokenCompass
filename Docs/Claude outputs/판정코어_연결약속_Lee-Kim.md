@@ -2,6 +2,7 @@
 
 > 작성: 2026-09-17 · 작성: Programmer_Lee(시스템) · 받는 사람: 진선(클라이언트)
 > 상태: **초안 — 합의 전.** 2026-09-17 저녁 갱신: §3 `NightRun`과 §6 `DaySummary` 확장, 복도 카드 H1~H6과 임시 편성표를 **구현했습니다**(Lee 브랜치, 테스트 74개 통과). 이름·동작은 합의에 따라 바꿀 수 있습니다.
+> 2026-09-17 밤 갱신: 교실·과학실·화장실 카드 18장, 씬 대상 표식(`JudgeTarget`)과 등록부, 밤 시작/종료 신호, 판정 디버그 패널을 구현했습니다(테스트 215개 통과). **§4.1 순서 규칙과 §4.2 `ClueDelivered`·`InspectionCompleted` 정의를 고쳤고, §4.5·§9를 새로 넣었습니다.**
 > 판정 규칙의 정본은 `야간근무_공간별_지침록_개발명세반영본.html`(2026-09-12)입니다. 이 문서는 **누가 무엇을 언제 부르는지**만 정합니다.
 
 ---
@@ -135,7 +136,12 @@ sequenceDiagram
 - **Tab이 열려 있는 동안에는 보내지 않습니다.** 대신 열림/닫힘을 `JudgeSignal.Tab(bool)`로 한 번씩 보냅니다.
 - **조작 출처 구분.** 플레이어 입력은 `ActionSource.Player`, 연출이 움직인 것은 `ActionSource.Direction`.
 - **분위기 효과음·인체모형 효과음은 단서 신호를 보내지 않습니다.** (C-A 타격음 ≠ C3 단서, C-B 칠판음 ≠ C4 단서)
-- **같은 순간의 신호 순서:** `PassageCompleted` → `ZoneExited` → `SpaceExited` 순으로 보냅니다. H3는 통행 구역 이탈을 "되돌아감(취소)"으로 보므로, 통행 완료가 먼저 와야 준수로 처리됩니다.
+- **같은 순간의 신호 순서:** `NightRun.Tick` → `PassageCompleted` → `ZoneExited` → `InspectionCompleted` → `SpaceExited` 순으로 보냅니다.
+  - H3는 통행 구역 이탈을 "되돌아감(취소)"으로 보므로, 통행 완료가 먼저 와야 준수로 처리됩니다.
+  - C2·C5·S3·S4·T5는 "점검 없이 퇴실 = 대기로 복귀"이므로, **점검 완료가 공간 이탈보다 먼저** 와야 준수로 처리됩니다.
+  - T2(물 내림 12초)는 "정확히 12초에 퇴실 = 실패"이므로, 같은 프레임에서는 **`Tick`을 이동 신호보다 먼저** 부릅니다.
+- **`NightBegan`·`NightEndAccepted`는 보내지 않습니다.** 각각 `NightRun.BeginNight`·`NightRun.RequestEndNight`가 판정 안에서 만듭니다.
+- **Tab 중에는 단서 음원도 멈춥니다.** 코어는 Tab 중 신호를 버리므로, 음원이 Tab 중에 끝나면 `SequenceEnded`가 사라져 C4가 "끝나지 않은 것"으로 남습니다(동기화 오류).
 
 ### 4.2 신호 표
 
@@ -147,10 +153,10 @@ sequenceDiagram
 | `SpaceEntered` / `SpaceExited` | 플레이어 공간 추적 | **발밑 기준점**이 공간 경계를 넘은 순간. 경계 위에서는 직전 공간 유지. 화장실 칸 밖도 화장실 | Space |
 | `ZoneEntered` / `ZoneExited` | 구역 트리거 | 통행·점검·칸 내부·금지 구역 진입/이탈 | TargetId = 구역 ID |
 | `PassageCompleted` | 통행 구역 | 통행 완료 지점을 지나 통행 구역을 벗어난 순간 | TargetId = 통행 구역 ID |
-| `InspectionCompleted` | 점검 구역 | (기획서 보완안) 점검 구역 **1초 체류 후 공간 이탈**. 복도 단순 통행은 아님. S6의 구역 점검은 **구역** 이탈로 완료 | Space (5개 점검 ID) |
-| `ClueDelivered` | 오디오 단서 재생기 | 청취 구역 안에서 단서 클립이 **끝까지 정상 재생**된 순간. C1 분필은 세 번째 획 끝 | TargetId = 단서 ID |
+| `InspectionCompleted` | 점검 구역 | (기획서 보완안) 점검 구역 **1초 체류 후 공간 이탈**. 복도 단순 통행은 아님. 같은 순간의 `SpaceExited`보다 **먼저** 보냄. 재방문에서 다시 점검하면 다시 보냄. S6의 구역 점검은 이 신호가 아니라 구역 체류 시간 + `ZoneExited`로 판정 | Space (5개 점검 ID) |
+| `ClueDelivered` | 오디오 단서 재생기 | **카드의 사건 시작 시점**에 보냄(§4.5). 대부분은 청취 구역 안에서 클립이 끝까지 정상 재생된 순간이지만, **C4는 두 음원이 겹쳐 들리기 시작한 순간, T2는 물 내림이 시작된 순간**, C1은 세 번째 획 끝 | TargetId = 단서 ID |
 | `ClueIdentified` | 응시 추적기 | 안전 관찰 지점에서 대상을 화면 중앙에 **0.2초** 확인 | TargetId = 대상 ID |
-| `SequenceEnded` | 오디오·연출 시퀀스 | 지정 시퀀스 종료 (T2 12초 등) | TargetId = 시퀀스 ID |
+| `SequenceEnded` | 오디오·연출 시퀀스 | 지정 시퀀스 **전체** 종료 (C4 = 90~99 추가 마찰음까지 포함한 끝) | TargetId = 시퀀스 ID |
 | `GazeSample` | 응시 추적기 | **0.1초마다, 대상이 없어도** 보냄 | TargetId = 중앙의 첫 가시 충돌체 ID(없으면 ""), Value = 0.1 |
 | `ProximitySample` | 근접 추적기 | 0.1초마다, 가까운 기준점에 대해 | TargetId = 바닥 기준점 ID, Value = **수평** 거리(m) |
 | `FlashlightChanged` | 손전등 | 켜짐/꺼짐이 바뀐 순간 | Flag = 켜짐 |
@@ -183,6 +189,36 @@ scene.ha              인체모형 장면 H-A (장면 ID도 같은 규칙)
 - 소문자·숫자·점만 씁니다. 카드 데이터(`RuleSO`)의 대상 ID와 **글자까지 같아야** 합니다.
 - 씬에 등록되지 않은 ID를 쓰는 카드는 시작 전 검사에서 **미판정**이 되고 콘솔에 경고가 남습니다(크래시 없음).
 - 서수(「세 번째 칸」)는 **(제안)** 입구에서 봤을 때 왼쪽부터 셉니다. 기획 확인 전입니다. 레이아웃을 바꿔 서수가 달라지면 Lee에게 알려 주세요.
+
+### 4.5 신호를 보내기 전 확인할 것 (코어가 모르는 조건)
+
+코어는 "신호가 왔다"만 봅니다. 아래 조건은 **보내는 쪽이 확인한 뒤에만** 신호를 보내야 기획서 판정이 됩니다.
+
+| 카드 | 신호 | 보내기 전 조건 |
+|---|---|---|
+| C1 | 분필 단서 | 그날 1-3 점검 전, 1-1 문밖 청취 지점, 하루 1회 |
+| C2 | 회전 좌석 식별 | 회전 좌석이 실제로 있음(배치 25+ 또는 C-A), 금지 반경 밖 안전 관찰 지점 |
+| C3 | 타격음 단서 | 교실 점검 체류(1초)를 마치고 퇴실 준비 구역에 들어섬 |
+| C4 | 칠판+의자 단서 | 교탁 반경 밖. 시작 시점은 겹침 시작 |
+| C5 | 등 상태 식별 | 실제 켜진 등이 4개 이하. 등 개수와 조도 구간이 다르면 보내지 않고 개발 로그 |
+| S2 | 파손음 단서 | S1 최초 관찰 완료, 오늘 조우 선정 완료, 과학실 점검 후 퇴실, 과학실에 미완료 조우 없음 |
+| S3 | 접촉음 단서 | 그 방문에서 간격(`science.bench.glass`)을 이미 식별했고 반경 밖 |
+| S4 | 마지막 등 식별 | 실제 켜진 등이 1개 |
+| T2 | 물 내림 단서 | 현재 위치에서 12초 안에 출구 도달 가능. 시작 시점은 물 내림 시작 |
+| T4 | 호출 단서 | 세면대 반경 밖, 물 흐름 없는 수도꼭지가 보임 |
+| T5 | 새는 빛 식별 | 닫힌 칸 아래 빛이 실제로 있음 |
+| T6 | 두 칸 개방 식별 | 두 칸이 실제로 열림, T1 활성 날이 아님 |
+
+**모형·역설 방문에서 보내지 않을 신호**
+
+| 방문 | 보내지 않을 카드 신호 |
+|---|---|
+| C-A | C3 타격음(효과음), C4 단서, C5 등 식별 |
+| C-B | C4 칠판·의자(효과음), C3, C5 |
+| 일반 S-B | S2 파손음, **S4 마지막 등 식별**, S6 구역 진입(카드용) — S5만 새로 시작해야 함 |
+| P1 경유 S-B | 장면 ID를 `scene.sb` 대신 **`scene.sb.p1`**로 보냄(S5 미시작), S4·S6 카드용 신호 |
+| T-A | T2 물 내림, T4 호출, T5 빛 식별, **T6 두 칸 개방 식별**(장기 카드라 코어가 막지 못함) |
+| T-B | T2, T4(숨소리는 효과음), T5 |
 
 ---
 
@@ -243,6 +279,26 @@ scene.ha              인체모형 장면 H-A (장면 ID도 같은 규칙)
 1. `git lfs locks` 확인 — 씬·프리팹 잠금 충돌 여부
 2. `origin/Programmer_Jinsun` → `Programmer_Lee` 병합
    - 겹칠 가능성이 있는 파일: `HUDActions.cs`(진선님 수정본 채택), `Packages/manifest.json`·`packages-lock.json`(Lee 쪽 `com.unity.pipeline` 로컬 변경 — 커밋 여부 합의), `ProjectSettings/EditorBuildSettings.asset`(진선님 씬 등록 채택)
-3. Unity에서 컴파일 에러 0 확인 → EditMode 테스트 50개 + 진선님 로직 테스트 실행
+3. Unity에서 컴파일 에러 0 확인 → EditMode 테스트 215개 + 진선님 로직 테스트 실행
 4. Main → Loading → testScene → 결과창 흐름이 병합 후에도 그대로 도는지 확인 (진선님 가이드 Part 3 순서)
 5. 이 문서 §2·§3·§6 합의 → Lee가 `NightRun`·`DaySummary` 개정 구현 → 진선님이 `PlaySystems`·`PlayResultRouter` 연결
+
+---
+
+## 9. 2026-09-17 밤 추가 구현 (Lee)
+
+- **씬 대상 표식 `JudgeTarget`** (`_Game/Scripts/Direction/`): 오브젝트에 붙이고 ID를 적으면 켜질 때 등록부(`JudgeTargetRegistry`)에 올라갑니다. `NightRun.BeginNight`이 그 순간 켜진 표식으로 카드 참조를 검사합니다(표식이 하나도 없으면 검사 생략). 응시 레이캐스트는 `JudgeTarget.IdOf(hit.collider)`로 ID를 얻습니다. 메뉴 `NightDuty ▸ 씬 대상 검사`로 열린 씬과 편성표를 대조합니다.
+- **밤 시작/종료 신호**: `NightBegan`(71)으로 밤 시작부터 감시하는 장기 카드(C6)를 시작하고, 밤 종료 때 진행 중 카드에 `NightEndAccepted`를 전달합니다(“종료 때 의무가 남았으면 위반”).
+- **새 조건**: `BeforeCondition`(“가드보다 먼저 일어남” — T3·C6), `DoorObligationCondition`(직접 연 문 장부 — C6). 준수 전용 카드(S1, 위반 없음) 허용.
+- **카드 18장** `ScriptableObjects/Rules/Classroom|Science|Toilet`, 메뉴 `NightDuty ▸ 모든 공간 카드 에셋 생성`. 임시 편성표는 1일차 복도, 2일차 교실, 3일차 과학실, 4일차 화장실(**디버그 편성** — S1 1일차 고정, T1·T3 같은 날 금지 규칙은 DayDirector 몫).
+- **대상 ID 추가** (§4.4 규칙):
+```
+cls11.chalk3 · cls11.desk.turned · cls11.desk.back · cls11.lectern · cls11.lectern.noise · cls11.lights · cls13.lights
+corridor.door.11 (1-1 문, 신규) · corridor.door.13
+science.model.sa.face · science.glass.break · science.bench.glass · science.bench.glass.clink · science.light.last
+science.model.sb · science.zone.glass
+toilet.stall.outer · toilet.stall.inner · toilet.stall.outer.inside · toilet.stall.inner.inside
+toilet.flush · toilet.sink · toilet.sink.call · toilet.stall.light · toilet.stalls.bothopen
+scene.sa · scene.sb · scene.sb.p1 · scene.ta · scene.tb · scene.ca · scene.cb
+```
+- **남은 질문 (기획)**: C1을 장기로 둬도 되나(단기면 H3와 같은 방문에서 하루 1회 단서가 버려짐) / C6 1-1 문이 H1의 자동 개방 문과 같은가 / T6 준수는 T6 시작 뒤 점검만 인정하나 / C2·T6 "또는" 자격을 단서 존재로 대신해도 되나 / 동선 봉쇄 시 C6 면제 방법 / C5를 1-3에서 진행할 때 구간 보류가 1-1에 걸리는 한계.

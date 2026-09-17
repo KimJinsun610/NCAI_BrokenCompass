@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c51e42be42399c0498561f49a7e2361d, type: 3}
   m_Name: SceneFlowConfig
   m_EditorClassIdentifier: Assembly-CSharp::SceneFlowConfig
-  mainScene: Assets/3.2 Programmer_Kim/01 Scene/MainScene.unity
-  loadingScene: Assets/3.2 Programmer_Kim/01 Scene/LoadingScene.unity
+  mainScene: Assets/0. Main/01 Scene/MainScene.unity
+  loadingScene: Assets/0. Main/01 Scene/LoadingScene.unity
   playScene: Assets/0. Main/01 Scene/PlayScene.unity
-  resultScene: Assets/3.2 Programmer_Kim/01 Scene/ResultScene.unity
-  contractScene: Assets/3.2 Programmer_Kim/01 Scene/ContractScene.unity
+  resultScene: Assets/0. Main/01 Scene/ResultScene.unity
+  contractScene: Assets/0. Main/01 Scene/ContractScene.unity

@@ -15,14 +15,16 @@ using UnityEngine.UI;
 public static class SceneFlowSetup
 {
     private const string Root = "Assets/3.2 Programmer_Kim";
-    private const string DataFolder = Root + "/06 Data";
+    // 씬 · 설정 데이터는 공통 폴더(0. Main)에 둔다. 프리팹 · 폰트는 개인 폴더 그대로
+    private const string MainRoot = "Assets/0. Main";
+    private const string DataFolder = MainRoot + "/06 Data";
     private const string ResourcesFolder = DataFolder + "/Resources";
     private const string ConfigPath = ResourcesFolder + "/SceneFlowConfig.asset";
     private const string TipTablePath = DataFolder + "/LoadingTipTable.asset";
 
-    private const string MainScenePath = Root + "/01 Scene/MainScene.unity";
-    private const string LoadingScenePath = Root + "/01 Scene/LoadingScene.unity";
-    private const string DefaultPlayScenePath = Root + "/00 test/DemoScene.unity";
+    private const string MainScenePath = MainRoot + "/01 Scene/MainScene.unity";
+    private const string LoadingScenePath = MainRoot + "/01 Scene/LoadingScene.unity";
+    private const string DefaultPlayScenePath = MainRoot + "/01 Scene/PlayScene.unity";
 
     private const string MainHudPrefabPath = Root + "/03 Prefebs/01 UI/HUD_Main.prefab";
     private const string FontPath = Root + "/99 Resources/01 Fonts/Pretendard/Pretendard-Medium SDF.asset";
@@ -46,7 +48,7 @@ public static class SceneFlowSetup
             return;
         }
 
-        EnsureFolder(Root, "06 Data");
+        EnsureFolder(MainRoot, "06 Data");
         EnsureFolder(DataFolder, "Resources");
 
         LoadingTipTable tipTable = LoadOrCreate<LoadingTipTable>(TipTablePath);

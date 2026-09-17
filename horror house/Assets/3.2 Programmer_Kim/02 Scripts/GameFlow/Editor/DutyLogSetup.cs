@@ -28,7 +28,7 @@ public static class DutyLogSetup
     private static readonly Color RuleLineColor = new Color(0f, 0f, 0f, 0.12f);
     private static readonly Color StrikeColor = new Color(0.8f, 0.13f, 0.13f, 1f);
 
-    private const string ResultScenePath = "Assets/3.2 Programmer_Kim/01 Scene/ResultScene.unity";
+    private const string ResultScenePath = "Assets/0. Main/01 Scene/ResultScene.unity";
 
     /// <summary>근무 일지 레이아웃 코드를 바꾼 뒤 씬에 다시 반영할 때 쓴다. 인스펙터에서 바꾼 근무 일지 값은 초기화된다.</summary>
     [MenuItem("Tools/Programmer_Kim/Game Flow/Rebuild Duty Log (ResultScene)")]

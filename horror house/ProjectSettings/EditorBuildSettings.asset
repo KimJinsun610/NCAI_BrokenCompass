@@ -6,8 +6,8 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/3.2 Programmer_Kim/01 Scene/MainScene.unity
-    guid: b353fe594f00bc14e9cfe6c6eea31759
+    path: Assets/0. Main/01 Scene/MainScene.unity
+    guid: c3e3a75ab08bc6b4ab6d367f7a82efb7
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
@@ -15,8 +15,8 @@ EditorBuildSettings:
     path: Assets/3.2 Programmer_Kim/00 test/DemoScene.unity
     guid: 8c708d2780d36cd45b9aa1323eb79b22
   - enabled: 1
-    path: Assets/3.2 Programmer_Kim/01 Scene/LoadingScene.unity
-    guid: 6dee12e8ea4398444aba5b472d7b6d12
+    path: Assets/0. Main/01 Scene/LoadingScene.unity
+    guid: bb468d2d327fafe49af347f465e118c6
   - enabled: 1
     path: Assets/3.2 Programmer_Kim/00 test/testScene.unity
     guid: bc11d31d506a86a42857dbb376a2c037
@@ -24,14 +24,14 @@ EditorBuildSettings:
     path: Assets/3.2 Programmer_Kim/00 test/Art_DemoScene.unity
     guid: e2dcccffa3ab17145a3b1ad52d10d56e
   - enabled: 1
-    path: Assets/3.2 Programmer_Kim/01 Scene/ResultScene.unity
-    guid: b3debddb7b6d4404ea9fa9a37c8fe140
+    path: Assets/0. Main/01 Scene/ResultScene.unity
+    guid: a02624d52a65d9b48aa228f8317b6e6c
   - enabled: 1
-    path: Assets/3.2 Programmer_Kim/01 Scene/ContractScene.unity
-    guid: b7c3b10e103c87c468c60562fb828a23
+    path: Assets/0. Main/01 Scene/ContractScene.unity
+    guid: b97aad9d8a613d143960deb01f117778
   - enabled: 1
     path: Assets/0. Main/01 Scene/PlayScene.unity
-    guid: 0e101f024795f1247b338d2a39d37578
+    guid: a5de06311d109244e90721bcbecf3d63
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

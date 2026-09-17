@@ -15,8 +15,10 @@ using UnityEngine.UI;
 public static class ContractSceneSetup
 {
     private const string Root = "Assets/3.2 Programmer_Kim";
-    private const string ContractScenePath = Root + "/01 Scene/ContractScene.unity";
-    private const string ConfigPath = Root + "/06 Data/Resources/SceneFlowConfig.asset";
+    // 씬 · 설정 데이터는 공통 폴더(0. Main)에 둔다. 폰트는 개인 폴더 그대로
+    private const string MainRoot = "Assets/0. Main";
+    private const string ContractScenePath = MainRoot + "/01 Scene/ContractScene.unity";
+    private const string ConfigPath = MainRoot + "/06 Data/Resources/SceneFlowConfig.asset";
 
     private const string FontFolder = Root + "/99 Resources/01 Fonts/Pretendard/";
     private const string RegularFontPath = FontFolder + "Pretendard-Medium SDF.asset";

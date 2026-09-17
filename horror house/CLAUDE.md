@@ -193,7 +193,7 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
    - ② 직접 조작: 일차·밤 시작/종료, 축 +/포획, 시간, 응시, 공간, 손전등/Tab/점검, 임의 신호, 카드 목록, 로그.
    - 코어 모드 토글 시 `DebugAxisDriver`를 끄고 `NightRun.DebugRebroadcast`로 조명·이상현상 리그에 코어 구간을 보냅니다.
 4. 플레이 중에는 `set_component_properties`가 안 됩니다 → `eval`. `FindAnyObjectByType`는 DontSave 오브젝트를 찾지 못합니다.
-5. 병합 후 빌드 씬 목록이 옛것이면 Unity를 재시작합니다(**재시작 전에 저장하지 마십시오**). 현재 빌드 씬은 7개입니다.
+5. 병합 후 빌드 씬 목록이 옛것이면 Unity를 재시작합니다(**재시작 전에 저장하지 마십시오**). 현재 빌드 씬은 9개입니다(0번 `0. Main/01 Scene/MainScene`).
 6. 에디터를 쓸 수 없을 때의 대안: `mono-mcs`와 UnityEngine 최소 스텁으로 `-langversion:7.2` 컴파일(`UNITY_EDITOR` / 심볼 없음 / `NIGHTDUTY_DEBUG` 세 구성). 스텁 누락 에러는 코드 문제가 아닙니다. 지금은 Unity MCP로 직접 컴파일·테스트하는 것이 기본입니다.
 7. 조도 축 연출은 에디트 모드에서도 **Game 뷰**로 확인합니다(§8-6).
 
@@ -346,7 +346,7 @@ namespace NightDuty {
 - `Assets/_Game/` — **팀의 실제 게임 콘텐츠.** Scripts/, Tests/, ScriptableObjects/, Resources/, Scenes/, Prefabs/, Materials/, Art/, Audio/. 전부 git으로 추적합니다. 벤더 프리팹을 고칠 때는 원본을 수정하지 말고 `Assets/_Game/Prefabs/`에 **Prefab Variant**를 만듭니다.
 - `Assets/3.1. Programmer_lee/` — Lee 개인 폴더. `01 Scene/_Test_AxisRig.unity`(축·판정 시험 씬), `02 Scripts/`(시험 리그·판정 디버그 패널).
 - `Assets/3.2 Programmer_Kim/` — 진선님 개인 폴더. SceneFlow·SceneFlowConfig·GameTime·GameSession·DayResult·DayIntro·ResultController·AxisBarView·DutyLogView·ViolationLogView·HUDActions·PlayResultRouter·`PlaySystems.prefab`.
-- `Assets/0. Main/` — 개인 작업 폴더.
+- `Assets/0. Main/` — **공통 작업 폴더**(2026-09-17). 게임 흐름 씬 `01 Scene/{Main,Loading,Play,Result,Contract}Scene`과 `06 Data/`(SceneFlowConfig · LoadingTipTable)가 여기 있습니다. 프리팹 · 스크립트는 아직 진선님 개인 폴더에 있습니다.
 - 개인 폴더는 원칙적으로 **일회성 실험과 단일 시스템 테스트 씬 전용**입니다. 공유 코드와 출시 콘텐츠는 처음부터 `_Game`에 둡니다. 나중에 옮기면 SO·프리팹의 스크립트 참조가 모두 깨집니다(진선님 GameFlow 이전 여부는 Q8).
   - 폴더명 표기가 불일치합니다(`3.1.` 뒤에는 점이 있고 `3.2` 뒤에는 없습니다). **경로를 하드코딩하지 마십시오.**
   - `3.2 Programmer_Kim`은 진선님 폴더이며 브랜치명(`Programmer_Jinsun`)과 다릅니다.

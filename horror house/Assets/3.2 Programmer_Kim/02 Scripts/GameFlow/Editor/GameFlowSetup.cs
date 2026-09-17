@@ -21,8 +21,9 @@ public static class GameFlowSetup
     private const string PlaySystemsPrefabPath = SystemPrefabFolder + "/PlaySystems.prefab";
     private const string HudPlayPrefabPath = PrefabRoot + "/01 UI/HUD_Play.prefab";
     private const string TestScenePath = Root + "/00 test/testScene.unity";
-    private const string ResultScenePath = Root + "/01 Scene/ResultScene.unity";
-    private const string ConfigPath = Root + "/06 Data/Resources/SceneFlowConfig.asset";
+    // 씬 · 설정 데이터는 공통 폴더(0. Main)에 둔다
+    private const string ResultScenePath = "Assets/0. Main/01 Scene/ResultScene.unity";
+    private const string ConfigPath = "Assets/0. Main/06 Data/Resources/SceneFlowConfig.asset";
 
     private const string FontFolder = Root + "/99 Resources/01 Fonts/Pretendard/";
     private const string RegularFontPath = FontFolder + "Pretendard-Medium SDF.asset";

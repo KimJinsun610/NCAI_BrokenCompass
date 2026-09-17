@@ -1,5 +1,17 @@
+using System.Collections.Generic;
+
 namespace NightDuty
 {
+    /// <summary>하룻밤이 끝난 방식.</summary>
+    public enum NightOutcome
+    {
+        /// <summary>근무 종료 요청이 수락되어 정상적으로 끝났다.</summary>
+        Completed = 0,
+
+        /// <summary>어느 축이든 100에 도달해 포획(게임오버)으로 끝났다.</summary>
+        Captured = 1
+    }
+
     /// <summary>
     /// 하루 근무가 끝났을 때 정산 화면에 넘기는 결과 묶음.
     /// <para>
@@ -14,19 +26,22 @@ namespace NightDuty
         /// <summary>정산 대상 일차(1부터 시작).</summary>
         public readonly int Day;
 
-        /// <summary>실제로 방문한 순찰 지점 수.</summary>
+        /// <summary>그날 일반 점검을 완료한 점검 ID 수(복도·1-1·1-3·과학실·화장실 중).</summary>
         public readonly int PatrolDone;
 
-        /// <summary>그날 요구된 전체 순찰 지점 수(현재 스코프 기준 5).</summary>
+        /// <summary>전체 점검 ID 수(5).</summary>
         public readonly int PatrolTotal;
 
-        /// <summary>기록된 지침 미준수 횟수. 발생 시각만 함께 보여 주고 어떤 수칙이었는지는 밝히지 않는다.</summary>
+        /// <summary>그날 위반으로 정산된 카드 수. 화면에는 발생 시각만 보여 주고 어떤 수칙이었는지는 밝히지 않는다.</summary>
         public readonly int Violations;
 
-        /// <summary>플레이어가 실제로 판단을 내린 모순(충돌) 상황 수.</summary>
+        /// <summary>
+        /// <b>폐기 예정.</b> 구버전 §0 조항의 모순(충돌) 처리 수. 확정 기획서에서 §0·전화가 폐기되어
+        /// <see cref="NightRun"/>은 항상 0을 넣는다. 역설 문자 결과로 대체할지는 기획 결정 대기.
+        /// </summary>
         public readonly int ConflictsHandled;
 
-        /// <summary>그날 지침록에 심어진 전체 모순 수. 신뢰 축 구간이 높을수록 늘어난다.</summary>
+        /// <summary><b>폐기 예정.</b> <see cref="ConflictsHandled"/> 참조. 항상 0.</summary>
         public readonly int ConflictsTotal;
 
         /// <summary>청각 축 최종값(0~100).</summary>
@@ -38,18 +53,39 @@ namespace NightDuty
         /// <summary>배치 축 최종값(0~100).</summary>
         public readonly int Layout;
 
-        /// <summary>신뢰 축 최종값(0~100). 월드가 아니라 지침록의 모순·서체로만 드러난 값이다.</summary>
+        /// <summary>신뢰 축 최종값(0~100). 수칙 준수로만 오르며 월드에는 그려지지 않는다.</summary>
         public readonly int Trust;
 
         /// <summary>
-        /// 각인축. Day 3부터 플레이어가 가장 크게 반응한 축이 각인축으로 결정된다.
-        /// <para>
-        /// 정산 화면은 <b>해당 축 이름만 다른 서체로</b> 표시하고 그 밖의 설명은 일절 붙이지 않는다.
-        /// 「당신은 소리에 민감합니다」 같은 문구를 넣는 순간 프로파일링이 임의적으로 읽히기 때문이다.
-        /// Day 3 이전에는 판정 근거가 부족하므로 null이다.
-        /// </para>
+        /// <b>폐기 예정.</b> 구버전의 각인축. 확정 기획서에서 프로파일링·각인축이 폐기되어
+        /// <see cref="NightRun"/>은 항상 null을 넣는다. 기존 결과창 코드 호환을 위해서만 남겨 둔다.
         /// </summary>
         public readonly FearAxis? ImprintAxis;
+
+        private static readonly int[] NoMinutes = new int[0];
+        private static readonly RuleResult[] NoResults = new RuleResult[0];
+
+        private readonly IReadOnlyList<int> _violationMinutes;
+        private readonly IReadOnlyList<RuleResult> _results;
+
+        /// <summary>하룻밤이 끝난 방식. 기존 11인자 생성자로 만들면 <see cref="NightOutcome.Completed"/>.</summary>
+        public readonly NightOutcome Outcome;
+
+        /// <summary>포획으로 끝났을 때의 최초 종료 원인. <see cref="Outcome"/>이 Captured일 때만 의미가 있다.
+        /// 화면에는 축 정도만 쓰고 카드·문자 ID는 표시하지 않는다.</summary>
+        public readonly TerminationCause Cause;
+
+        /// <summary>위반이 정산된 게임 시각(0:00 기준 분) 목록. 결과창의 위반 로그는 이 값만 표시한다.</summary>
+        public IReadOnlyList<int> ViolationMinutes
+        {
+            get { return _violationMinutes ?? NoMinutes; }
+        }
+
+        /// <summary>카드별 정산 결과(미판정 포함). 개발 로그·근무 종료 리뷰용이며 화면 표시용이 아니다.</summary>
+        public IReadOnlyList<RuleResult> Results
+        {
+            get { return _results ?? NoResults; }
+        }
 
         /// <summary>하루치 정산 결과를 구성한다.</summary>
         public DaySummary(
@@ -76,6 +112,55 @@ namespace NightDuty
             Layout = layout;
             Trust = trust;
             ImprintAxis = imprintAxis;
+            Outcome = NightOutcome.Completed;
+            Cause = default;
+            _violationMinutes = null;
+            _results = null;
+        }
+
+        /// <summary>
+        /// 확정 기획서 기준의 하룻밤 결과를 구성한다. 폐기 예정 필드(충돌·각인축)는 0/null로 채운다.
+        /// </summary>
+        public DaySummary(
+            int day,
+            int patrolDone,
+            int patrolTotal,
+            int auditory,
+            int illuminance,
+            int layout,
+            int trust,
+            NightOutcome outcome,
+            TerminationCause cause,
+            IReadOnlyList<int> violationMinutes,
+            IReadOnlyList<RuleResult> results)
+        {
+            Day = day;
+            PatrolDone = patrolDone;
+            PatrolTotal = patrolTotal;
+            Violations = violationMinutes != null ? violationMinutes.Count : 0;
+            ConflictsHandled = 0;
+            ConflictsTotal = 0;
+            Auditory = auditory;
+            Illuminance = illuminance;
+            Layout = layout;
+            Trust = trust;
+            ImprintAxis = null;
+            Outcome = outcome;
+            Cause = cause;
+            _violationMinutes = violationMinutes;
+            _results = results;
+        }
+
+        /// <summary>게임 시각(분)을 「0:41」 형식으로 바꾼다. 24시 이후는 0시부터 다시 센다.</summary>
+        public static string FormatMinutes(int minutes)
+        {
+            if (minutes < 0)
+            {
+                return "--:--";
+            }
+
+            int m = minutes % (24 * 60);
+            return (m / 60) + ":" + (m % 60).ToString("00");
         }
 
         /// <summary>

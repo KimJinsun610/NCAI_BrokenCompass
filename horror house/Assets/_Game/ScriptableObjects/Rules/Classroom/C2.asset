@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8816b6fab6f8d4da7083ac9a2a4eb9, type: 3}
+  m_Name: C2
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
+  _cardId: C2
+  _space: 3
+  _playerText: "\uCD9C\uC785\uBB38\uC744 \uD5A5\uD574 \uB3CC\uC544\uC549\uC740 \uCC45\uC0C1
+    \uADFC\uCC98\uB85C\uB294 \uAC00\uC9C0 \uB9C8\uC2ED\uC2DC\uC624. \uADF8 \uC790\uB9AC\uB294
+    \uC218\uC5C5\uC744 \uB4E3\uAE30 \uC704\uD55C \uC790\uB9AC\uAC00 \uC544\uB2D9\uB2C8\uB2E4.
+    \uC549\uC544 \uC788\uB294 \uCABD\uC5D0\uC11C\uB294 \uBB38\uC774 \uC798 \uBCF4\uC785\uB2C8\uB2E4."
+  _isLongTerm: 0
+  _useEligibleBand: 0
+  _eligibleAxis: 0
+  _eligibleFrom: 0
+  _eligibleTo: 4
+  _triggerKind: 31
+  _triggerId: 
+  _triggerSpace: 0
+  _targetIds:
+  - cls11.desk.turned
+  _successCondition:
+    rid: 6144270366874271837
+  _failureCondition:
+    rid: 6144270366874271838
+  _cancelCondition:
+    rid: 6144270366874271839
+  _settleAt: 0
+  _successDelta: 2
+  _failureAxis: 2
+  _failureDelta: 12
+  _radius: 1.5
+  _graceSeconds: 0
+  _gazeSeconds: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 6144270366874271837
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 25
+        _targetId: 
+        _space: 3
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271838
+      type: {class: ProximityCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _anchorId: 
+        _radius: 0
+    - rid: 6144270366874271839
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 21
+        _targetId: 
+        _space: 3
+        _flag: 0
+        _playerOnly: 1

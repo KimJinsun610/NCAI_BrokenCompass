@@ -1,0 +1,77 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8816b6fab6f8d4da7083ac9a2a4eb9, type: 3}
+  m_Name: C4
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
+  _cardId: C4
+  _space: 3
+  _playerText: "\uCE60\uD310 \uAE01\uB294 \uC18C\uB9AC\uC640 \uC758\uC790 \uB044\uB294
+    \uC18C\uB9AC\uAC00 \uACB9\uCE5C\uB2E4\uBA74, \uAD50\uD0C1 \uCABD\uC73C\uB85C\uB294
+    \uBC1C\uC744 \uB4E4\uC774\uC9C0 \uB9C8\uC2ED\uC2DC\uC624. \uB450 \uC18C\uB9AC\uAC00
+    \uBAA8\uB450 \uBA4E\uC73C\uBA74 \uC810\uAC80\uC744 \uACC4\uC18D\uD558\uC154\uB3C4
+    \uB429\uB2C8\uB2E4. \uB450 \uC18C\uB9AC\uB97C \uD568\uAED8 \uB0B4\uB824\uBA74,
+    \uC190\uC774 \uB124 \uAC1C \uD544\uC694\uD569\uB2C8\uB2E4."
+  _isLongTerm: 0
+  _useEligibleBand: 1
+  _eligibleAxis: 0
+  _eligibleFrom: 3
+  _eligibleTo: 4
+  _triggerKind: 30
+  _triggerId: cls11.lectern.noise
+  _triggerSpace: 0
+  _targetIds:
+  - cls11.lectern
+  _successCondition:
+    rid: 6144270366874271842
+  _failureCondition:
+    rid: 6144270366874271843
+  _cancelCondition:
+    rid: -2
+  _settleAt: 0
+  _successDelta: 2
+  _failureAxis: 0
+  _failureDelta: 15
+  _radius: 1.5
+  _graceSeconds: 0
+  _gazeSeconds: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 6144270366874271842
+      type: {class: AnyOfCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _conditions:
+        - rid: 6144270366874271844
+        - rid: 6144270366874271845
+    - rid: 6144270366874271843
+      type: {class: ProximityCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _anchorId: 
+        _radius: 0
+    - rid: 6144270366874271844
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 32
+        _targetId: cls11.lectern.noise
+        _space: 0
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271845
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 21
+        _targetId: 
+        _space: 3
+        _flag: 0
+        _playerOnly: 1

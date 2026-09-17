@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8c8816b6fab6f8d4da7083ac9a2a4eb9, type: 3}
+  m_Name: H5
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
+  _cardId: H5
+  _space: 1
+  _playerText: "\uCC9C\uC7A5\uC5D0\uC11C \uBB34\uC5B8\uAC00 \uB5A8\uC5B4\uC84C\uB2E4\uBA74,
+    \uADF8 \uC790\uB9AC\uB97C \uD53C\uD574 \uC9C0\uB098\uAC00\uC2ED\uC2DC\uC624.
+    \uB5A8\uC5B4\uB728\uB9B0 \uAC83\uC740 \uC544\uC9C1 \uCC9C\uC7A5\uC5D0 \uC788\uC2B5\uB2C8\uB2E4."
+  _isLongTerm: 0
+  _useEligibleBand: 1
+  _eligibleAxis: 2
+  _eligibleFrom: 3
+  _eligibleTo: 4
+  _triggerKind: 31
+  _triggerId: 
+  _triggerSpace: 0
+  _targetIds:
+  - corridor.debris
+  _successCondition:
+    rid: 6144270366874271831
+  _failureCondition:
+    rid: 6144270366874271832
+  _cancelCondition:
+    rid: -2
+  _settleAt: 0
+  _successDelta: 2
+  _failureAxis: 2
+  _failureDelta: 12
+  _radius: 1.5
+  _graceSeconds: 0
+  _gazeSeconds: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 6144270366874271831
+      type: {class: SignalCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _kind: 24
+        _targetId: corridor.passage
+        _space: 0
+        _flag: 0
+        _playerOnly: 1
+    - rid: 6144270366874271832
+      type: {class: ProximityCondition, ns: NightDuty, asm: NightDuty.Core}
+      data:
+        _anchorId: 
+        _radius: 0

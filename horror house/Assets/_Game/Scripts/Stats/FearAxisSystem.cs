@@ -37,7 +37,8 @@ namespace NightDuty
     /// (<c>DebugAxisDriver</c>와 같은 포트에 꽂힌다).
     /// <list type="bullet">
     /// <item>값은 0~100 누적. <b>감쇠·상시 증가·감소 없음.</b> 새 값 = min(100, 기존 + 델타).</item>
-    /// <item>어느 축이든 100에 도달하면 <b>종료 잠금</b>. 최초 원인 1개를 기록하고 <see cref="EventBus.AxisCritical"/>을 <b>한 번만</b> 보낸다.</item>
+    /// <item><b>청각·조도·배치</b> 중 하나가 100에 도달하면 <b>종료 잠금</b>. 최초 원인 1개를 기록하고 <see cref="EventBus.AxisCritical"/>을 <b>한 번만</b> 보낸다.</item>
+    /// <item><b>신뢰는 100에서 멈출 뿐 잠그지 않는다</b>(2026-09-17 결정). 신뢰는 태블릿 문자와 근무수칙의 충돌을 늘리는 데에만 쓴다.</item>
     /// <item>잠금 이후의 델타는 모두 무시한다.</item>
     /// </list>
     /// 회차 기록이므로 다음 날에 초기화하지 않는다.
@@ -49,6 +50,14 @@ namespace NightDuty
 
         private readonly int[] _values = new int[AxisCount];
         private TerminationCause _cause;
+
+        /// <summary>
+        /// 100 도달이 종료 잠금(포획)으로 이어지는 축인지. 청각·조도·배치만 true, 신뢰는 false.
+        /// </summary>
+        public static bool IsTerminal(FearAxis axis)
+        {
+            return axis == FearAxis.Auditory || axis == FearAxis.Illuminance || axis == FearAxis.Layout;
+        }
 
         /// <summary>종료 잠금 상태인지.</summary>
         public bool IsLocked { get; private set; }
@@ -78,6 +87,7 @@ namespace NightDuty
         /// <summary>
         /// 델타를 적용한다. 실제로 값이 바뀌었으면 true.
         /// 잠금 상태, 0 이하 델타(축은 줄지 않는다), 이미 100인 축은 무시한다.
+        /// 신뢰가 100에 닿아도 잠그지 않는다(<see cref="IsTerminal"/>).
         /// </summary>
         /// <param name="axis">대상 축.</param>
         /// <param name="delta">양수 델타.</param>
@@ -118,7 +128,7 @@ namespace NightDuty
 
             // 잠금과 원인을 이벤트보다 먼저 확정한다. 구독자가 Apply를 다시 불러도
             // 100 이후의 델타가 끼어들거나 최초 원인이 덮이지 않게 하기 위해서다.
-            bool reachedEnd = after >= Bands.Max;
+            bool reachedEnd = after >= Bands.Max && IsTerminal(axis);
             if (reachedEnd)
             {
                 IsLocked = true;
@@ -151,7 +161,7 @@ namespace NightDuty
 
             for (int i = 0; i < AxisCount; i++)
             {
-                if (_values[i] >= Bands.Max)
+                if (_values[i] >= Bands.Max && IsTerminal((FearAxis)i))
                 {
                     IsLocked = true;
                     _cause = new TerminationCause((FearAxis)i, "복원", SpaceId.None);

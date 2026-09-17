@@ -872,7 +872,7 @@ public sealed class NightRunDebugPanel : MonoBehaviour
 
         GUILayout.BeginHorizontal();
         GUILayout.Label("포획 시험", _small, GUILayout.Width(60));
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 3; i++)   // 신뢰는 100이 돼도 포획되지 않으므로 제외
         {
             FearAxis target = (FearAxis)i;   // 람다가 루프 변수를 붙잡지 않게 복사
             if (GUILayout.Button(AxisNames[i] + " 100")) Later(() => { NightRun.DebugForceCapture(target); Note(AxisNames[(int)target] + " 100으로 올림"); });

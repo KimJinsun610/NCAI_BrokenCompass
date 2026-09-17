@@ -1,0 +1,1273 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>공간별 근무 지침록</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#eeece2;
+  --paper-raised:#f8f6ee;
+  --paper-sunken:#e4e1d3;
+  --ink:#1f1d16;
+  --ink-dim:#6f6a58;
+  --ink-faint:#9a9480;
+  --rule:#d7d3c1;
+  --rule-strong:#c3bea8;
+  --red:#9a2b24;
+  --red-soft:#f1ded9;
+  --trust:#77621f;
+  --trust-soft:#e9e2c6;
+  --hall:#2e5266;
+  --hall-soft:#dde6e9;
+  --class:#7a4a26;
+  --class-soft:#ecdfd0;
+  --lab:#3c5c33;
+  --lab-soft:#dde6d6;
+  --toilet:#3e4d63;
+  --toilet-soft:#dee3ec;
+  --shadow:0 1px 2px rgba(30,28,20,.05), 0 10px 28px rgba(30,28,20,.08);
+  --accent: var(--hall);
+  --accent-soft: var(--hall-soft);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#17160f;
+    --paper-raised:#1f1d15;
+    --paper-sunken:#131209;
+    --ink:#eae6d8;
+    --ink-dim:#a8a28c;
+    --ink-faint:#736c58;
+    --rule:#37341f;
+    --rule-strong:#4a4527;
+    --red:#d97066;
+    --red-soft:#3a1f1a;
+    --trust:#d1b34f;
+    --trust-soft:#332c15;
+    --hall:#7fb0c9;
+    --hall-soft:#1c2c33;
+    --class:#d19b62;
+    --class-soft:#2f2417;
+    --lab:#8fbf7c;
+    --lab-soft:#212c1c;
+    --toilet:#93a6c9;
+    --toilet-soft:#1f2734;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17160f;
+  --paper-raised:#1f1d15;
+  --paper-sunken:#131209;
+  --ink:#eae6d8;
+  --ink-dim:#a8a28c;
+  --ink-faint:#736c58;
+  --rule:#37341f;
+  --rule-strong:#4a4527;
+  --red:#d97066;
+  --red-soft:#3a1f1a;
+  --trust:#d1b34f;
+  --trust-soft:#332c15;
+  --hall:#7fb0c9;
+  --hall-soft:#1c2c33;
+  --class:#d19b62;
+  --class-soft:#2f2417;
+  --lab:#8fbf7c;
+  --lab-soft:#212c1c;
+  --toilet:#93a6c9;
+  --toilet-soft:#1f2734;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html{background:var(--paper)}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:"IBM Plex Sans KR","Noto Sans KR",sans-serif;
+  line-height:1.6;
+}
+.wrap{max-width:1040px;margin:0 auto;padding:40px 24px 96px}
+a{color:inherit}
+
+/* ---- masthead ---- */
+.mast{margin-bottom:36px}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:14px;
+}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--red)}
+h1{
+  font-family:"Noto Serif KR",serif;
+  font-size:clamp(28px,4vw,40px);
+  font-weight:700;
+  line-height:1.25;
+  margin:0 0 12px;
+  text-wrap:balance;
+  letter-spacing:-.01em;
+}
+.mast p{
+  max-width:62ch;
+  color:var(--ink-dim);
+  font-size:14.5px;
+  margin:0 0 4px;
+}
+.mast .scope{
+  margin-top:18px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 18px;
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;
+  color:var(--ink-dim);
+}
+.mast .scope b{color:var(--ink);font-weight:600}
+
+/* ---- legend ---- */
+.legend{
+  display:flex;flex-wrap:wrap;gap:10px;
+  margin:22px 0 8px;
+  padding:14px 16px;
+  background:var(--paper-raised);
+  border:1px solid var(--rule);
+  border-radius:6px;
+}
+.legend .item{
+  display:flex;align-items:center;gap:7px;
+  font-size:12px;color:var(--ink-dim);
+  font-family:"IBM Plex Mono",monospace;
+}
+.legend .swatch{width:10px;height:10px;border-radius:2px;flex:none}
+
+/* ---- tabs ---- */
+.tabbar{
+  display:flex;
+  gap:2px;
+  margin:28px 0 0;
+  border-bottom:1px solid var(--rule-strong);
+  overflow-x:auto;
+}
+.tab{
+  appearance:none;border:none;background:none;
+  font-family:"IBM Plex Sans KR",sans-serif;
+  font-weight:600;
+  font-size:14.5px;
+  color:var(--ink-dim);
+  padding:14px 20px 13px;
+  cursor:pointer;
+  border-bottom:3px solid transparent;
+  white-space:nowrap;
+  display:flex;align-items:baseline;gap:8px;
+  transition:color .15s;
+}
+.tab .num{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-faint);font-weight:500}
+.tab:hover{color:var(--ink)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tab[aria-selected="true"] .num{color:var(--accent)}
+
+/* ---- panel ---- */
+.panel{padding-top:32px}
+.panel[hidden]{display:none}
+
+.role{
+  border-left:3px solid var(--accent);
+  padding:2px 0 2px 20px;
+  margin-bottom:8px;
+}
+.role p{
+  font-family:"Noto Serif KR",serif;
+  font-size:16.5px;
+  line-height:1.75;
+  margin:0 0 10px;
+  max-width:64ch;
+}
+.role .self-report{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:12px;
+  color:var(--ink-dim);
+  margin-top:6px;
+}
+.role .self-report b{color:var(--accent);font-weight:600}
+
+h2.sec{
+  font-family:"IBM Plex Sans KR",sans-serif;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+  margin:40px 0 14px;
+  display:flex;align-items:center;gap:10px;
+}
+h2.sec::after{content:"";flex:1;height:1px;background:var(--rule)}
+h2.sec .count{
+  font-family:"IBM Plex Mono",monospace;
+  font-weight:500;
+  color:var(--ink-faint);
+  letter-spacing:0;
+  text-transform:none;
+}
+
+/* ---- anomaly table ---- */
+.anomaly-wrap{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--paper-raised)}
+table.anomaly{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px}
+table.anomaly th,table.anomaly td{
+  padding:11px 14px;
+  text-align:left;
+  border-bottom:1px solid var(--rule);
+  vertical-align:top;
+}
+table.anomaly thead th{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--ink-dim);
+  font-weight:500;
+  background:var(--paper-sunken);
+}
+table.anomaly td:first-child, table.anomaly th:first-child{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:12px;
+  color:var(--ink-dim);
+  white-space:nowrap;
+  width:78px;
+}
+table.anomaly tbody tr:last-child td{border-bottom:none}
+table.anomaly tbody tr:nth-child(5) td:first-child{color:var(--red);font-weight:600}
+td.ax-hear{border-left:3px solid var(--hall)}
+td.ax-light{border-left:3px solid var(--trust)}
+td.ax-place{border-left:3px solid var(--red)}
+
+/* ---- rule cards ---- */
+.rule-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+@media (max-width:720px){.rule-grid{grid-template-columns:1fr}}
+.rule-card{
+  background:var(--paper-raised);
+  border:1px solid var(--rule);
+  border-radius:6px;
+  padding:16px 17px;
+  position:relative;
+}
+.rule-card .rhead{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  gap:10px;margin-bottom:9px;
+}
+.rule-id{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11.5px;font-weight:600;
+  color:var(--accent);
+  background:var(--accent-soft);
+  padding:2px 7px;border-radius:3px;
+  flex:none;
+}
+.pill{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;font-weight:500;
+  padding:2px 8px;border-radius:20px;white-space:nowrap;
+}
+.pill.trust{background:var(--trust-soft);color:var(--trust)}
+.pill.violate{background:var(--red-soft);color:var(--red)}
+.rule-text{
+  font-family:"Noto Serif KR",serif;
+  font-size:14.5px;
+  line-height:1.7;
+  margin:0 0 10px;
+}
+.rule-meta{
+  font-size:12px;color:var(--ink-dim);
+  border-top:1px solid var(--rule);
+  padding-top:9px;margin-top:4px;
+  line-height:1.55;
+}
+.rule-meta b{color:var(--ink);font-weight:600}
+.rule-meta.reason{font-style:normal}
+.delta-row{display:flex;gap:14px;margin-top:8px;flex-wrap:wrap}
+.delta-row .d{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-dim)}
+.delta-row .d b{color:var(--ink)}
+
+/* ---- scenes ---- */
+.scene-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+@media (max-width:720px){.scene-grid{grid-template-columns:1fr}}
+.scene-card{
+  background:var(--paper-raised);
+  border:1px solid var(--rule);
+  border-top:3px solid var(--accent);
+  border-radius:6px;
+  padding:18px 19px 16px;
+}
+.scene-card h3{
+  font-family:"Noto Serif KR",serif;
+  font-size:16.5px;font-weight:700;
+  margin:0 0 12px;
+  display:flex;align-items:baseline;gap:8px;
+}
+.scene-card h3 .sid{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;font-weight:600;color:var(--accent);
+}
+.scene-field{margin-bottom:10px}
+.scene-field:last-child{margin-bottom:0}
+.scene-field .flabel{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:3px;
+}
+.scene-field p{margin:0;font-size:13px;color:var(--ink-dim);line-height:1.6}
+.scene-field.moment p{font-family:"Noto Serif KR",serif;font-size:14px;color:var(--ink)}
+
+/* ---- messages ---- */
+.msg-list{display:flex;flex-direction:column;gap:10px}
+.msg{
+  display:flex;gap:12px;
+  background:var(--paper-raised);
+  border:1px solid var(--rule);
+  border-radius:6px;
+  padding:13px 16px;
+  align-items:flex-start;
+}
+.msg .mtime{
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;color:var(--ink-faint);
+  flex:none;width:96px;padding-top:2px;
+}
+.msg .mbody{flex:1;min-width:0}
+.msg .mtext{
+  font-family:"Noto Serif KR",serif;
+  font-size:14px;line-height:1.65;margin:0 0 6px;
+}
+.msg .mmeta{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-dim)}
+.msg .mmeta .link{color:var(--accent);font-weight:600}
+.msg.paradox{border-color:var(--red);background:var(--red-soft)}
+.msg.paradox .mtime{color:var(--red)}
+
+/* ---- keyboard focus ---- */
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+@media (prefers-reduced-motion:no-preference){
+  .panel{animation:fade .25s ease}
+}
+@keyframes fade{from{opacity:0;transform:translateY(2px)}to{opacity:1;transform:none}}
+
+/* Developer specifications remain outside the player-facing rule text. */
+.dev-banner,.dev-common{background:var(--paper-raised);border:1px solid var(--rule);border-radius:6px;padding:20px;margin:24px 0}
+.dev-banner p{margin:0 0 8px;font-size:13px}
+.dev-banner p:last-child{margin-bottom:0}
+.dev-spec{margin-top:12px;border-top:1px solid var(--rule);padding-top:10px;font-size:12.5px}
+.dev-spec summary{cursor:pointer;color:var(--accent);font-weight:600;min-height:28px}
+.dev-spec summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.dev-spec dl{margin:10px 0}
+.dev-spec dt{font-weight:600;color:var(--ink);margin-top:12px}
+.dev-spec dd{margin:3px 0 0;color:var(--ink-dim);line-height:1.7;overflow-wrap:anywhere}
+.dev-common{margin-top:44px;line-height:1.75;font-size:14px}
+.dev-common h2{font-family:"Noto Serif KR",serif;font-size:24px;margin:0 0 12px}
+.dev-common h3{font-size:17px;margin:32px 0 12px}
+.dev-common li{margin:8px 0}
+.dev-nav{display:flex;flex-wrap:wrap;gap:8px 16px;margin:16px 0}
+.dev-table-wrap{overflow-x:auto;margin:16px 0;border:1px solid var(--rule);border-radius:4px}
+.dev-table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:620px}
+.dev-table th,.dev-table td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--rule);overflow-wrap:anywhere}
+.dev-table th{background:var(--paper-sunken);font-weight:600}
+.dev-table tr:last-child td{border-bottom:0}
+.dev-table td:first-child{min-width:100px;font-weight:600}
+[id]{scroll-margin-top:20px}
+@media print{
+  .tabbar,.dev-nav{display:none}
+  .panel[hidden]{display:block}
+  .rule-grid,.scene-grid{display:block}
+  .rule-card,.scene-card{margin-bottom:14px;break-inside:avoid}
+  .dev-spec::details-content{display:block;content-visibility:visible}
+  .dev-table{min-width:0}
+  .dev-table-wrap{overflow:visible}
+}
+
+</style>
+</head>
+<body>
+
+<div class="wrap" id="top">
+
+  <div class="mast">
+    <div class="eyebrow"><span class="dot"></span>야간근무 · 근무 지침록 발신처: 시설관리팀</div>
+    <h1>네 공간의 지침, 이상현상, 문자</h1>
+    <p>복도·교실·과학실·화장실 네 순찰 공간이 각각 어떤 청각·조도·배치 이상현상을 담당하고, 어떤 근무수칙이 태블릿에 실리며, 어떤 문자와 연결되는지를 공간별로 정리했다. 공간마다 수칙과 정면으로 부딪히는 역설 문자가 하나씩 있다.</p>
+    <div class="scope">
+      <span><b>4</b>공간</span>
+      <span><b>24</b>근무수칙</span>
+      <span><b>8</b>인체모형 장면</span>
+      <span><b>12</b>태블릿 문자</span>
+      <span><b>4</b>역설 쌍</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="item"><span class="swatch" style="background:var(--trust)"></span>준수 → 신뢰 상승</span>
+    <span class="item"><span class="swatch" style="background:var(--red)"></span>위반 → 감각축 상승</span>
+    <span class="item"><span class="swatch" style="background:var(--red)" ></span>역설 — 문자가 수칙이 금지한 곳으로 부름</span>
+  </div>
+
+  <aside class="dev-banner" aria-label="개발 명세 안내">
+    <p><b>개발 인계용 판정 정리 · 2026-09-12</b></p>
+    <p>각 수칙 아래의 ‘개발 판정 상세’를 펼치면 시작·준수·위반·종료·예외·연결 대상·테스트를 확인할 수 있습니다. 24개 수칙의 델타와 8개 모형·12개 문자 구성은 유지했습니다.</p>
+    <p><a href="#dev-common">공통 개발 명세로 이동</a> · <a href="#dev-changes">문구 수정과 보완안 확인</a> · 보완안은 누락 조건을 채운 설계 기준이며 실제 구현·플레이테스트 결과가 아닙니다.</p>
+  </aside>
+
+  <nav class="tabbar" role="tablist" aria-label="순찰 공간">
+    <button class="tab" role="tab" aria-selected="true" aria-controls="panel-hall" id="tab-hall" data-accent="hall"><span class="num">05</span>복도</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="panel-class" id="tab-class" data-accent="class"><span class="num">06</span>교실 1-1·1-3</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="panel-lab" id="tab-lab" data-accent="lab"><span class="num">07</span>과학실</button>
+    <button class="tab" role="tab" aria-selected="false" aria-controls="panel-toilet" id="tab-toilet" data-accent="toilet"><span class="num">08</span>화장실</button>
+  </nav>
+
+  <!-- ============ 복도 ============ -->
+  <section class="panel" id="panel-hall" role="tabpanel" aria-labelledby="tab-hall">
+
+    <div class="role">
+      <p>방은 점검하고 나오지만 복도는 같은 길을 여러 번 지나간다. 처음에는 물건이 걸리고, 나중에는 그 옆에 자리가 생긴다. 플레이어가 내리는 결정은 &lsquo;멀리 돌아갈 것인가, 가까이 확인해 통과할 것인가&rsquo;다.</p>
+      <div class="self-report"><b>자기 신고</b> 청각은 앞·뒤 음원의 차이 · 조도는 형광등 8개 중 켜진 개수 · 배치는 우회해야 하는 물건의 위치</div>
+    </div>
+
+    <h2 class="sec">이상현상 <span class="count">청각 · 조도 · 배치</span></h2>
+    <div class="anomaly-wrap">
+      <table class="anomaly">
+        <thead><tr><th>구간</th><th>청각</th><th>조도 (등 8개, 공통 색온도표)</th><th>배치</th></tr></thead>
+        <tbody>
+          <tr><td>0~24</td><td class="ax-hear">실제 문·발소리와 기본 환경음</td><td class="ax-light">8개, 6500K 백색</td><td class="ax-place">지정 통행에서 문 자동 개방 1회</td></tr>
+          <tr><td>25~49</td><td class="ax-hear">앞쪽 지정 문 닫힘 1회</td><td class="ax-light">6개, 4500K 옅은 노랑</td><td class="ax-place">중앙 상자 1개, 벽 쪽 안전 통로 유지</td></tr>
+          <tr><td>50~74</td><td class="ax-hear">앞쪽 닫힘 뒤 지나온 문 닫힘 1회</td><td class="ax-light">4개, 3200K 주황</td><td class="ax-place">상자 상태 유지. 모형은 <a href="#dev-encounters">조우 배정 규약</a>으로 별도 배정</td></tr>
+          <tr><td>75~89</td><td class="ax-hear">뒤쪽 닫힘 앞에 손잡이 놓는 소리 추가</td><td class="ax-light">2개, 2000K 적갈</td><td class="ax-place">기존 천장 조각 낙하 1회. 낙하 영역은 우회 가능</td></tr>
+          <tr><td>90~99</td><td class="ax-hear">뒤쪽 소리 단서 유지, 지정 문 무음 개방 1회</td><td class="ax-light">0개, 붉은 잔광</td><td class="ax-place">기존 나무·풀 묶음 추가. 통로는 남김</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="sec">근무수칙 <span class="count">6개</span></h2>
+    <div class="rule-grid">
+      <div class="rule-card" id="rule-H1">
+        <div class="rhead"><span class="rule-id">H1</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">복도를 지나던 중 문이 저절로 열린다면, 닫지 말고 그대로 지나가십시오. 그 문을 연 것은 아직 나오지 않았습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">수동 닫기 <b>배치 +12</b></span></div>
+        <div class="rule-meta">자동 개방을 실제 관찰한 문만 대상. 수동 닫기 배치 +12 / 해당 통행 종료 신뢰 +2.</div>
+        <details class="dev-spec" id="spec-H1"><summary>H1 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>H1 배정, 그날 미정산. 지정 통행 또는 H-A에서 대상 문이 자동으로 열리는 동작을 관찰했을 때 시작한다. 처음부터 열려 있던 문과 잠금쇠 소리만 난 문은 시작 조건이 아니다.</dd>
+          <dt>준수</dt><dd>자동으로 열린 대상 문을 수동으로 닫지 않고 해당 통행 구역을 벗어나면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>활성 중 대상 문에 E 닫기 명령이 정상 수락되면 즉시 배치 +12. 닫힘 애니메이션 완료까지 기다리지 않는다.</dd>
+          <dt>종료·반복</dt><dd>준수 또는 위반으로 그날 H1 정산 종료. 다른 문·재통행으로 반복 채점하지 않는다.</dd>
+          <dt>예외·충돌</dt><dd>H-A에서 이미 열린 문은 모형 관찰만 기록하고 H1 미판정. 자동 개방을 못 봤다면 소리만으로 H1을 시작하지 않는다. C6의 수동 개방 의무가 남은 문에는 H1 자동 개방을 배정하지 않는다.</dd>
+          <dt>씬 연결·설정값</dt><dd>대상 개폐형 문, 자동/수동 조작 출처, 통행 구역, 문 동작 관찰 신호.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>문 닫힘 상태에서 자동 개방 관찰 후 통과: 신뢰 +2. E 닫기: 배치 +12. 이미 열린 문에서 H-A 관찰: H1 0.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-H2">
+        <div class="rhead"><span class="rule-id">H2</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">등 뒤에서 문 닫히는 소리가 난다면, 소리가 난 문을 오래 바라보지 마십시오. 돌아본 근무자들은 모두, 문이 열려 있었다고 보고했습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">응시 <b>청각 +15</b></span></div>
+        <div class="rule-meta">청각 50~99. 단서 후 2초 유예, 대상 문 3초 연속 응시 시 청각 +15 / 통행 종료 신뢰 +2.</div>
+        <details class="dev-spec" id="spec-H2"><summary>H2 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>지정 문 닫힘 소리가 플레이어 뒤쪽에서 실제 재생된 뒤 시작한다. 대상 문과 음원은 같은 ID를 사용한다. 다른 문 소리나 모형 장면의 효과음은 제외한다.</dd>
+          <dt>준수</dt><dd>금지 응시를 하지 않고 해당 통행 구역을 이탈하면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>소리 시작 후 2초 동안은 응시 시간을 쌓지 않는다. 이후 대상 문을 화면 중앙으로 3초 이상 연속 응시하면 청각 +15.</dd>
+          <dt>종료·반복</dt><dd>유예·응시 타이머는 사건 시작에 한 번 초기화한다. 준수/위반 뒤 재진입해도 재채점하지 않는다.</dd>
+          <dt>예외·충돌</dt><dd>고개를 돌린 각도·짧게 본 행동은 판정하지 않는다. 응시가 끊기거나 가려지면 연속 시간이 0이 된다. 시작 때 대상이 앞에 있으면 이 단서는 연기한다.</dd>
+          <dt>씬 연결·설정값</dt><dd>문 응시 대상, 뒤쪽 음원 배치 지점, 통행 구역, 유예 2초·연속 응시 3초.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>유예 뒤 2.9초 응시 후 이탈: 신뢰 +2. 3.0초 응시: 청각 +15. 2초씩 두 번 끊어 보기: 위반 없음.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-H3">
+        <div class="rhead"><span class="rule-id">H3</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">복도를 지날 때는 손전등을 꺼 주십시오. 불빛은 근무자보다 앞서 걷습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">On 통과 <b>조도 +12</b></span></div>
+        <div class="rule-meta">복도 진입 후 2초 내 Off, 해당 통행 동안 유지. 신뢰 +2 / 준비 이후 On 조도 +12.</div>
+        <details class="dev-spec" id="spec-H3"><summary>H3 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>H3 배정 상태에서 유효한 복도 통행 구역에 진입하면 2초 전환 유예를 시작한다. 교실 경계 중립 구역은 포함하지 않는다.</dd>
+          <dt>준수</dt><dd>유예 종료부터 Off를 유지하고 통행 완료 지점을 지난 뒤 복도 구역을 이탈하면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>유예가 끝났는데 On이거나, 이후 활성 구역 안에서 On으로 바꾸면 조도 +12. 출구 도달까지 위반 적용을 늦추지 않는다.</dd>
+          <dt>종료·반복</dt><dd>유예 안에 입구로 되돌아가고 통행을 완료하지 않았으면 미판정. 다음 진입에 다시 시작할 수 있다. 이미 성립한 위반은 되돌리지 않는다.</dd>
+          <dt>예외·충돌</dt><dd>Off로 들어와도 실제 통행 없이 보상하지 않는다. C5와 공유하는 문턱에서는 두 카드가 동시에 상태를 검사하지 않는다. 모형 방문·역설 방문에는 신규 H3를 시작하지 않는다.</dd>
+          <dt>씬 연결·설정값</dt><dd>복도 진입/통행 완료/이탈 구역, 교실 경계 중립 구역, 손전등 상태.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>On 입장 뒤 2초 내 Off 후 통과: 신뢰 +2. 유예 뒤 On: 조도 +12 한 번. On 상태로 중립 문턱 통과: 경계 자체 벌점 없음.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-H4">
+        <div class="rhead"><span class="rule-id">H4</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">복도 가운데 상자가 있다면, 그날 근무가 끝날 때까지 다가가지 말고 벽을 따라 지나가십시오. 반입 목록에 없는 물건입니다. 안에 있는 것도 그렇습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">근접 <b>배치 +12</b></span></div>
+        <div class="rule-meta">보완안: 상자 식별 후 근무 종료까지 1.5m 접근 금지. 준수 신뢰 +2 / 위반 배치 +12.</div>
+        <details class="dev-spec" id="spec-H4"><summary>H4 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>배치 25~99, H4 배정. 지정 상자가 식별되고 안전하게 우회할 수 있을 때 시작한다. H-B 발견형 방문 자체로 신규 H4를 시작하지 않는다.</dd>
+          <dt>준수</dt><dd>해당 상자 구간을 안전하게 한 번 이상 통행하고, 밤 종료까지 대상 금지 영역에 들어가지 않으면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>활성 상태에서 대상 상자 중심의 수평 거리 1.5m 미만으로 진입하면 배치 +12.</dd>
+          <dt>종료·반복</dt><dd>통행 직후에는 준수를 지급하지 않고 감시를 유지한다. 밤 종료에 준수/미판정을 확정한다. 위반은 즉시 한 번만 정산한다.</dd>
+          <dt>예외·충돌</dt><dd>보완안: P2가 뒤늦게 도착해도 이미 지급한 준수를 취소하거나 두 번째 채점하지 않도록 감시를 그날까지 유지한다. 발동 전 상자 안쪽에 있으면 사건을 시작하지 않는다. 상자를 옮기거나 치우는 조작은 없다.</dd>
+          <dt>씬 연결·설정값</dt><dd>고정 상자 중심, 금지 반경 1.5m, 안전 통행 완료 신호, 밤 종료.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>통행 후 재방문하여 1.4m 진입: 신뢰 선지급 없이 배치 +12. 끝까지 1.5m 이상 유지: 밤 종료 신뢰 +2. P2 도착도 같은 H4 한 번만 정산.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-H5">
+        <div class="rhead"><span class="rule-id">H5</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">천장에서 무언가 떨어졌다면, 그 자리를 피해 지나가십시오. 떨어뜨린 것은 아직 천장에 있습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">근접 <b>배치 +12</b></span></div>
+        <div class="rule-meta">배치 75~99. 낙하 식별 후 조각 1.5m 접근 금지. 신뢰 +2 / 배치 +12.</div>
+        <details class="dev-spec" id="spec-H5"><summary>H5 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>지정 낙하 연출이 실행되고, 떨어진 조각을 안전 거리에서 식별했을 때 시작한다. 플레이어가 낙하·금지 영역 안에 있는 동안은 낙하를 시작하지 않는다.</dd>
+          <dt>준수</dt><dd>낙하 영역을 우회하여 해당 통행을 완료하면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>식별 후 조각 중심 수평 거리 1.5m 미만에 진입하면 배치 +12.</dd>
+          <dt>종료·반복</dt><dd>그날 낙하 연출 1회, 카드 정산 1회. 미발견 낙하도 반복 재생하지 않고 남은 조각을 나중에 식별할 수 있게 둔다.</dd>
+          <dt>예외·충돌</dt><dd>발견 뒤 되돌아가 통행을 못 마친 경우 감시를 유지하고 다음 통행에서 완료 가능. 밤 종료까지 통행도 위반도 없으면 미판정. 낙하 피해·정지 판정·즉사는 추가하지 않는다.</dd>
+          <dt>씬 연결·설정값</dt><dd>기존 낙하 조각, 낙하 음원, 금지 반경 1.5m, 우회 통행 구역.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>낙하 후 우회 완료: 신뢰 +2. 단서 전에 이미 영역 안: 낙하 연기. 미발견 후 재방문: 낙하 재생 없이 조각 식별로 판단 기회 제공.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-H6">
+        <div class="rhead"><span class="rule-id">H6</span><span class="pill trust">준수 +4</span></div>
+        <p class="rule-text">복도에 나무가 서 있다면, 풀을 밟지 말고 지나가십시오. 본교 복도에는 나무가 없습니다. 그 아래에서 기다리는 것도 없습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +4</b></span><span class="d">진입 <b>배치 +25</b></span></div>
+        <div class="rule-meta">배치 90~99. 풀 영역과 2m 금지 영역 일치. 신뢰 +4 / 배치 +25, 100 도달 시 종료.</div>
+        <details class="dev-spec" id="spec-H6"><summary>H6 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>나무·풀 묶음을 금지 영역 밖에서 식별했고 안전 통로가 남아 있을 때 시작한다.</dd>
+          <dt>준수</dt><dd>풀 영역을 밟지 않고 해당 통행을 완료하면 신뢰 +4.</dd>
+          <dt>위반</dt><dd>플레이어 발밑 기준점이 나무 중심 수평 반경 2m 미만인 풀 영역에 들어가면 배치 +25.</dd>
+          <dt>종료·반복</dt><dd>위반/준수 한 번 뒤 재통행은 재채점하지 않는다. 밤 종료까지 통행하지 않고 물러나 있기만 했다면 미판정.</dd>
+          <dt>예외·충돌</dt><dd>풀의 보이는 가장자리와 금지 영역을 배치 단계에서 맞춘다. 빈 바닥을 밟았는데 실패하는 배치는 사용할 수 없다. 기존 자산으로 맞추기 어렵다면 반경/배치를 함께 확인할 항목으로 남긴다. 90~99에서 +25는 즉시 게임오버다.</dd>
+          <dt>씬 연결·설정값</dt><dd>기존 나무·풀, 반경 2m 금지 영역, 바닥 기준점, 우회 통로.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>잔디 밖 통과: 신뢰 +4. 배치 90에서 진입: 100으로 제한하고 포획 종료 요청 1회. 잔디 밖인데 트리거 진입: 배치 검증 실패.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+    </div>
+
+    <h2 class="sec">인체모형 장면 <span class="count">2개</span></h2>
+    <div class="scene-grid">
+      <div class="scene-card">
+        <h3><span class="sid">H-A</span>문 앞에서 기다리는 것</h3>
+        <div class="scene-field moment"><div class="flabel">감정과 순간</div><p>1-3에 들어가려는데 누군가 문을 향해 서 있다. 문을 열어 주는 것처럼 느껴져 옆을 통과하기가 꺼려진다.</p></div>
+        <div class="scene-field"><div class="flabel">시작 배치</div><p>1-3 문 옆 선 모형. 일일 후보로 선택된 뒤 비가시 상태에서 준비</p></div>
+        <div class="scene-field"><div class="flabel">순서</div><p>1초 관찰 기록 후 문이 닫혀 있으면 자동 개방 1회, 열려 있으면 잠금쇠 소리만 1회. 일일 조우 완료는 해당 방문 종료 후</p></div>
+        <div class="scene-field"><div class="flabel">연결 카드</div><p>H1 배정 및 실제 자동 개방 관찰 시 A(그대로 통과) 신뢰 +2 / B(수동 닫기) 배치 +12. 이미 열린 문에서 잠금쇠 소리만 나면 H1 미판정. 모형 관찰은 별도 기록</p></div>
+      </div>
+      <div class="scene-card">
+        <h3><span class="sid">H-B</span>상자 뒤의 자리</h3>
+        <div class="scene-field moment"><div class="flabel">감정과 순간</div><p>상자를 피해 지나가려는데 그 뒤 의자에 모형이 앉아 있다. 우회하는 동안 누군가의 앞을 지나야 한다.</p></div>
+        <div class="scene-field"><div class="flabel">시작 배치</div><p>기존 의자 + 앉은 모형을 상자 뒤 고정 지점에 준비. 새 포즈 없음</p></div>
+        <div class="scene-field"><div class="flabel">순서</div><p>발견 시 낮은 두드림 1회 → 이탈 시 의자 다리 끌리는 소리 1회. 모형은 실제로 움직이지 않음</p></div>
+        <div class="scene-field"><div class="flabel">연결 카드</div><p>발견형. 장면 고유 델타 0. 신규 H4는 시작하지 않으며 이미 활성인 H4의 그날 접근 금지는 유지</p></div>
+      </div>
+    </div>
+
+    <h2 class="sec">태블릿 문자 <span class="count">3개 — 발견 유도 2 + 역설 1</span></h2>
+    <div class="msg-list">
+      <div class="msg">
+        <div class="mtime">G-H1</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;1-3 교실 출입 기록이 비어 있습니다. 근무 종료 전 해당 교실 문 앞으로 이동하십시오. 문은 열려 있을 수 있습니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">H-A 미관찰</span> · 일반 점검 2곳 완료 후 발송 · 목적지 진입만 판정, 무시 시 델타 없음</div>
+        </div>
+      </div>
+      <div class="msg">
+        <div class="mtime">G-H2</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;복도 물품 확인 위치가 변경되었습니다. 근무 종료 전 상자가 놓인 구간의 벽 쪽 통로로 이동하십시오.&rdquo;</p>
+          <div class="mmeta"><span class="link">H-B 미관찰</span> · 상자 금지 반경 <b>밖</b> 벽 쪽 지점 진입</div>
+        </div>
+      </div>
+      <div class="msg paradox">
+        <div class="mtime">P2<br>역설</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;복도 물품의 반입 여부를 확인해야 합니다. 근무 종료 전 상자 앞까지 이동하십시오. 내용물을 여실 필요는 없습니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">H4와 충돌</span> — 목적지가 상자 중심 1.5m <b>안쪽</b>, H4가 금지한 바로 그 반경이다 · 따르면 <span class="link">H4 위반 배치 +12</span>, 거절하면 <span class="link">H4 준수 신뢰 +2 + P2 미도달 배치 +6</span> · H4는 그날 종료까지 준수를 보류한다. P2 도착 영역은 H4 금지 영역 전체와 동일하며, 같은 카드 결과를 두 번 적용하지 않는다</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ 교실 ============ -->
+  <section class="panel" id="panel-class" role="tabpanel" aria-labelledby="tab-class" hidden>
+
+    <div class="role">
+      <p>비어 있는 교실에서 수업 절차만 이어진다. 플레이어가 점검자 자격으로 들어왔지만 문서에서는 학생과 혼동한다. 1-1에 좌석·소리·모형을 집중하고, 1-3은 별도 점검과 우회 동선에 사용한다.</p>
+      <div class="self-report"><b>자기 신고</b> 청각은 분필 획수와 종류 · 조도는 형광등 8개 중 켜진 개수 · 배치는 1-1의 지정 책상·의자 방향 변화. 책상 수는 유지</div>
+    </div>
+
+    <h2 class="sec">이상현상 <span class="count">청각 · 조도 · 배치</span></h2>
+    <div class="anomaly-wrap">
+      <table class="anomaly">
+        <thead><tr><th>구간</th><th>청각</th><th>조도 (등 8개, 공통 색온도표)</th><th>배치</th></tr></thead>
+        <tbody>
+          <tr><td>0~24</td><td class="ax-hear">1-1 문밖에서 분필 3획, 하루 1회</td><td class="ax-light">8개, 6500K 백색</td><td class="ax-place">정상 책상 방향</td></tr>
+          <tr><td>25~49</td><td class="ax-hear">분필 단서 유지, 실내 지우개 털기 소리 1회</td><td class="ax-light">6개, 4500K 옅은 노랑</td><td class="ax-place">뒤쪽 지정 책상·의자 한 묶음이 출입문을 향함</td></tr>
+          <tr><td>50~74</td><td class="ax-hear">점검 후 퇴실 때 뒷줄 책상 타격음 1회</td><td class="ax-light">4개, 3200K 주황</td><td class="ax-place">회전 좌석 유지</td></tr>
+          <tr><td>75~89</td><td class="ax-hear">별도 방문의 입구에서 칠판 긁기 + 교탁 의자 마찰음</td><td class="ax-light">2개, 2000K 적갈</td><td class="ax-place">해당 열의 기존 의자 방향 변경</td></tr>
+          <tr><td>90~99</td><td class="ax-hear">칠판 소리 종료 뒤 교탁 마찰음 한 구절 추가</td><td class="ax-light">0개, 붉은 잔광</td><td class="ax-place">다른 열까지 방향 변화. 책상 수·안전 통로는 유지</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="sec">근무수칙 <span class="count">6개</span></h2>
+    <div class="rule-grid">
+      <div class="rule-card" id="rule-C1">
+        <div class="rhead"><span class="rule-id">C1</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">1-1 문밖에서 분필 소리가 정확히 세 번 들린다면, 점검 순서를 바꾸어 1-3부터 완료하십시오. 순서를 지키지 않고 들어온 사람은, 학생으로 처리됩니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">우회 전 진입 <b>청각 +12</b></span></div>
+        <div class="rule-meta">보완안: 청각 0~49, 분필 3획 식별 가능할 때만 시작. 1-3 점검 완료 전 1-1 진입 청각 +12 / 우회 완료 신뢰 +2.</div>
+        <details class="dev-spec" id="spec-C1"><summary>C1 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>C1 배정, 그날 1-3 점검 미완료, 청각 0~49. 1-1 바깥에서 세 획을 끝까지 들을 수 있는 시점에 한 번 재생한다. 세 번째 획 종료가 활성 시점이다.</dd>
+          <dt>준수</dt><dd>활성 이후 1-1에 먼저 들어가지 않고 1-3 점검을 완료하면 신뢰 +2. 단순 문턱 왕복은 점검 완료가 아니다.</dd>
+          <dt>위반</dt><dd>1-3 점검 완료 전에 1-1 실내 경계를 넘으면 청각 +12. 1-1 문을 E로 여는 것만으로는 위반하지 않는다.</dd>
+          <dt>종료·반복</dt><dd>우회 완료 또는 선진입으로 한 번 정산. 그날 이미 1-3 점검을 마친 뒤라면 사건을 시작하지 않는다.</dd>
+          <dt>예외·충돌</dt><dd>50 이상에서 셀 수 없는 소리를 내면서 세 획 규칙을 채점하지 않는다. 높은 구간에 유지하려면 명확한 세 획 단서와 표를 함께 바꿔야 한다. 활성 뒤 아무 교실도 점검하지 않으면 업무 미완료이며 준수 보상 없음.</dd>
+          <dt>씬 연결·설정값</dt><dd>분필 3획 클립, 문밖 청취 구역, 1-1 실내 경계, 1-3 점검 완료 신호.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>1-3 문턱만 밟고 1-1 진입: 청각 +12. 1-3 점검 완료 후 1-1 진입: 신뢰 +2 한 번. 청각 50 시작: C1 새 발동 없음.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-C2">
+        <div class="rhead"><span class="rule-id">C2</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">출입문을 향해 돌아앉은 책상 근처로는 가지 마십시오. 그 자리는 수업을 듣기 위한 자리가 아닙니다. 앉아 있는 쪽에서는 문이 잘 보입니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">근접 <b>배치 +12</b></span></div>
+        <div class="rule-meta">배치 25~99 또는 C-A 실제 장면. 회전 좌석 1.5m 접근 금지. 신뢰 +2 / 배치 +12.</div>
+        <details class="dev-spec" id="spec-C2"><summary>C2 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>출입문을 향한 지정 책상·의자 묶음을 금지 반경 밖에서 식별할 때 시작한다. C-A에서는 모형 1초 관찰과 별도로 해당 좌석을 같은 대상으로 연결한다.</dd>
+          <dt>준수</dt><dd>대상 좌석 반경 밖에서 교실 점검을 마치고 퇴실하면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>대상 좌석 기준점과 수평 거리 1.5m 미만으로 진입하면 배치 +12.</dd>
+          <dt>종료·반복</dt><dd>점검하지 않고 퇴실하면 아직 위반하지 않은 카드는 미판정 상태로 남겨 다음 유효 방문에 기회를 준다. 실제 정산은 그날 한 번.</dd>
+          <dt>예외·충돌</dt><dd>75 이상에서 여러 의자가 돌아가도 기준 좌석 한 묶음만 채점한다. 문구의 대상과 헷갈리는 추가 역방향 책상을 만들지 않는다. C-A의 1초 관찰 자체는 안전하다.</dd>
+          <dt>씬 연결·설정값</dt><dd>지정 회전 좌석 묶음과 기준점, 1.5m 반경, 교실 점검/퇴실 신호.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>C-A 1초 관찰 후 거리 유지·점검·퇴실: 신뢰 +2. 여러 의자 근접: 지정 대상 위반 한 번만 계산.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-C3">
+        <div class="rhead"><span class="rule-id">C3</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">나가려는 순간 뒤쪽 책상이 울린다면, 그 책상을 오래 바라보지 말고 교실 밖으로 나오십시오. 당신의 이름은, 아직 부르지 않았습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">응시 <b>청각 +15</b></span></div>
+        <div class="rule-meta">청각 50~99. 타격음 후 2초 유예, 지정 책상 3초 연속 응시 금지. 신뢰 +2 / 청각 +15.</div>
+        <details class="dev-spec" id="spec-C3"><summary>C3 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>일반 교실 점검을 마치고 퇴실 준비 구역에 들어왔을 때 지정 뒷줄 책상에서 타격음 1회. 아직 실내에 있어 선택할 수 있을 때만 시작한다.</dd>
+          <dt>준수</dt><dd>유예 뒤 금지 응시 없이 교실 실내 경계를 나가면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>음원 시작 2초 뒤부터 지정 책상 3초 이상 연속 응시하면 청각 +15.</dd>
+          <dt>종료·반복</dt><dd>첫 퇴실 또는 위반으로 그날 정산 종료. 위반 후 돌아나가도 신뢰를 더하지 않는다.</dd>
+          <dt>예외·충돌</dt><dd>C-A의 퇴실 ‘쿵’은 모형 효과음이며 C3를 새로 시작하지 않는다. C-B도 제외한다. 짧은 시선 확인을 위반으로 세지 않는다.</dd>
+          <dt>씬 연결·설정값</dt><dd>지정 책상 응시 대상, 타격음, 퇴실 준비/실내 경계, 2초 유예·3초 응시.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>일반 퇴실 중 3초 응시: 청각 +15. C-A의 같은 타격음: C3 0. 소리 나기 전에 이미 실외: 사건 미시작.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-C4">
+        <div class="rhead"><span class="rule-id">C4</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">칠판 긁는 소리와 의자 끄는 소리가 겹친다면, 교탁 쪽으로는 발을 들이지 마십시오. 두 소리가 모두 멎으면 점검을 계속하셔도 됩니다. 두 소리를 함께 내려면, 손이 네 개 필요합니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">근접 <b>청각 +15</b></span></div>
+        <div class="rule-meta">청각 75~99. 두 소리 시작 후 마지막 음원 종료까지 교탁 1.5m 금지. 신뢰 +2 / 청각 +15.</div>
+        <details class="dev-spec" id="spec-C4"><summary>C4 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>일반 방문의 입구에서 칠판 긁기와 의자 마찰음이 겹쳐 재생될 때 시작한다. 플레이어가 교탁 반경 밖이고 해당 방문에 다른 단기 사건이 없어야 한다.</dd>
+          <dt>준수</dt><dd>두 음원이 모두 끝날 때까지 교탁 반경에 들어가지 않거나, 그 전에 안전하게 퇴실하면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>활성 중 교탁 중심 수평 거리 1.5m 미만 진입 시 청각 +15.</dd>
+          <dt>종료·반복</dt><dd>두 음원 중 더 늦게 끝난 음원의 종료 또는 퇴실 때 종료. 클립 길이를 판정 데이터와 동일하게 사용한다.</dd>
+          <dt>예외·충돌</dt><dd>90~99의 추가 마찰음까지 포함한 전체 시퀀스 종료가 기준이다. 이미 교탁 가까이에 있으면 발동을 미룬다. C-B의 칠판·의자 효과음에는 C4를 붙이지 않는다. 문구의 ‘손이 네 개’는 추가 모델/판정 요구가 아니다.</dd>
+          <dt>씬 연결·설정값</dt><dd>교탁 기준점, 두 음원의 전체 시퀀스와 종료 신호, 1.5m 영역.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>칠판만 멎고 의자 소리 중 접근: 청각 +15. 모든 음원 종료 뒤 접근: 위반 없음. Tab 중 음원만 끝나면 동기화 오류.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-C5">
+        <div class="rhead"><span class="rule-id">C5</span><span class="pill trust">준수 +3</span></div>
+        <p class="rule-text">형광등이 네 개 이하로 켜져 있다면, 손전등을 켜고 교실 밖으로 나올 때까지 유지하십시오. 어두운 교실에서는 퇴실이 확인되지 않습니다. 아직 퇴실이 확인되지 않은 근무자가 한 명 있습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +3</b></span><span class="d">Off 통과 <b>조도 +12</b></span></div>
+        <div class="rule-meta">조도 50~99, 실제 켜진 등 4개 이하. 입구 2초 내 On, 퇴실까지 유지. 신뢰 +3 / 조도 +12.</div>
+        <details class="dev-spec" id="spec-C5"><summary>C5 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>선택된 교실의 진입 지점에서 등 상태를 식별하면 2초 유예를 시작한다. 조도값뿐 아니라 실제 라이트 그룹의 켜진 개수를 확인한다.</dd>
+          <dt>준수</dt><dd>유예 종료부터 On 상태로 교실 점검을 마치고 실내 경계를 벗어나면 신뢰 +3.</dd>
+          <dt>위반</dt><dd>유예가 끝나도 Off이거나 이후 퇴실 전 Off로 바꾸면 조도 +12.</dd>
+          <dt>종료·반복</dt><dd>1-1·1-3을 각각 채점하지 않고 처음 유효하게 진행된 방문의 결과 한 번만 기록한다. 짧은 입구 왕복은 준수 없음.</dd>
+          <dt>예외·충돌</dt><dd>등 개수와 조도 구간이 다르면 해당 사건을 시작하지 않고 개발 로그에 남긴다. 실내에서 조도 구간이 바뀌어도 이 방문의 등 조건과 의무를 도중에 뒤집지 않는다. C-A·C-B 모형 방문에는 신규 C5 없음.</dd>
+          <dt>씬 연결·설정값</dt><dd>교실별 라이트 그룹 8개, 입구·점검·퇴실 구역, On 상태, 경계 중립 구역.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>유예 내 On 후 점검·퇴실: 신뢰 +3. 1-1에서 정산 후 1-3 재점검: 추가 0. 복도로 나온 후 중립 구역에서 Off: C5 위반 없음.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-C6">
+        <div class="rhead"><span class="rule-id">C6</span><span class="pill trust">준수 +3</span></div>
+        <p class="rule-text">1-1과 1-3을 각각 점검하고, 직접 열어 둔 문은 근무 종료 전까지 닫으십시오. 저절로 열린 문은 그대로 두십시오. 뒤따라 닫는 사람이 따로 있습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +3</b></span><span class="d">미점검·미폐쇄 <b>배치 +12</b></span></div>
+        <div class="rule-meta">두 교실 점검과 수동 개방 문 의무를 밤 종료에 합산. 신뢰 +3 / 미점검·미폐쇄 배치 +12 한 번.</div>
+        <details class="dev-spec" id="spec-C6"><summary>C6 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>C6가 일일 덱에 전달되면 두 교실 점검과 해당 방 문의 수동 개방 의무를 감시한다. 목록을 직접 작성하는 플레이어 입력은 없다.</dd>
+          <dt>준수</dt><dd>밤 종료 시 두 교실 점검 완료, 수동으로 열어 둔 모든 대상 문에 닫기 완료가 기록됐으면 신뢰 +3.</dd>
+          <dt>위반</dt><dd>밤 종료 정산 시 도달 가능한 교실의 점검 누락 또는 수동 개방 문 닫기 의무가 남으면 배치 +12. 문 두 개 누락도 +12 한 번.</dd>
+          <dt>종료·반복</dt><dd>일반 재방문 때 지급하지 않는다. 한 번 닫고 다시 E로 열면 해당 문 의무를 다시 생성한다. 카드의 최종 결과는 그날 한 번.</dd>
+          <dt>예외·충돌</dt><dd>자동 개방 문은 의무를 만들지 않는다. 자동 문 연출로 미완료 수동 의무를 삭제하지 않으며, 그런 문은 자동 개방 후보에서 제외한다. 시스템이 동선을 막아 점검 기회가 없으면 관련 실패를 부과하지 않는다. P3는 순서만 바꾸고 1-3 점검 자체를 면제하지 않는다.</dd>
+          <dt>씬 연결·설정값</dt><dd>교실 두 곳 점검 상태, 문별 수동 열기/닫기 수락 기록, 밤 종료 신호.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>문 두 개 미폐쇄: 배치 +12 한 번. 자동 개방 문 유지·두 교실 점검: 신뢰 +3. E 재개방 후 미폐쇄: 종료 때 위반.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+    </div>
+
+    <h2 class="sec">인체모형 장면 <span class="count">2개</span></h2>
+    <div class="scene-grid">
+      <div class="scene-card">
+        <h3><span class="sid">C-A</span>문을 향한 좌석</h3>
+        <div class="scene-field moment"><div class="flabel">감정과 순간</div><p>칠판을 보며 들어가려는데 뒤쪽 한 자리만 문을 향해 앉아 있어, 수업의 관찰 대상이 된 것처럼 느낀다.</p></div>
+        <div class="scene-field"><div class="flabel">시작 배치</div><p>뒤쪽 지정 책상·의자를 문 쪽으로 돌리고 앉은 모형. 문가에서 얼굴을 확인 가능</p></div>
+        <div class="scene-field"><div class="flabel">순서</div><p>1초 관찰 기록 후 퇴실 준비 구역에서 해당 책상 &lsquo;쿵&rsquo; 1회. C3 발동 신호는 보내지 않음. 일일 조우 완료는 실제 퇴실 후</p></div>
+        <div class="scene-field"><div class="flabel">연결 카드</div><p>C2 배정 시 A(간격 두고 점검) 신뢰 +2 / B(좌석 접근) 배치 +12. 관찰 1초 자체는 안전</p></div>
+      </div>
+      <div class="scene-card">
+        <h3><span class="sid">C-B</span>교탁의 인솔자</h3>
+        <div class="scene-field moment"><div class="flabel">감정과 순간</div><p>문을 열었더니 칠판 앞에 선 모형이 자신을 향하고 있다. 수업에 호출된 것처럼 느낀다.</p></div>
+        <div class="scene-field"><div class="flabel">시작 배치</div><p>교탁과 칠판 사이, 플레이어를 향한 고정 회전만 사용</p></div>
+        <div class="scene-field"><div class="flabel">순서</div><p>관찰 시 칠판 긁기 1회 → 퇴실 경계에서 교탁 의자 마찰음 1회</p></div>
+        <div class="scene-field"><div class="flabel">연결 카드</div><p>발견형. C3·C4를 새로 시작하지 않아 뒤늦은 벌점이 붙지 않음</p></div>
+      </div>
+    </div>
+
+    <h2 class="sec">태블릿 문자 <span class="count">4개 — 발견 유도 2 + 재방문 1 + 역설 1</span></h2>
+    <div class="msg-list">
+      <div class="msg">
+        <div class="mtime">G-C1</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;1-1 뒤쪽 좌석의 점검 기록이 접수되지 않았습니다. 근무 종료 전 해당 교실 뒤쪽 통로로 이동하십시오. 좌석 안쪽으로 들어가실 필요는 없습니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">C-A 미관찰</span> · 회전 좌석 금지 반경 밖 뒤쪽 통로 진입</div>
+        </div>
+      </div>
+      <div class="msg">
+        <div class="mtime">G-C2</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;1-1 앞쪽 점검 위치로 이동하십시오. 이번 근무가 끝나기 전에 도착하시면 됩니다. 교탁 너머로는 업무를 배정하지 않았습니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">C-B 미관찰</span> · 교탁 금지 반경 밖 앞쪽 통로 진입</div>
+        </div>
+      </div>
+      <div class="msg">
+        <div class="mtime">N1</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;1-3 교실 문 앞 기록을 다시 확인하고 있습니다. 근무 종료 전 해당 위치로 한 번 더 이동하십시오. 앞선 방문이 없었다는 뜻은 아닙니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">일반 재방문</span> · 회차 최대 1회, 역설 문자를 보낸 날엔 발송 안 함 · 새 이상현상 없이 목적지 도착만 요구</div>
+        </div>
+      </div>
+      <div class="msg paradox">
+        <div class="mtime">P3<br>역설</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;1-3 교실 점검을 마치기 전에 1-1 내부로 이동하십시오. 안에서 나는 소리는 저희도 듣고 있습니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">C1과 충돌</span> — 네 역설 중 유일하게 반경이 아니라 <b>순서</b>를 뒤집는다 · 따르면 <span class="link">C1 위반 청각 +12</span>, 거절하면 <span class="link">C1 준수 신뢰 +2 + P3 미도달 배치 +6</span> · P3 전문 노출 후 1-3 점검을 먼저 완료하면 그 시점에 P3는 미도달로 확정된다. 1-3 점검 의무 자체는 유지 · 문자가 분필 소리의 존재를 인정하면서도 들어가라고 한다</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ 과학실 ============ -->
+  <section class="panel" id="panel-lab" role="tabpanel" aria-labelledby="tab-lab" hidden>
+
+    <div class="role">
+      <p>처음에는 인계받는 물건이지만, 다시 만났을 때는 보관 위치에 없는 물건이다. 배치축 정점 — 인체모형은 시야 밖에 있을 때만 위치가 바뀌는 유일한 존재다.</p>
+      <div class="self-report"><b>자기 신고</b> 청각은 유리 접촉·긁힘음 · 조도는 천장등 4개 중 켜진 개수 · 배치는 S-A·S-B의 모형 위치 차이. 실험대 수는 유지</div>
+    </div>
+
+    <h2 class="sec">이상현상 <span class="count">청각 · 조도 · 배치</span></h2>
+    <div class="anomaly-wrap">
+      <table class="anomaly">
+        <thead><tr><th>구간</th><th>청각</th><th>조도 (등 4개, 공통 색온도표)</th><th>배치</th></tr></thead>
+        <tbody>
+          <tr><td>0~24</td><td class="ax-hear">유효 점검 후 퇴실할 때 유리 파손음 1회</td><td class="ax-light">4개, 6500K 백색</td><td class="ax-place">기존 실험대·기구 정상 배치</td></tr>
+          <tr><td>25~49</td><td class="ax-hear">지정 유리 기구 접촉음 추가</td><td class="ax-light">3개, 4500K 옅은 노랑</td><td class="ax-place">일반 소품 배치 유지</td></tr>
+          <tr><td>50~74</td><td class="ax-hear">같은 실험대에서 짧은 긁힘 추가</td><td class="ax-light">2개, 3200K 주황</td><td class="ax-place">일반 소품 배치 유지</td></tr>
+          <tr><td>75~89</td><td class="ax-hear">접촉음 위치를 실험대 아래쪽으로 조정</td><td class="ax-light">1개, 2000K 적갈</td><td class="ax-place">일반 소품 배치 유지</td></tr>
+          <tr><td>90~99</td><td class="ax-hear">퇴실 파손음 뒤 무거운 물체 놓는 소리 1회</td><td class="ax-light">0개, 붉은 잔광</td><td class="ax-place">일반 소품 배치 유지 · 모형 위치는 S-A·S-B 장면으로 별도 표현</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="sec">근무수칙 <span class="count">6개</span></h2>
+    <div class="rule-grid">
+      <div class="rule-card" id="rule-S1">
+        <div class="rhead"><span class="rule-id">S1</span><span class="pill trust">준수 +3</span></div>
+        <p class="rule-text">첫 근무일에는 과학실 보관 위치의 인체 모형과 눈을 맞춘 뒤 순찰을 시작하십시오. 모형도 같은 순간에 당신을 확인합니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +3</b></span><span class="d">미확인 <b>업무 미완료</b></span></div>
+        <div class="rule-meta">1일차 고정. 보관 위치 모형의 얼굴 대상 1초 연속 응시 신뢰 +3. 미관찰은 업무 미완료.</div>
+        <details class="dev-spec" id="spec-S1"><summary>S1 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>첫날 S1 고정 안내와 과학실 보관 위치 S-A를 준비한다. 다른 공간을 먼저 방문해도 카드가 실패하지 않는다.</dd>
+          <dt>준수</dt><dd>실제 보관 모형의 얼굴 응시 대상을 가림 없이 1초 연속 확인하면 신뢰 +3과 최초 조우 완료를 한 번 기록한다.</dd>
+          <dt>위반</dt><dd>감각축 위반 델타 없음. 보관 위치 바닥만 보거나 모형이 가려진 상태는 완료가 아니다.</dd>
+          <dt>종료·반복</dt><dd>최초 관찰은 회차 한 번. 일일 조우 완료는 이 관찰 이후 과학실 퇴실까지 이뤄졌을 때다.</dd>
+          <dt>예외·충돌</dt><dd>관찰 전 다른 장소 모형은 모두 비활성. 모형 미배치·얼굴 대상 참조 누락은 구현 오류이며 플레이어 벌점 없음. S1의 ‘모형도 확인’은 모형 시선 추적 기능을 뜻하지 않는다.</dd>
+          <dt>씬 연결·설정값</dt><dd>기존 선 모형, 얼굴 응시 대상, 과학실 실내 경계, 최초 조우 이력.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>얼굴 0.9초 후 시선 이탈: 미완료. 연속 1초: 신뢰 +3. 재방문 재응시: 0. 첫날 다른 방 선방문: 모형 없음·S1 벌점 없음.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-S2">
+        <div class="rhead"><span class="rule-id">S2</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">과학실에서 나온 뒤 유리 깨지는 소리가 들린다면, 그날은 다시 들어가지 마십시오. 퇴실 기록 이후의 파손은 안에 남아 있는 사람의 책임입니다. 당신은 이미 나오셨고, 그 사람은 아직입니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">재진입 <b>청각 +12</b></span></div>
+        <div class="rule-meta">일반 점검 후 유효 퇴실의 파손음부터 밤 종료까지 재진입 금지. 신뢰 +2 / 청각 +12.</div>
+        <details class="dev-spec" id="spec-S2"><summary>S2 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>S1 최초 관찰 완료, 오늘의 일일 조우 선정 완료, 과학실 일반 점검 완료 후 퇴실할 때 파손음을 재생한다. 미완료 일일 조우를 과학실에 남겨둔 상태에서는 시작하지 않는다.</dd>
+          <dt>준수</dt><dd>파손음 전달 이후 밤 종료까지 과학실 실내 경계를 다시 넘지 않으면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>활성 후 과학실 실내 재진입 즉시 청각 +12. 문만 열고 바깥에 있는 것은 재진입이 아니다.</dd>
+          <dt>종료·반복</dt><dd>재진입 위반은 즉시 한 번, 준수는 밤 종료 한 번. 소리가 멎거나 다른 방을 방문해도 의무는 지속된다.</dd>
+          <dt>예외·충돌</dt><dd>일일 S-B 방문에는 새 S2 없음. P1은 이미 활성화된 S2를 유지한다. 첫날 S-A 관찰·점검 후 퇴실은 사용할 수 있다. 문밖 청취 지점을 벗어나 소리가 전달되지 않으면 시작하지 않는다.</dd>
+          <dt>씬 연결·설정값</dt><dd>과학실 점검/실내 경계, 퇴실 바깥 청취 지점, 파손음, 밤 종료.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>문 E 개방만: 0. 실내 진입: 청각 +12. P1 목적지 도착 전 문턱만 넘기: S2 위반이며 문자 완료는 아님.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-S3">
+        <div class="rhead"><span class="rule-id">S3</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">유리 기구끼리 부딪히는 소리가 나는 실험대가 있는데, 그 기구들은 서로 닿을 수 없는 간격으로 고정되어 있다면, 다가가지 마십시오. 내용물은 모두 비웠습니다. 비운 뒤에도 안에서 무언가 움직입니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">근접 <b>청각 +12</b></span></div>
+        <div class="rule-meta">청각 25~99. 분리된 유리 기구 식별과 접촉음 전달 후 실험대 1.5m 금지. 신뢰 +2 / 청각 +12.</div>
+        <details class="dev-spec" id="spec-S3"><summary>S3 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>지정 실험대의 서로 떨어진 기구를 반경 밖에서 식별했고, 해당 위치의 유리 접촉음이 전달되면 시작한다. 양쪽 단서가 모두 필요하다.</dd>
+          <dt>준수</dt><dd>접근하지 않고 과학실 점검을 마쳐 퇴실하면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>활성 후 지정 실험대 기준점 수평 반경 1.5m 미만으로 진입하면 청각 +12.</dd>
+          <dt>종료·반복</dt><dd>그날 정산 한 번. 단서 없는 첫 방문은 미판정이며 다른 유효 방문에 발생 가능.</dd>
+          <dt>예외·충돌</dt><dd>기구 간격은 기존 배치로 고정하며 런타임에 물체 거리를 재어 조건을 새로 만들지 않는다. ‘안에서 움직임’은 분위기 문구로, 기구 내부 움직임·새 모델·내용물 생성은 구현하지 않는다. 모형 방문에는 신규 S3 없음.</dd>
+          <dt>씬 연결·설정값</dt><dd>기존 기구 배치와 식별 대상, 실험대 기준점, 유리 접촉음, 1.5m 반경.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>소리만 나고 간격 단서가 가려짐: 미시작. 두 단서 식별 후 접근: 청각 +12. 다른 실험대 접근: 이 카드 추가 벌점 없음.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-S4">
+        <div class="rhead"><span class="rule-id">S4</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">천장등이 하나만 남았다면, 그 등을 오래 올려다보지 마십시오. 그 안에서도 이쪽을 봅니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">응시 <b>조도 +12</b></span></div>
+        <div class="rule-meta">조도 75~89, 실제 등 1개. 대상 등 2초 연속 응시 금지. 신뢰 +2 / 조도 +12.</div>
+        <details class="dev-spec" id="spec-S4"><summary>S4 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>유일하게 켜진 등이 식별되면 시작한다. 동일한 식별 시간 0.2초는 금지 응시 시간에 포함하지 않는 보완안을 사용한다.</dd>
+          <dt>준수</dt><dd>금지 응시 없이 일반 점검을 마치고 퇴실하면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>식별 완료 뒤 같은 등을 화면 중앙으로 2초 이상 연속 응시하면 조도 +12.</dd>
+          <dt>종료·반복</dt><dd>연속 시선이 끊기면 응시 시간만 0으로 초기화한다. 카드 상태는 방문 종료까지 유지한다.</dd>
+          <dt>예외·충돌</dt><dd>조도 90~99에서 시작할 대상이 없으므로 새 발동 없음. 사건 진행 중 등 상태는 완료까지 유지하고 구간 표현 갱신은 뒤로 미룬다. 기능 오류로 대상이 사라졌다면 미판정으로 취소한다.</dd>
+          <dt>씬 연결·설정값</dt><dd>등 1개의 응시 대상, 과학실 라이트 그룹 4개, 연속 응시 2초.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>식별 뒤 1.9초 응시·시선 이탈: 위반 없음. 2초: 조도 +12. 처음부터 등 0개: 미발동.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-S5">
+        <div class="rhead"><span class="rule-id">S5</span><span class="pill trust">준수 +3</span></div>
+        <p class="rule-text">인체 모형이 보관 위치를 벗어난 곳에 서 있다면, 그 모형에 다가가지 말고 과학실에서 나오십시오. 이전 근무자가 시도한 방법은 지침에서 삭제했습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +3</b></span><span class="d">근접 <b>배치 +15</b></span></div>
+        <div class="rule-meta">일반 S-B 실제 관찰 뒤 모형 1.5m 접근 금지·퇴실. 신뢰 +3 / 배치 +15. P1에는 적용하지 않음.</div>
+        <details class="dev-spec" id="spec-S5"><summary>S5 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>S5 배정, 일반 일일 S-B를 반경 밖에서 1초 관찰했을 때 시작한다. 빈 보관 위치만 본 것으로 시작하지 않는다.</dd>
+          <dt>준수</dt><dd>모형 반경 밖으로 과학실에서 퇴실하면 신뢰 +3.</dd>
+          <dt>위반</dt><dd>활성 후 해당 모형 중심 수평 반경 1.5m 미만 진입 시 배치 +15.</dd>
+          <dt>종료·반복</dt><dd>관찰 뒤 퇴실 또는 위반으로 정산. 미관찰이면 일일 조우 업무만 남는다. 위반 후 퇴실해도 조우 완료는 가능하다.</dd>
+          <dt>예외·충돌</dt><dd>모형을 먼저 발견해도 유효하다. 문구의 ‘그쪽’을 빈 보관 위치로 오해하지 않게 대상을 모형으로 명시했다. 출구가 금지 반경 안에 있으면 해당 배치를 사용하지 않는다. P1 방문은 S2·P1만 판정한다.</dd>
+          <dt>씬 연결·설정값</dt><dd>S-B 모형 관찰 대상/기준점, 1.5m 반경, 안전한 퇴실 경로.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>빈 보관 위치 관찰: S5 미시작. 문 옆 S-B 관찰 후 거리 유지·퇴실: 신뢰 +3. P1 중 근접: S5 0.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-S6">
+        <div class="rhead"><span class="rule-id">S6</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">유리 기구 점검 구역에서는 손전등을 끄고, 그 구역을 나갈 때까지 유지하십시오. 빛을 비추면 목록에 없던 것이 하나씩 늘어납니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">On 통과 <b>조도 +12</b></span></div>
+        <div class="rule-meta">유리 기구 구역 진입 후 2초 내 Off, 점검 1초·구역 이탈까지 유지. 신뢰 +2 / 조도 +12.</div>
+        <details class="dev-spec" id="spec-S6"><summary>S6 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>일반 방문에서 지정 유리 기구 구역을 식별하고 진입하면 2초 유예를 시작한다. S1 최초 관찰 전·S-B·P1 방문은 제외한다.</dd>
+          <dt>준수</dt><dd>유예 이후 Off를 유지하며 구역 안에서 1초 점검을 마친 뒤 이탈하면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>유예 종료에도 On이거나 이후 구역을 나가기 전 On으로 바꾸면 조도 +12.</dd>
+          <dt>종료·반복</dt><dd>점검 없이 유예 안에 되돌아가면 미판정. 다음 유효 진입에 다시 시작 가능하나 정산은 그날 한 번.</dd>
+          <dt>예외·충돌</dt><dd>목록 열기/작성·새 물체 생성·손전등으로 물체 수 증가를 구현하지 않는다. 문장의 후반은 이유를 불확실하게 남기는 표현이다. 점검 구역은 S3 금지 영역 밖에서 사용할 수 있어야 한다.</dd>
+          <dt>씬 연결·설정값</dt><dd>유리 기구 구역, 점검 체류 1초, 유예 2초, 손전등 상태.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>유예 내 Off·1초 점검·구역 이탈: 신뢰 +2. 과학실 다른 구역에서 On: S6 위반 없음. S-B 방문: 미시작.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+    </div>
+
+    <h2 class="sec">인체모형 장면 <span class="count">2개 — 최초 조우 담당</span></h2>
+    <div class="scene-grid">
+      <div class="scene-card">
+        <h3><span class="sid">S-A</span>인계품: 최초 조우</h3>
+        <div class="scene-field moment"><div class="flabel">감정과 순간</div><p>모형을 확인하라는 문서를 읽고 정면을 보지만, &lsquo;확인한 순간 인계가 끝난다&rsquo;는 문장 때문에 시선을 맞추기가 꺼려진다.</p></div>
+        <div class="scene-field"><div class="flabel">시작 배치</div><p>기존 보관 위치의 선 모형. 1일차 고정 위치, 배치 수치와 무관</p></div>
+        <div class="scene-field"><div class="flabel">순서</div><p>1초 응시로 S1 신뢰 +3 및 최초 조우 완료. 미루면 업무만 남고 벌점 없음</p></div>
+        <div class="scene-field"><div class="flabel">종료</div><p>관찰 후 퇴실·비가시 상태에서 비활성화. 이후 유효 퇴실의 S2 파손음이 뒤를 확인하려는 충동을 만듦</p></div>
+      </div>
+      <div class="scene-card">
+        <h3><span class="sid">S-B</span>돌아온 인계품</h3>
+        <div class="scene-field moment"><div class="flabel">감정과 순간</div><p>비어 있는 보관 위치를 확인한 뒤 나가려는데, 모형이 출입문 안쪽 옆에 서 있다.</p></div>
+        <div class="scene-field"><div class="flabel">시작 배치</div><p>보관 위치는 비워 두고 문 안쪽 옆 안전 지점에 준비. 먼저 발견해도 조우는 정상 기록</p></div>
+        <div class="scene-field"><div class="flabel">순서</div><p>1초 관찰 후 유리 기구 접촉음 1회. 고청각에서는 무거운 물체 놓는 소리 1회 추가</p></div>
+        <div class="scene-field"><div class="flabel">연결 카드</div><p>S5 배정 시 A(간격 두고 퇴실) 신뢰 +3 / B(근접 확인) 배치 +15. P1 경유 시 S5 미판정</p></div>
+      </div>
+    </div>
+
+    <h2 class="sec">태블릿 문자 <span class="count">2개 — 발견 유도 1 + 역설 1</span></h2>
+    <div class="msg-list">
+      <div class="msg">
+        <div class="mtime">G-S1</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;과학실 출입문 안쪽 기록을 다시 받겠습니다. 근무 종료 전 문 안쪽 점검 위치로 이동하십시오. 보관 위치가 아니라 출입문 안쪽입니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">S-B 미관찰</span> · 모형 금지 반경 밖 문 안쪽 점검 구역 진입</div>
+        </div>
+      </div>
+      <div class="msg paradox">
+        <div class="mtime">P1<br>역설</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;과학실 내부에 근무자 한 명이 남아 있는 것으로 확인됩니다. 이번 근무가 끝나기 전에 과학실 문 안쪽 점검 위치로 이동하십시오. 퇴실 처리가 끝나지 않았습니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">S2와 충돌</span> — 나온 곳으로 다시 들어오라고 한다 · S2가 적용 중일 때만 발송(2일차 이후, 그날 일일 조우는 이미 종료) · 따르면 <span class="link">S2 위반 청각 +12</span>, 거절하면 <span class="link">S2 준수 신뢰 +2 + P1 미도달 배치 +6</span> · 네 역설 중 유일하게 모형 장면(S-B) 예약을 함께 쓴다 · 시스템은 어느 쪽도 취소하거나 확답하지 않음</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ============ 화장실 ============ -->
+  <section class="panel" id="panel-toilet" role="tabpanel" aria-labelledby="tab-toilet" hidden>
+
+    <div class="role">
+      <p>문을 열어 확인해야 하는 업무와, 안에 있는 것을 존중해야 한다는 문서가 어긋난다. 청각은 물방울 개수 대신 물 내림·호칭·칸 안쪽 소리로 구성하고 거울·플레이어 반사는 쓰지 않는다.</p>
+      <div class="self-report"><b>자기 신고</b> 청각은 물 내림·호칭 발생 여부 · 조도는 천장등 4개 중 켜진 개수, 닫힌 칸 아래 새는 빛 · 배치는 열린 점검칸 개수</div>
+    </div>
+
+    <h2 class="sec">이상현상 <span class="count">청각 · 조도 · 배치</span></h2>
+    <div class="anomaly-wrap">
+      <table class="anomaly">
+        <thead><tr><th>구간</th><th>청각</th><th>조도 (등 4개, 공통 색온도표)</th><th>배치</th></tr></thead>
+        <tbody>
+          <tr><td>0~24</td><td class="ax-hear">기본 환경음</td><td class="ax-light">4개, 6500K 백색</td><td class="ax-place">입구 쪽 개폐형 칸 자동 개방 1회</td></tr>
+          <tr><td>25~49</td><td class="ax-hear">안쪽 칸 물 내림 1회</td><td class="ax-light">3개, 4500K 옅은 노랑</td><td class="ax-place">안쪽 칸이 이미 열린 상태 추가</td></tr>
+          <tr><td>50~74</td><td class="ax-hear">별도 방문에서 세면대 쪽 &lsquo;근무자님&rsquo; 호칭</td><td class="ax-light">2개, 3200K 주황</td><td class="ax-place">일반 칸 상태 유지</td></tr>
+          <tr><td>75~89</td><td class="ax-hear">물 내림 끝에 손잡이 소리 추가</td><td class="ax-light">1개, 2000K 적갈</td><td class="ax-place">개폐형 점검칸 두 곳 모두 열린 상태(T1 제외)</td></tr>
+          <tr><td>90~99</td><td class="ax-hear">물 내림 뒤 닫힌 칸 위치에서 들숨 1회</td><td class="ax-light">0개, 붉은 잔광</td><td class="ax-place">동일. 닫힌 칸 음원 대상 없으면 들숨 생략</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 class="sec">근무수칙 <span class="count">6개</span></h2>
+    <div class="rule-grid">
+      <div class="rule-card" id="rule-T1">
+        <div class="rhead"><span class="rule-id">T1</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">칸 문이 눈앞에서 저절로 움직이는 것을 보았다면, 그날은 어떤 칸도 여닫지 마십시오. 안에서 열어 준 문을 다시 열면 두 번째 방문으로 기록됩니다. 첫 번째 방문자가 누구였는지는 확인하지 않습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">수동 개폐 <b>배치 +12</b></span></div>
+        <div class="rule-meta">배치 0~74. 자동 칸 문 움직임 관찰 뒤 그날 두 점검칸 E 개폐 금지. 신뢰 +2 / 배치 +12.</div>
+        <details class="dev-spec" id="spec-T1"><summary>T1 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>T1 배정, T3 미배정. 두 개폐형 점검칸 중 지정 문의 자동 움직임을 실제 관찰한 시점부터 시작한다.</dd>
+          <dt>준수</dt><dd>밤 종료까지 두 점검칸의 수동 개폐 명령이 없으면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>활성 후 어느 점검칸이든 E 열기/닫기 명령이 수락되면 배치 +12. 화장실 출입문은 제외한다.</dd>
+          <dt>종료·반복</dt><dd>방을 나가도 감시 지속. 위반 뒤 반복 개폐에는 델타 없음. 자동 움직임은 그날 한 번만 연출.</dd>
+          <dt>예외·충돌</dt><dd>이미 열린 문을 보기만 한 것으로 발동하지 않는다. 움직임 미관찰이면 미판정. T-A가 선택되면 칸을 비가시 상태에서 미리 열어 관찰만 가능하게 한다. T1 활성 후 사용자가 닫았다면 그 조작에 한 번 실패하고 재개방에 중복 벌점 없음.</dd>
+          <dt>씬 연결·설정값</dt><dd>개폐형 칸 문 2개, 출입문 별도 ID, 자동/수동 출처, 밤 종료.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>자동 움직임 후 출입문 E: 0. 칸 문 E: 배치 +12. 처음부터 열린 칸만 관찰: T1 미시작.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-T2">
+        <div class="rhead"><span class="rule-id">T2</span><span class="pill trust">준수 +3</span></div>
+        <p class="rule-text">칸 안에서 물 내리는 소리가 들린다면, 소리가 멎기 전에 나오십시오. 안에 계신 분이 먼저 나오도록 양보하지 마십시오. 소리가 멎었다는 것은, 나올 준비가 끝났다는 뜻입니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +3</b></span><span class="d">종료 시 체류 <b>청각 +15</b></span></div>
+        <div class="rule-meta">청각 25~99. 물 내림 12초 종료 전 화장실 이탈. 신뢰 +3 / 종료까지 실내면 청각 +15.</div>
+        <details class="dev-spec" id="spec-T2"><summary>T2 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>일반 방문에서 지정 물 내림 시퀀스를 처음부터 전달할 수 있을 때 시작한다. 현재 위치에서 12초 안에 정상 보행으로 출구에 도달할 수 있어야 한다.</dd>
+          <dt>준수</dt><dd>시퀀스 시간이 12초 미만일 때 화장실 실내 경계를 벗어나면 신뢰 +3.</dd>
+          <dt>위반</dt><dd>시퀀스 시간이 12초 이상인데 실내에 남아 있으면 청각 +15. 칸에서 공용부로 나오는 것은 퇴실이 아니다.</dd>
+          <dt>종료·반복</dt><dd>첫 유효 퇴실 또는 제한시간으로 그날 종료. 이탈 뒤 재진입해도 동일 시퀀스로 다시 채점하지 않는다.</dd>
+          <dt>예외·충돌</dt><dd>Tab 중 관련 음원·제한시간·이동을 함께 멈춘다. 재개할 때 남은 시퀀스를 계속한다. 소리 종료 뒤 일어나는 들숨은 이 타이머를 연장하지 않는다. T-A·T-B 방문에는 신규 T2 없음.</dd>
+          <dt>씬 연결·설정값</dt><dd>12초 물 내림 시퀀스, 화장실 실내 경계, 일시정지 처리.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>11.9초에 실외: 신뢰 +3. 정확히 12초에 퇴실: 청각 +15. 5초에 Tab 10초 열고 닫기: 남은 게임플레이 시간 7초.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-T3">
+        <div class="rhead"><span class="rule-id">T3</span><span class="pill trust">준수 +3</span></div>
+        <p class="rule-text">안쪽 점검칸에 무언가 서 있다면, 칸 문을 닫고 다시 열지 않은 채 화장실 밖으로 나오십시오. 비품이 들어 있는 칸도 사용 중인 칸으로 분류합니다. 사용이 끝나면 저희가 회수하겠습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +3</b></span><span class="d">미폐쇄·재개방 <b>배치 +15</b></span></div>
+        <div class="rule-meta">T-A 관찰 후 칸 닫기 완료·퇴실 신뢰 +3 / 닫기 전 퇴실 또는 퇴실 전 재개방 배치 +15.</div>
+        <details class="dev-spec" id="spec-T3"><summary>T3 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>T3 배정, T1 미배정. 안쪽 칸의 T-A를 1초 실제 관찰한 시점부터 시작한다.</dd>
+          <dt>준수</dt><dd>대상 칸 문 닫힘이 완료되고, 재개방 없이 화장실 실내 경계를 벗어나면 신뢰 +3.</dd>
+          <dt>위반</dt><dd>문 닫힘 완료 전에 화장실을 나가거나, 관찰 후 닫기 명령을 한 뒤 퇴실 전에 다시 열기 명령을 수락하면 배치 +15. 여러 조건을 어겨도 +15 한 번.</dd>
+          <dt>종료·반복</dt><dd>시간 제한 없음. 관찰·닫기 후 실내에 머무르면 아직 진행 중이다. 첫 퇴실/위반에 정산, 일일 조우 완료는 퇴실 후 기록한다.</dd>
+          <dt>예외·충돌</dt><dd>관찰 전에 칸을 닫은 것은 T3 위반이 아니다. 다시 열어 확인한 뒤부터 순서를 검사한다. T3 없이 T-A를 만나면 닫기 의무 없음. 닫기 완료 전에 출구로 나갈 수 있는 경우도 실패이므로 닫힘 상태를 눈·소리로 식별 가능하게 한다.</dd>
+          <dt>씬 연결·설정값</dt><dd>T-A 관찰 대상, 안쪽 칸 문 닫힘 완료/명령 수락 신호, 화장실 실내 경계.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>관찰 후 열린 채 퇴실: 배치 +15. 닫기 완료·퇴실: 신뢰 +3. 닫고 재개방·퇴실: 배치 +15 한 번. 관찰 전 개폐: T3 0.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-T4">
+        <div class="rhead"><span class="rule-id">T4</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">세면대 쪽에서 당신을 부르는 소리가 나는데, 수도꼭지는 잠긴 채 그대로라면, 그쪽으로 발을 떼지 마십시오. 시설관리팀은 배수구로 연락하지 않습니다. 이름을 안다고 해서, 사람인 것은 아닙니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">근접 <b>청각 +12</b></span></div>
+        <div class="rule-meta">청각 50~99. 물이 흐르지 않는 세면대의 호출음 뒤 1.5m 접근 금지. 신뢰 +2 / 청각 +12.</div>
+        <details class="dev-spec" id="spec-T4"><summary>T4 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>물 흐름이 없는 지정 세면대 상태를 확인할 수 있고 그곳에서 호출음이 전달되면 시작한다. 호출 전에 플레이어가 금지 반경 밖이어야 한다.</dd>
+          <dt>준수</dt><dd>해당 세면대에 접근하지 않고 화장실을 나가면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>활성 후 세면대 기준점 수평 거리 1.5m 미만 진입 시 청각 +12.</dd>
+          <dt>종료·반복</dt><dd>퇴실 또는 위반으로 그날 한 번 정산. 소리를 반복 재생하며 재채점하지 않는다.</dd>
+          <dt>예외·충돌</dt><dd>‘수도꼭지는 잠김’은 고정된 상태이며 수도 조작은 없다. 호출은 기존 기획의 ‘근무자님’을 사용하고 실제 사용자 이름 수집·음성 응답·태블릿 열람 의무를 추가하지 않는다. T-B 장면에서는 신규 T4 없음.</dd>
+          <dt>씬 연결·설정값</dt><dd>지정 세면대 상태, 호출 음원, 1.5m 반경, 화장실 실내 경계.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>호출 후 퇴실: 신뢰 +2. 세면대 접근: 청각 +12. Tab을 열지 않고 퇴실해도 준수. T-B 숨소리로 T4 발동 없음.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-T5">
+        <div class="rhead"><span class="rule-id">T5</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">닫힌 칸 아래로 빛이 새어나온다면, 손전등을 끄고 공용부 점검을 마치십시오. 문을 열어 확인하실 필요는 없습니다. 그 안에서는 바깥이 어두운 편이 낫다고 합니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">On 통과 <b>조도 +12</b></span></div>
+        <div class="rule-meta">조도 50~99, 실제 닫힌 칸 아래 빛. 식별 후 2초 내 Off·점검·퇴실. 신뢰 +2 / 조도 +12.</div>
+        <details class="dev-spec" id="spec-T5"><summary>T5 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>닫힌 지정 칸 아래 새는 빛을 공용부에서 식별하면 2초 유예를 시작한다. 모든 칸이 열린 상태에서는 시작하지 않는다.</dd>
+          <dt>준수</dt><dd>유예 뒤 Off를 유지하여 공용부 점검을 마치고 화장실 밖으로 나오면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>유예 종료에도 On이거나 활성 중 퇴실 전에 On으로 바꾸면 조도 +12.</dd>
+          <dt>종료·반복</dt><dd>빛을 식별한 뒤 의무는 해당 방문 종료까지 유지한다. 문을 열어 빛 단서를 지워도 이미 시작된 의무는 해제되지 않는다.</dd>
+          <dt>예외·충돌</dt><dd>문 열기 자체는 T5 위반이 아니다. T1 등 이미 활성화된 다른 카드가 있다면 그 카드로만 별도 판단한다. T-A·T-B 방문에는 신규 T5 없음. 빛 연출 자산/라이트는 보유 확인 필요.</dd>
+          <dt>씬 연결·설정값</dt><dd>닫힌 칸 아래 빛과 식별 대상, 공용부 점검 구역, 손전등, 실내 경계.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>열린 칸뿐인 상태: 미시작. 식별 후 문을 열고 On 유지: 조도 +12. Off 점검·퇴실: 신뢰 +2.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+      <div class="rule-card" id="rule-T6">
+        <div class="rhead"><span class="rule-id">T6</span><span class="pill trust">준수 +2</span></div>
+        <p class="rule-text">점검칸이 모두 열린 것을 보았다면, 그날은 어느 칸도 문턱 안으로 들어가지 마십시오. 두 칸이 동시에 열리는 날은 흔치 않습니다. 그런 날 안을 들여다본 근무자가 무엇을 보았는지는, 기록에 없습니다.</p>
+        <div class="delta-row"><span class="d">준수 <b>신뢰 +2</b></span><span class="d">내부 진입 <b>배치 +15</b></span></div>
+        <div class="rule-meta">두 점검칸 개방 식별 후 밤 종료까지 칸 내부 진입 금지. 신뢰 +2 / 배치 +15.</div>
+        <details class="dev-spec" id="spec-T6"><summary>T6 개발 판정 상세</summary>
+          <dl><dt>발생 자격·시작</dt><dd>T6 배정, 배치 75~99 또는 별도 유효한 두 칸 개방 상태. 플레이어가 공용부에서 두 칸 개방을 식별하면 시작한다. 수치만으로는 시작하지 않는다.</dd>
+          <dt>준수</dt><dd>공용부 점검을 완료하고 밤 종료까지 어느 점검칸 안에도 들어가지 않으면 신뢰 +2.</dd>
+          <dt>위반</dt><dd>활성 중 플레이어 발밑 기준점이 두 점검칸 중 하나의 문턱 안쪽 실내 영역으로 넘어가면 배치 +15.</dd>
+          <dt>종료·반복</dt><dd>보완안: P4와 연결할 수 있도록 밤 종료까지 준수를 보류한다. 재방문·문 개폐로 금지가 사라지지 않는다.</dd>
+          <dt>예외·충돌</dt><dd>문밖에서 들여다보기·문 E 개폐 자체는 T6 위반이 아니다. T-A 방문에는 신규 T6를 시작하지 않으며, P4는 당일 T-A가 선택됐으면 보내지 않는다. 이미 T6가 활성인 날 T-A를 나중에 보더라도 칸 바깥 관찰 경로를 유지한다.</dd>
+          <dt>씬 연결·설정값</dt><dd>개폐형 두 칸 상태, 공용부 식별/점검 구역, 칸별 문턱 안쪽 영역, 밤 종료.</dd>
+          <dt>검증 절차·기대 결과</dt><dd>문밖 관찰·점검: 밤 종료 신뢰 +2. 바깥 칸 내부 진입도 배치 +15. P4 안쪽 칸 도착: 같은 T6 한 번만 적용.</dd></dl>
+          <a href="#dev-common">공통 판정·예외 기준</a>
+        </details>
+      </div>
+    </div>
+
+    <h2 class="sec">인체모형 장면 <span class="count">2개</span></h2>
+    <div class="scene-grid">
+      <div class="scene-card">
+        <h3><span class="sid">T-A</span>안쪽 칸의 이용자</h3>
+        <div class="scene-field moment"><div class="flabel">감정과 순간</div><p>문밖에서 확인하라는 업무를 따라갔더니 안쪽 벽을 보고 선 모형이 있다. 닫는 동안 그 등이 시야에 남는다.</p></div>
+        <div class="scene-field"><div class="flabel">시작 배치</div><p>안쪽 개폐형 칸을 열고 선 모형을 벽 방향으로 준비. 문 조작 지점은 칸 밖</p></div>
+        <div class="scene-field"><div class="flabel">순서</div><p>1초 관찰 기록 후 T3에 따라 닫으면 옷감 스치는 소리 1회. 문은 자동 재개방하지 않으며 플레이어 E 재개방은 가능. 일일 조우 완료는 화장실 퇴실 후</p></div>
+        <div class="scene-field"><div class="flabel">연결 카드</div><p>T3 배정 시 A(닫힘 완료 후 퇴실) 신뢰 +3 / B(닫기 전 퇴실 또는 퇴실 전 재개방) 배치 +15 한 번. T1 적용 중엔 T3 없이 관찰만 가능하게 준비</p></div>
+      </div>
+      <div class="scene-card">
+        <h3><span class="sid">T-B</span>세면대의 호출자</h3>
+        <div class="scene-field moment"><div class="flabel">감정과 순간</div><p>세면대 맞은편 통로에 도착했더니 모형이 세면대 옆에 서 있다. 출구로 나가며 그 자리를 등져야 한다.</p></div>
+        <div class="scene-field"><div class="flabel">시작 배치</div><p>지정 세면대 옆 빈 바닥의 선 모형. 출입구는 막지 않음</p></div>
+        <div class="scene-field"><div class="flabel">순서</div><p>플레이어가 출구 구역에 진입하면 배수구 위치에서 짧은 숨소리 1회</p></div>
+        <div class="scene-field"><div class="flabel">연결 카드</div><p>발견형. T4·T2·T5를 새로 시작하지 않으며 장면 고유 델타 0. 이미 활성인 장기 금지는 유지</p></div>
+      </div>
+    </div>
+
+    <h2 class="sec">태블릿 문자 <span class="count">3개 — 발견 유도 2 + 역설 1</span></h2>
+    <div class="msg-list">
+      <div class="msg">
+        <div class="mtime">G-T1</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;화장실 안쪽 점검칸 앞 기록이 누락되었습니다. 근무 종료 전 칸 바깥 통로로 이동하십시오. 내부 이용은 요청하지 않았습니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">T-A 미관찰</span> · 안쪽 칸 바깥 관찰 지점 진입</div>
+        </div>
+      </div>
+      <div class="msg">
+        <div class="mtime">G-T2</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;다음 확인 위치는 화장실 세면대 맞은편 통로입니다. 근무 종료 전 그쪽으로 이동하십시오. 세면대 앞까지 접근할 필요는 없습니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">T-B 미관찰</span> · 세면대 금지 반경 밖 맞은편 지점 진입</div>
+        </div>
+      </div>
+      <div class="msg paradox">
+        <div class="mtime">P4<br>역설</div>
+        <div class="mbody">
+          <p class="mtext">&ldquo;안쪽 점검칸의 배수 상태를 확인해야 합니다. 칸 안으로 들어가 주십시오. 문은 닫지 않으셔도 됩니다.&rdquo;</p>
+          <div class="mmeta"><span class="link">T6과 충돌</span> — 들어가지 말라던 칸 안으로 부른다. 네 역설 중 유일하게 몸을 좁은 공간에 넣으라는 지시라 델타도 가장 크다 · 따르면 <span class="link">T6 위반 배치 +15</span>, 거절하면 <span class="link">T6 준수 신뢰 +2 + P4 미도달 배치 +6</span> · 그날 T-A가 선택되면 발송하지 않는다. 바깥 칸만 진입하면 T6 +15와 P4 미도달 +6이 별도로 적용된다. 상세 결과는 개발 공통 명세 참조</div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <section id="dev-common" class="dev-common" aria-labelledby="dev-title">
+    <h2 id="dev-title">개발 공통 명세</h2>
+    <p>2026-09-12 판정 정리. 이 영역과 각 카드의 ‘개발 판정 상세’는 제작자용이며 게임 태블릿에는 노출하지 않는다. 각 카드의 본문만 플레이어용 수칙이다. 공지 카드나 별도 인수 목록 UI를 추가하지 않는다.</p>
+    <p><b>적용 기준:</b> 이 HTML의 24개 수칙, 8개 모형 장면, 12개 문자, 기존 델타를 기준으로 작성했다. 수칙 문장과 요약, 상세 명세는 함께 적용한다. ‘보완안’은 기존 문서에서 비어 있던 판단을 이번에 채운 값이며 Unity 구현 완료나 플레이테스트 통과를 뜻하지 않는다.</p>
+    <nav class="dev-nav" aria-label="개발 명세 바로가기"><a href="#dev-lifecycle">공통 판정</a><a href="#dev-primitives">입력·대상 정의</a><a href="#dev-encounters">조우·충돌</a><a href="#dev-messages">문자·역설</a><a href="#dev-data">데이터·인계</a><a href="#dev-qa">검증 절차</a><a href="#dev-changes">변경 내역</a></nav>
+
+    <h3 id="dev-lifecycle">1. 공통 판정과 종료</h3>
+    <ol>
+      <li>그날 배정된 수칙인지 먼저 확인한다. 카드 미배정, 단서 미발생, 대상 참조 누락, 실제 선택 불가능은 미판정이며 델타 0이다. 일반 이상현상 자체는 월드 구간에 따라 발생할 수 있지만, 소리가 났다는 사실만으로 임의의 카드를 채점하지 않는다.</li>
+      <li>카드의 구간 자격과 대상 준비, 유효한 단서 전달이 모두 성립하면 진행 중으로 전환한다. 최초 근무 S1과 시작부터 업무를 추적하는 C6은 개별 명세를 따른다. 카드 문구의 ‘기록’, ‘목록’, ‘회수’, ‘손이 네 개’ 같은 설명은 추가 입력·모델·이벤트를 만들지 않는다.</li>
+      <li>위반이 성립하면 즉시 해당 카드의 큰 델타 하나를 적용한다. 준수는 각 카드에 지정한 완료 시점에만 지급한다. 준수·위반은 서로 배타적이며 같은 카드에는 하룻밤 결과 하나만 남긴다. 점검 대상 개수나 왕복 횟수로 곱하지 않는다.</li>
+      <li>이미 정산한 결과는 되돌리지 않는다. 진행 중인 사건은 대상·구간·연출을 고정하고, 델타로 구간이 바뀌면 관련 월드 변화는 그 사건 종료 이후 안전한 시점에 적용한다. 다른 공간의 기존 3축 표현은 계속 해당 수치를 따른다. 100 도달은 지연하지 않는다.</li>
+      <li>두 카드를 실제로 동시에 위반했다면 서로 다른 결과다. 기본 구성은 아래 충돌표로 불필요한 중복을 막고, 의도한 P1~P4는 수칙과 문자를 따로 정산한다. 개발 로그와 근무 종료 리뷰에는 어느 카드·문자의 결과인지 분리하여 저장한다. 플레이 도중 축·델타·위반 팝업은 표시하지 않는다.</li>
+      <li>보완안: 조작·경계 이벤트는 실제 발생 순서로 처리하고, 같은 시각에 여러 카드가 반응하면 그날 덱 표시 순서로 처리한다. 같은 카드에서 성공과 실패가 같은 시각에 성립하면 실패를 우선한다. T2의 정확히 12초 퇴실은 ‘소리가 멎기 전’이 아니므로 실패다.</li>
+    </ol>
+    <div class="dev-table-wrap"><table class="dev-table">
+      <thead><tr><th>상태</th><th>뜻과 전환</th><th>저장할 결과</th></tr></thead>
+      <tbody>
+        <tr><td>대기</td><td>카드 배정 후 단서·선택 기회를 기다린다. 미시작 상태를 성공으로 계산하지 않는다.</td><td>델타 없음</td></tr>
+        <tr><td>진행 중</td><td>대상 ID, 단서 시각, 유예·응시 시간, 완료 조건을 추적한다.</td><td>아직 미정산</td></tr>
+        <tr><td>준수 / 위반</td><td>개별 완료 조건에서 한 번 정산하고 그날 재진입은 무시한다.</td><td>카드 ID·원인·적용 축·델타</td></tr>
+        <tr><td>미판정</td><td>밤이 끝나도록 선택 기회가 없었거나 시스템 오류로 중단됐다. 짧은 입구 왕복 같은 유효하지 않은 시도는 종료 전 대기로 복귀할 수 있다.</td><td>미판정 사유, 델타 0</td></tr>
+        <tr><td>종료 잠금</td><td>어느 축이든 100에 도달하면 신규 판정·문자·조우·정산을 중단한다.</td><td>최초 종료 원인 1개</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>밤 종료 순서:</b> 일반적인 근무 종료 요청은 필수 점검과 오늘 조우의 관찰·방문 종료가 완료되어야 수락한다. ‘카드 결과 정산 완료’를 이 전제에 넣지 않는다. 종료를 수락하면 남은 수칙을 덱 순서로 정산한 다음 P형 미도달을 정산하고 다음 날로 넘어간다. C6 점검 누락 검사는 강제 종료 또는 별도 종료 경로에도 같은 규칙을 적용하기 위한 방어 조건이다. 강제 종료 시스템을 새로 제작하라는 뜻은 아니다.</p>
+    <p><b>100과 포획 엔딩:</b> 청각·조도·배치·신뢰는 누적 0~100, 감쇠·상시 증가 없음. 결과 한 건마다 새 값=min(100, 기존 값+델타)을 계산한다. 100이 되면 종료 원인 축·카드/문자 ID·현재 공간을 기록하고 종료 요청을 한 번만 보낸다. 그 뒤의 미적용 델타는 중단한다. 청각·조도·배치의 90~99 표현은 엔딩 이전 경고를 담당하며 새 경고 시스템은 추가하지 않는다. 모형에게 잡히는 종료 연출은 계획 중이므로 여기서는 종료 신호까지만 계약으로 정한다. 신뢰 100도 기존 게임오버 조건을 유지하되 신뢰의 포획 연출 연결은 별도 확인 항목이다.</p>
+
+    <h3 id="dev-primitives">2. 입력·대상·시간의 공통 정의</h3>
+    <div class="dev-table-wrap"><table class="dev-table">
+      <thead><tr><th>항목</th><th>개발 기준</th><th>보완·확인 항목</th></tr></thead>
+      <tbody>
+        <tr><td>문 E</td><td>기존 개폐 스크립트에서 명령이 수락된 사건과 실제 닫힘 완료를 구분한다. 키를 눌렀지만 사거리 밖이라 무시된 입력은 조작이 아니다. 조작 출처는 플레이어/연출로 구분한다.</td><td>T3만 닫힘 완료 후 퇴실을 요구한다. 나머지 조작 금지는 수락 시점에 실패. 정확한 문 참조와 기존 스크립트 연결 확인 필요.</td></tr>
+        <tr><td>응시</td><td>카메라 중앙 레이의 첫 가시 충돌체를 대상 ID로 판별한다. 벽·닫힌 문 뒤 대상을 관통해 세지 않는다. 대상이 바뀌거나 가려지면 연속 시간은 0이다.</td><td>최초/모형 관찰 1초, H2·C3 금지 3초, S4 금지 2초. 최대 거리와 얼굴·문·책상 대상 범위는 실제 씬에서 지정한다.</td></tr>
+        <tr><td>시각 단서 식별</td><td>보완안: 안전 관찰 지점에서 지정 단서 대상을 중앙으로 0.2초 확인한 것을 식별 신호로 사용한다. H1·T1은 실제 자동 움직임 중에 확인해야 한다. 모형 관찰의 1초와 구분한다.</td><td>0.2초는 시험값. 여러 등이 켜진 상태·두 칸 개방은 하나의 기존 공간 관찰 대상에 연결하고 실제 전체 상태를 검사한다. 단순 응시만으로 가려진 단서를 봤다고 가정하지 않는다.</td></tr>
+        <tr><td>청각 단서 전달</td><td>플레이어가 지정 청취 영역 안에 있고 해당 이벤트 ID의 음원이 정상 재생됐을 때 전달로 기록한다. 사용자가 실제로 들었는지·OS 음소거 여부를 추측하지 않는다.</td><td>볼륨·감쇠·다른 소리의 마스킹을 플레이테스트한다. C1은 세 획 전체를 전달해야 한다. 분위기 효과음은 카드 단서 ID를 보내지 않는다.</td></tr>
+        <tr><td>근접</td><td>플레이어 발밑 기준점과 등록한 바닥 기준점 사이의 수평 거리로 판정한다. 1.5m/2m ‘미만’은 금지, 정확히 경계는 바깥이다. 트리거를 쓰면 같은 영역으로 만든다.</td><td>대상 위치·판정 중심을 씬에서 고정한다. H6는 풀의 외곽과 일치해야 한다. H4·H5·C2 등의 간격도 안전 통로에서 실측한다. 개발용 Gizmo만 사용하며 새 월드 표시를 요구하지 않는다.</td></tr>
+        <tr><td>공간 경계</td><td>문 상태가 아닌 플레이어 발밑 기준점의 공간 진입·이탈로 판정한다. 화장실 칸 밖은 여전히 화장실 실내다. 경계 위는 직전 공간을 유지하고 경계 안쪽으로 넘어간 순간 갱신한다.</td><td>실내/복도 손전등 구역 사이 중립 구간을 둔다. 같은 프레임에 H3 Off와 C5 On을 동시에 요구하지 않는다. 중립 폭은 씬에서 확인한다.</td></tr>
+        <tr><td>일반 점검 완료</td><td>기존 점검 완료 신호가 있으면 연결한다. 없다면 보완안으로 안전한 지정 점검 구역에 1초 체류 후 공간 이탈을 완료로 사용한다. 새 기록 버튼·물건 조작은 없다. S6의 구역 1초 점검은 해당 구역 이탈로 완료한다.</td><td>대상은 복도·1-1·1-3·과학실·화장실의 5개 점검 ID. 문자 조건의 ‘서로 다른 두 곳’도 이 ID로 센다. 복도 단순 통행은 점검 구역 체류 없이 완료되지 않는다.</td></tr>
+        <tr><td>모형 점검</td><td>가림 없는 모형 1초 관찰과 그 방문의 퇴실을 모두 완료해야 당일 조우 업무가 끝난다. 연관 수칙을 위반하고 나가도 진행은 가능하다.</td><td>해당 공간 점검도 동시에 완료 가능. 관찰 기록과 조우 방문 종료 기록은 별도 유지한다.</td></tr>
+        <tr><td>Tab·일시정지</td><td>보완안: Tab 중 이동·문/손전등 조작·게임 시계·진행 중 판정 시간·관련 음원/문 동작을 함께 멈춘다. 닫으면 이어서 재개한다. 대기 중 신규 사건은 시작하지 않는다.</td><td>Tab 직전 응시 시간은 유지하되, 재개 첫 화면에서 대상이 달라졌으면 0으로 초기화한다. 태블릿 때문에 100 종료나 이미 성립한 실패를 취소하지 않는다. 기존 조작 잠금 연결 확인 필요.</td></tr>
+        <tr><td>선택 불가능</td><td>시작부터 금지 반경 안, 출구 봉쇄, 대상 누락, 단서 가림이면 사건 시작을 미룬다. 진행 중 시스템이 경로를 막거나 대상을 제거했다면 미정산 사건만 취소하고 사유를 남긴다.</td><td>플레이어가 문을 닫거나 시선을 돌린 행동은 시스템 오류가 아니다. 시작된 의무를 회피 행동만으로 지우지 않는다.</td></tr>
+      </tbody>
+    </table></div>
+    <p>수칙 본문에서 요구한 행동만 채점한다. 괴담의 이유·기관 설명은 판정 조건이 아니다. ‘목록에 없던 것’은 목록 UI나 생성물을 뜻하지 않으며, ‘이름’은 사용자 개인정보나 음성 인식을 요구하지 않는다. 기존 선/앉은 포즈와 오디오·기존 오브젝트 조작 범위로 구현한다.</p>
+
+    <h3 id="dev-encounters">3. 조우 배정과 카드 충돌</h3>
+    <p>최초 조우 S-A만 첫날 과학실에 고정한다. 실제 관찰 전 다른 공간 모형은 숨긴다. 나머지 H-A·H-B·C-A·C-B·T-A·T-B·S-B의 순서를 회차 시작에 한 번 섞고 저장한다. 둘째 날부터 첫 일반 점검 완료 후 미관찰·도달 가능·비가시 준비 가능 후보를 고른다. 오늘 미방문 공간과 직전 조우와 다른 공간을 우선하며, 후보가 없으면 이 두 선호만 차례로 완화한다. 실제 금지·봉쇄 조건은 완화하지 않는다. 현재 공간은 준비를 위해 우선 제외하고, 모두 불가능하면 다음 공간 이동에 재검사한다.</p>
+    <p>선정한 장면은 잠그고 새로 뽑지 않는다. 준비 위치를 보고 있으면 대기한다. 최초 조우 이후에는 배치 50 같은 수치가 등장 허가를 결정하지 않는다. 3축은 기존 구간별 소리·빛·배치 변화를 담당한다. 날짜별 공간 순서를 고정하거나 새 확률을 도입하지 않는다.</p>
+    <p>미관찰 모형은 같은 자리에 남기고, 관찰 후 퇴실·비가시 상태에서 정리한다. 모형은 회차당 장면별 한 번 소비한다. 관찰하지 않은 채 떠난 장면을 소비하지 않는다. 다음 날로 넘기려면 오늘 조우 관찰·방문 종료가 필요하다. 다른 공간 모형을 동시에 노출하지 않는다. 의도적 미관찰에 강제 시선·체류 즉사를 추가하지 않는다.</p>
+    <div class="dev-table-wrap"><table class="dev-table">
+      <thead><tr><th>상황</th><th>처리</th></tr></thead><tbody>
+        <tr><td>모형 방문 허용 연결</td><td>H-A는 H1, C-A는 C2, T-A는 T3, 일반 S-B는 S5만 신규 시작 가능. S-A 완료 후 유효 퇴실의 S2는 가능. 카드 배정·단서 조건은 각각 필요하다.</td></tr>
+        <tr><td>H-B·C-B·T-B 발견형</td><td>장면 고유 델타 0. 효과음으로 신규 감각 카드를 시작하지 않는다. 이미 활성인 밤 전체 금지는 유지되므로 그 금기를 실제로 어기면 원래 카드 결과만 적용한다.</td></tr>
+        <tr><td>일반 사건 겹침</td><td>보완안: 한 공간 방문에서 신규 단기 판단 사건 하나만 시작한다. 여러 후보는 그날 덱 순서의 첫 유효 카드를 우선한다. 나머지는 다음 방문을 기다린다. 이미 켜진 장기 의무는 계속 감시한다.</td></tr>
+        <tr><td>일일 조우 선정 전 S2</td><td>시작을 미뤄 과학실만 남은 조우가 재진입 금지 때문에 막히지 않게 한다. 일반 S-B 방문에는 신규 S2·S6 없음. S2 활성 상태의 일반 S-B 배정은 불가하고 P1 경유만 예외다.</td></tr>
+        <tr><td>H1·C6</td><td>자동 개방 문은 C6 수동 개방 의무를 만들지 않는다. 미완료 수동 의무가 있는 문에는 H1 자동 사건을 배정하지 않는다. H1 활성 문의 수동 닫기는 H1로만 실패한다.</td></tr>
+        <tr><td>H3·C5</td><td>복도 Off와 교실 On 사이 중립 구역·각 입구 2초 유예를 사용한다. 앞 공간 이탈을 처리한 다음 새 공간의 유예를 시작한다.</td></tr>
+        <tr><td>T1·T3</td><td>같은 날 드로우하지 않는다. T1 활성 중 T-A는 열린 칸에서 관찰만 한다. 이미 금지된 수동 개폐를 요구하지 않는다.</td></tr>
+        <tr><td>T-A·T2/T4/T5/T6</td><td>모형 방문에 이 일반 카드들을 새로 시작하지 않는다. 활성 T6가 있으면 칸 바깥 관찰 경로로 양립한다. P4는 당일 T-A 선택 이력이 있으면 불가.</td></tr>
+        <tr><td>C-A 타격음·C3 / C-B 소리·C4</td><td>소리가 유사해도 모형 효과음 ID는 규칙 발동 신호를 보내지 않는다. 개발자가 AudioClip 재생 자체를 위반 단서로 연결하지 않는다.</td></tr>
+        <tr><td>G·N과 일반 금지</td><td>목적지와 경로는 활성 금지 구역 밖이어야 한다. 도중 신규 사건이 길을 막지 않게 하고 시스템 봉쇄가 생기면 문자 미판정. 이미 접한 수칙을 몰래 해제하지 않는다.</td></tr>
+      </tbody></table></div>
+
+    <h3 id="dev-messages">4. 문자·역설 판정</h3>
+    <p>문자는 이동만 요구한다. 발송, 전문 노출, 목적지 도착, 모형 관찰은 서로 다른 기록이다. 전문 노출은 해당 문자 본문이 태블릿 화면에 실제 표시된 상태를 말하며 추가 ‘확인’ 버튼이나 열람 시간 벌점은 없다. 보완안: P형의 선택 구간은 전문 노출 때 열고, 그 전에 이미 지나가 끝난 행동에는 소급 적용하지 않는다.</p>
+    <div class="dev-table-wrap"><table class="dev-table">
+      <thead><tr><th>유형</th><th>발송·완료·미도달</th></tr></thead><tbody>
+        <tr><td>G-H1/H2, G-C1/C2, G-S1, G-T1/T2</td><td>선정 모형 준비 후 서로 다른 일반 점검 2곳 이상 완료, 아직 모형 미관찰일 때 해당 문자 1개. 목적지 안이면 자연 관찰을 기다린다. Tab 중이거나 현재 목적지라 놓친 발송은 이후 공간 이동·Tab 닫힘에 재검사한다. 지정 구역에 진입하면 문자 완료, 델타 0. 모형을 자연 관찰하면 미발송 문자는 취소, 발송된 문자는 목적 달성으로 닫는다. 도착만 하고 미관찰이면 모형 업무는 남는다. 미도달 0.</td></tr>
+        <tr><td>N1</td><td>1-3 점검과 당일 조우 종료 후, 진행 중 단기 사건·활성 모형이 없을 때 회차 1회. 해당 문 앞 도착으로 완료, 미도달 0. P형을 보낸 날에는 불가하며 N1을 먼저 보낸 날 P형도 불가.</td></tr>
+        <tr><td>P형 공통</td><td>짝 카드가 배정·단서 노출·아직 미정산이고 당일 조우 방문이 끝난 뒤만 가능. 기존 통합 운영안의 하루 최대 1쌍·회차 최대 2쌍·각 P ID 회차 1회를 적용한다. 각자의 근무 종료 기한까지 실제 이동할 수 있어야 한다. P형 도착 보상은 0, 유효 미도달은 배치 +6. +6은 시험 밸런스다.</td></tr>
+        <tr><td>짝 카드가 먼저 끝남</td><td>보완안: 전문 노출 전에 짝 카드가 정산되면 P형을 미판정으로 취소한다. 이미 정산한 카드를 다시 열거나 다른 카드로 바꿔 벌점을 붙이지 않는다. 전문 노출 뒤에는 짝 카드·문자의 아래 결과표를 적용한다.</td></tr>
+        <tr><td>동시 P 후보</td><td>보완안: 방문 안에서 끝나는 P3 우선, 이후 P2·P1·P4 순서. 이는 동률 처리용 고정 순서이며 모형 조우 순서를 고정하지 않는다. 선택된 문자만 보내고 나머지는 다음 날 자격을 다시 확인한다.</td></tr>
+      </tbody></table></div>
+    <p>P형은 읽지 않음·시스템 봉쇄·게임오버로 이동 선택 기회가 없으면 미판정이다. 의도된 짝 금지 때문에 갈 수 없다는 뜻은 이 예외에 포함하지 않는다. P 방문에는 짝 카드 외의 신규 사건을 시작하지 않는다. 이미 활성인 다른 금지를 피할 수 없는 목적지는 선택하지 않는다.</p>
+    <div class="dev-table-wrap"><table class="dev-table">
+      <thead><tr><th>ID·추가 자격</th><th>목적지/기한</th><th>따름</th><th>거절·부분 행동</th></tr></thead><tbody>
+        <tr><td>P1·S2<br>2일차 이후, S-B 미관찰·미예약·준비 가능</td><td>과학실 실내 문 옆 지정 지점. 전문 노출 뒤부터 근무 종료까지. S-B 추가 소비 뒤 남은 미관찰 후보가 이후 남은 근무일 수 이상이어야 한다.</td><td>재진입 시 S2 청각 +12, 지정 지점 도착 시 P1 완료 0. S-B 관찰 여부는 별도. S5 추가 판정 없음.</td><td>재진입 없음: 밤 종료 S2 신뢰 +2, P1 배치 +6. 문턱만 넘고 목적지 미도달: S2 청각 +12, 밤 종료 P1 배치 +6.</td></tr>
+        <tr><td>P2·H4<br>H4 활성·상자 안전 통행 1회 이상·미위반</td><td>보완안: P2 도착 영역을 H4의 1.5m 금지 영역과 동일하게 사용한다. 근무 종료까지. 좁은 별도 지점 때문에 +12와 +6이 우연히 이중 부과되지 않는다.</td><td>영역 진입: H4 배치 +12, P2 완료 0. 합계 배치 +12.</td><td>끝까지 접근 안 함: 밤 종료 H4 신뢰 +2 후 P2 배치 +6. 영역 바깥까지만 접근한 것도 미도달이다.</td></tr>
+        <tr><td>P3·C1<br>분필 3획 전달·1-3 점검 미완료·C1 미정산</td><td>1-3 점검 완료 이전의 1-1 실내 진입. 기한은 1-3 점검 완료 또는 근무 종료 중 먼저 도달한 시점.</td><td>1-1 먼저 진입: C1 청각 +12, P3 완료 0. 이후 1-3 점검 의무는 유지.</td><td>1-3 점검 먼저 완료: C1 신뢰 +2 뒤 P3 배치 +6 즉시 정산. 이후 1-1 진입으로 P3를 성공으로 바꾸지 않는다. 둘 다 미완료면 일반 근무 종료 불가; 별도 종료 경로라면 C1 미판정, 유효 P3 미도달만 +6.</td></tr>
+        <tr><td>P4·T6<br>T6 활성·공용부 점검 완료·그날 T-A 미선택</td><td>안쪽 지정 점검칸의 문턱 안쪽 영역 전체. 근무 종료까지. 두 칸 중 어느 칸인지 태블릿의 ‘안쪽’과 씬 참조를 일치시킨다.</td><td>안쪽 칸 진입: T6 배치 +15, P4 완료 0. 합계 배치 +15.</td><td>어느 칸에도 안 들어감: T6 신뢰 +2 후 P4 배치 +6. 바깥 칸에만 들어감: T6 배치 +15, 이후 안쪽 칸 미도달이면 P4 배치 +6, 합계 배치 +21.</td></tr>
+      </tbody></table></div>
+    <p>모든 합계는 적용 중 100에 도달하지 않았을 때의 값이다. 같은 행동의 수칙 결과를 먼저 처리하고 아직 게임이 진행 중일 때 문자 결과를 적용한다. 예를 들어 P4의 잘못된 칸 진입으로 배치 100이 됐다면 뒤의 +6은 적용하지 않는다. P1의 추가 S-B를 끝내 못 봐도 이미 완료한 당일 조우를 되돌리지 않으며, 밤 종료에 미관찰 예약을 정리하고 이후 후보로 남긴다.</p>
+
+    <h3 id="dev-data">5. 데이터·씬 연결 인계</h3>
+    <p>아래 이름은 필요한 정보의 예시이며 기존 클래스·프리팹 이름이 아니다. 팀의 현재 데이터 구조에 연결한다. 새 범용 규칙 엔진이나 대규모 구조 개편을 요구하지 않는다.</p>
+    <div class="dev-table-wrap"><table class="dev-table">
+      <thead><tr><th>묶음</th><th>필요한 값</th></tr></thead><tbody>
+        <tr><td>수칙 데이터</td><td>cardId, playerText, eligibleBand, triggerId, targetIds, successCondition, failureCondition, settleAt, successDelta, failureAxis, failureDelta, radius, graceSeconds, gazeSeconds. 사용하지 않는 값은 비워 둔다.</td></tr>
+        <tr><td>하룻밤 기록</td><td>assignedCardIds와 덱 순서, 카드별 상태/시작 시각/정산 여부, 전달한 단서, 공간별 점검 완료, 문별 수동 닫기 의무, 활성 장기 금지, 오늘 선택 조우와 관찰·퇴실 상태, 발송/노출/도착 문자 ID.</td></tr>
+        <tr><td>회차 기록</td><td>누적 4축, 최초 S-A 관찰 여부, 섞어 둔 조우 후보 순서, 이미 관찰한 장면, 직전 조우 공간, 사용한 N/P ID와 P 횟수, 최초 게임오버 원인. 다음 날에 축·조우 소비 이력을 초기화하지 않는다.</td></tr>
+        <tr><td>씬 참조</td><td>문·모형·책상·실험대·세면대·라이트 그룹, 관찰 대상, 청취 구역, 공간/점검/통행/칸 내부 영역. 모든 카드에 대상 참조가 연결됐는지 시작 전 검사한다.</td></tr>
+        <tr><td>기존 이벤트 연결</td><td>문 명령 수락과 닫힘 완료, 공간 진입/이탈, 점검 완료, 지정 단서 재생/식별, 모형 관찰, Tab 상태, 손전등 상태, 밤 종료 요청. 기존 시스템에 신호가 없으면 해당 연결만 추가한다.</td></tr>
+      </tbody></table></div>
+    <p><b>저장 기능이 있는 경우:</b> 진행 중 상태·남은 시간·이미 적용한 델타·문자 노출·조우 예약도 함께 복원한다. 로드 직후 접촉 중인 트리거를 신규 진입으로 세지 않는다. 저장 기능 자체가 없다면 이 작업 때문에 새로 제작하지 않는다.</p>
+    <p><b>구현 전 확인할 항목:</b> 기존 선/앉은 전신 모형 프리팹, 각 문의 실제 E 스크립트 연결, 등 그룹 수(복도·교실 각 8, 과학실·화장실 각 4), 닫힌 칸 아래 빛 자산, 판정 반경과 실제 통로, 시선/점검/Tab 일시정지 기능. 숫자는 제작 기준이며 실제 씬 수량 확인 결과가 아니다.</p>
+
+    <h3 id="dev-qa">6. 검증 절차와 기대 결과</h3>
+    <p>각 카드의 펼침 항목에 정상·위반·예외 테스트가 있다. 아래는 공통 교차 검증이다. 실제 Unity 테스트는 아직 수행하지 않았다.</p>
+    <div class="dev-table-wrap"><table class="dev-table">
+      <thead><tr><th>검증</th><th>절차</th><th>기대 결과</th></tr></thead><tbody>
+        <tr><td>미배정/미단서</td><td>H2 없이 문 소리, H1 자동 움직임 미관찰, S4 등 0개를 각각 재현한다.</td><td>해당 카드 준수·위반 모두 0.</td></tr>
+        <tr><td>준수 후 재진입</td><td>H2 한 번 통과 후 같은 문을 3초 응시한다.</td><td>이미 정산한 H2 추가 델타 없음.</td></tr>
+        <tr><td>위반 중복</td><td>T3 관찰 후 닫기·재개방·열린 채 퇴실한다.</td><td>배치 +15 한 번, 신뢰 0.</td></tr>
+        <tr><td>이미 열린 문</td><td>H-A 준비 문이 처음부터 열리게 하고 모형을 본다.</td><td>조우 관찰 기록, H1 미판정. 잠금쇠 소리로 H1 시작 안 함.</td></tr>
+        <tr><td>금지 반경</td><td>1.49m·1.50m에서 H4를 확인하고, H6의 풀 바깥을 걷는다.</td><td>H4는 1.49m 진입만 실패. H6 빈 바닥에는 실패 영역 없음.</td></tr>
+        <tr><td>빛 경계</td><td>C5 On 상태로 교실을 나와 중립 구역에서 Off로 바꾼 뒤 복도를 걷는다.</td><td>C5 완료 후 H3 유예 시작. 모순된 동시 위반 없음.</td></tr>
+        <tr><td>Tab과 제한시간</td><td>T2 5초 경과 뒤 Tab 10초, 닫고 남은 시간을 확인한다.</td><td>음원·타이머 함께 멈추고 남은 유효 시간 7초. 읽는 동안 이동으로 회피 불가.</td></tr>
+        <tr><td>미관찰 조우</td><td>준비 위치를 계속 보거나 모형을 보지 않고 떠난다.</td><td>시야 안 생성·이동 없음. 미관찰 장면 미소비. 안전 준비/다음 방문 대기.</td></tr>
+        <tr><td>모형 효과음</td><td>C-A 퇴실 타격음과 C-B 칠판음을 재생한다.</td><td>C3·C4 새 판정 없음. 해당 조우의 연결 카드만 적용.</td></tr>
+        <tr><td>P2 지연 발송</td><td>상자를 우회한 뒤 H4가 활성인 상태에서 P2 전문을 열고 접근한다.</td><td>신뢰 선지급 없이 H4 배치 +12, P2 완료 0.</td></tr>
+        <tr><td>P3와 C6</td><td>P3 지시에 따라 1-1 먼저 진입하고 나중에 1-3도 점검한다.</td><td>C1 청각 +12, P3 완료. C6은 문 의무까지 충족하면 밤 종료 신뢰 +3. 1-3 제외 처리 없음.</td></tr>
+        <tr><td>P4 잘못된 칸</td><td>T6 활성·P4 노출 후 바깥 칸만 들어가고 안쪽에는 안 간다.</td><td>T6 배치 +15와 P4 배치 +6은 별개. 게임오버 없을 때 합계 +21.</td></tr>
+        <tr><td>P 전문 미노출</td><td>P3를 보냈지만 열기 전 1-3 점검을 완료한다.</td><td>C1 정상 정산. P3 소급 벌점 없음·미판정 취소.</td></tr>
+        <tr><td>100 도달</td><td>99+2, 88+12, 90+25를 각각 적용한다.</td><td>모두 100, 종료 신호 1회, 대기 중 후속 결과 중단. 실제 포획 연출은 별도 확인.</td></tr>
+        <tr><td>정산 순서</td><td>신뢰 99에서 P1 거절 밤 종료를 실행한다.</td><td>S2 신뢰 +2가 먼저 100에 도달. P1 배치 +6은 미적용.</td></tr>
+        <tr><td>같은 카드의 두 대상</td><td>C6 두 문 의무를 모두 남기거나 C5 두 교실에서 동일 행동을 한다.</td><td>C6 최대 배치 +12, C5 카드 결과 그날 한 번.</td></tr>
+      </tbody></table></div>
+
+    <h3 id="dev-changes">7. 이번 정리에서 달라진 부분</h3>
+    <ul>
+      <li>H2·C3는 순간적인 고개 돌리기와 3초 응시를 구분하도록 플레이어 문구를 수정했다. S5는 빈 보관 위치가 아닌 발견한 모형을 접근 금지 대상으로 명시했다.</li>
+      <li>T3는 칸을 닫고 다시 열지 않은 채 화장실 밖으로 나가는 순서를 명시하고, 닫기 전 퇴실·재개방의 누락 판정을 보완했다.</li>
+      <li>보완안: H4·T6를 근무 종료까지 감시하도록 문장과 정산 시점을 통일했다. P2·P4 때문에 같은 카드를 다시 채점하거나 준수를 취소하는 구현을 막기 위한 변경이다.</li>
+      <li>C5·S6의 손전등 유지 종료를 문구에 명시했다. C6은 기존 밤 종료 판정에 맞춰 ‘나올 때’ 대신 ‘근무 종료 전까지’ 닫도록 바꿨다.</li>
+      <li>보완안: C1은 구간표에서 세 획이 유지되는 0~49에서만 발동한다. 실제로 셀 수 없는 소리를 세 획 위반 조건으로 쓰지 않는다. P3는 순서만 바꾸도록 ‘1-3 제외’ 표현을 고쳐 C6의 전체 점검 의무와 충돌하지 않게 했다.</li>
+      <li>H-A의 이미 열린 문, H-B의 기존 장기 금지, 모형 효과음과 카드 단서의 구분을 장면 요약에도 반영했다. 교실 책상 수·과학실 실험대 수 증감 설명은 현재 표의 고정 개수에 맞췄다.</li>
+      <li>새 공지·카드·모형·문자는 추가하지 않았다. 원본의 24·8·12개 구성과 각 축 델타를 유지했다. 조우 순서 무작위화, 3축 경고, 100 종료도 유지한다.</li>
+    </ul>
+    <p><b>확정 상태:</b> 카드별 동작·종료·예외 명세 작성 완료. 보완안의 수치와 씬 대상 연결은 구현 시 확인 필요. Unity 기능·자산 확인 및 플레이테스트 필요. 포획 엔딩은 종료 신호 이후 연출 명세가 별도로 필요하다.</p>
+    <p><b>구성 의도:</b> 각 수칙 바로 아래에서 해당 카드의 동작을 확인하고, 공통 처리는 한 곳에서 참조하도록 구성했다. 문장 표현을 다듬는 일이 새 판정이나 자산 추가로 이어지지 않도록 조건과 분위기 설명을 구분했다.</p>
+    <p><a href="#top">문서 처음으로</a></p>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var accentMap = {
+    hall:   {c:'--hall',   s:'--hall-soft'},
+    class:  {c:'--class',  s:'--class-soft'},
+    lab:    {c:'--lab',    s:'--lab-soft'},
+    toilet: {c:'--toilet', s:'--toilet-soft'}
+  };
+  function activate(tab){
+    tabs.forEach(function(t){
+      var selected = t === tab;
+      t.setAttribute('aria-selected', selected ? 'true' : 'false');
+      var panel = document.getElementById(t.getAttribute('aria-controls'));
+      if(panel) panel.hidden = !selected;
+    });
+    var key = tab.getAttribute('data-accent');
+    var map = accentMap[key];
+    if(map){
+      document.documentElement.style.setProperty('--accent', 'var(' + map.c + ')');
+      document.documentElement.style.setProperty('--accent-soft', 'var(' + map.s + ')');
+    }
+  }
+  tabs.forEach(function(tab, i){
+    tab.addEventListener('click', function(){ activate(tab); });
+    tab.addEventListener('keydown', function(e){
+      var idx = tabs.indexOf(tab);
+      if(e.key === 'ArrowRight'){ e.preventDefault(); tabs[(idx+1) % tabs.length].focus(); activate(tabs[(idx+1) % tabs.length]); }
+      if(e.key === 'ArrowLeft'){ e.preventDefault(); tabs[(idx-1+tabs.length) % tabs.length].focus(); activate(tabs[(idx-1+tabs.length) % tabs.length]); }
+    });
+  });
+})();
+</script>
+</body>
+</html>

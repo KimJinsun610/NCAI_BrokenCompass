@@ -441,7 +441,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 정산순서_신뢰99에서_첫준수가100이면_뒤결과는미적용()
+        public void 정산순서_신뢰99에서_준수로100이되어도_포획없이_뒤카드까지정산한다()
         {
             _kit.Axes.Apply(FearAxis.Trust, 99, "setup", SpaceId.None);
             _kit.Axes.Apply(FearAxis.Layout, 25, "setup", SpaceId.None);
@@ -468,11 +468,12 @@ namespace NightDuty.Tests
             book.Dispatch(JudgeSignal.OfSpace(SignalKind.InspectionCompleted, SpaceId.Toilet));
             book.EndNight();
 
+            // 2026-09-17 결정: 신뢰는 게임오버를 일으키지 않는다. 100에서 멈추고 정산은 계속된다.
             Assert.AreEqual(100, _kit.Axes.GetValue(FearAxis.Trust));
-            Assert.IsTrue(_kit.Axes.IsLocked);
-            Assert.AreEqual("H4", _kit.Axes.Cause.SourceId);
-            Assert.AreEqual(1, book.Results.Count);
-            Assert.AreEqual(CardState.Locked, book.Watchers[1].State);
+            Assert.IsFalse(_kit.Axes.IsLocked);
+            Assert.AreEqual(2, book.Results.Count);
+            Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
+            Assert.AreEqual(CardState.Complied, book.Watchers[1].State);
         }
 
         [Test]

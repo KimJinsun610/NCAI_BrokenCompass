@@ -37,9 +37,17 @@ public class GameTime : MonoBehaviour
     /// <summary>시계가 흐르는 중인지. 연출 등으로 멈춰 두면 false.</summary>
     public bool IsRunning => running;
 
+    /// <summary>현실 1초 동안 흐르는 게임 시간(초)</summary>
+    public float TimeMultiplier => timeMultiplier;
+
+    public string StartTimeText => FormatTime(Mathf.FloorToInt(startSeconds / 60f));
+
+    public string EndTimeText => FormatTime(Mathf.FloorToInt(endSeconds / 60f));
+
     private const float SecondsPerDay = 24f * 60f * 60f;
 
     private float currentSeconds;
+    private float startSeconds;
     private float endSeconds;
     private int lastShownMinute = -1;
     private bool ended;
@@ -47,9 +55,10 @@ public class GameTime : MonoBehaviour
 
     private void Awake()
     {
-        currentSeconds = (startHour * 60 + startMinute) * 60f;
+        startSeconds = (startHour * 60 + startMinute) * 60f;
+        currentSeconds = startSeconds;
         endSeconds = (endHour * 60 + endMinute) * 60f;
-        if (endSeconds <= currentSeconds)
+        if (endSeconds <= startSeconds)
         {
             endSeconds += SecondsPerDay;
         }
@@ -84,6 +93,32 @@ public class GameTime : MonoBehaviour
     public void SkipToEnd()
     {
         if (!ended) currentSeconds = endSeconds;
+    }
+
+    public void SetTimeMultiplier(float value)
+    {
+        timeMultiplier = Mathf.Max(0.1f, value);
+    }
+
+    /// <summary>
+    /// 테스트용: 근무 구간 안의 hour:00으로 이동한다. 12시간제 표기면 12는 자정으로 본다.
+    /// 종료 시각 이후를 고르면 종료 시각에 맞추고, 다음 프레임에 정상 종료 경로를 탄다.
+    /// </summary>
+    /// <returns>실제로 이동한 시각이 종료 시각으로 잘렸으면 true</returns>
+    public bool JumpToHour(int hour)
+    {
+        if (ended) return false;
+
+        hour = ((hour % 24) + 24) % 24;
+        if (use12HourFormat && hour == 12) hour = 0;
+
+        float target = hour * 3600f;
+        if (target < startSeconds) target += SecondsPerDay;
+
+        bool clamped = target > endSeconds;
+        currentSeconds = clamped ? endSeconds : target;
+        RefreshText(true);
+        return clamped;
     }
 
     /// <summary>자정 기준 누적 분을 표시 문자열로 바꾼다.</summary>

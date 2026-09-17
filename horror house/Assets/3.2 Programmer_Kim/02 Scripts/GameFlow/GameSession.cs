@@ -29,6 +29,13 @@ public static class GameSession
         ClearResult();
     }
 
+    /// <summary>테스트용: 일차를 직접 지정한다 (1 ~ FinalDay)</summary>
+    public static void SetDay(int day)
+    {
+        CurrentDay = Mathf.Clamp(day, 1, FinalDay);
+        ClearResult();
+    }
+
     public static void SetResult(DayResult result)
     {
         LastResult = result;

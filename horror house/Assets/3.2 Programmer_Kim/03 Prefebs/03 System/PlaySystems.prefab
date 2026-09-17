@@ -124,7 +124,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameTime
   startHour: 0
   startMinute: 0
-  endHour: 1
+  endHour: 6
   endMinute: 0
   timeMultiplier: 20
   use12HourFormat: 1

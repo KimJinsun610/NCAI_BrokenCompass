@@ -139,7 +139,7 @@ Canvas:
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 300
   m_TargetDisplay: 0
 --- !u!114 &2413793165638728500
 MonoBehaviour:
@@ -259,7 +259,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Go To Main
+  m_text: Restart
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 2170849f341d9c64a81ef6f148f1ca8e, type: 2}
   m_sharedMaterial: {fileID: 5406468190940279402, guid: 2170849f341d9c64a81ef6f148f1ca8e, type: 2}
@@ -454,14 +454,14 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 8191984631899609234}
         m_TargetAssemblyTypeName: HUDActions, Assembly-CSharp
-        m_MethodName: LoadScene
-        m_Mode: 5
+        m_MethodName: GoToMain
+        m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: MainScene
+          m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!1 &8839423773290197695
@@ -529,7 +529,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: DUTY ENDED
+  m_text: YOU DIED
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 3930412249579fb47aefceeab4b25224, type: 2}
   m_sharedMaterial: {fileID: -3997154683166152911, guid: 3930412249579fb47aefceeab4b25224, type: 2}
@@ -704,6 +704,10 @@ PrefabInstance:
     - target: {fileID: 2918111636927340000, guid: f032a18b2a531ff4fa2ca663623eaaa7, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 3488421254583706151, guid: f032a18b2a531ff4fa2ca663623eaaa7, type: 3}
+      propertyPath: m_text
+      value: Quit
       objectReference: {fileID: 0}
     - target: {fileID: 5745488820578870313, guid: f032a18b2a531ff4fa2ca663623eaaa7, type: 3}
       propertyPath: m_Name

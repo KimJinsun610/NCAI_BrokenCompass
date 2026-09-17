@@ -8,4 +8,5 @@ public enum GameScene
     Loading,
     Play,
     Result,
+    Contract,
 }

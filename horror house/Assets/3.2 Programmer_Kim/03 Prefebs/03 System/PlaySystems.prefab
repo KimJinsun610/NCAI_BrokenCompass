@@ -143,6 +143,7 @@ MonoBehaviour:
   gameTime: {fileID: 0}
   fadeOverlay: {fileID: 663667197300094213}
   fadeOutDuration: 1
+  deathScreenPrefab: {fileID: 1992461081768549865, guid: 1af26532e47875b4c89c95cb401061c6, type: 3}
   fakeData:
     rules:
     - text: "\uBCF5\uB3C4\uB97C \uC9C0\uB098\uB358 \uC911 \uBB38\uC774 \uC5F4\uB9B0\uB2E4\uBA74,

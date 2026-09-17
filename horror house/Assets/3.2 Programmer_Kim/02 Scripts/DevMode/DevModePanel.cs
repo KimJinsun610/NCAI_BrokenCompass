@@ -1,6 +1,7 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
+using NightDuty;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 #if ENABLE_INPUT_SYSTEM
@@ -24,7 +25,7 @@ public sealed class DevModePanel : MonoBehaviour
     private const float PanelWidth = 380f;
     private const int MaxLog = 30;
 
-    private static readonly string[] TabNames = { "① 일차", "② 게임 시간", "③ 지시 사항" };
+    private static readonly string[] TabNames = { "① 일차 · 사망", "② 게임 시간", "③ 지시 사항" };
     private static readonly float[] SpeedFactors = { 1f, 2f, 5f, 10f, 30f };
     private static readonly int[] QuickHours = { 1, 2, 3, 4, 5, 6 };
     private static readonly string[] SpaceNames = { "복도", "교실", "과학실", "화장실" };
@@ -203,6 +204,20 @@ public sealed class DevModePanel : MonoBehaviour
         SceneFlow.GoTo(GameScene.Play, false);
     }
 
+    private void DieNow()
+    {
+        if (FindAnyObjectByType<PlayResultRouter>() == null)
+        {
+            Note("이 씬에는 사망 처리(PlayResultRouter)가 없습니다.");
+            return;
+        }
+
+        // 패널이 끈 플레이어를 먼저 돌려준 뒤 사망 처리가 다시 끄게 한다 (닫을 때 되살아나지 않도록)
+        SetShow(false);
+        Note("즉시 사망 → 사망 화면");
+        EventBus.RaiseAxisCritical(FearAxis.Auditory);
+    }
+
     private void SetSpeed(float factor)
     {
         speedFactor = factor;
@@ -379,6 +394,14 @@ public sealed class DevModePanel : MonoBehaviour
         if (GUILayout.Button("+", GUILayout.Width(24))) Later(() => dayInput = Mathf.Min(GameSession.FinalDay, dayInput + 1));
         if (GUILayout.Button("이 날로 다시 시작")) Later(() => RestartDay(dayInput));
         GUILayout.EndHorizontal();
+
+        GUILayout.Space(6);
+        GUILayout.Label("사망", bold);
+        GUILayout.Label("페이드 후 사망 화면(YOU DIED / Restart / Quit)을 띄웁니다. 패널은 닫힙니다.", small);
+        Color savedColor = GUI.backgroundColor;
+        GUI.backgroundColor = ViolateColor;
+        if (GUILayout.Button("즉시 사망 ▶", GUILayout.Height(26))) Later(() => DieNow());
+        GUI.backgroundColor = savedColor;
     }
 
     // ─────────────────────────────── ② 게임 시간 ───────────────────────────────

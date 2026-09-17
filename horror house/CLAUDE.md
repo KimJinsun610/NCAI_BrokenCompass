@@ -3,8 +3,10 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
-> 개정: 2026-09-17. 확정 기획서(2026-09-12 판정 정리)와 인수인계서(`HANDOFF_야간근무_인수인계`)를 반영해 전면 재작성했습니다.
-> 이전 판에 있던 `RED_THRESHOLD = 75`, 미방문 페널티 배치 +22, `ComplianceMode` 3종, 과학실 붉은 잔광 유지는 **모두 폐기**되었습니다.
+> 개정: 2026-09-17(2차). 인수인계서(`HANDOFF_야간근무_인수인계.md`, 9/17 Lee 세션 판)의 구현 현황을 반영했습니다.
+> 판정 코어·카드 24장·판정 디버그 패널·EditMode 테스트 264개가 이미 있으며, 이전 판의 「Rules/Direction 비어 있음」 서술은 틀렸습니다.
+> 폐기된 결정(`RED_THRESHOLD = 75`, 미방문 페널티 +22, `ComplianceMode`, §0 조항·전화 이벤트, 감쇠, 프로파일링·각인축, 과학실 Band4 등 1개)은 되살리지 마십시오.
+> **이 파일과 인수인계서가 어긋나면 인수인계서가 우선**합니다. 어긋남을 발견하면 이 파일을 고치십시오.
 
 ---
 
@@ -24,16 +26,15 @@
 
 | 순위 | 문서 | 위치 | 역할 |
 |---|---|---|---|
-| 1 | **`야간근무_공간별_지침록_개발명세반영본.html`** | 사용자에게 요청 | **판정의 정본.** 24수칙 전문, 카드별 「개발 판정 상세」, 공통 개발 명세 1~7절 |
-| 2 | `HANDOFF_야간근무_인수인계 (3).md` | `../Docs/Claude outputs/` | 내려진 결정, 발견된 함정, 남은 작업 목록 |
+| 1 | **`야간근무_공간별_지침록_개발명세반영본.html`** (2026-09-12) | `../Docs/Claude outputs/` | **판정 규칙의 기획 정본.** 24수칙 전문, 카드별 「개발 판정 상세」, 공통 개발 명세 1~7절 |
+| 1′ | `Editor/CorridorCardBuilder.cs` · `Editor/RoomCardBuilder.cs` | `Assets/_Game/Scripts/Editor/` | **카드 구현값의 정본.** 기획 정본을 해석해 24장을 만드는 코드 |
+| 2 | **`HANDOFF_야간근무_인수인계.md`** | `../Docs/Claude outputs/` | **새 세션이 가장 먼저 읽는 단일 인수인계서.** 결정·함정·진행 상황·다음 작업·결정 대기 |
 | 3 | 이 파일 | `horror house/CLAUDE.md` | 작업 규약 요약 |
 | 4 | `형상관리_매뉴얼.md` | `../Docs/` | git/LFS 운영 규칙 |
+| — | `게임플로우_작업내역_설정가이드.md` (2026-09-14) | `../Docs/Claude outputs/` | 진선님 게임 흐름(Main→Loading→Play→Result) 설정법. Part 5에 판정 시스템 연결 시 바꿀 곳 |
 
-- **수칙 전문·델타·판정 상세를 이 파일이나 코드 주석에 옮겨 적지 마십시오.** 사본이 어긋나면 어느 쪽이 맞는지 알 수 없게 됩니다. 카드를 구현할 때는 정본의 해당 카드 7항목(발생 자격·시작 / 준수 / 위반 / 종료·반복 / 예외·충돌 / 씬 연결·설정값 / 검증 절차·기대 결과)을 직접 읽으십시오.
-- `../Docs/Claude outputs/`의 다음 문서는 **구버전 기준(3공간·30장·§0 조항)** 입니다. 설계 원리만 참고하고 스코프·수치는 따르지 마십시오:
-  `4주_압축_스케줄.md`(무효), `8주_스코프_절단_제안서[구버전].md`, `절단_확정_계획서_v2_기획팀용.md`, `근무수칙_구현난이도_판정서.md`,
-  `시스템파트_개발계획서_ProgrammerLee.md`, `클라이언트파트_개발계획서_ProgrammerKim.md`(8주 기준, 설계 원리는 유효).
-- `NightDuty.Core_현황과_사용법.md`는 진선님 전달용 Core 사용법(`CorridorPresenter` 예제 포함)입니다. 인수인계서 §0.1의 폐기 항목과 겹치는 부분은 정본을 따르십시오.
+- **수칙 전문·델타·판정 상세를 이 파일이나 코드 주석에 옮겨 적지 마십시오.** 사본이 어긋나면 어느 쪽이 맞는지 알 수 없게 됩니다. 카드를 구현·수정할 때는 정본의 해당 카드 7항목(발생 자격·시작 / 준수 / 위반 / 종료·반복 / 예외·충돌 / 씬 연결·설정값 / 검증 절차·기대 결과)을 직접 읽으십시오. 구현값 요약표는 인수인계서 §6에 있습니다.
+- 인수인계서가 이전 문서(9/16 인수인계, 판정코어 연결약속, `NightDuty.Core_현황과_사용법`, 시스템/클라이언트 개발계획서, 4주 스케줄, 8주 절단 제안서, 절단 확정 v2, 구현난이도 판정서, 진행기록·카드분석)를 **모두 대체**했습니다. 해당 파일들은 `Docs/`에 더 이상 없습니다. 다시 찾지 마십시오.
 - 이미 내려진 결정은 다시 논의하지 않습니다. 바꿔야 한다면 **사용자에게 먼저 확인**받으십시오.
 
 ---
@@ -147,7 +148,7 @@ Band0 = 0–24 · Band1 = 25–49 · Band2 = 50–74 · Band3 = 75–89 · Band4
 
 ### 3.1 연결
 
-이 프로젝트에는 `com.unity.pipeline`이 설치되어 있어, 실행 중인 에디터를 **Unity CLI** 또는 **Unity CLI의 MCP 서버**(`unity mcp`)로 직접 조작할 수 있습니다.
+이 프로젝트에는 `com.unity.pipeline`(0.7.0-exp.1)이 설치되어 있어, 실행 중인 에디터를 **Unity CLI** 또는 **Unity CLI의 MCP 서버**(`unity mcp`)로 직접 조작할 수 있습니다.
 
 ```powershell
 unity status        # 에디터 인스턴스가 "ready"인지 확인
@@ -157,24 +158,32 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 
 - MCP로 연결된 세션에서는 같은 명령이 `unity` MCP 도구(`editor_status`, `console_status`, `recompile`, `run_tests` 등)로 보입니다.
 - **작업 전에 에디터가 `ready`인지 먼저 확인하십시오.** 에디터가 닫혀 있으면 모든 명령이 「Pipeline instance를 찾을 수 없음」으로 실패합니다. MCP 도구에는 프로젝트를 여는 명령이 없으므로, 사용자에게 `unity open "<horror house 경로>"` 또는 Unity Hub로 열어 달라고 요청하십시오.
-- 에디터가 자동화 모드로 열리지 않았기 때문에 **모달 대화상자가 뜨면 명령이 멈출 수 있습니다.** 응답이 없으면 에디터 화면을 확인해 달라고 요청하십시오.
+- **`com.unity.pipeline`은 `Packages/manifest.json`에 있어야 합니다.** 병합 때 빠질 수 있습니다(현재 stash 복구본, 미커밋 — 커밋 여부는 팀 결정 대기, §12.2). MCP 서버가 에디터보다 먼저 켜지면 도구가 0개로 보입니다 → 에디터를 띄운 뒤 앱을 재시작합니다.
+- 에디터 창이 뒤에 있으면 패키지 해석·플레이 틱이 멈춥니다 → `editor_focus`.
+- 에디터가 자동화 모드로 열리지 않았기 때문에 **모달 대화상자가 뜨면 명령이 멈춥니다.** 확인 대화상자를 띄우는 메뉴를 MCP로 실행하지 마십시오. 응답이 없으면 에디터 화면을 확인해 달라고 요청하십시오.
 - **연결이 안 되는데 에디터는 켜져 있다면 Safe Mode(컴파일 에러)를 먼저 의심하십시오.** `unity pipeline list`로 확인한 뒤 C# 컴파일 에러를 고치고 Unity를 재시작합니다.
-- `Library/Pipeline/.unity-pipeline-port`에는 에디터에서 C#을 실행할 수 있는 인증 토큰이 들어 있습니다. 내용을 출력하거나 공유하지 마십시오.
+- `Library/Pipeline/.unity-pipeline-port`에는 에디터에서 C#을 실행할 수 있는 인증 토큰이 들어 있습니다. **내용을 출력하거나 공유하지 마십시오.**
 - `eval`, `run_script`는 임의 코드 실행입니다. 읽기 목적 외에는 사용자 확인 후 쓰십시오.
 
 ### 3.2 씬·에셋 수정 규칙
 
 - **에디터가 연결되어 있으면 `.unity` / `.prefab` / `.asset` YAML을 직접 편집하지 마십시오.** fileID·GUID를 틀리기 쉽고, 에디터가 재임포트 전까지 변경을 모르며, 활성 씬이 아닌 파일을 고치는 실수가 생깁니다. 에디터 명령(`create_gameobject`, `set_component_properties`, `save_scene` 등)을 쓰십시오.
 - 에디터가 없을 때만 파일을 직접 고치고, 그 사실을 명시하십시오.
-- 씬·프리팹 수정 전에는 **LFS 잠금**을 확인합니다(§9).
+- 씬·프리팹 수정 전에는 **LFS 잠금** 확인을 사용자에게 요청합니다(§9).
 - `switch_build_target`, `clear_baked_lighting`, `delete_asset`, `package_add/remove`, 설정 변경(`set_*_settings`)처럼 되돌리기 어려운 명령은 **사용자 확인 후** 실행합니다.
 
 ### 3.3 검증
 
-1. 코드 수정 후 `recompile` → `recompile_status` → `console_status`로 **컴파일 에러 0**을 확인합니다.
-2. 테스트가 있으면 `run_tests`로 실행합니다. 정본 6절의 교차 검증 16종과 각 카드의 「검증 절차·기대 결과」가 테스트 케이스의 원천입니다.
-3. 에디터를 쓸 수 없을 때의 대안: `mono-mcs`와 UnityEngine 최소 스텁으로 `-langversion:7.2` 컴파일(`UNITY_EDITOR` / 심볼 없음 / `NIGHTDUTY_DEBUG` 세 구성). 스텁에 없는 멤버 에러는 스텁 문제이며, 스텁을 대충 구현하면 테스트가 거짓 통과합니다. 가능하면 실제 에디터 검증을 우선합니다.
-4. `NightDuty ▸ 테스트 씬 생성` 메뉴가 32m 복도 + 실시간 Point Light 8개 + `DebugAxisDriver` 씬을 만듭니다. 조도 축 연출은 이 씬에서 눈으로 확인합니다. 에디트 모드에서도 **Game 뷰**를 쓰십시오(§8-6).
+1. 코드 수정 후 `Assets/Refresh` → 25~30초 뒤 `recompile_status` → `console_status`로 **컴파일 에러 0**을 확인합니다.
+2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 264/264 통과**(2026-09-17). 결과가 크면 파일로 저장되므로 요약만 grep합니다. 정본 6절의 교차 검증 16종과 각 카드의 「검증 절차·기대 결과」가 테스트 케이스의 원천이며, `CardScenarioTests`(49개)가 실제 카드 에셋으로 지키기/어기기 결과를 확인합니다.
+3. 플레이 모드 확인은 `Assets/3.1. Programmer_lee/01 Scene/_Test_AxisRig.unity`에서 합니다. 플레이하면 **판정 디버그 패널**(`NightRunDebugPanel`, F2 숨김)이 자동 생성됩니다.
+   - ① 카드 시험: 공간 H/C/S/T → 카드별 [지키기 ▶]/[어기기 ▶]. 새 회차 + 그 카드만 넣은 밤을 만들어 결과를 보여 줍니다.
+   - ② 직접 조작: 일차·밤 시작/종료, 축 +/포획, 시간, 응시, 공간, 손전등/Tab/점검, 임의 신호, 카드 목록, 로그.
+   - 코어 모드 토글 시 `DebugAxisDriver`를 끄고 `NightRun.DebugRebroadcast`로 조명·이상현상 리그에 코어 구간을 보냅니다.
+4. 플레이 중에는 `set_component_properties`가 안 됩니다 → `eval`. `FindAnyObjectByType`는 DontSave 오브젝트를 찾지 못합니다.
+5. 병합 후 빌드 씬 목록이 옛것이면 Unity를 재시작합니다(**재시작 전에 저장하지 마십시오**). 현재 빌드 씬은 7개입니다.
+6. 에디터를 쓸 수 없을 때의 대안: `mono-mcs`와 UnityEngine 최소 스텁으로 `-langversion:7.2` 컴파일(`UNITY_EDITOR` / 심볼 없음 / `NIGHTDUTY_DEBUG` 세 구성). 스텁 누락 에러는 코드 문제가 아닙니다. 지금은 Unity MCP로 직접 컴파일·테스트하는 것이 기본입니다.
+7. 조도 축 연출은 에디트 모드에서도 **Game 뷰**로 확인합니다(§8-6).
 
 ---
 
@@ -183,35 +192,45 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 ### 4.1 어셈블리 — 의존은 단방향
 
 ```
-Assets/_Game/Scripts/
-├── NightDuty.Core.asmdef          references: []               판정 · 수치 · 편성
-│   ├── Core/          Vocabulary · Bands · EventBus · IFearAxisReader · DebugAxisDriver
-│   ├── Data/          BandTableSO · DocumentTypes
-│   ├── Stats/         DaySummary
-│   ├── Presentation/  ISpacePresenter · IDocumentView        (인터페이스만)
-│   ├── Rules/ · Rules/Conditions/ · Direction/               (비어 있음)
-│   └── Editor/        NightDuty.Editor.asmdef   references: [NightDuty.Core], Editor 전용
-│                      BandTableAssetCreator · TestLightRigSetup · TestSceneBuilder
-└── (예정) NightDuty.Client.asmdef   references: [NightDuty.Core]   플레이어 · UI · 연출
-Assets/_Game/ScriptableObjects/BandTable.asset
+Assets/_Game/
+├── Scripts/NightDuty.Core.asmdef     references: []   판정 · 수치 · 편성 (Tests·Editor에 InternalsVisibleTo)
+│   ├── Core/          AssemblyInfo · Vocabulary · Bands · EventBus · IFearAxisReader · DebugAxisDriver
+│   ├── Data/          RuleSO · NightDeckTableSO · BandTableSO · SpaceAnomalyTableSO · DocumentTypes
+│   ├── Rules/         JudgeSignal · RuleBook · RuleWatcher · JudgeWorld · CardState · RuleReferenceCheck
+│   │   └── Conditions/  ICondition · SignalCondition · GazeCondition · FlashlightCondition · ProximityCondition
+│   │                    CompositeConditions(AllOf/AnyOf/Elapsed) · OrderConditions(Before/DoorObligation) · TargetMatch(Ids)
+│   ├── Direction/     NightRun · JudgeTarget · JudgeTargetRegistry · CardScenarios
+│   ├── Stats/         FearAxisSystem · BandResolver · DaySummary
+│   ├── Presentation/  ISpacePresenter · IDocumentView            (인터페이스만)
+│   └── Editor/        NightDuty.Editor.asmdef  references: [NightDuty.Core], Editor 전용
+│                      CorridorCardBuilder · RoomCardBuilder · SpaceAnomalyTableBuilder · BandTableAssetCreator
+│                      RuleCardValidator · SceneTargetValidator · SubclassSelectorDrawer · TestLightRigSetup · TestSceneBuilder
+├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 264개 (CardScenarioTests 49개 포함)
+├── ScriptableObjects/  Rules/{Corridor,Classroom,Science,Toilet}/ 카드 24장 · SpaceAnomalyTable · BandTable
+└── Resources/NightDeckTable.asset    임시 편성: 1일 복도 · 2일 교실 · 3일 과학실 · 4일 화장실
 ```
 
-- `NightDuty.Client` 어셈블리는 **아직 만들어지지 않았습니다.** 클라이언트 코드를 추가할 때 함께 만듭니다.
-- **`NightDuty.Core`는 연출을 참조하지 않습니다.** 축이 바뀌면 Core는 이벤트만 올리고, 무엇을 그릴지는 Client가 정합니다. 「축이 올랐으니 여기서 바로 불을 끄면 되겠다」는 유혹이 반드시 옵니다. **asmdef에 참조를 추가해 우회하지 마십시오.**
-- `Assets/3.1. Programmer_lee/02 Scripts/AxisTestLightRig.cs`는 실험용이며 버릴 파일입니다.
+- **`NightDuty.Client` 어셈블리는 아직 없습니다.** 진선님 코드(GameFlow·Result·HUD)와 Lee의 시험 리그는 개인 폴더의 `Assembly-CSharp`에 있습니다. `_Game`으로 옮길지는 결정 대기(Q8)입니다.
+- **`NightDuty.Core`는 연출을 참조하지 않습니다.** 축이 바뀌면 Core는 이벤트만 올리고, 무엇을 그릴지는 클라이언트가 정합니다. 「축이 올랐으니 여기서 바로 불을 끄면 되겠다」는 유혹이 반드시 옵니다. **asmdef에 참조를 추가해 우회하지 마십시오.**
+- 개인 폴더 `Assets/3.1. Programmer_lee/02 Scripts/`: `AxisTestLightRig`(조도 시험) · `AxisTestAnomalyRig`(합성음·임시 소품, F1) · `NightRunDebugPanel`(판정 디버그 패널, F2). 모두 시험용이며 출시 코드가 아닙니다.
+- 에디터 메뉴(`NightDuty ▸`): 「복도 카드 에셋 생성」, 「모든 공간 카드 에셋 생성」(없는 카드만 생성, 편성표 빈 2~4일만 채움), 「이상현상 표 에셋 생성」, 「씬 대상 검사 (열린 씬 × 편성표)」(대상 0개면 조용히 종료), 「조도 표 기획값으로 되돌리기」, 「테스트 씬 생성」.
 
-### 4.2 데이터 흐름과 폴더 배치
+### 4.2 판정 흐름
 
 ```
-[Data]        RuleSO 24장 · SpaceProfileSO · BandTableSO · AudioSequenceSO
-[Direction]   DayDirector → 덱 배정 → EncounterDirector(조우) → MessageDirector/ParadoxResolver(문자)
-[Rules]       RuleWatcher × N  (대기 → 진행 중 → 준수/위반/미판정)
-[Stats]       FearAxisSystem  min(100, 기존+델타), 100 → 종료 잠금 → BandResolver → BandChanged
-[Presentation] 청각·조도·배치 → SpacePresenter (Client)   /   신뢰 → 수치만 누적
+클라이언트 센서/문/재생기 ──JudgeSignal──▶ NightRun.Send
+                                            │
+NightRun (정적 회차 창구) ──▶ RuleBook (카드 배분 · 방문 몫 · 보류)
+                                  └▶ RuleWatcher × 카드  (Waiting/Active/Complied/Violated/Undetermined/Locked)
+                                        └ ICondition(무상태) + ConditionState(ms 타이머 · Latched · Child · Ids)
+                                  └▶ FearAxisSystem.Apply(axis, delta, sourceId, space) → 100이면 LockAll
+                                  └▶ BandResolver (보류 · 히스테리시스) → EventBus.BandChanged / BandProgress
+NightRun.RequestEndNight ─▶ EndNight(진행 카드에 NightEndAccepted → 밤 종료 정산) ─▶ DaySummary ─▶ EventBus.DayEnded
+포획 시 EventBus.AxisCritical(axis) 1회 (원인은 NightRun.Cause)
 ```
 
-새 파일의 자리는 「고르는 것인가(Direction) / 판단하는 것인가(Rules) / 숫자를 올리는 것인가(Stats) / 그리는 것인가(Presentation·Client)」로 정합니다.
-연출 시퀀스만 **Unity Timeline + Signal**을 씁니다.
+- 새 파일의 자리는 「고르는 것인가(Direction) / 판단하는 것인가(Rules) / 숫자를 올리는 것인가(Stats) / 그리는 것인가(Presentation·클라이언트)」로 정합니다. 연출 시퀀스만 **Unity Timeline + Signal**을 씁니다.
+- 아직 없는 것: `DayDirector`(편성 규칙), `EncounterDirector`(조우 8장면), `MessageDirector`/`ParadoxResolver`(P1~P4), `SpaceAnomalyTable`을 읽는 실제 `ISpacePresenter`, 면제 API(`RuleBook.Waive`), `RequestEndNight` 수락 조건.
 
 ### 4.3 핵심 API
 
@@ -222,15 +241,22 @@ namespace NightDuty {
     enum Band     { Band0=0, Band1=1, Band2=2, Band3=3, Band4=4 }
 
     static class Bands { static Band Of(int value); static int LowerBound(Band); static int UpperBound(Band);
-                         static float Progress(int value, Band band); }
+                         static float Progress(int value, Band band); }   // 원시 표. 히스테리시스는 BandResolver
     interface IFearAxisReader { int GetValue(FearAxis); Band GetBand(FearAxis); }
+
+    static class NightRun {   // 회차 창구
+        StartNewRun(); BeginNight(int day, Func<int> clockMinutes); Tick(float sec);
+        Send(in JudgeSignal); RequestEndNight();   // 현재 항상 수락
+        BuildSummary(); Day; Axes; IsCaptured; Cause;
+        // 디버그: DebugForceCapture · DebugAddAxis · DebugRebroadcast · RegisteredTargets · TargetsInUse · DeckOverride
+    }
 
     static class EventBus {
         event Action<SpaceId, FearAxis, Band, Band> BandChanged;   // space, axis, from, to
         event Action<SpaceId, FearAxis, float>      BandProgress;
-        event Action<int, ClauseZeroType>           DayStarted;    // 2번째 인자 재설계 예정
+        event Action<int, ClauseZeroType>           DayStarted;    // 2번째 인자 폐기 예정
         event Action<DaySummary>                    DayEnded;
-        event Action<FearAxis>                      AxisCritical;  // 100 도달
+        event Action<FearAxis>                      AxisCritical;  // 100 도달, 1회
         static void ClearAll();
     }
     interface ISpacePresenter { SpaceId Space { get; }
@@ -238,24 +264,34 @@ namespace NightDuty {
 }
 ```
 
-- `DebugAxisDriver`는 실제 `FearAxisSystem`과 **똑같이 `IFearAxisReader`를 구현**해 같은 포트에 꽂히는 가짜 공급원입니다. 클라이언트 작업이 판정 시스템 완성을 기다리지 않게 해 줍니다. **계속 동작하게 유지하십시오.** 플레이어 빌드에는 포함되지 않아야 합니다(`#if UNITY_EDITOR || NIGHTDUTY_DEBUG`).
-- 시스템과 클라이언트 사이를 넘나드는 것은 `BandChanged` 이벤트와 `ISpacePresenter` / `IDocumentView` 인터페이스, 그리고 정본 5절의 **기존 이벤트 연결**(문 명령 수락/닫힘 완료, 공간 진입/이탈, 점검 완료, 단서 재생/식별, 모형 관찰, Tab 상태, 손전등 상태, 밤 종료 요청)뿐입니다. 기존 시스템에 신호가 없으면 해당 연결만 추가합니다.
+- **조건:** `SignalCondition`(`UsesTarget` public) · `GazeCondition(target, seconds, grace)` · `FlashlightCondition(whenOn, grace)` · `ProximityCondition(anchor, radius)` · `AllOf`/`AnyOf`/`Elapsed` · `BeforeCondition(happened, guard)` · `DoorObligationCondition(doorId, checkAt)`. 대상 특수값: `""`(카드 대상 목록) · `*` · `@trigger`.
+- **코어 확장:** `SignalKind.NightBegan = 71`(밤 시작 장기 카드, C6) · EndNight가 진행 카드에 `NightEndAccepted`를 먼저 전달(Tab 무관, 외부 전송분은 무시) · 준수 전용 카드(Failure=null, FailureDelta=0, S1) · 잠금 시 보류 해제 · `RuleBook.Abandon()` · `NightDeckTableSO.RawCardsOf(day)`.
+- **대상 검사 순서:** `RegisteredTargets`(복사) → 없으면 `JudgeTargetRegistry` 스냅숏(비어 있지 않을 때) → 둘 다 없으면 검사 생략. 등록 안 된 ID를 쓰는 카드는 미판정 + 경고.
+- **`JudgeTarget`:** MonoBehaviour, `_ids[]`, `PrimaryId`, `IdOf(Component)`, `SetIds`, OnEnable 등록. Registry는 ID별 개수·소유자 목록을 가지며 SubsystemRegistration에서 초기화됩니다.
+- **`DaySummary`:** 기존 11인자 생성자 유지 + `Outcome`, `Cause`, `ViolationMinutes`, `Results`, `FormatMinutes`.
+- `DebugAxisDriver`는 실제 `FearAxisSystem`과 **똑같이 `IFearAxisReader`를 구현**하는 가짜 공급원입니다. 클라이언트 작업이 판정 시스템을 기다리지 않게 해 줍니다. **계속 동작하게 유지하십시오.** 플레이어 빌드에는 포함되지 않아야 합니다(`#if UNITY_EDITOR || NIGHTDUTY_DEBUG`).
 
-### 4.4 개정 대기 중인 기존 코드 — 정본과 어긋남
+### 4.4 시스템 ↔ 클라이언트 연결 약속 (합의 대기, 상세는 인수인계서 §5)
 
-아래는 알려진 불일치입니다. 새 코드에서 이 값들에 의존하지 마십시오.
+- **호출 흐름:** 메인 시작 → `StartNewRun()` / Play 시작 → `BeginNight(GameSession.CurrentDay, () => 현재 게임 분)` / 매 프레임(Tab·일시정지 아닐 때) → `Tick(Time.deltaTime)` / `GameTime.ShiftEnded` → `RequestEndNight()` → `DayEnded(DaySummary)` → 결과 저장 → Result 씬 / `AxisCritical` → `BuildSummary()`로 사망 결과.
+- **신호 규칙:** 응시·근접 샘플은 **0.1초 고정 간격**, 응시는 대상이 없어도 빈 ID로 보냄. 판정 시간은 `Tick`으로만(`JudgeSignal.Tick`을 Send하지 않음). Tab 중에는 `JudgeSignal.Tab(bool)`만. 출처는 `ActionSource.Player`/`Direction`. `NightBegan`·`NightEndAccepted`는 NightRun이 만들므로 보내지 않음.
+- **같은 순간 순서:** `Tick` → `PassageCompleted` → `ZoneExited` → `InspectionCompleted` → `SpaceExited`.
+- **대상 ID**는 소문자·숫자·점이며 카드 데이터와 글자까지 같아야 합니다(예: `corridor.door.13`, `cls11.chalk3`, `toilet.stall.inner`, `scene.sb.p1`). 목록은 인수인계서 §5.4.
+- 카드별 「보내기 전 조건」(코어가 모르는 씬 조건)은 인수인계서 §5.3에 있습니다. 클라이언트가 확인하고 보냅니다.
+- **진선님 코드는 아직 NightRun을 호출하지 않습니다.** `PlayResultRouter`가 `FakeDayData`를 씁니다.
 
-| 위치 | 현재 | 정본 |
+### 4.5 코드에 남은 폐기 흔적 — 새 코드에서 쓰지 마십시오
+
+| 위치 | 현재 | 조치 |
 |---|---|---|
-| `Bands` · `Vocabulary` · `BandTableSO` 주석 | Band4 = 90~100 | 90~99 표현, **100은 종료 잠금 경로로 별도 처리** |
-| `Bands.RedThreshold = 75` | 존재 | 없음 → 제거 대상 |
-| `BandTableSO.cs` 과학실 Band4 등 개수 | 1 | **0** (수정 후 `BandTable.asset` 재생성) |
-| `ClauseZeroType`, `DayStarted(int, ClauseZeroType)` | 존재 | §0 조항 폐기 → 역설 문자 체계로 대체, 시그니처 재설계 |
-| `DaySummary.ImprintAxis` | 존재 | 프로파일링 폐기 → 제거 대상 |
-| `AxisCritical(FearAxis)` | 축만 전달 | 원인 카드/문자 ID·공간 기록, **종료 신호 1회 후 델타 중단** 보장 |
-| `IDocumentView.Render(..., ClauseZeroType, ...)` | 존재 | `ClauseZeroType` 제거에 맞춰 시그니처 정리 |
+| `Bands.RedThreshold = 75` | `[Obsolete]` 표시만 됨 | 참조가 없어지면 제거 |
+| `ClauseZeroType`, `EventBus.DayStarted(int, ClauseZeroType)` | 존재 | §0 조항 폐기 → 시그니처 재설계 |
+| `IDocumentView.Render(..., ClauseZeroType, ...)` | 존재 | 위와 함께 정리 |
+| `DaySummary.ImprintAxis`, `Conflicts*` | 호환용(null/0) | 진선님 `ResultController`가 아직 `ImprintAxis`를 씀 → 연결 작업 때 함께 제거 |
+| `AxisCritical(FearAxis)` | 축만 전달 | 원인은 `NightRun.Cause`로 조회. 1회 발화·이후 델타 중단은 `FearAxisSystem.LockAll`이 보장 |
 
-- `DayStarted`·`IDocumentView`는 클라이언트 코드가 구독·구현하는 시그니처입니다. 바꿀 때는 진선님 쪽 작업과 함께 맞춥니다.
+- Band4 = 90~99, 100 = 종료 잠금, 전 공간 Band4 등 0개는 **코드·`BandTableSO`에 이미 반영**됐습니다.
+- `DayStarted`·`IDocumentView`는 클라이언트가 구독·구현하는 시그니처입니다. 바꿀 때는 진선님 쪽 작업과 함께 맞춥니다.
 
 ---
 
@@ -294,14 +330,18 @@ namespace NightDuty {
 
 ## 6. 폴더 구조
 
-- `Assets/_Game/` — **팀의 실제 게임 콘텐츠.** Scenes/, Scripts/, Prefabs/, Materials/, Art/, Audio/, ScriptableObjects/. 전부 git으로 추적합니다. 벤더 프리팹을 고칠 때는 원본을 수정하지 말고 `Assets/_Game/Prefabs/`에 **Prefab Variant**를 만듭니다.
-- `Assets/3.1. Programmer_lee/`, `Assets/3.2 Programmer_Kim/`, `Assets/0. Main/` — 개인 작업 폴더. **일회성 실험과 단일 시스템 테스트 씬 전용**입니다(예: `_Test_AxisRig.unity`). 공유 코드와 출시 콘텐츠는 처음부터 `_Game`에 둡니다. 나중에 옮기면 SO·프리팹의 스크립트 참조가 모두 깨집니다.
+- `Assets/_Game/` — **팀의 실제 게임 콘텐츠.** Scripts/, Tests/, ScriptableObjects/, Resources/, Scenes/, Prefabs/, Materials/, Art/, Audio/. 전부 git으로 추적합니다. 벤더 프리팹을 고칠 때는 원본을 수정하지 말고 `Assets/_Game/Prefabs/`에 **Prefab Variant**를 만듭니다.
+- `Assets/3.1. Programmer_lee/` — Lee 개인 폴더. `01 Scene/_Test_AxisRig.unity`(축·판정 시험 씬), `02 Scripts/`(시험 리그·판정 디버그 패널).
+- `Assets/3.2 Programmer_Kim/` — 진선님 개인 폴더. SceneFlow·SceneFlowConfig·GameTime·GameSession·DayResult·DayIntro·ResultController·AxisBarView·DutyLogView·ViolationLogView·HUDActions·PlayResultRouter·`PlaySystems.prefab`.
+- `Assets/0. Main/` — 개인 작업 폴더.
+- 개인 폴더는 원칙적으로 **일회성 실험과 단일 시스템 테스트 씬 전용**입니다. 공유 코드와 출시 콘텐츠는 처음부터 `_Game`에 둡니다. 나중에 옮기면 SO·프리팹의 스크립트 참조가 모두 깨집니다(진선님 GameFlow 이전 여부는 Q8).
   - 폴더명 표기가 불일치합니다(`3.1.` 뒤에는 점이 있고 `3.2` 뒤에는 없습니다). **경로를 하드코딩하지 마십시오.**
   - `3.2 Programmer_Kim`은 진선님 폴더이며 브랜치명(`Programmer_Jinsun`)과 다릅니다.
 - `Assets/1. Design/`, `Assets/2. Art/` — 기획·아트 팀 작업 폴더.
 - `Assets/NOT_Lonely/` — 서드파티 패키지(`HQ_AbandonedSchool`, `Object Placement Tool`, `SimpleFPController`). **gitignore 대상**이며 팀원마다 **같은 버전**을 로컬에 설치합니다.
 - `Assets/Scenes/`, `Assets/Settings/` — URP 템플릿 기본 씬과 렌더 설정.
-- `.gitkeep`은 의도적으로 비워 둔 폴더 표시입니다. 실제 파일이 생긴 폴더의 `.gitkeep`은 지웁니다(현재 `Core/`, `Data/`, `Editor/`, `Presentation/`, `Stats/`에 남아 있음).
+- `.gitkeep`은 의도적으로 비워 둔 폴더 표시입니다. 실제 파일이 생긴 폴더의 `.gitkeep`은 지웁니다.
+- `../Docs/` — `형상관리_매뉴얼.md`, `Claude outputs/`(정본 HTML·인수인계서·게임플로우 가이드).
 
 ---
 
@@ -311,7 +351,7 @@ namespace NightDuty {
 - **벤더 데모씬의 조명은 전부 Area Light(베이크 전용)** 이라 실시간으로 켜고 꺼도 화면에 반영되지 않습니다.
 - URP Forward+이므로 오브젝트당 라이트 수 제한은 없습니다. 다만 Additional Light Shadow 아틀라스가 2048이라 **등 8개가 모두 그림자를 던지면 부족**합니다. 대부분 `Shadows: None`으로 둡니다.
 - 새 씬은 `Assets/_Game/Scenes/`에 새로 만듭니다(공간 4개 + 경비실).
-- **벤더 데모씬 사본(약 19MB)은 부품 창고로만 씁니다.** 그 안에서 작업하거나 커밋하지 마십시오. 로드가 느리고 `Ran out of Graphics Ring Buffer space`를 일으킬 수 있으며, 병합 충돌은 사실상 해결할 수 없습니다.
+- **벤더 데모씬 사본(`DemoScene_LeeTest.unity`, 약 19MB)은 부품 창고로만 씁니다.** 그 안에서 작업하거나 커밋하지 마십시오. 로드가 느리고 `Ran out of Graphics Ring Buffer space`를 일으킬 수 있으며, 병합 충돌은 사실상 해결할 수 없습니다.
 
 ---
 
@@ -333,14 +373,15 @@ namespace NightDuty {
 
 자세한 내용은 `../Docs/형상관리_매뉴얼.md`를 따릅니다.
 
-- **씬·프리팹 수정 전에 잠금을 확인합니다.** `.unity`와 `.prefab`은 LFS 잠금 대상입니다(Force Text YAML로 저장되며 LFS 저장이 아니라 잠금만 추적).
-  `git lfs locks` → `git lfs lock "Assets/경로/파일.unity"` → 커밋·푸시 → `git lfs unlock "Assets/경로/파일.unity"`.
-- **`Assets/NOT_Lonely/`는 gitignore입니다.** `git add`하지 마십시오. Git 클라이언트의 **"Discard All"이 이 미추적 폴더를 통째로 삭제할 수 있습니다.**
+- **git은 사용자가 직접 합니다. Claude는 git 명령(status·log·커밋·병합·stash·lfs lock 등)을 실행하지 않습니다.** git 상태가 필요하면 사용자에게 묻고, 커밋 메시지는 요청받았을 때 작성만 합니다.
+- **씬·프리팹 수정 전에 잠금 확인을 사용자에게 요청합니다.** `.unity`와 `.prefab`은 LFS 잠금 대상입니다(Force Text YAML로 저장되며 LFS 저장이 아니라 잠금만 추적).
+  절차: `git lfs locks` → `git lfs lock "Assets/경로/파일.unity"` → 커밋·푸시 → `git lfs unlock "Assets/경로/파일.unity"`.
+- **`Assets/NOT_Lonely/`는 gitignore입니다.** Git 클라이언트의 **"Discard All"이 이 미추적 폴더를 통째로 삭제할 수 있습니다.**
 - 텍스처·모델·오디오·영상·폰트·압축 파일·네이티브 플러그인은 `.gitattributes`에 따라 LFS로 추적합니다. LFS를 우회해 대용량 바이너리를 커밋하지 마십시오. `.gitattributes`를 개인적으로 수정하지 마십시오.
-- `Library/`, `Temp/`, `obj/`, `Build/`, `Logs/`, `UserSettings/`를 강제로 add하지 마십시오.
-- **커밋 전 `git status`를 확인하십시오.** 데스크톱 앱 세션에서 프로젝트 루트에 `Claude outputs/` 폴더가 생길 수 있습니다. 프로젝트의 일부가 아니므로 `git reset "Claude outputs"`로 제외합니다.
+- `Library/`, `Temp/`, `obj/`, `Build/`, `Logs/`, `UserSettings/`는 커밋 대상이 아닙니다.
+- 데스크톱 앱 세션에서 프로젝트 루트에 `Claude outputs/` 폴더가 생길 수 있습니다. 프로젝트의 일부가 아니므로 커밋에서 제외하도록 사용자에게 알립니다.
 - 커밋 프리픽스: `feat:` · `fix:` · `art:` · `chore:` · `docs:`
-- 사용자는 커밋 메시지 작성을 자주 요청합니다. **Summary(50자 내외) + Description** 형식으로, 파일 목록보다 **왜 이렇게 했는지**와 **나중에 실수하기 쉬운 점**을 적습니다.
+- 커밋 메시지는 **Summary(50자 내외) + Description** 형식으로, 파일 목록보다 **왜 이렇게 했는지**와 **나중에 실수하기 쉬운 점**을 적습니다.
 
 ---
 
@@ -348,33 +389,61 @@ namespace NightDuty {
 
 | 사람 | 역할 | 브랜치 | 개인 폴더 |
 |---|---|---|---|
-| 이성현 (민트) | **시스템** — 판정 · 수치 · 편성(덱·조우·문자) · 규칙 데이터 스키마. 주로 `.cs`·`.asset` 작업이라 씬 잠금이 드뭅니다. | `Programmer_Lee` | `Assets/3.1. Programmer_lee/` |
-| 진선 | **클라이언트** — 플레이어 · 태블릿 UI · HUD · 공간 연출 · 씬 · 오디오. 씬 잠금을 가장 자주 잡습니다. 아트팀과 잠금 시간을 조율하고 당일 해제합니다. | `Programmer_Jinsun` | `Assets/3.2 Programmer_Kim/` |
+| 이성현 (Lee) | **시스템** — 판정 · 수치 · 편성(덱·조우·문자) · 규칙 데이터 스키마. 주로 `.cs`·`.asset` 작업이라 씬 잠금이 드뭅니다. | `Programmer_Lee` | `Assets/3.1. Programmer_lee/` |
+| 김진선 (Kim) | **클라이언트** — 게임 흐름 · 태블릿 UI · HUD · 결과창 · 공간 연출 · 씬 · 오디오. 씬 잠금을 가장 자주 잡습니다. 아트팀과 잠금 시간을 조율하고 당일 해제합니다. | `Programmer_Jinsun` | `Assets/3.2 Programmer_Kim/` |
 
 - 원격에는 `main`, `Programmer_Lee`, `Programmer_Jinsun`, `hyunuung`, `Art` 브랜치가 있습니다. 개인 브랜치에서 작업한 뒤 `main`에 병합합니다.
+- **플레이어 센서(응시·근접·구역·공간·문·손전등·Tab) 담당은 아직 정해지지 않았습니다.**
 - 공간 레이아웃이나 대상 서수(「세 번째 칸」 등)를 바꾸면 수칙의 의미가 바뀝니다. 시스템 담당에게 알리십시오.
 
 ---
 
 ## 11. 작업 방식
 
+### 11.1 세션 시작 절차
+
+1. `../Docs/Claude outputs/HANDOFF_야간근무_인수인계.md` 통독 → 이 파일 확인.
+2. Unity 연결 확인: `editor_status`(ready) → `console_status`(에러 0) → EditMode 테스트(264개 통과 기준).
+3. git 상태는 **사용자에게 묻습니다.**
+4. 다음 작업(§12.1)은 사용자 확인 후 착수합니다.
+
+### 11.2 원칙
+
 - 작업을 맡기면 **끝까지 해 주기를 기대**합니다. 단, 파괴적이거나 되돌릴 수 없는 작업은 먼저 확인합니다.
-- 설계 산출물은 `../Docs/Claude outputs/`에 markdown으로 둡니다. 다이어그램은 아티팩트로도 발행합니다.
+- 설계 산출물은 `../Docs/Claude outputs/`에 markdown으로 둡니다. 다이어그램은 아티팩트로도 발행합니다(현행 아키텍처 페이지: https://claude.ai/artifact/5qgPXsVt7thj32VdMHFgPu, v3 — 패널 개편 미반영).
+- 작업이 끝나면 인수인계서의 진행 상황·다음 작업을 갱신하고, 이 파일과 어긋난 부분이 생기면 함께 고칩니다.
 - 병렬 에이전트를 쓸 때는 **공유 타입 시그니처를 모든 프롬프트에 똑같이 넣고** 「자기 것만 정의하고 나머지는 이름으로만 참조하라」고 지시합니다. 컴퓨터 조작 도구와 에디터·디바이스 반영은 **메인 세션 한 곳에서만** 합니다.
 - 경로는 세션마다 다를 수 있습니다. 절대경로를 하드코딩하지 말고 연결된 폴더를 먼저 확인하십시오.
+- **기기 파일 전송(원격 세션):** 기기 셸이 없으면 스테이징/커밋으로 옮깁니다. 기기로 올릴 때는 매번 **새 `/mnt/user-data/outputs/<새 폴더>`** 에 준비합니다(같은 경로를 재사용하면 옛 내용이 올라감). `expectedMtimeMs`를 쓰고, 올린 뒤 크기를 확인합니다.
+- **IMGUI(디버그 패널):** 버튼 동작은 `Later(...)` 큐에 넣어 Update에서 실행, `GUI.matrix`는 finally에서 복구, 지원 안 되는 기호(✔✖⚠■) 금지, F1/F2 입력은 `#if ENABLE_LEGACY_INPUT_MANAGER`.
 
 ---
 
-## 12. 미해결 — 사용자 확인 필요
+## 12. 다음 작업과 미해결
 
-| # | 항목 | 비고 |
+### 12.1 다음 작업 (우선순위)
+
+1. **NightRun ↔ 진선님 게임 흐름 연결** (§4.4). 결과창을 실제 `DaySummary`로 바꾸고 `FakeDayData`·`ImprintAxis` 경로 제거, 위반 시각은 `ViolationMinutes`(시각만, 카드 ID 표시 금지). 「충돌 처리」 표시 숨김, 로딩 팁의 §0 문구 정리, 일차가 바뀌어도 축 유지.
+2. 플레이어 센서 담당 확정 → 실제 씬에 `JudgeTarget` 배치(LFS 잠금 확인) → `씬 대상 검사`.
+3. `SpaceAnomalyTable`을 읽는 실제 공간 연출(`ISpacePresenter`).
+4. `DayDirector`(S1 1일차 고정, T1·T3 같은 날 금지, S2 활성 중 S-B 금지) · `EncounterDirector` · `MessageDirector`/`ParadoxResolver`(P1~P4).
+5. 면제 API(`RuleBook.Waive` — C6 동선 봉쇄, S4 대상 소실) · `RequestEndNight` 수락 조건(필수 점검 + 오늘 조우 완료).
+6. (선택) 아키텍처 페이지 갱신.
+
+### 12.2 결정 대기 — 사용자 확인 필요
+
+| # | 항목 | 누구 |
 |---|---|---|
-| 1 | **근무 일수** | 정본에 고정 일수가 없습니다. 조우 8개를 하루 하나씩 소비하는 구조와 「남은 근무일 수」 언급만 있습니다. |
-| 2 | 일정 재작성 | `4주_압축_스케줄.md`는 3공간 기준이라 무효입니다. 4공간·24수칙 기준으로 다시 짜야 합니다. |
-| 3 | 응시 판정 여유 | 정본은 「중앙 레이의 첫 가시 충돌체, 끊기면 0」입니다. 인수인계서는 H2·C3의 「짧게 본 행동 비판정」을 위해 약 12° 판정 원뿔을 권합니다. 가림 검사와 0 초기화는 공통이며, 원뿔 폭은 확인 후 확정합니다. |
-| 4 | 진선님 폴더명 ↔ 브랜치 불일치 | `3.2 Programmer_Kim` ↔ `Programmer_Jinsun`. 정한 뒤 이 파일에 반영합니다. |
-| 5 | git 커밋 상태 | 이전 세션이 디바이스 연결이 끊긴 채 종료됐습니다. `git log --oneline -10`·`git status`로 먼저 확인합니다. |
-| 6 | 보완안 수치 | 0.2초 식별, 미도달 +6, 1.5m 반경, 중립 구역 폭 등은 **시험값**입니다. 플레이테스트로 확정합니다. |
-| 7 | 포획 엔딩 연출 | 종료 신호까지만 계약되어 있습니다. 신뢰 100의 포획 연출 연결도 별도 확인 항목입니다. |
-| 8 | 씬 대상 연결 | 24장의 `eligibleBand`·`triggerId`·`targetIds` 매핑은 기획팀 확인이 필요합니다. |
-| 9 | 구현 전 자산 확인 | 선/앉은 전신 모형 프리팹, 문 E 스크립트, 등 그룹 수, 닫힌 칸 아래 빛 자산, Tab 일시정지 기능. |
+| Q1 | **근무 일수**(조우 8장면 연동). 현재 코드는 `GameSession.FinalDay = 5` | 기획 |
+| Q2 | 근무 종료 방식(시계 자동 / 종료 요청). 현재 게임 시계 0:00→1:00, ×20 배속 | 기획 |
+| Q3 | 결과창에 역설 문자 결과 표시 여부 | 기획 |
+| Q4 | 포획 엔딩 연출(신뢰 100 포함). 종료 신호까지만 계약됨 | 기획 |
+| Q5 | 응시 여유 각도. 정본은 「중앙 레이 첫 가시 충돌체, 끊기면 0」, 인수인계서는 H2·C3을 위해 약 12° 원뿔 권고 | 기획·진선 |
+| Q6 | Tab이 `timeScale = 0`인가 | 진선 |
+| Q8 | GameFlow 코드를 `_Game`으로 옮길지 | 진선 |
+| Q9 | H3가 통행 구역 진입 시 방문 몫을 차지하는 것이 의도인가 | 기획 |
+| 카드 | C1 장기 유지 / C2·T6 「또는」 자격을 단서 존재로 대신 / C6 1-1 문 ID(H1 자동 문과 같은가)·봉쇄 면제 / T6 준수는 시작 뒤 점검만 인정 / S3·S4·T5 「점검 없이 퇴실 = 대기」 해석 / C5 보류가 1-1에 걸림 | 기획 |
+| 팀 | `com.unity.pipeline` 커밋 여부(현재 stash 복구본, 미커밋) | Lee·진선 |
+| 기타 | 진선님 폴더명 ↔ 브랜치명 불일치 정리 / 일정 재작성(4공간·24수칙 기준) | 팀 |
+| 수치 | 0.2초 식별, 미도달 +6, 1.5m 반경, 중립 구역 폭 등은 **시험값** — 플레이테스트로 확정 | 팀 |
+| 자산 | 선/앉은 전신 모형 프리팹, 문 E 스크립트, 등 그룹 수, 닫힌 칸 아래 빛 자산, Tab 일시정지 기능 | 진선·아트 |

@@ -64,6 +64,8 @@ namespace NightDuty
 
         private static readonly int[] NoMinutes = new int[0];
         private static readonly RuleResult[] NoResults = new RuleResult[0];
+        private static readonly DutyLogEntry[] NoLog = new DutyLogEntry[0];
+        private readonly IReadOnlyList<DutyLogEntry> _dutyLog;
 
         private readonly IReadOnlyList<int> _violationMinutes;
         private readonly IReadOnlyList<RuleResult> _results;
@@ -85,6 +87,14 @@ namespace NightDuty
         public IReadOnlyList<RuleResult> Results
         {
             get { return _results ?? NoResults; }
+        }
+
+        /// <summary>
+        /// 근무 일지 줄(그날 덱 순서). 결과창의 「금일 근무 지침」 재료다. 기존 생성자로 만들면 비어 있다.
+        /// </summary>
+        public IReadOnlyList<DutyLogEntry> DutyLog
+        {
+            get { return _dutyLog ?? NoLog; }
         }
 
         /// <summary>하루치 정산 결과를 구성한다.</summary>
@@ -116,6 +126,7 @@ namespace NightDuty
             Cause = default;
             _violationMinutes = null;
             _results = null;
+            _dutyLog = null;
         }
 
         /// <summary>
@@ -133,6 +144,26 @@ namespace NightDuty
             TerminationCause cause,
             IReadOnlyList<int> violationMinutes,
             IReadOnlyList<RuleResult> results)
+            : this(day, patrolDone, patrolTotal, auditory, illuminance, layout, trust, outcome, cause, violationMinutes, results, null)
+        {
+        }
+
+        /// <summary>
+        /// 하룻밤 결과에 근무 일지 줄까지 담는다. <see cref="NightRun.BuildSummary"/>가 쓴다.
+        /// </summary>
+        public DaySummary(
+            int day,
+            int patrolDone,
+            int patrolTotal,
+            int auditory,
+            int illuminance,
+            int layout,
+            int trust,
+            NightOutcome outcome,
+            TerminationCause cause,
+            IReadOnlyList<int> violationMinutes,
+            IReadOnlyList<RuleResult> results,
+            IReadOnlyList<DutyLogEntry> dutyLog)
         {
             Day = day;
             PatrolDone = patrolDone;
@@ -149,6 +180,7 @@ namespace NightDuty
             Cause = cause;
             _violationMinutes = violationMinutes;
             _results = results;
+            _dutyLog = dutyLog;
         }
 
         /// <summary>게임 시각(분)을 「0:41」 형식으로 바꾼다. 24시 이후는 0시부터 다시 센다.</summary>

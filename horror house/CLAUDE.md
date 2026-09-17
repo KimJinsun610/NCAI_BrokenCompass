@@ -187,7 +187,7 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 ### 3.3 검증
 
 1. 코드 수정 후 `Assets/Refresh` → 25~30초 뒤 `recompile_status` → `console_status`로 **컴파일 에러 0**을 확인합니다.
-2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 264/264 통과**(2026-09-17). 결과가 크면 파일로 저장되므로 요약만 grep합니다. 정본 6절의 교차 검증 16종과 각 카드의 「검증 절차·기대 결과」가 테스트 케이스의 원천이며, `CardScenarioTests`(49개)가 실제 카드 에셋으로 지키기/어기기 결과를 확인합니다.
+2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 278/278 통과**(2026-09-17, 게임 흐름 연결 후). 결과가 크면 파일로 저장되므로 요약만 grep합니다. 정본 6절의 교차 검증 16종과 각 카드의 「검증 절차·기대 결과」가 테스트 케이스의 원천이며, `CardScenarioTests`(49개)가 실제 카드 에셋으로 지키기/어기기 결과를 확인합니다.
 3. 플레이 모드 확인은 `Assets/3.1. Programmer_lee/01 Scene/_Test_AxisRig.unity`에서 합니다. 플레이하면 **판정 디버그 패널**(`NightRunDebugPanel`, F2 숨김)이 자동 생성됩니다.
    - ① 카드 시험: 공간 H/C/S/T → 카드별 [지키기 ▶]/[어기기 ▶]. 새 회차 + 그 카드만 넣은 밤을 만들어 결과를 보여 줍니다.
    - ② 직접 조작: 일차·밤 시작/종료, 축 +/포획, 시간, 응시, 공간, 손전등/Tab/점검, 임의 신호, 카드 목록, 로그.
@@ -217,7 +217,7 @@ Assets/_Game/
 │   └── Editor/        NightDuty.Editor.asmdef  references: [NightDuty.Core], Editor 전용
 │                      CorridorCardBuilder · RoomCardBuilder · SpaceAnomalyTableBuilder · BandTableAssetCreator
 │                      RuleCardValidator · SceneTargetValidator · SubclassSelectorDrawer · TestLightRigSetup · TestSceneBuilder
-├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 264개 (CardScenarioTests 49개 포함)
+├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 278개 (CardScenarioTests 49개 포함)
 ├── ScriptableObjects/  Rules/{Corridor,Classroom,Science,Toilet}/ 카드 24장 · SpaceAnomalyTable · BandTable
 └── Resources/NightDeckTable.asset    임시 편성: 1일 복도 · 2일 교실 · 3일 과학실 · 4일 화장실
 ```
@@ -242,6 +242,7 @@ NightRun.RequestEndNight ─▶ EndNight(진행 카드에 NightEndAccepted → �
 ```
 
 - 새 파일의 자리는 「고르는 것인가(Direction) / 판단하는 것인가(Rules) / 숫자를 올리는 것인가(Stats) / 그리는 것인가(Presentation·클라이언트)」로 정합니다. 연출 시퀀스만 **Unity Timeline + Signal**을 씁니다.
+- 연결 구동기: `Assets/_Game/Flow/NightRunDriver` · `NightDutyResultMapper` (Assembly-CSharp, §4.4).
 - 아직 없는 것: `DayDirector`(편성 규칙), `EncounterDirector`(조우 8장면), `MessageDirector`/`ParadoxResolver`(P1~P4), `SpaceAnomalyTable`을 읽는 실제 `ISpacePresenter`, 면제 API(`RuleBook.Waive`), `RequestEndNight` 수락 조건.
 
 ### 4.3 핵심 API
@@ -283,14 +284,32 @@ namespace NightDuty {
 - **`DaySummary`:** 기존 11인자 생성자 유지 + `Outcome`, `Cause`, `ViolationMinutes`, `Results`, `FormatMinutes`.
 - `DebugAxisDriver`는 실제 `FearAxisSystem`과 **똑같이 `IFearAxisReader`를 구현**하는 가짜 공급원입니다. 클라이언트 작업이 판정 시스템을 기다리지 않게 해 줍니다. **계속 동작하게 유지하십시오.** 플레이어 빌드에는 포함되지 않아야 합니다(`#if UNITY_EDITOR || NIGHTDUTY_DEBUG`).
 
-### 4.4 시스템 ↔ 클라이언트 연결 약속 (합의 대기, 상세는 인수인계서 §5)
+### 4.4 시스템 ↔ 게임 흐름 연결 (2026-09-17 구현, 담당 Lee)
+
+```
+GameSession.StartNewRun() ──▶ NightRun.StartNewRun()
+Play 씬 로드 ─ GameTime이 있으면 NightRunDriver 자동 생성 (Assets/_Game/Flow/, Assembly-CSharp)
+   Start ─▶ BeginNight(GameSession.CurrentDay, gameTime.CurrentMinutes)
+   Update ─▶ 시계가 흐를 때만 Tick(Time.deltaTime)  ← 판정 시간은 실제 초. 배속 곱하지 않음
+   GameTime.ShiftEnded ─▶ RequestEndNight() ─▶ DayEnded ─▶ PlayResultRouter ─▶ NightDutyResultMapper ─▶ Result 씬
+   포획 ─▶ AxisCritical(구독자 호출 뒤 NightRun이 밤을 스스로 닫음) ─▶ 진선님 사망 화면(HUD_Death)
+   OnDestroy(밤이 열린 채) ─▶ NightRun.AbandonNight()
+```
+
+- **구동기는 씬·프리팹에 놓지 않아도 됩니다**(자동 생성). 직접 놓으면 자동 생성은 건너뜁니다. 씬 전환 때 옛 구동기가 새 밤을 버리지 않도록 소유자 검사를 합니다.
+- 결과창 근무 일지는 `DaySummary.DutyLog`(`DutyLogEntry`: 덱 순서 번호·본문·빨간 줄)에서 옵니다. 빨간 줄 = 위반 **또는** 그날 들어가지 않은 공간(`NightRun.WasVisitedToday`, Tab 중 진입은 제외). 카드 ID는 넘기지 않습니다.
+- 위반 시각은 `GameTime.FormatTime`으로 결과창과 같은 표기(12시간제)로 바꿉니다.
+- 라우터의 `ShiftEnded` 가짜 결과는 **밤이 없을 때(구동기 없는 시험)만** 씁니다. 디버그 메뉴 「Force Death」는 `NightRun.DebugForceCapture`를 거칩니다.
+- 남은 TODO: 태블릿 Tab 신호(`JudgeSignal.Tab`)와 시계 정지(Q6), 종료 요청 거절 처리(Q2), 플레이어 센서(응시·근접·공간·문·손전등), `ResultController`의 「충돌 처리」 표시·`ImprintAxis` 정리(Q3).
+
+### 4.4.1 신호 규칙 (상세는 인수인계서 §5)
 
 - **호출 흐름:** 메인 시작 → `StartNewRun()` / Play 시작 → `BeginNight(GameSession.CurrentDay, () => 현재 게임 분)` / 매 프레임(Tab·일시정지 아닐 때) → `Tick(Time.deltaTime)` / `GameTime.ShiftEnded` → `RequestEndNight()` → `DayEnded(DaySummary)` → 결과 저장 → Result 씬 / `AxisCritical` → `BuildSummary()`로 사망 결과.
 - **신호 규칙:** 응시·근접 샘플은 **0.1초 고정 간격**, 응시는 대상이 없어도 빈 ID로 보냄. 판정 시간은 `Tick`으로만(`JudgeSignal.Tick`을 Send하지 않음). Tab 중에는 `JudgeSignal.Tab(bool)`만. 출처는 `ActionSource.Player`/`Direction`. `NightBegan`·`NightEndAccepted`는 NightRun이 만들므로 보내지 않음.
 - **같은 순간 순서:** `Tick` → `PassageCompleted` → `ZoneExited` → `InspectionCompleted` → `SpaceExited`.
 - **대상 ID**는 소문자·숫자·점이며 카드 데이터와 글자까지 같아야 합니다(예: `corridor.door.13`, `cls11.chalk3`, `toilet.stall.inner`, `scene.sb.p1`). 목록은 인수인계서 §5.4.
 - 카드별 「보내기 전 조건」(코어가 모르는 씬 조건)은 인수인계서 §5.3에 있습니다. 클라이언트가 확인하고 보냅니다.
-- **진선님 코드는 아직 NightRun을 호출하지 않습니다.** `PlayResultRouter`가 `FakeDayData`를 씁니다.
+- 플레이어 센서가 아직 없어 실제 플레이에서는 모든 카드가 미판정으로 끝납니다. 통합 확인은 디버그 신호로 합니다.
 
 ### 4.5 코드에 남은 폐기 흔적 — 새 코드에서 쓰지 마십시오
 
@@ -402,8 +421,8 @@ namespace NightDuty {
 
 | 사람 | 역할 | 브랜치 | 개인 폴더 |
 |---|---|---|---|
-| 이성현 (Lee) | **시스템** — 판정 · 수치 · 편성(덱·조우·문자) · 규칙 데이터 스키마. 주로 `.cs`·`.asset` 작업이라 씬 잠금이 드뭅니다. | `Programmer_Lee` | `Assets/3.1. Programmer_lee/` |
-| 김진선 (Kim) | **클라이언트** — 게임 흐름 · 태블릿 UI · HUD · 결과창 · 공간 연출 · 씬 · 오디오. 씬 잠금을 가장 자주 잡습니다. 아트팀과 잠금 시간을 조율하고 당일 해제합니다. | `Programmer_Jinsun` | `Assets/3.2 Programmer_Kim/` |
+| 이성현 (Lee) | **시스템** — 판정 · 수치 · 편성(덱·조우·문자) · 규칙 데이터 스키마 · **시스템 통합(게임 흐름 연결)**. 주로 `.cs`·`.asset` 작업이라 씬 잠금이 드뭅니다. | `Programmer_Lee` | `Assets/3.1. Programmer_lee/` |
+| 김진선 (Kim) | **클라이언트** — **공동 작업용 통일 씬**, 태블릿 UI · HUD · 결과창 · 공간 연출 · 오디오. 씬 잠금을 가장 자주 잡습니다. 아트팀과 잠금 시간을 조율하고 당일 해제합니다. | `Programmer_Jinsun` | `Assets/3.2 Programmer_Kim/` |
 
 - 원격에는 `main`, `Programmer_Lee`, `Programmer_Jinsun`, `hyunuung`, `Art` 브랜치가 있습니다. 개인 브랜치에서 작업한 뒤 `main`에 병합합니다.
 - **플레이어 센서(응시·근접·구역·공간·문·손전등·Tab) 담당은 아직 정해지지 않았습니다.**
@@ -416,7 +435,7 @@ namespace NightDuty {
 ### 11.1 세션 시작 절차
 
 1. `../Docs/Claude outputs/HANDOFF_야간근무_인수인계.md` 통독 → 이 파일 확인.
-2. Unity 연결 확인: `editor_status`(ready) → `console_status`(에러 0) → EditMode 테스트(264개 통과 기준).
+2. Unity 연결 확인: `editor_status`(ready) → `console_status`(에러 0) → EditMode 테스트(278개 통과 기준).
 3. git 상태는 **사용자에게 묻습니다.**
 4. 다음 작업(§12.1)은 사용자 확인 후 착수합니다.
 
@@ -436,7 +455,7 @@ namespace NightDuty {
 
 ### 12.1 다음 작업 (우선순위)
 
-1. **NightRun ↔ 진선님 게임 흐름 연결** (§4.4). 결과창을 실제 `DaySummary`로 바꾸고 `FakeDayData`·`ImprintAxis` 경로 제거, 위반 시각은 `ViolationMinutes`(시각만, 카드 ID 표시 금지). 「충돌 처리」 표시 숨김, 로딩 팁의 §0 문구 정리, 일차가 바뀌어도 축 유지.
+1. ~~NightRun ↔ 진선님 게임 흐름 연결~~ **완료(2026-09-17, §4.4)**. 남은 것: 결과창 「충돌 처리」 숨김·`ImprintAxis` 제거, 로딩 팁 §0 문구 정리, 통일 씬이 들어오면 구동기 동작 재확인.
 2. 플레이어 센서 담당 확정 → 실제 씬에 `JudgeTarget` 배치(LFS 잠금 확인) → `씬 대상 검사`.
 3. `SpaceAnomalyTable`을 읽는 실제 공간 연출(`ISpacePresenter`).
 4. `DayDirector`(S1 1일차 고정, T1·T3 같은 날 금지, S2 활성 중 S-B 금지) · `EncounterDirector` · `MessageDirector`/`ParadoxResolver`(P1~P4).

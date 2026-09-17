@@ -80,7 +80,7 @@ public class FakeDayData
         int a = criticalAxis == FearAxis.Auditory ? 100 : auditory;
         int i = criticalAxis == FearAxis.Illuminance ? 100 : illuminance;
         int l = criticalAxis == FearAxis.Layout ? 100 : layout;
-        int t = criticalAxis == FearAxis.Trust ? 100 : trust;
+        int t = trust; // 신뢰는 포획 원인이 되지 않는다(2026-09-17 결정)
 
         DaySummary summary = new DaySummary(
             day, patrolDone, patrolTotal, times.Length, conflictsHandled, conflictsTotal,

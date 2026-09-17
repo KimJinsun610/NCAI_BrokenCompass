@@ -19,6 +19,7 @@ public static class GameSession
     public static void StartNewRun()
     {
         CurrentDay = 1;
+        NightDuty.NightRun.StartNewRun(); // 판정 코어의 회차(4축)도 함께 새로 시작
         ClearResult();
     }
 

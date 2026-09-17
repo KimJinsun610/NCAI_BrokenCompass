@@ -25,7 +25,8 @@ public static class GameFlowDebugMenu
     [MenuItem(MenuRoot + "Force Death (Auditory)")]
     private static void ForceDeath()
     {
-        EventBus.RaiseAxisCritical(FearAxis.Auditory);
+        // 판정 코어를 거쳐 포획한다 — 축 잠금·밤 닫기·AxisCritical이 실제와 같은 순서로 일어난다.
+        NightRun.DebugForceCapture(FearAxis.Auditory);
     }
 
     [MenuItem(MenuRoot + "Result Next Button")]

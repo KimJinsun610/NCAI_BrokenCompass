@@ -329,5 +329,24 @@ namespace NightDuty.Tests
                 NightRun.StartNewRun();
             }
         }
+
+        [Test]
+        public void 정산순서_배치88에서_밤종료위반이100이면_뒤카드는정산하지않는다()
+        {
+            _kit.Axes.Apply(FearAxis.Layout, 88, "setup", SpaceId.None);
+            RuleSO first = NightLong(new SignalCondition(SignalKind.NightEndAccepted), new DoorObligationCondition(string.Empty));
+            RuleSO second = NightLong(new SignalCondition(SignalKind.NightEndAccepted), new DoorObligationCondition(string.Empty));
+            RuleBook book = _kit.Book(first, second);
+            book.BeginNight();
+
+            book.Dispatch(JudgeSignal.DoorCommand("corridor.door.11", false, ActionSource.Player));
+            book.EndNight();
+
+            Assert.AreEqual(100, _kit.Axes.GetValue(FearAxis.Layout));
+            Assert.IsTrue(_kit.Axes.IsLocked);
+            Assert.AreEqual(1, book.Results.Count);
+            Assert.AreEqual(CardState.Violated, book.Watchers[0].State);
+            Assert.AreEqual(CardState.Locked, book.Watchers[1].State);
+        }
     }
 }

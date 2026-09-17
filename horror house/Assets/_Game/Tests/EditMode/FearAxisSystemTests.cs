@@ -13,7 +13,7 @@ namespace NightDuty.Tests
             EventBus.ClearAll();
         }
 
-        [TestCase(99, 2, FearAxis.Trust)]
+        [TestCase(99, 2, FearAxis.Auditory)]
         [TestCase(88, 12, FearAxis.Illuminance)]
         [TestCase(90, 25, FearAxis.Layout)]
         public void 백도달_값은100_종료신호는한번(int start, int delta, FearAxis axis)
@@ -31,6 +31,65 @@ namespace NightDuty.Tests
             Assert.AreEqual(axis, axes.Cause.Axis);
             Assert.AreEqual("X1", axes.Cause.SourceId);
             Assert.AreEqual(SpaceId.Corridor, axes.Cause.Space);
+        }
+
+        [Test]
+        public void 신뢰100은_포획이아니다_값만100에서멈춘다()
+        {
+            FearAxisSystem axes = new FearAxisSystem();
+            int critical = 0;
+            int terminated = 0;
+            EventBus.AxisCritical += a => critical++;
+            axes.Terminated += c => terminated++;
+
+            axes.Apply(FearAxis.Trust, 99, "setup", SpaceId.None);
+            Assert.IsTrue(axes.Apply(FearAxis.Trust, 2, "H1", SpaceId.Corridor));
+            Assert.IsFalse(axes.Apply(FearAxis.Trust, 4, "H6", SpaceId.Corridor), "100 이후 신뢰는 더 오르지 않는다");
+
+            Assert.AreEqual(100, axes.GetValue(FearAxis.Trust));
+            Assert.IsFalse(axes.IsLocked);
+            Assert.AreEqual(0, critical);
+            Assert.AreEqual(0, terminated);
+            Assert.AreEqual(Band.Band4, axes.GetBand(FearAxis.Trust));
+        }
+
+        [Test]
+        public void 신뢰100뒤에도_감각축델타와_포획은_정상동작한다()
+        {
+            FearAxisSystem axes = new FearAxisSystem();
+            int critical = 0;
+            EventBus.AxisCritical += a => critical++;
+
+            axes.Apply(FearAxis.Trust, 100, "setup", SpaceId.None);
+            axes.Apply(FearAxis.Layout, 90, "setup", SpaceId.None);
+            axes.Apply(FearAxis.Layout, 25, "H6", SpaceId.Corridor);
+
+            Assert.AreEqual(100, axes.GetValue(FearAxis.Layout));
+            Assert.IsTrue(axes.IsLocked);
+            Assert.AreEqual(FearAxis.Layout, axes.Cause.Axis);
+            Assert.AreEqual(1, critical);
+        }
+
+        [Test]
+        public void 복원_신뢰100만으로는_잠그지않는다()
+        {
+            FearAxisSystem axes = new FearAxisSystem();
+            axes.Restore(10, 20, 30, 100);
+            Assert.IsFalse(axes.IsLocked);
+            Assert.AreEqual(100, axes.GetValue(FearAxis.Trust));
+
+            axes.Restore(10, 100, 30, 100);
+            Assert.IsTrue(axes.IsLocked);
+            Assert.AreEqual(FearAxis.Illuminance, axes.Cause.Axis);
+        }
+
+        [TestCase(FearAxis.Auditory, true)]
+        [TestCase(FearAxis.Illuminance, true)]
+        [TestCase(FearAxis.Layout, true)]
+        [TestCase(FearAxis.Trust, false)]
+        public void 포획축은_청각조도배치뿐이다(FearAxis axis, bool expected)
+        {
+            Assert.AreEqual(expected, FearAxisSystem.IsTerminal(axis));
         }
 
         [Test]

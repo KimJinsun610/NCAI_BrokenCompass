@@ -8,7 +8,7 @@ namespace NightDuty
         /// <summary>근무 종료 요청이 수락되어 정상적으로 끝났다.</summary>
         Completed = 0,
 
-        /// <summary>어느 축이든 100에 도달해 포획(게임오버)으로 끝났다.</summary>
+        /// <summary>청각·조도·배치 중 하나가 100에 도달해 포획(게임오버)으로 끝났다. 신뢰 100은 포획이 아니다.</summary>
         Captured = 1
     }
 

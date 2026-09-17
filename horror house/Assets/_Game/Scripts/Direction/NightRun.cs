@@ -13,7 +13,7 @@ namespace NightDuty
     /// <para>
     /// 하룻밤 순서: <see cref="BeginNight"/> → (<see cref="Tick"/> · <see cref="Send"/> 반복) → <see cref="RequestEndNight"/>.
     /// 수락되면 <see cref="EventBus.DayEnded"/>로 결과를 보낸다.
-    /// 어느 축이든 100이 되면 <see cref="FearAxisSystem"/>이 <see cref="EventBus.AxisCritical"/>을 한 번 보내고,
+    /// 청각·조도·배치 중 하나가 100이 되면 <see cref="FearAxisSystem"/>이 <see cref="EventBus.AxisCritical"/>을 한 번 보내고(신뢰 100은 포획이 아니다),
     /// 이후 판정·정산은 멈춘다. 이때 결과는 <see cref="BuildSummary"/>로 가져간다(DayEnded는 보내지 않는다).
     /// </para>
     /// <para>
@@ -237,7 +237,7 @@ namespace NightDuty
                 results);
         }
 
-        /// <summary>디버그: 지정 축을 100으로 올려 포획 경로를 시험한다. 에디터·디버그 빌드에서만 쓴다.</summary>
+        /// <summary>디버그: 지정 축을 100으로 올려 포획 경로를 시험한다(신뢰는 100이 돼도 포획되지 않는다). 에디터·디버그 빌드에서만 쓴다.</summary>
         public static void DebugForceCapture(FearAxis axis)
         {
             EnsureRun();

@@ -2,6 +2,7 @@
 
 > **새 세션은 이 문서 하나만 읽고 시작한다.** 이미 내려진 결정·발견된 함정이 담겨 있다. 재논의하지 말고 따르고, 바꿔야 하면 사용자에게 먼저 확인한다.
 > 최종 개정: 2026-09-17 (Lee 세션) — 판정 코어·카드 24장·판정 패널 구현, 진선님 브랜치 병합 반영.
+> **추가 개정 2026-09-17 — 신뢰 축 용도 변경(기획 결정, 정본 HTML 미반영):** 신뢰는 게임오버를 일으키지 않고, 태블릿 문자↔근무수칙 충돌(역설)을 늘리는 데에만 쓴다. 충돌 문자는 기획자가 추가한다. 코드 반영 완료(`FearAxisSystem.IsTerminal`, EditMode 272/272). 이 결정은 정본의 「신뢰 100 게임오버」 문장보다 우선한다.
 > 이 문서가 대체한 것: 이전 인수인계(9/16), 판정코어 연결약속, NightDuty.Core 현황과 사용법, 시스템/클라이언트 개발계획서, 4주 스케줄, 8주 절단 제안서, 절단 확정 v2, 근무수칙 구현난이도 판정서, 진행기록·카드분석.
 > 판정 규칙의 기획 정본: `야간근무_공간별_지침록_개발명세반영본.html`(2026-09-12). 카드 구현 정본: `Editor/CorridorCardBuilder.cs`, `Editor/RoomCardBuilder.cs`.
 > 함께 남긴 문서: `Docs/형상관리_매뉴얼.md`(git·LFS 규칙), `Docs/Claude outputs/게임플로우_작업내역_설정가이드.md`(진선님 게임 흐름 설정법).
@@ -25,7 +26,7 @@
 - **팀:** 이성현(Lee, 판정 시스템) · 김진선(Kim, 게임 흐름·UI).
 - **근무:** 기본 5일(`GameSession.FinalDay`, 기획 미정), 1회 근무는 게임 시계 0:00→1:00(×20 배속).
 - **공간:** 복도 · 교실(1-1, 1-3) · 과학실 · 화장실. 카드 24장(H1~H6, C1~C6, S1~S6, T1~T6).
-- **공포 4축:** 청각 · 조도 · 배치 · 신뢰. 감소 없음, 회차 내내 누적. **100 = 포획(게임 오버)**, AxisCritical 1회.
+- **공포 4축:** 청각 · 조도 · 배치 · 신뢰. 감소 없음, 회차 내내 누적. **청각·조도·배치 100 = 포획(게임 오버)**, AxisCritical 1회. **신뢰는 100에서 멈출 뿐 포획 없음** — 신뢰가 높을수록 태블릿 문자와 수칙의 충돌이 늘어난다.
 - **밴드:** 0–24 / 25–49 / 50–74 / 75–89 / 90–99 → 공간 연출(조명 개수·소리·배치) 변화. 신뢰는 월드에 그리지 않음. Band4 = 전 공간 등 0개 + 붉은 잔광.
 - **판정 규칙 요지**
   - 한 방문에 **새 단기 사건 1개**. 장기 카드는 이 몫을 쓰지 않음.
@@ -52,6 +53,8 @@
 | 「지침록을 열어도 시간이 흐른다」 | **반대.** Tab(태블릿) 중 시간·판정·음원 모두 정지 |
 | 인체모형 = 과학실 전용 | **8개 장면이 4공간 전체에** 분포 |
 | `DaySummary.ImprintAxis` | 불필요 (프로파일링 폐기) |
+| **신뢰 100 = 게임오버** (2026-09-17 폐기) | **신뢰는 포획 조건이 아님.** 역설 문자 확장의 입력으로만 사용 |
+| 신뢰에 따라 태블릿 폰트·디자인 왜곡 (2026-09-17 폐기) | 신뢰 구간에 따라 **태블릿 문자↔근무수칙 충돌이 늘어남** |
 | Band4 = 90~100 | **90~99.** 100은 게임오버 트리거 |
 
 **유효하게 남은 것:** 4축 체계 · 5구간 · 조도 공통 색온도표와 등 개수 ·
@@ -67,10 +70,10 @@
 | 청각 | `Auditory` | 청각 관련 수칙 **위반** | +12 ~ +15 |
 | 조도 | `Illuminance` | 조도 관련 수칙 **위반** | +12 |
 | 배치 | `Layout` | 배치 관련 수칙 **위반** | +12 ~ +25 |
-| **신뢰** | `Trust` | 수칙 **준수** | +2 ~ +4 |
+| **신뢰** | `Trust` | 수칙 **준수** | +2 ~ +4 (100에서 멈춤, 포획 없음) |
 
 - **0~100 누적. 감쇠 없음, 상시 증가 없음.** 결과 한 건마다 `새 값 = min(100, 기존 + 델타)`.
-- **어느 축이든 100 도달 → 포획 엔딩(게임오버).** 신뢰 100도 마찬가지.
+- **청각·조도·배치 중 하나가 100 도달 → 포획 엔딩(게임오버).** 신뢰 100은 포획이 아니다(2026-09-17 결정).
   종료 원인 축·카드/문자 ID·현재 공간을 기록하고 **종료 요청을 한 번만** 보낸다.
   그 뒤의 미적용 델타는 중단.
 - 위반은 **즉시** 큰 델타 하나. 준수는 **카드마다 지정된 완료 시점에만.**
@@ -141,7 +144,7 @@ Band4 = 90–99  (10칸)   ← 더 좁아짐. 100은 게임오버
 - **모형 효과음은 카드 단서 ID를 보내지 않습니다.** C-A의 타격음이 C3를 시작하지 않고,
   C-B의 칠판음이 C4를 시작하지 않습니다. 소리가 비슷해도 별개입니다.
 
-### 1A.6 태블릿 문자 12개
+### 1A.6 태블릿 문자 12개 (충돌 문자는 기획자가 추가 예정)
 
 | 종류 | ID | 역할 |
 |---|---|---|
@@ -161,8 +164,10 @@ Band4 = 90–99  (10칸)   ← 더 좁아짐. 100은 게임오버
 | **P3** | C1 | **유일하게 반경이 아니라 순서를 뒤집음** | 청각 +12 | 신뢰 +2 + 배치 +6 |
 | **P4** | T6 | 들어가지 말라던 칸 **안으로** 부름. 델타 최대 | 배치 +15 | 신뢰 +2 + 배치 +6 |
 
+- **신뢰 → 역설 확장 (2026-09-17 결정):** 신뢰가 높을수록 태블릿 문자와 수칙의 충돌이 늘어난다. 기획자가 P1~P4 외 충돌 문자를 추가한다. 새 문자마다 짝 카드·목적지·따름/거절 결과·충돌표 행이 정본에 있어야 구현한다. 신뢰 구간별 발송 한도·구간 판정 시점·짝 카드 편성 보강은 **기획 대기(Q10)** — 확정 전 하드코딩 금지, 데이터(SO)로 둔다. 권장: 밤 시작(또는 발송 순간)에 신뢰 구간을 읽고 그날 밤 고정.
+- **주의할 순환:** 준수 → 신뢰↑ → 역설↑ → 거절 시 짝 카드 준수(신뢰↑) + 미도달 배치 +6. 규칙을 잘 지킬수록 배치 압박이 커진다. 하룻밤 최대 배치 상승량을 기획과 계산할 것.
 - P형 도착 보상은 **0**, 유효 미도달은 **배치 +6** (시험 밸런스).
-- 하루 최대 1쌍 · 회차 최대 2쌍 · 각 P ID 회차 1회.
+- 하루 최대 1쌍 · 회차 최대 2쌍 · 각 P ID 회차 1회 (현행값. 신뢰 구간에 따라 늘어날 예정).
 - **전문 노출 전에 짝 카드가 정산되면 P형을 미판정으로 취소.** 소급 벌점 없음.
 - 동시 후보 시 고정 순서: **P3 → P2 → P1 → P4**.
 - 수칙 결과를 먼저 처리하고, 게임이 진행 중일 때 문자 결과를 적용.
@@ -290,7 +295,7 @@ GeometryUtility.TestPlanesAABB(카메라 프러스텀)
 | `Assets/_Game/Scripts/Direction` | NightRun, JudgeTarget, JudgeTargetRegistry, CardScenarios |
 | `Assets/_Game/Scripts/Stats` | FearAxisSystem, BandResolver, DaySummary |
 | `Assets/_Game/Scripts/Editor` | `NightDuty.Editor`. 카드·표 빌더, 검사기, 드로어, 테스트 씬 도구 |
-| `Assets/_Game/Tests/EditMode` | `NightDuty.Tests.EditMode` — **264개** |
+| `Assets/_Game/Tests/EditMode` | `NightDuty.Tests.EditMode` — **272개** |
 | `Assets/_Game/ScriptableObjects` | `Rules/{Corridor,Classroom,Science,Toilet}` 24장, SpaceAnomalyTable, BandTable |
 | `Assets/_Game/Resources/NightDeckTable.asset` | 임시 편성: 1일 복도 · 2일 교실 · 3일 과학실 · 4일 화장실 |
 | `Assets/3.1. Programmer_lee/02 Scripts` | AxisTestLightRig, AxisTestAnomalyRig, NightRunDebugPanel (Assembly-CSharp) |
@@ -323,7 +328,7 @@ NightRun.RequestEndNight ─▶ EndNight(진행 카드에 NightEndAccepted → �
 
 ---
 
-## 4. 진행 상황 (2026-09-17 병합 후 검증: 에디터 ready · 컴파일 에러 0 · 빌드 씬 7개 · EditMode 264/264)
+## 4. 진행 상황 (2026-09-17 병합 후 검증: 에디터 ready · 컴파일 에러 0 · 빌드 씬 7개 · EditMode 264/264 → 신뢰 변경 후 272/272)
 
 ### 완료·병합됨 (Lee)
 - 판정 코어 1차 + NightRun·DaySummary 확장 + `@trigger` + H3 방문 몫 반환.
@@ -336,6 +341,7 @@ NightRun.RequestEndNight ─▶ EndNight(진행 카드에 NightEndAccepted → �
   - ② 직접 조작: 일차·밤 시작/종료, 축 +/포획, 시간, 응시, 공간, 손전등/Tab/점검, 임의 신호, 카드 목록, 로그.
   - ③ 도움말.
   - 코어 모드 토글 시 DebugAxisDriver 끄고 `DebugRebroadcast`로 조명·이상현상 리그에 코어 구간 전달.
+- **신뢰 비포획화(2026-09-17):** `FearAxisSystem.IsTerminal(axis)` 추가 — 청각·조도·배치만 100에서 종료 잠금, 신뢰는 100에서 멈춤(Restore도 동일). 판정 패널 「포획 시험」에서 신뢰 버튼 제거. 테스트: 신뢰100 비포획·신뢰100 뒤 감각축 포획·복원·포획축 목록, 정산순서 테스트를 신뢰(계속 정산)/배치88(잠금 후 중단)로 분리. 진선님 `FakeDayData`의 `criticalAxis == Trust` 분기는 연결 작업 때 정리.
 ### 병합된 진선님 작업
 - SceneFlow(Main → Loading → testScene → Result, 빌드 목록 확인), SceneFlowConfig, GameTime(ShiftEnded·SetRunning·SkipToEnd), GameSession(FinalDay 5), DayResult, DayIntro, ResultController(`summary.ImprintAxis`, `AxisValue` 사용), AxisBarView·DutyLogView·ViolationLogView, HUDActions, PlaySystems.prefab.
 - `PlayResultRouter`: ShiftEnded → `FakeDayData`, DayEnded → DayResult(위반 시각 비어 있음·가짜 로그), AxisCritical → 가짜 데이터, `SceneFlow.GoTo(GameScene.Result, false)`.
@@ -452,7 +458,8 @@ scene.ha(복도 장면 형식) · scene.ca · scene.cb · scene.sa · scene.sb �
 | Q1 | 근무 일수(조우 8장면 연동) | 기획 |
 | Q2 | 근무 종료 방식(시계 자동 / 종료 요청) | 기획 |
 | Q3 | 결과창 역설 문자 결과 표시 여부 | 기획 |
-| Q4 | 신뢰 100 포획 엔딩 연출 | 기획 |
+| Q4 | 포획 엔딩 연출(청각·조도·배치 — 신뢰는 포획 없음) | 기획 |
+| Q10 | 신뢰 → 충돌 확장 규칙: 구간별 역설 발송 한도, 추가 충돌 문자 목록(짝 카드·목적지·결과·충돌표), 구간 판정 시점, 짝 카드 편성 보강 여부 | 기획 |
 | Q5 | 응시 여유 각도(권고 약 12°) | 기획·진선 |
 | Q6 | Tab이 `timeScale = 0`인가 | 진선 |
 | Q8 | GameFlow 코드를 `_Game`으로 옮길지 | 진선 |
@@ -513,7 +520,7 @@ scene.ha(복도 장면 형식) · scene.ca · scene.cb · scene.sa · scene.sb �
 ## 11. 첫 세션 시작 절차
 
 1. 이 문서 통독 → `horror house/CLAUDE.md` 확인(폐기 항목이 남아 있을 수 있음 — §1.1이 우선).
-2. Unity MCP 연결 확인: `editor_status` → `console_status`(에러 0) → EditMode 테스트(264개 통과 기준).
+2. Unity MCP 연결 확인: `editor_status` → `console_status`(에러 0) → EditMode 테스트(272개 통과 기준).
 3. git 상태는 **사용자에게 묻는다**(Claude는 git 명령 금지).
 4. §7의 1번(NightRun ↔ 게임 흐름 연결)부터 사용자 확인 후 착수.
 

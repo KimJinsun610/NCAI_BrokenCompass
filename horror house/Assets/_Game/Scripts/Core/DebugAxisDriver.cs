@@ -34,7 +34,7 @@ namespace NightDuty
         [Tooltip("배치(Layout). 소품이 원래 자리에서 얼마나 어긋나 있는지 — 열린 문, 꺼내진 물건, 옮겨진 책상 등 — 를 결정합니다.")]
         [Range(Bands.Min, Bands.Max)] [SerializeField] private int _layout;
 
-        [Tooltip("신뢰(Trust). 월드에는 절대 그려지지 않습니다. 지침록(문서 UI)의 문구가 어긋나거나 사라지는 정도만 바꿉니다.")]
+        [Tooltip("신뢰(Trust). 월드에는 절대 그려지지 않고 게임오버도 일으키지 않습니다. 오를수록 태블릿 문자와 근무수칙의 충돌이 늘어납니다.")]
         [Range(Bands.Min, Bands.Max)] [SerializeField] private int _trust;
 
         [Header("방송 설정")]

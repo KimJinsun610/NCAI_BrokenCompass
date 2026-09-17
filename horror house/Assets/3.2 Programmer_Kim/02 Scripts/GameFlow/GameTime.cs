@@ -32,6 +32,9 @@ public class GameTime : MonoBehaviour
 
     public string CurrentTimeText { get; private set; }
 
+    /// <summary>현재 게임 시각(자정 기준 누적 분). 판정 코어가 위반 시각을 기록할 때 읽는다. 표시는 FormatTime으로.</summary>
+    public int CurrentMinutes => Mathf.FloorToInt(currentSeconds / 60f);
+
     public bool IsEnded => ended;
 
     /// <summary>시계가 흐르는 중인지. 연출 등으로 멈춰 두면 false.</summary>

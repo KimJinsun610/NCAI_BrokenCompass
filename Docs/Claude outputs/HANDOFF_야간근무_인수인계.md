@@ -295,7 +295,7 @@ GeometryUtility.TestPlanesAABB(카메라 프러스텀)
 | `Assets/_Game/Scripts/Direction` | NightRun, JudgeTarget, JudgeTargetRegistry, CardScenarios |
 | `Assets/_Game/Scripts/Stats` | FearAxisSystem, BandResolver, DaySummary |
 | `Assets/_Game/Scripts/Editor` | `NightDuty.Editor`. 카드·표 빌더, 검사기, 드로어, 테스트 씬 도구 |
-| `Assets/_Game/Tests/EditMode` | `NightDuty.Tests.EditMode` — **272개** |
+| `Assets/_Game/Tests/EditMode` | `NightDuty.Tests.EditMode` — **278개** |
 | `Assets/_Game/ScriptableObjects` | `Rules/{Corridor,Classroom,Science,Toilet}` 24장, SpaceAnomalyTable, BandTable |
 | `Assets/_Game/Resources/NightDeckTable.asset` | 임시 편성: 1일 복도 · 2일 교실 · 3일 과학실 · 4일 화장실 |
 | `Assets/3.1. Programmer_lee/02 Scripts` | AxisTestLightRig, AxisTestAnomalyRig, NightRunDebugPanel (Assembly-CSharp) |
@@ -342,13 +342,19 @@ NightRun.RequestEndNight ─▶ EndNight(진행 카드에 NightEndAccepted → �
   - ③ 도움말.
   - 코어 모드 토글 시 DebugAxisDriver 끄고 `DebugRebroadcast`로 조명·이상현상 리그에 코어 구간 전달.
 - **신뢰 비포획화(2026-09-17):** `FearAxisSystem.IsTerminal(axis)` 추가 — 청각·조도·배치만 100에서 종료 잠금, 신뢰는 100에서 멈춤(Restore도 동일). 판정 패널 「포획 시험」에서 신뢰 버튼 제거. 테스트: 신뢰100 비포획·신뢰100 뒤 감각축 포획·복원·포획축 목록, 정산순서 테스트를 신뢰(계속 정산)/배치88(잠금 후 중단)로 분리. 진선님 `FakeDayData`의 `criticalAxis == Trust` 분기는 연결 작업 때 정리.
+- **게임 흐름 연결(2026-09-17):**
+  - `Assets/_Game/Flow/NightRunDriver.cs`(Assembly-CSharp): Play 씬에 GameTime이 있으면 **자동 생성**(씬·프리팹 수정 없음). Start→`BeginNight(GameSession.CurrentDay, gameTime.CurrentMinutes)`, 시계가 흐를 때만 `Tick(Time.deltaTime)`(실제 초), `ShiftEnded`→`RequestEndNight`, 밤이 열린 채 파괴되면 `AbandonNight`. 정적 소유자 검사로 씬 전환 시 옛 구동기가 새 밤을 버리지 않게 함.
+  - `Assets/_Game/Flow/NightDutyResultMapper.cs`: `DaySummary`→`DayResult`(사망/완료, 원인 축, 위반 시각을 `GameTime.FormatTime`으로, 근무 일지 줄).
+  - 코어: `NightRun.TodayDeck`, `WasVisitedToday`(SpaceEntered, Tab 중 제외), `AbandonNight()`, **포획 시 밤 자동 닫기**(AxisCritical 구독자 호출 뒤), `DaySummary.DutyLog`(`DutyLogEntry`: 번호·카드ID·공간·본문·상태·방문, `Struck` = 위반 또는 미방문).
+  - 진선님 파일 최소 수정: `GameTime.CurrentMinutes`, `GameSession.StartNewRun`→`NightRun.StartNewRun`, `PlayResultRouter`(밤이 있으면 ShiftEnded 가짜 결과 생략, DayEnded→매퍼), `FakeDayData` 신뢰 사망 분기 제거, `GameFlowDebugMenu` Force Death→`NightRun.DebugForceCapture`.
+  - 검증: EditMode 278/278. testScene 플레이 모드에서 구동기 자동 생성·Day1 덱 6장·H1 위반→배치 12→종료 경로로 결과(위반 시각 12:00, 1번 줄 빨간 줄, 복도 외 없음) 확인.
 ### 병합된 진선님 작업
 - SceneFlow(Main → Loading → testScene → Result, 빌드 목록 확인), SceneFlowConfig, GameTime(ShiftEnded·SetRunning·SkipToEnd), GameSession(FinalDay 5), DayResult, DayIntro, ResultController(`summary.ImprintAxis`, `AxisValue` 사용), AxisBarView·DutyLogView·ViolationLogView, HUDActions, PlaySystems.prefab.
 - `PlayResultRouter`: ShiftEnded → `FakeDayData`, DayEnded → DayResult(위반 시각 비어 있음·가짜 로그), AxisCritical → 가짜 데이터, `SceneFlow.GoTo(GameScene.Result, false)`.
-- **진선님 코드는 아직 NightRun을 호출하지 않는다.**
+- (2026-09-17) 진선님 흐름 최신: 사망 시 결과창 대신 Play 씬 위에 `HUD_Death` → 메인. 시작 버튼은 계약서 씬(`GameScene.Contract`)을 거친다. **진선님은 이제 공동 작업용 통일 씬을 만든다. 시스템 통합은 Lee 담당.**
 
 ### 아직 없음 / 미연결
-- NightRun ↔ 게임 흐름 연결 (§7의 1번).
+- ~~NightRun ↔ 게임 흐름 연결~~ 완료. 남은 연결: 태블릿 Tab 신호·시계 정지(Q6), 종료 요청 거절 처리(Q2).
 - 실제 씬의 `JudgeTarget` 배치, 플레이어 센서(응시·근접·구역·공간·문·손전등·Tab) — **담당 미정**.
 - DayDirector(편성 규칙: S1 1일차 고정, T1·T3 같은 날 금지, S2 활성 중 S-B 금지), EncounterDirector(조우 8장면), MessageDirector/ParadoxResolver(P1~P4).
 - SpaceAnomalyTable을 읽는 실제 공간 연출(`ISpacePresenter`).
@@ -444,7 +450,7 @@ scene.ha(복도 장면 형식) · scene.ca · scene.cb · scene.sa · scene.sb �
 
 ## 7. 다음 작업 (우선순위)
 
-1. **NightRun ↔ 진선님 흐름 연결** (§5.1). 결과창을 실제 `DaySummary`로, `ImprintAxis` 사용 제거, 위반 시각 포맷.
+1. ~~NightRun ↔ 진선님 흐름 연결~~ **완료(2026-09-17, Lee가 통합 담당)** — §4 「게임 흐름 연결」 참조. 남은 것: 결과창 「충돌 처리」 숨김·`ImprintAxis` 제거, 로딩 팁 §0 문구, 진선님 통일 씬이 들어오면 구동기 재확인.
 2. 플레이어 센서 담당 확정 → 실제 씬에 `JudgeTarget` 배치(LFS 잠금 확인) → `씬 대상 검사`.
 3. SpaceAnomalyTable을 읽는 실제 공간 연출.
 4. DayDirector · EncounterDirector · MessageDirector/ParadoxResolver(P1~P4).
@@ -520,7 +526,7 @@ scene.ha(복도 장면 형식) · scene.ca · scene.cb · scene.sa · scene.sb �
 ## 11. 첫 세션 시작 절차
 
 1. 이 문서 통독 → `horror house/CLAUDE.md` 확인(폐기 항목이 남아 있을 수 있음 — §1.1이 우선).
-2. Unity MCP 연결 확인: `editor_status` → `console_status`(에러 0) → EditMode 테스트(272개 통과 기준).
+2. Unity MCP 연결 확인: `editor_status` → `console_status`(에러 0) → EditMode 테스트(278개 통과 기준).
 3. git 상태는 **사용자에게 묻는다**(Claude는 git 명령 금지).
 4. §7의 1번(NightRun ↔ 게임 흐름 연결)부터 사용자 확인 후 착수.
 

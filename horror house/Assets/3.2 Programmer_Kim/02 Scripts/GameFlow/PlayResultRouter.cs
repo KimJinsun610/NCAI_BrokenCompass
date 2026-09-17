@@ -6,9 +6,10 @@ using UnityEngine;
 /// <summary>
 /// Play 씬의 하루 종료를 감지한다.
 /// 종료 경로:
-///  1) GameTime 종료 시각 도달 → 근무 완료 (현재는 FakeDayData로 결과 생성) → 페이드 → Result 씬
+///  1) GameTime 종료 시각 도달 → NightRunDriver가 종료 요청 → 3) 경로로 들어온다.
+///     판정 코어의 밤이 없을 때(구동기 없는 시험 씬)만 FakeDayData로 결과를 만든다.
 ///  2) EventBus.AxisCritical → 사망 → 페이드 → 이 씬 위에 사망 화면(HUD_Death). 결과창은 거치지 않는다
-///  3) EventBus.DayEnded → 근무 완료 (Lee의 판정 시스템이 완성되면 실제 수치가 이 경로로 들어온다)
+///  3) EventBus.DayEnded → 근무 완료. NightDutyResultMapper로 실제 수치·위반 시각·근무 일지를 옮긴다.
 /// </summary>
 public class PlayResultRouter : MonoBehaviour
 {
@@ -52,13 +53,16 @@ public class PlayResultRouter : MonoBehaviour
 
     private void OnShiftEnded()
     {
+        // 밤이 열려 있으면 NightRunDriver가 종료 요청을 보내고 DayEnded로 돌아온다(구독 순서와 무관).
+        if (NightRun.IsNightActive) return;
+
+        // 구동기의 종료 요청이 이미 DayEnded를 처리했으면 finished라 아래는 무시된다.
         Finish(fakeData.Build(GameSession.CurrentDay, DayOutcome.Completed, null));
     }
 
     private void OnDayEnded(DaySummary summary)
     {
-        // 위반 시각과 지침별 위반 여부는 아직 DaySummary에 없다 — 시각은 비워 두고 근무 일지 줄은 임시로 가짜 데이터를 쓴다
-        Finish(new DayResult(summary, DayOutcome.Completed, null, Array.Empty<string>(), fakeData.BuildLogLines()));
+        Finish(NightDutyResultMapper.From(summary, gameTime));
     }
 
     private void OnAxisCritical(FearAxis axis)

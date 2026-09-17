@@ -35,6 +35,8 @@ namespace NightDuty
         private static Func<int> _clockMinutes;
         private static readonly List<int> ViolationMinutesToday = new List<int>();
         private static readonly HashSet<SpaceId> InspectedToday = new HashSet<SpaceId>();
+        private static readonly HashSet<SpaceId> VisitedToday = new HashSet<SpaceId>();
+        private static readonly List<RuleSO> DeckToday = new List<RuleSO>();
         private static DaySummary _lastSummary;
 
         /// <summary>
@@ -64,7 +66,7 @@ namespace NightDuty
             }
         }
 
-        /// <summary>어느 축이든 100에 도달했는지.</summary>
+        /// <summary>청각·조도·배치 중 하나가 100에 도달해 포획됐는지(신뢰 100은 포획이 아니다).</summary>
         public static bool IsCaptured
         {
             get { return _axes != null && _axes.IsLocked; }
@@ -88,7 +90,19 @@ namespace NightDuty
             get { return _book; }
         }
 
-        /// <summary>마지막으로 보낸 하룻밤 결과.</summary>
+        /// <summary>그날 편성된 카드(덱 표시 순서). 밤이 닫힌 뒤에도 다음 <see cref="BeginNight"/> 전까지 남는다.</summary>
+        public static IReadOnlyList<RuleSO> TodayDeck
+        {
+            get { return DeckToday; }
+        }
+
+        /// <summary>오늘 발밑 기준점으로 들어간 적이 있는 공간인지(Tab 중·포획 뒤의 진입은 세지 않는다).</summary>
+        public static bool WasVisitedToday(SpaceId space)
+        {
+            return VisitedToday.Contains(space);
+        }
+
+        /// <summary>마지막으로 닫힌 하룻밤 결과(정상 종료·포획·중단 모두).</summary>
         public static DaySummary LastSummary
         {
             get { return _lastSummary; }
@@ -113,6 +127,8 @@ namespace NightDuty
             Day = 0;
             ViolationMinutesToday.Clear();
             InspectedToday.Clear();
+            VisitedToday.Clear();
+            DeckToday.Clear();
             _lastSummary = default;
             TargetsInUse = null;
         }
@@ -138,8 +154,11 @@ namespace NightDuty
             _clockMinutes = clockMinutes;
             ViolationMinutesToday.Clear();
             InspectedToday.Clear();
+            VisitedToday.Clear();
 
             IReadOnlyList<RuleSO> deck = LoadDeck(Day);
+            DeckToday.Clear();
+            DeckToday.AddRange(deck);
             TargetsInUse = ResolveTargets();
             _book = new RuleBook(deck, _axes, _bands, TargetsInUse);
             _book.Settled += OnSettled;
@@ -166,6 +185,7 @@ namespace NightDuty
             }
 
             _book.Dispatch(JudgeSignal.Tick(judgeSeconds));
+            CloseIfCaptured();
         }
 
         /// <summary>판정 신호 하나를 보낸다(연결 약속 §4). 밤이 진행 중이 아니면 무시한다.</summary>
@@ -176,12 +196,35 @@ namespace NightDuty
                 return;
             }
 
-            if (signal.Kind == SignalKind.InspectionCompleted && signal.Space != SpaceId.None && !_book.World.TabOpen && !IsCaptured)
+            bool counts = signal.Space != SpaceId.None && !_book.World.TabOpen && !IsCaptured;
+            if (counts && signal.Kind == SignalKind.InspectionCompleted)
             {
                 InspectedToday.Add(signal.Space);
             }
 
+            if (counts && signal.Kind == SignalKind.SpaceEntered)
+            {
+                VisitedToday.Add(signal.Space);
+            }
+
             _book.Dispatch(signal);
+            CloseIfCaptured();
+        }
+
+        /// <summary>
+        /// 밤을 정산 없이 버린다. 일시정지 메뉴에서 메인으로 나가는 등 Play 씬이 종료 요청 없이 사라질 때 부른다.
+        /// 남은 카드는 정산하지 않고(델타 없음) <see cref="EventBus.DayEnded"/>도 보내지 않는다. 축 값은 그대로 둔다.
+        /// </summary>
+        public static void AbandonNight()
+        {
+            if (_book == null)
+            {
+                return;
+            }
+
+            _book.Abandon();
+            _lastSummary = BuildSummary();
+            CloseNight();
         }
 
         /// <summary>
@@ -222,6 +265,7 @@ namespace NightDuty
             List<RuleResult> results = _book != null
                 ? new List<RuleResult>(_book.Results)
                 : new List<RuleResult>(_lastSummary.Results);
+            List<DutyLogEntry> dutyLog = BuildDutyLog(results);
 
             return new DaySummary(
                 Day,
@@ -234,7 +278,56 @@ namespace NightDuty
                 _axes.IsLocked ? NightOutcome.Captured : NightOutcome.Completed,
                 _axes.Cause,
                 new List<int>(ViolationMinutesToday),
-                results);
+                results,
+                dutyLog);
+        }
+
+        /// <summary>그날 덱 순서대로 근무 일지 줄을 만든다. 같은 카드의 결과가 여럿이면 마지막 것을 쓴다.</summary>
+        private static List<DutyLogEntry> BuildDutyLog(List<RuleResult> results)
+        {
+            Dictionary<string, CardState> last = new Dictionary<string, CardState>();
+            for (int i = 0; i < results.Count; i++)
+            {
+                if (!string.IsNullOrEmpty(results[i].CardId))
+                {
+                    last[results[i].CardId] = results[i].State;
+                }
+            }
+
+            List<DutyLogEntry> log = new List<DutyLogEntry>(DeckToday.Count);
+            for (int i = 0; i < DeckToday.Count; i++)
+            {
+                RuleSO card = DeckToday[i];
+                if (card == null)
+                {
+                    continue;
+                }
+
+                CardState state;
+                if (!last.TryGetValue(card.CardId, out state))
+                {
+                    state = CardState.Waiting;
+                }
+
+                log.Add(new DutyLogEntry(i + 1, card.CardId, card.Space, card.PlayerText, state, VisitedToday.Contains(card.Space)));
+            }
+
+            return log;
+        }
+
+        /// <summary>
+        /// 포획됐으면 그날 밤을 닫는다. <see cref="EventBus.AxisCritical"/> 구독자는 닫히기 전에 호출되므로
+        /// 그 안에서 <see cref="BuildSummary"/>를 불러도 결과가 온전하다.
+        /// </summary>
+        private static void CloseIfCaptured()
+        {
+            if (_book == null || !IsCaptured)
+            {
+                return;
+            }
+
+            _lastSummary = BuildSummary();
+            CloseNight();
         }
 
         /// <summary>디버그: 지정 축을 100으로 올려 포획 경로를 시험한다(신뢰는 100이 돼도 포획되지 않는다). 에디터·디버그 빌드에서만 쓴다.</summary>
@@ -244,6 +337,7 @@ namespace NightDuty
             int remain = Bands.Max - _axes.GetValue(axis);
             SpaceId space = _book != null ? _book.World.CurrentSpace : SpaceId.None;
             _axes.Apply(axis, remain, "debug", space);
+            CloseIfCaptured();
         }
 
         /// <summary>
@@ -260,6 +354,7 @@ namespace NightDuty
 
             SpaceId space = _book != null ? _book.World.CurrentSpace : SpaceId.None;
             _axes.Apply(axis, delta, "debug", space);
+            CloseIfCaptured();
         }
 
         /// <summary>
@@ -354,6 +449,8 @@ namespace NightDuty
             Day = 0;
             ViolationMinutesToday.Clear();
             InspectedToday.Clear();
+            VisitedToday.Clear();
+            DeckToday.Clear();
             _lastSummary = default;
             DeckOverride = null;
             RegisteredTargets = null;

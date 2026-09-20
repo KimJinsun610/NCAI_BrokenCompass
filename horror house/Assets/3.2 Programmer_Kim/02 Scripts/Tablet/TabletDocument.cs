@@ -40,6 +40,12 @@ public class TabletDocument : MonoBehaviour
     [Tooltip("태블릿을 들고 있을 때만 입력을 받는다. 비어 있으면 같은 오브젝트 위에서 찾는다.")]
     public PlayerTablet tablet;
 
+    [Header("나타나는 연출")]
+    [Tooltip("태블릿이 올라오는 동안 글자를 서서히 띄운다. 끄면 화면이 켜지는 순간 바로 보인다.")]
+    public bool fadeTextWithOpen = true;
+    [Tooltip("몇 %쯤 올라왔을 때부터 글자가 보이기 시작할지(0~1).")]
+    [Range(0f, 1f)] public float fadeStartAt = 0.5f;
+
     private readonly List<RuleSO> _rules = new List<RuleSO>();
     private int _page;
     private int _loadedDay = -1;
@@ -70,11 +76,39 @@ public class TabletDocument : MonoBehaviour
 
     private void Update()
     {
+        FadeWithOpenAmount();
+
         if (tablet != null && !tablet.IsOpened) return;
 
         float wheel = Input.mouseScrollDelta.y;
         if (Input.GetKeyDown(nextKey) || wheel < -0.01f) NextPage();
         else if (Input.GetKeyDown(previousKey) || wheel > 0.01f) PreviousPage();
+    }
+
+    /// <summary>
+    /// 태블릿이 올라오는 동안 글자가 서서히 나타나게 한다.
+    /// 화면 오브젝트는 켜졌다 꺼졌다 하지만, 글자 투명도를 같이 움직여서 툭 나타나 보이지 않게 한다.
+    /// </summary>
+    private void FadeWithOpenAmount()
+    {
+        if (tablet == null || !fadeTextWithOpen) return;
+
+        // 화면이 켜지는 지점부터 완전히 올라올 때까지 0 → 1
+        float open = tablet.OpenAmount;
+        float from = Mathf.Clamp01(fadeStartAt);
+        float alpha = from >= 0.999f ? 1f : Mathf.Clamp01((open - from) / (1f - from));
+        alpha = Mathf.SmoothStep(0f, 1f, alpha);
+
+        SetAlpha(headerText, alpha);
+        SetAlpha(bodyText, alpha);
+        SetAlpha(pageText, alpha);
+    }
+
+    private static void SetAlpha(TMP_Text text, float alpha)
+    {
+        if (text == null) return;
+        if (Mathf.Abs(text.alpha - alpha) < 0.003f) return;
+        text.alpha = alpha;
     }
 
     /// <summary>편성표에서 그날 수칙을 다시 읽어 첫 쪽부터 보여 준다.</summary>

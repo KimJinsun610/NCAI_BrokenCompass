@@ -43,9 +43,19 @@ public class PlayerTablet : MonoBehaviour
     /// <summary>태블릿이 올라와 있는가.</summary>
     public bool IsOpened { get { return _opened; } }
 
+    /// <summary>연출(흔들림)을 얹기 전의 기준 위치. ViewmodelSway가 여기에 더한다.</summary>
+    public Vector3 PosePosition { get; private set; }
+
+    /// <summary>연출을 얹기 전의 기준 회전.</summary>
+    public Quaternion PoseRotation { get; private set; }
+
+    /// <summary>0 = 완전히 내린 상태, 1 = 완전히 올린 상태. 연출 세기를 조절할 때 쓴다.</summary>
+    public float OpenAmount { get { return _t; } }
+
     private bool _opened;
     // 0 = 내린 자세, 1 = 올린 자세
     private float _t;
+    private float _tVelocity;
 
     private void Start()
     {
@@ -69,11 +79,20 @@ public class PlayerTablet : MonoBehaviour
         }
 
         float target = _opened ? 1f : 0f;
-        if (!Mathf.Approximately(_t, target))
+        if (!Mathf.Approximately(_t, target) || Mathf.Abs(_tVelocity) > 0.0001f)
         {
+            // 일정 속도로 움직이면 시작·끝이 딱 끊긴다. 스프링처럼 감속하며 붙게 한다.
+            // 올라오는 도중에 다시 누르면 속도를 이어받아 부드럽게 방향을 튼다.
             // 태블릿을 여는 동안 시간이 멈출 수 있으므로 unscaled를 쓴다.
-            float step = moveSeconds > 0.0001f ? Time.unscaledDeltaTime / moveSeconds : 1f;
-            _t = Mathf.MoveTowards(_t, target, step);
+            float smoothTime = Mathf.Max(0.02f, moveSeconds * 0.45f);
+            _t = Mathf.SmoothDamp(_t, target, ref _tVelocity, smoothTime, Mathf.Infinity, Time.unscaledDeltaTime);
+
+            if (Mathf.Abs(_t - target) < 0.0015f)
+            {
+                _t = target;
+                _tVelocity = 0f;
+            }
+
             ApplyPose(_t);
             SetScreenActive(_t >= screenOnAt);
         }
@@ -100,17 +119,24 @@ public class PlayerTablet : MonoBehaviour
     {
         _opened = opened;
         _t = opened ? 1f : 0f;
+        _tVelocity = 0f;
         ApplyPose(_t);
         SetScreenActive(_t >= screenOnAt);
     }
 
-    /// <summary>에디터 미리보기와 실행 중 모두 쓰는 자세 적용.</summary>
+    /// <summary>
+    /// 에디터 미리보기와 실행 중 모두 쓰는 자세 적용.
+    /// 결과를 PosePosition·PoseRotation에도 남겨서, ViewmodelSway가 그 위에 흔들림을 얹을 수 있게 한다.
+    /// </summary>
     public void ApplyPose(float t)
     {
         // 부드럽게 들어올리기 위해 가속·감속을 넣는다.
         float e = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t));
-        transform.localPosition = Vector3.Lerp(closedPosition, openedPosition, e);
-        transform.localRotation = Quaternion.Slerp(Quaternion.Euler(closedRotation), Quaternion.Euler(openedRotation), e);
+        PosePosition = Vector3.Lerp(closedPosition, openedPosition, e);
+        PoseRotation = Quaternion.Slerp(Quaternion.Euler(closedRotation), Quaternion.Euler(openedRotation), e);
+
+        transform.localPosition = PosePosition;
+        transform.localRotation = PoseRotation;
     }
 
     private void SetScreenActive(bool active)

@@ -40,6 +40,11 @@ MonoBehaviour:
   _successDelta: 2
   _failureAxis: 0
   _failureDelta: 15
+  _paradoxId: P10
+  _paradoxText: "\uCE60\uD310\uACFC \uC758\uC790 \uC18C\uB9AC\uAC00 \uC544\uC9C1
+    \uB4E4\uB9AC\uB294 \uB3D9\uC548 \uAD50\uD0C1 \uBC14\uB85C \uC55E\uC73C\uB85C
+    \uC774\uB3D9\uD558\uC2ED\uC2DC\uC624. \uB450 \uC18C\uB9AC\uAC00 \uBAA8\uB450
+    \uBA4E\uC73C\uBA74 \uC810\uAC80\uC744 \uBC1B\uB294 \uCABD\uC774 \uBC14\uB01D\uB2C8\uB2E4."
   _radius: 1.5
   _graceSeconds: 0
   _gazeSeconds: 0

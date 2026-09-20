@@ -38,6 +38,11 @@ MonoBehaviour:
   _successDelta: 2
   _failureAxis: 2
   _failureDelta: 12
+  _paradoxId: P8
+  _paradoxText: "\uCD9C\uC785\uBB38\uC744 \uD5A5\uD55C \uC88C\uC11D \uC606\uC73C\uB85C
+    \uC640 \uC8FC\uC2ED\uC2DC\uC624. \uC88C\uC11D\uC758 \uBC29\uD5A5\uC740 \uC815\uC0C1\uC785\uB2C8\uB2E4.
+    \uC790\uB9AC\uB97C \uBE44\uC6CC \uB450\uB294 \uC2DC\uAC04\uC774 \uAE38\uC5B4\uC9C0\uACE0
+    \uC788\uC5B4 \uD655\uC778\uC744 \uC694\uCCAD\uB4DC\uB9BD\uB2C8\uB2E4."
   _radius: 1.5
   _graceSeconds: 0
   _gazeSeconds: 0

@@ -85,6 +85,13 @@ namespace NightDuty
         [SerializeField, Tooltip("위반 델타 (+12~+25)")]
         private int _failureDelta = 12;
 
+        [Header("역설 문자 — 이 카드와 정면으로 부딪히는 태블릿 문자 (S1은 없음)")]
+        [SerializeField, Tooltip("역설 ID (예: P1). 비우면 이 카드에는 역설이 없다")]
+        private string _paradoxId = string.Empty;
+
+        [SerializeField, TextArea(2, 5), Tooltip("태블릿에 노출하는 역설 문자 전문. 따르면 이 카드의 위반 델타가 그대로 적용된다")]
+        private string _paradoxText = string.Empty;
+
         [Header("설정값 — 조건이 0/음수로 두면 이 값을 쓴다")]
         [SerializeField, Tooltip("금지 반경(m). 기본 1.5, H6만 2")]
         private float _radius = 1.5f;
@@ -151,6 +158,15 @@ namespace NightDuty
 
         /// <summary>위반 델타.</summary>
         public int FailureDelta { get { return _failureDelta; } }
+
+        /// <summary>역설 ID(P1~P23). 비어 있으면 이 카드에는 역설이 없다(S1).</summary>
+        public string ParadoxId { get { return _paradoxId ?? string.Empty; } }
+
+        /// <summary>역설 문자 전문. 따르면 이 카드의 위반 델타가 적용되고, 거절하면 이 카드의 준수 델타(신뢰)가 오른다.</summary>
+        public string ParadoxText { get { return _paradoxText ?? string.Empty; } }
+
+        /// <summary>이 카드에 역설 문자가 붙어 있는지.</summary>
+        public bool HasParadox { get { return !string.IsNullOrEmpty(_paradoxId) && !string.IsNullOrEmpty(_paradoxText); } }
 
         /// <summary>기본 금지 반경(m).</summary>
         public float Radius { get { return _radius; } }
@@ -338,6 +354,8 @@ namespace NightDuty
             _successDelta = config.SuccessDelta;
             _failureAxis = config.FailureAxis;
             _failureDelta = config.FailureDelta;
+            _paradoxId = config.ParadoxId;
+            _paradoxText = config.ParadoxText;
             _radius = config.Radius;
             _graceSeconds = config.GraceSeconds;
             _gazeSeconds = config.GazeSeconds;
@@ -365,6 +383,8 @@ namespace NightDuty
             public int SuccessDelta = 2;
             public FearAxis FailureAxis = FearAxis.Layout;
             public int FailureDelta = 12;
+            public string ParadoxId = string.Empty;
+            public string ParadoxText = string.Empty;
             public float Radius = 1.5f;
             public float GraceSeconds;
             public float GazeSeconds;

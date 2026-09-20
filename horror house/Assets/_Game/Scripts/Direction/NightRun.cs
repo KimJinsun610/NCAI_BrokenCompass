@@ -37,6 +37,7 @@ namespace NightDuty
         private static readonly HashSet<SpaceId> InspectedToday = new HashSet<SpaceId>();
         private static readonly HashSet<SpaceId> VisitedToday = new HashSet<SpaceId>();
         private static readonly List<RuleSO> DeckToday = new List<RuleSO>();
+        private static readonly ParadoxDirector Paradox = new ParadoxDirector();
         private static DaySummary _lastSummary;
 
         /// <summary>
@@ -162,6 +163,7 @@ namespace NightDuty
             TargetsInUse = ResolveTargets();
             _book = new RuleBook(deck, _axes, _bands, TargetsInUse);
             _book.Settled += OnSettled;
+            Paradox.BeginNight();
             _book.BeginNight();   // 밤 시작부터 감시하는 장기 카드(C6)를 시작한다.
 
             // 씬이 새로 열렸으므로 연출에 현재 구간을 from == to로 한 번 알린다.
@@ -185,6 +187,7 @@ namespace NightDuty
             }
 
             _book.Dispatch(JudgeSignal.Tick(judgeSeconds));
+            PollParadox();
             CloseIfCaptured();
         }
 
@@ -208,7 +211,43 @@ namespace NightDuty
             }
 
             _book.Dispatch(signal);
+            PollParadox();
             CloseIfCaptured();
+        }
+
+        /// <summary>오늘 보낸 역설 문자(발송 순서).</summary>
+        public static IReadOnlyList<ParadoxMessage> MessagesToday
+        {
+            get { return Paradox.Today; }
+        }
+
+        /// <summary>진행 중인 카드 중 역설 문자를 보낼 것이 있으면 보낸다. Tab 중에는 보내지 않는다.</summary>
+        private static void PollParadox()
+        {
+            if (_book == null || _book.World.TabOpen || IsCaptured)
+            {
+                return;
+            }
+
+            Paradox.Poll(_book, _axes, CurrentMinute());
+        }
+
+        private static int CurrentMinute()
+        {
+            if (_clockMinutes == null)
+            {
+                return -1;
+            }
+
+            try
+            {
+                return _clockMinutes();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                return -1;
+            }
         }
 
         /// <summary>

@@ -14532,13 +14532,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1134648474429902, guid: 4c383ef964103054e9fb2ccccc096459, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 123944379}
   m_SourcePrefab: {fileID: 100100000, guid: 4c383ef964103054e9fb2ccccc096459, type: 3}
 --- !u!4 &123944377 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4235483220408152, guid: 4c383ef964103054e9fb2ccccc096459, type: 3}
   m_PrefabInstance: {fileID: 123944376}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &123944378 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1134648474429902, guid: 4c383ef964103054e9fb2ccccc096459, type: 3}
+  m_PrefabInstance: {fileID: 123944376}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &123944379
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 123944378}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - toilet.sink
 --- !u!1001 &124054702
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24321,8 +24343,16 @@ PrefabInstance:
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -24379,6 +24409,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &213761441 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 213761437}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &214188256
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -58239,8 +58274,16 @@ PrefabInstance:
       value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -58297,6 +58340,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &512740291 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 512740287}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &512950964 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4227289026539160, guid: 70dc859686150de4491767fc5f32476e, type: 3}
@@ -59375,8 +59423,16 @@ PrefabInstance:
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -59433,6 +59489,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &523312416 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 523312412}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &523390059
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -88098,8 +88159,16 @@ PrefabInstance:
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -88156,6 +88225,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &765850272 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 765850268}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &765873335
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -89501,8 +89575,16 @@ PrefabInstance:
       value: 50
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -89520,6 +89602,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 272802841}
   m_SourcePrefab: {fileID: 100100000, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+--- !u!108 &776645606 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 776645605}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &776810080
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -89593,8 +89680,16 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -89612,6 +89707,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 967872018}
   m_SourcePrefab: {fileID: 100100000, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+--- !u!108 &776810081 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 776810080}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &777066012
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -97787,13 +97887,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1318753044608856, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 848291607}
   m_SourcePrefab: {fileID: 100100000, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
 --- !u!4 &848291605 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4944102135447920, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
   m_PrefabInstance: {fileID: 848291604}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &848291606 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1318753044608856, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
+  m_PrefabInstance: {fileID: 848291604}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &848291607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 848291606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - corridor.door.auto
 --- !u!1001 &848301107
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -108300,8 +108422,16 @@ PrefabInstance:
       value: 170
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -108319,6 +108449,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 752020069}
   m_SourcePrefab: {fileID: 100100000, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+--- !u!108 &946794789 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 946794788}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &947067875
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -110152,8 +110287,16 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -110171,6 +110314,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 473815523}
   m_SourcePrefab: {fileID: 100100000, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+--- !u!108 &963301191 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 963301190}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &964991525
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -112269,6 +112417,14 @@ PrefabInstance:
       propertyPath: m_LocalRotation.z
       value: -0
       objectReference: {fileID: 0}
+    - target: {fileID: 108858776018571474, guid: d77a891f0e276a249bd34524b4bc9c29, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108858776018571474, guid: d77a891f0e276a249bd34524b4bc9c29, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -112277,6 +112433,11 @@ PrefabInstance:
 --- !u!4 &979076930 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4307710471526652, guid: d77a891f0e276a249bd34524b4bc9c29, type: 3}
+  m_PrefabInstance: {fileID: 979076929}
+  m_PrefabAsset: {fileID: 0}
+--- !u!108 &979076931 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108858776018571474, guid: d77a891f0e276a249bd34524b4bc9c29, type: 3}
   m_PrefabInstance: {fileID: 979076929}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &979083246
@@ -112538,8 +112699,16 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -112596,6 +112765,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &981421844 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 981421840}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &982138164
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -116254,6 +116428,14 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
       value: 6500
       objectReference: {fileID: 0}
@@ -116308,6 +116490,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &1028227899 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1028227895}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1028613202
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -116483,13 +116670,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1784498971153272, guid: 92b58386b61485342835e239802f474e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1030380152}
   m_SourcePrefab: {fileID: 100100000, guid: 92b58386b61485342835e239802f474e, type: 3}
 --- !u!4 &1030380150 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4197097310406942, guid: 92b58386b61485342835e239802f474e, type: 3}
   m_PrefabInstance: {fileID: 1030380149}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1030380151 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1784498971153272, guid: 92b58386b61485342835e239802f474e, type: 3}
+  m_PrefabInstance: {fileID: 1030380149}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1030380152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1030380151}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - science.door
 --- !u!4 &1031390536 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4020236253176982, guid: f4d4f684321258147b2c69d7409b5acd, type: 3}
@@ -118013,6 +118222,10 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
       objectReference: {fileID: 0}
@@ -118071,6 +118284,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &1045024971 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1045024967}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1045043853
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -119846,8 +120064,16 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -119864,7 +120090,15 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1929373042576086, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1345189312}
+    - targetCorrespondingSourceObject: {fileID: 1929373042576086, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1345189313}
   m_SourcePrefab: {fileID: 100100000, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+--- !u!108 &1058687090 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1058687089}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1059119491
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -135043,8 +135277,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 100000, guid: f2906bd5ad9bdab4f996f8869958fc7e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1181331505}
   m_SourcePrefab: {fileID: 100100000, guid: f2906bd5ad9bdab4f996f8869958fc7e, type: 3}
+--- !u!1 &1181331504 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 100000, guid: f2906bd5ad9bdab4f996f8869958fc7e, type: 3}
+  m_PrefabInstance: {fileID: 1181331503}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1181331505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1181331504}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - corridor.box
 --- !u!1001 &1181649374
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -136148,6 +136404,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4298468951054594, guid: ce1ea43d6f50beb45a14d09c0e883847, type: 3}
   m_PrefabInstance: {fileID: 2009054053}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1194910947
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1194910948}
+  - component: {fileID: 1194910949}
+  m_Layer: 0
+  m_Name: Lights_Corridor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1194910948
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1194910947}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872545627}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1194910949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1194910947}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e1a3b946cd602c4fb6930a6c3bc6a6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceLights
+  space: 1
+  lights:
+  - {fileID: 1347785439}
+  - {fileID: 981421844}
+  - {fileID: 1028227899}
+  - {fileID: 1264464727}
+  - {fileID: 1606851327}
+  - {fileID: 946794789}
+  - {fileID: 1571137475}
+  - {fileID: 1602891751}
+  - {fileID: 1740134231}
+  - {fileID: 963301191}
+  bandTable: {fileID: 0}
 --- !u!1001 &1195344508
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -136382,6 +136695,57 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4912358996615366, guid: 7f5f6a62c6e35ce4899193b75743e94b, type: 3}
   m_PrefabInstance: {fileID: 1196210782}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1196265333
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1196265334}
+  - component: {fileID: 1196265335}
+  m_Layer: 0
+  m_Name: Lights_ScienceRoom
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1196265334
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196265333}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872545627}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1196265335
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196265333}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e1a3b946cd602c4fb6930a6c3bc6a6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceLights
+  space: 5
+  lights:
+  - {fileID: 776810081}
+  - {fileID: 1766443935}
+  - {fileID: 1209352232}
+  - {fileID: 1058687090}
+  bandTable: {fileID: 0}
 --- !u!1 &1197717463
 GameObject:
   m_ObjectHideFlags: 0
@@ -137691,8 +138055,16 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -137710,6 +138082,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 655839525}
   m_SourcePrefab: {fileID: 100100000, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+--- !u!108 &1209352232 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1209352231}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1209501464 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4538224429637732, guid: 0f95d8e6ce1d6fc428ac1a21e465e683, type: 3}
@@ -143706,8 +144083,16 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -143764,6 +144149,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &1264464727 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1264464723}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1264932936 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4017455102940108, guid: 1ff6d4f12a5ca8f428777d810097c2ee, type: 3}
@@ -151803,8 +152193,16 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1905625638038716, guid: 860790b1300488d4d923adb8e2499cc5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1667901326}
   m_SourcePrefab: {fileID: 100100000, guid: 860790b1300488d4d923adb8e2499cc5, type: 3}
+--- !u!1 &1331847808 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1905625638038716, guid: 860790b1300488d4d923adb8e2499cc5, type: 3}
+  m_PrefabInstance: {fileID: 1331847807}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1332747326
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -153372,6 +153770,20 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &1345189313
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1345189310}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - science.light.last
 --- !u!1001 &1346291423
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -153700,8 +154112,16 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -153758,6 +154178,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &1347785439 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1347785435}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1349271047 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4071815786891044, guid: 84a6285698efe7b4da26f51a6209d189, type: 3}
@@ -155932,13 +156357,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1318753044608856, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1372720609}
   m_SourcePrefab: {fileID: 100100000, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
 --- !u!4 &1372720607 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4944102135447920, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
   m_PrefabInstance: {fileID: 1372720606}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1372720608 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1318753044608856, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
+  m_PrefabInstance: {fileID: 1372720606}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1372720609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1372720608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - toilet.door
 --- !u!1001 &1372722447
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -156000,8 +156447,16 @@ PrefabInstance:
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -156019,6 +156474,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 410061673}
   m_SourcePrefab: {fileID: 100100000, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+--- !u!108 &1372722448 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1372722447}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1373460871
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -182563,6 +183023,10 @@ PrefabInstance:
       propertyPath: m_Shadows.m_Bias
       value: 0.1
       objectReference: {fileID: 0}
+    - target: {fileID: 108413864315222540, guid: 18488ef18efca5e4e8fb58eeb6ce4a2c, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -182610,6 +183074,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &1571137475 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108413864315222540, guid: 18488ef18efca5e4e8fb58eeb6ce4a2c, type: 3}
+  m_PrefabInstance: {fileID: 1571137471}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1571275473
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -185692,6 +186161,10 @@ PrefabInstance:
       propertyPath: m_Shadows.m_Bias
       value: 0.1
       objectReference: {fileID: 0}
+    - target: {fileID: 108413864315222540, guid: 18488ef18efca5e4e8fb58eeb6ce4a2c, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -185739,6 +186212,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &1602891751 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108413864315222540, guid: 18488ef18efca5e4e8fb58eeb6ce4a2c, type: 3}
+  m_PrefabInstance: {fileID: 1602891747}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1602990039 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4980794114526066, guid: ad50c38259390db48bce8439a88318ec, type: 3}
@@ -186124,6 +186602,14 @@ PrefabInstance:
       value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
       value: 6500
       objectReference: {fileID: 0}
@@ -186178,6 +186664,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &1606851327 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1606851323}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1606935772
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -187626,6 +188117,152 @@ Transform:
   - {fileID: 1277748761}
   m_Father: {fileID: 724948908}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1610872449
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1610872451}
+  - component: {fileID: 1610872450}
+  - component: {fileID: 1610872452}
+  m_Layer: 0
+  m_Name: JudgeZones
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1610872450
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1610872449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3086acb91feface48999fba29d1b7d7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceZones
+  player: {fileID: 0}
+  zones:
+  - Space: 3
+    Box:
+      m_Center: {x: 44, y: 3.4, z: 52}
+      m_Extent: {x: 6, y: 2, z: 4}
+    OutOfScope: 0
+    InspectionBox:
+      m_Center: {x: 43.694946, y: 3.4, z: 51.93191}
+      m_Extent: {x: 4.9695683, y: 2, z: 3.5985909}
+  - Space: 4
+    Box:
+      m_Center: {x: 46, y: 3.4, z: 36}
+      m_Extent: {x: 8, y: 2, z: 4}
+    OutOfScope: 0
+    InspectionBox:
+      m_Center: {x: 44.36765, y: 3.2228718, z: 35.641083}
+      m_Extent: {x: 5.059643, y: 1.8228717, z: 3.1487904}
+  - Space: 5
+    Box:
+      m_Center: {x: 48, y: 3.4, z: 42}
+      m_Extent: {x: 6, y: 2, z: 2}
+    OutOfScope: 0
+    InspectionBox:
+      m_Center: {x: 48, y: 3.4, z: 42}
+      m_Extent: {x: 2, y: 2, z: 1.5}
+  - Space: 2
+    Box:
+      m_Center: {x: 2, y: 3.4, z: 34}
+      m_Extent: {x: 4, y: 2, z: 2}
+    OutOfScope: 0
+    InspectionBox:
+      m_Center: {x: 0, y: 3.4, z: 34.2}
+      m_Extent: {x: 1.6, y: 2, z: 1}
+  - Space: 0
+    Box:
+      m_Center: {x: 46, y: 8.4, z: 50}
+      m_Extent: {x: 8, y: 1.9999998, z: 6}
+    OutOfScope: 1
+    InspectionBox:
+      m_Center: {x: 0, y: 0, z: 0}
+      m_Extent: {x: 0, y: 0, z: 0}
+  - Space: 0
+    Box:
+      m_Center: {x: 34.1, y: 3.4, z: 46.15}
+      m_Extent: {x: 3.4, y: 2, z: 1.65}
+    OutOfScope: 1
+    InspectionBox:
+      m_Center: {x: 0, y: 0, z: 0}
+      m_Extent: {x: 0, y: 0, z: 0}
+  - Space: 1
+    Box:
+      m_Center: {x: 28, y: 3.4, z: 44}
+      m_Extent: {x: 24, y: 2, z: 4}
+    OutOfScope: 0
+    InspectionBox:
+      m_Center: {x: 28, y: 3.1789496, z: 44}
+      m_Extent: {x: 2, y: 1.7789495, z: 2}
+  signalZones:
+  - Id: corridor.passage
+    Box:
+      m_Center: {x: 28, y: 3.366346, z: 44}
+      m_Extent: {x: 24, y: 1.9663458, z: 4}
+    IsPassage: 1
+  - Id: toilet.stall.outer.inside
+    Box:
+      m_Center: {x: 3.2, y: 3.4, z: 34.9}
+      m_Extent: {x: 0.45, y: 2, z: 0.95}
+    IsPassage: 0
+  - Id: toilet.stall.inner.inside
+    Box:
+      m_Center: {x: 5.2, y: 3.4, z: 34.9}
+      m_Extent: {x: 0.45, y: 2, z: 0.95}
+    IsPassage: 0
+  - Id: science.zone.glass
+    Box:
+      m_Center: {x: 49, y: 3.4, z: 42}
+      m_Extent: {x: 3, y: 2, z: 1}
+    IsPassage: 0
+  building:
+    m_Center: {x: 20, y: 3.4, z: 42}
+    m_Extent: {x: 35, y: 2, z: 15}
+  inspectionDwellSeconds: 1
+  sampleSeconds: 0.1
+--- !u!4 &1610872451
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1610872449}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1610872452
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1610872449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - corridor.passage
+  - toilet.stall.outer.inside
+  - toilet.stall.inner.inside
+  - science.zone.glass
 --- !u!1001 &1611125123
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -191619,6 +192256,73 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4531022862580394, guid: bb1aa373bcbc58f4bad45fef1ec5259a, type: 3}
   m_PrefabInstance: {fileID: 1650859144}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1651804609
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1651804610}
+  - component: {fileID: 1651804612}
+  - component: {fileID: 1651804611}
+  m_Layer: 0
+  m_Name: Lights_Classroom_1_3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1651804610
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1651804609}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872545627}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1651804611
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1651804609}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - cls13.lights
+--- !u!114 &1651804612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1651804609}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e1a3b946cd602c4fb6930a6c3bc6a6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceLights
+  space: 4
+  lights:
+  - {fileID: 765850272}
+  - {fileID: 776645606}
+  - {fileID: 1801392594}
+  - {fileID: 1372722448}
+  - {fileID: 979076931}
+  bandTable: {fileID: 0}
 --- !u!1001 &1652412253
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -192509,6 +193213,55 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4867330675206390, guid: 7fbc389327272d54eb7884e674b194d2, type: 3}
   m_PrefabInstance: {fileID: 1658419307}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1658442440
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1658442441}
+  - component: {fileID: 1658442442}
+  m_Layer: 0
+  m_Name: Lights_Toilet
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1658442441
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658442440}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872545627}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1658442442
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1658442440}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e1a3b946cd602c4fb6930a6c3bc6a6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceLights
+  space: 2
+  lights:
+  - {fileID: 2017293391}
+  - {fileID: 1045024971}
+  bandTable: {fileID: 0}
 --- !u!1001 &1658732780
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -193741,6 +194494,20 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4261411285719316, guid: 860790b1300488d4d923adb8e2499cc5, type: 3}
   m_PrefabInstance: {fileID: 1331847807}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1667901326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1331847808}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - cls11.desk.back
 --- !u!4 &1667995667 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4486767508517552, guid: 0160c7b505a7fe14daf6f68471522e00, type: 3}
@@ -195215,8 +195982,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1510501326933230, guid: db877a98499ada34283c137aec3023ff, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1679709204}
   m_SourcePrefab: {fileID: 100100000, guid: db877a98499ada34283c137aec3023ff, type: 3}
+--- !u!1 &1679709203 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1510501326933230, guid: db877a98499ada34283c137aec3023ff, type: 3}
+  m_PrefabInstance: {fileID: 1679709202}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1679709204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1679709203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - cls11.lectern
 --- !u!4 &1680171249 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4093531820117020, guid: b3cffe337bc1cca4fbf8698e59eb01ec, type: 3}
@@ -197625,13 +198414,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1207706423176784, guid: 6f648a9216c63b24796544bbd20f3407, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1700396244}
   m_SourcePrefab: {fileID: 100100000, guid: 6f648a9216c63b24796544bbd20f3407, type: 3}
 --- !u!4 &1700396242 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4659918917407224, guid: 6f648a9216c63b24796544bbd20f3407, type: 3}
   m_PrefabInstance: {fileID: 1700396241}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1700396243 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1207706423176784, guid: 6f648a9216c63b24796544bbd20f3407, type: 3}
+  m_PrefabInstance: {fileID: 1700396241}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1700396244
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1700396243}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - toilet.stall.inner
 --- !u!1001 &1700825728
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -202274,8 +203085,16 @@ PrefabInstance:
       value: 100
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -202293,6 +203112,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1740134233}
   m_SourcePrefab: {fileID: 100100000, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+--- !u!108 &1740134231 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1740134230}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1740134232 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1929373042576086, guid: 2166019e9549e5c4c847942f52474212, type: 3}
@@ -204526,8 +205350,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1784498971153272, guid: 92b58386b61485342835e239802f474e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1759859620}
   m_SourcePrefab: {fileID: 100100000, guid: 92b58386b61485342835e239802f474e, type: 3}
+--- !u!1 &1759859619 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1784498971153272, guid: 92b58386b61485342835e239802f474e, type: 3}
+  m_PrefabInstance: {fileID: 1759859618}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1759859620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1759859619}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - corridor.door.11
 --- !u!1001 &1760320111
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -205197,8 +206043,16 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -205255,6 +206109,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &1766443935 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1766443931}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &1766494207 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4688103113100766, guid: bdba6bfe2745a1c47954a431ccbb4d82, type: 3}
@@ -206858,8 +207717,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1544651268921368, guid: 119382af29134f54fbf90713b546c3af, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1781013281}
   m_SourcePrefab: {fileID: 100100000, guid: 119382af29134f54fbf90713b546c3af, type: 3}
+--- !u!1 &1781013280 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1544651268921368, guid: 119382af29134f54fbf90713b546c3af, type: 3}
+  m_PrefabInstance: {fileID: 1781013279}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1781013281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1781013280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - corridor.door.13
 --- !u!4 &1781373480 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4519076567101694, guid: 60ccfdc237693194da3000aba3f92eec, type: 3}
@@ -209321,8 +210202,16 @@ PrefabInstance:
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -209340,6 +210229,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 439542679}
   m_SourcePrefab: {fileID: 100100000, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+--- !u!108 &1801392594 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 1801392593}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1801473534
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -210083,6 +210977,72 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4641330613480718, guid: 0417feb805689e048a21222b21a4e9ee, type: 3}
   m_PrefabInstance: {fileID: 1809384086}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1809528002
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1809528003}
+  - component: {fileID: 1809528005}
+  - component: {fileID: 1809528004}
+  m_Layer: 0
+  m_Name: Lights_Classroom_1_1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1809528003
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1809528002}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1872545627}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1809528004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1809528002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - cls11.lights
+--- !u!114 &1809528005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1809528002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e1a3b946cd602c4fb6930a6c3bc6a6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceLights
+  space: 3
+  lights:
+  - {fileID: 2080541481}
+  - {fileID: 512740291}
+  - {fileID: 523312416}
+  - {fileID: 213761441}
+  bandTable: {fileID: 0}
 --- !u!1001 &1809560179
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -213845,8 +214805,16 @@ PrefabInstance:
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 108199839940094262, guid: c620f49962b99924aa1243d53179b2b7, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108199839940094262, guid: c620f49962b99924aa1243d53179b2b7, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108199839940094262, guid: c620f49962b99924aa1243d53179b2b7, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108199839940094262, guid: c620f49962b99924aa1243d53179b2b7, type: 3}
       propertyPath: m_ColorTemperature
@@ -217138,6 +218106,42 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4250140871227382, guid: a21e9adc31154a747a5812089ad37275, type: 3}
   m_PrefabInstance: {fileID: 1872173729}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1872545626
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1872545627}
+  m_Layer: 0
+  m_Name: JudgeLights
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1872545627
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1872545626}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1194910948}
+  - {fileID: 1809528003}
+  - {fileID: 1651804610}
+  - {fileID: 1196265334}
+  - {fileID: 1658442441}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1872811431
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -219191,13 +220195,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1207706423176784, guid: 6f648a9216c63b24796544bbd20f3407, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1893446522}
   m_SourcePrefab: {fileID: 100100000, guid: 6f648a9216c63b24796544bbd20f3407, type: 3}
 --- !u!4 &1893446520 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4659918917407224, guid: 6f648a9216c63b24796544bbd20f3407, type: 3}
   m_PrefabInstance: {fileID: 1893446519}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1893446521 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1207706423176784, guid: 6f648a9216c63b24796544bbd20f3407, type: 3}
+  m_PrefabInstance: {fileID: 1893446519}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1893446522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1893446521}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - toilet.stall.outer
 --- !u!1 &1894151264
 GameObject:
   m_ObjectHideFlags: 0
@@ -230397,8 +231423,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1827261316296618, guid: d3ddd276ffa8f4647a1a5a251bde7e96, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1981678225}
   m_SourcePrefab: {fileID: 100100000, guid: d3ddd276ffa8f4647a1a5a251bde7e96, type: 3}
+--- !u!1 &1981678224 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1827261316296618, guid: d3ddd276ffa8f4647a1a5a251bde7e96, type: 3}
+  m_PrefabInstance: {fileID: 1981678223}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1981678225
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1981678224}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - cls11.chalk3
 --- !u!1001 &1982195995
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -234327,6 +235375,10 @@ PrefabInstance:
       value: 130
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
       objectReference: {fileID: 0}
@@ -234385,6 +235437,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &2017293391 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 2017293387}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2017706996 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4488564304755262, guid: dc5527aae0757644583fea72dc6e71e9, type: 3}
@@ -242670,8 +243727,16 @@ PrefabInstance:
       value: 80
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_InnerSpotAngle
       value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
       propertyPath: m_ColorTemperature
@@ -242728,6 +243793,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!108 &2080541481 stripped
+Light:
+  m_CorrespondingSourceObject: {fileID: 108534189363886106, guid: 2166019e9549e5c4c847942f52474212, type: 3}
+  m_PrefabInstance: {fileID: 2080541477}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2081054236
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -247131,13 +248201,35 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1318753044608856, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2120018042}
   m_SourcePrefab: {fileID: 100100000, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
 --- !u!4 &2120018040 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4944102135447920, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
   m_PrefabInstance: {fileID: 2120018039}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2120018041 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1318753044608856, guid: ea0b3a53d51d3f94a9b82aff7983c608, type: 3}
+  m_PrefabInstance: {fileID: 2120018039}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2120018042
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2120018041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - corridor.door.back
 --- !u!1001 &2120753691
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -249779,3 +250871,5 @@ SceneRoots:
   - {fileID: 446462099}
   - {fileID: 1664163145}
   - {fileID: 1287851590}
+  - {fileID: 1610872451}
+  - {fileID: 1872545627}

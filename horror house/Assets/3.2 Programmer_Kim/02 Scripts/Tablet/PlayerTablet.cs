@@ -40,6 +40,22 @@ public class PlayerTablet : MonoBehaviour
     [Tooltip("태블릿 화면(월드 캔버스). 태블릿이 올라오는 도중에 켜진다.")]
     public GameObject screenRoot;
 
+    /// <summary>
+    /// 켜 두면 태블릿을 내리고 있어도 화면이 꺼지지 않는다.
+    /// 알람이 와서 내린 상태에서도 화면을 보여 줘야 할 때 TabletAlarm이 켠다.
+    /// 값을 바꾸면 그 자리에서 화면을 다시 켜고 끈다.
+    /// </summary>
+    public bool ForceScreenOn
+    {
+        get { return _forceScreenOn; }
+        set
+        {
+            if (_forceScreenOn == value) return;
+            _forceScreenOn = value;
+            SetScreenActive(_t >= screenOnAt);
+        }
+    }
+
     /// <summary>태블릿이 올라와 있는가.</summary>
     public bool IsOpened { get { return _opened; } }
 
@@ -56,6 +72,7 @@ public class PlayerTablet : MonoBehaviour
     // 0 = 내린 자세, 1 = 올린 자세
     private float _t;
     private float _tVelocity;
+    private bool _forceScreenOn;
 
     private void Start()
     {
@@ -144,6 +161,9 @@ public class PlayerTablet : MonoBehaviour
 
     private void SetScreenActive(bool active)
     {
+        // 알람이 켜 두라고 하면 내린 상태에서도 화면을 유지한다.
+        if (_forceScreenOn) active = true;
+
         if (screenRoot != null && screenRoot.activeSelf != active)
         {
             screenRoot.SetActive(active);

@@ -58,6 +58,13 @@ public class ViewmodelSway : MonoBehaviour
     [Tooltip("태블릿을 올리고 내리는 도중에 흔들림이 얼마나 부드럽게 붙을지. 클수록 더 뭉근하다.")]
     [Range(0f, 1f)] public float openBlendCurve = 0.6f;
 
+    /// <summary>
+    /// 바깥에서 끼워 넣는 추가 흔들림(예: 알람 진동).
+    /// 여기에 값을 넣어 두면 호흡·시선 지연 위에 그대로 더해진다. 매 프레임 넣어 줘야 한다.
+    /// </summary>
+    [System.NonSerialized] public Vector3 extraPosition;
+    [System.NonSerialized] public Vector3 extraRotation;
+
     private PlayerTablet _tablet;
     private Transform _cameraTransform;
 
@@ -114,8 +121,9 @@ public class ViewmodelSway : MonoBehaviour
         if (lookSway) AddLookSway(dt, ref posOffset, ref rotOffset);
         if (walkBob) AddWalkBob(dt, ref posOffset, ref rotOffset);
 
-        transform.localPosition = _tablet.PosePosition + posOffset * strength;
-        transform.localRotation = _tablet.PoseRotation * Quaternion.Euler(rotOffset * strength);
+        // 알람 진동처럼 바깥에서 넣는 값은 태블릿을 내리고 있어도 그대로 적용한다.
+        transform.localPosition = _tablet.PosePosition + posOffset * strength + extraPosition;
+        transform.localRotation = _tablet.PoseRotation * Quaternion.Euler(rotOffset * strength + extraRotation);
     }
 
     /// <summary>느린 사인파에 약간의 노이즈를 섞는다. 순수한 사인파만 쓰면 기계처럼 보인다.</summary>

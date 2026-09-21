@@ -87,6 +87,7 @@ public class TabletDocument : MonoBehaviour
     {
         if (tablet == null) tablet = GetComponentInParent<PlayerTablet>();
         if (taskList == null) taskList = GetComponent<TabletTaskList>();
+        if (taskList == null) taskList = GetComponentInParent<TabletTaskList>();
     }
 
     private void OnEnable()

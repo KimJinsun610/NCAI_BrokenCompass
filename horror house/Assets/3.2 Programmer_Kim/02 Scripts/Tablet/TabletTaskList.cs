@@ -43,6 +43,9 @@ public class TabletTaskList : MonoBehaviour
     /// <summary>목록이 바뀌면 알린다. 화면이 이 신호를 받아 다시 그린다.</summary>
     public event Action Changed;
 
+    /// <summary>새 지시가 들어왔을 때만 알린다. 알람이 이 신호를 듣고 울린다.</summary>
+    public event Action<Task> TaskAdded;
+
     public IReadOnlyList<Task> Tasks { get { return tasks; } }
 
     /// <summary>아직 끝내지 않은 일의 수.</summary>
@@ -62,14 +65,17 @@ public class TabletTaskList : MonoBehaviour
         Task found = Find(id);
         if (found != null)
         {
+            // 이미 있는 지시는 문구만 고친다. 알람은 울리지 않는다.
             found.text = text;
-        }
-        else
-        {
-            tasks.Add(new Task { id = id, text = text, done = false });
+            Raise();
+            return;
         }
 
+        Task task = new Task { id = id, text = text, done = false };
+        tasks.Add(task);
+
         Raise();
+        if (TaskAdded != null) TaskAdded(task);
     }
 
     /// <summary>끝낸 것으로 표시한다.</summary>

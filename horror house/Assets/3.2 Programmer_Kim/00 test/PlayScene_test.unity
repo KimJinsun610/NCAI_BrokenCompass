@@ -191014,14 +191014,38 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2087270009645622171, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4293648588
+      objectReference: {fileID: 0}
+    - target: {fileID: 2087270009645622171, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 2159123364928073260, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3037416985620321534, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: alarmClip
+      value: 
+      objectReference: {fileID: 8300000, guid: 546396858728d7e4289910b87d08fab2, type: 3}
     - target: {fileID: 3229842202808758907, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
       propertyPath: attachTo
       value: 
       objectReference: {fileID: 1527162404}
+    - target: {fileID: 3229842202808758907, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: closedPosition.x
+      value: -0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3229842202808758907, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: closedPosition.y
+      value: -0.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3229842202808758907, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: closedRotation.x
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 3229842202808758907, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
       propertyPath: openedPosition.x
       value: -0.18
@@ -191130,6 +191154,14 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6030436014268019125, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4293319103
+      objectReference: {fileID: 0}
+    - target: {fileID: 6030436014268019125, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: m_TextStyleHashCode
+      value: -1183493901
+      objectReference: {fileID: 0}
     - target: {fileID: 7406938407653891214, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
       propertyPath: m_LocalPosition.x
       value: 33.9771
@@ -191174,6 +191206,10 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8887705806267545729, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4288253043
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -191185,6 +191221,12 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 0}
     - targetCorrespondingSourceObject: {fileID: 1231194865410946065, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 5773136079649638861, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 8415993930936449300, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}

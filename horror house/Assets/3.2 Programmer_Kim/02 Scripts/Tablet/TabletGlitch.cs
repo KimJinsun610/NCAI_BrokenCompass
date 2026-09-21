@@ -101,6 +101,9 @@ public class TabletGlitch : MonoBehaviour
     {
         if (screenRenderer == null) return;
 
+        // Awake보다 먼저 불릴 수 있다(알람이 화면을 켜는 순간 등). 없으면 그때 만든다.
+        if (_block == null) _block = new MaterialPropertyBlock();
+
         // 재질을 복제하지 않고 이 렌더러에만 값을 덮어쓴다(다른 화면과 재질을 공유해도 안전).
         screenRenderer.GetPropertyBlock(_block);
         _block.SetFloat(GlitchId, _current);

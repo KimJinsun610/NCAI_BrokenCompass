@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Tablet_Screen
-  m_Shader: {fileID: 4800000, guid: 650dd9526735d5b46b79224bc6e94025, type: 3}
+  m_Shader: {fileID: 4800000, guid: b247927fcb943124a97c86dfc617a39b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -17,8 +17,7 @@ Material:
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
-  stringTagMap:
-    RenderType: Opaque
+  stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
   m_LockedProperties: 
@@ -44,16 +43,28 @@ Material:
     - _Cutoff: 0.5
     - _DstBlend: 0
     - _DstBlendAlpha: 0
+    - _FlickerSpeed: 11
+    - _FlickerStrength: 0.5
+    - _Glitch: 0
+    - _NoiseScale: 260
+    - _NoiseStrength: 0.6
     - _QueueOffset: 0
     - _SampleGI: 0
+    - _ScanlineCount: 140
+    - _ScanlineScroll: 0.15
+    - _ScanlineStrength: 0.35
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _Surface: 0
+    - _TearBands: 14
+    - _TearSpeed: 8
+    - _TearStrength: 0.5
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.04, g: 0.055, b: 0.07, a: 1}
+    - _BaseColor: {r: 0.04, g: 0.054999977, b: 0.06999998, a: 1}
     - _Color: {r: 0.04, g: 0.054999977, b: 0.06999998, a: 1}
+    - _GlowColor: {r: 0.34999996, g: 0.54999995, b: 0.6, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &7617630608520522636

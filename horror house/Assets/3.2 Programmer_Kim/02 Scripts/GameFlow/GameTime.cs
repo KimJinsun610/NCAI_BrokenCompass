@@ -10,15 +10,15 @@ using UnityEngine;
 public class GameTime : MonoBehaviour
 {
     [Header("근무 시간 (24시간 기준, 0 = 자정)")]
-    [SerializeField, Range(0, 23)] private int startHour = 0;
+    [SerializeField, Range(0, 23)] private int startHour = 2;
     [SerializeField, Range(0, 59)] private int startMinute = 0;
     [Tooltip("시작 시각보다 이르거나 같으면 다음 날로 계산한다 (예: 23:00 → 1:00)")]
-    [SerializeField, Range(0, 23)] private int endHour = 1;
+    [SerializeField, Range(0, 23)] private int endHour = 6;
     [SerializeField, Range(0, 59)] private int endMinute = 0;
 
     [Header("속도")]
-    [Tooltip("현실 1초 동안 흐르는 게임 시간(초). 20 = 20배속 (인게임 1시간 = 현실 3분)")]
-    [SerializeField, Min(0.1f)] private float timeMultiplier = 20f;
+    [Tooltip("현실 1초 동안 흐르는 게임 시간(초). 30 = 30배속 (인게임 1시간 = 현실 2분)")]
+    [SerializeField, Min(0.1f)] private float timeMultiplier = 30f;
 
     [Header("표시")]
     [Tooltip("켜면 12시간제(0시 → 12:00, 13시 → 1:00), 끄면 24시간제(00:00)")]

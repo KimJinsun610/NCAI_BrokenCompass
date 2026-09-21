@@ -33,6 +33,14 @@ public class TabletDocument : MonoBehaviour
     public bool useGameSessionDay = true;
     [Min(1)] public int previewDay = 1;
 
+    [Header("수행 지침")]
+    [Tooltip("할 일 목록. 비워 두면 같은 오브젝트에서 찾는다.")]
+    public TabletTaskList taskList;
+    [Tooltip("탭 이름을 보여 주는 줄. 보고 있는 쪽이 밝게 표시된다.")]
+    public TMP_Text tabText;
+    [Tooltip("탭을 오가는 키.")]
+    public KeyCode switchTabKey = KeyCode.Q;
+
     [Header("넘기기")]
     [Tooltip("이 키로 다음 쪽. 마우스 휠도 함께 동작한다.")]
     public KeyCode nextKey = KeyCode.RightArrow;
@@ -46,9 +54,21 @@ public class TabletDocument : MonoBehaviour
     [Tooltip("몇 %쯤 올라왔을 때부터 글자가 보이기 시작할지(0~1).")]
     [Range(0f, 1f)] public float fadeStartAt = 0.5f;
 
+    /// <summary>태블릿에 띄울 수 있는 화면 종류.</summary>
+    public enum Tab
+    {
+        Rules,   // 근무수칙
+        Tasks    // 수행 지침
+    }
+
     private readonly List<RuleSO> _rules = new List<RuleSO>();
     private int _page;
     private int _loadedDay = -1;
+    private TabletGlitch _glitch;
+    private Tab _tab = Tab.Rules;
+
+    /// <summary>지금 보고 있는 화면.</summary>
+    public Tab CurrentTab { get { return _tab; } }
 
     /// <summary>현재 쪽(0부터).</summary>
     public int Page { get { return _page; } }
@@ -66,23 +86,52 @@ public class TabletDocument : MonoBehaviour
     private void Awake()
     {
         if (tablet == null) tablet = GetComponentInParent<PlayerTablet>();
+        if (taskList == null) taskList = GetComponent<TabletTaskList>();
     }
 
     private void OnEnable()
     {
         // 태블릿을 열 때마다 화면이 켜지므로, 그때 일차가 바뀌었으면 다시 읽는다.
+        if (taskList != null) taskList.Changed += Render;
         Reload();
+    }
+
+    private void OnDisable()
+    {
+        if (taskList != null) taskList.Changed -= Render;
     }
 
     private void Update()
     {
         FadeWithOpenAmount();
 
+        if (ViewmodelTime.Paused) return;          // 일시정지 중에는 쪽 넘기기도 막는다
         if (tablet != null && !tablet.IsOpened) return;
+
+        if (Input.GetKeyDown(switchTabKey))
+        {
+            SwitchTab();
+            return;
+        }
 
         float wheel = Input.mouseScrollDelta.y;
         if (Input.GetKeyDown(nextKey) || wheel < -0.01f) NextPage();
         else if (Input.GetKeyDown(previousKey) || wheel > 0.01f) PreviousPage();
+    }
+
+    /// <summary>근무수칙 ↔ 수행 지침을 오간다.</summary>
+    public void SwitchTab()
+    {
+        SetTab(_tab == Tab.Rules ? Tab.Tasks : Tab.Rules);
+    }
+
+    public void SetTab(Tab value)
+    {
+        if (_tab == value) return;
+
+        _tab = value;
+        _page = 0;   // 화면을 바꾸면 첫 쪽부터
+        Render();
     }
 
     /// <summary>
@@ -159,34 +208,61 @@ public class TabletDocument : MonoBehaviour
 
     private void Render()
     {
+        RenderTabLine();
+
         if (headerText != null)
         {
-            headerText.text = "근무수칙 · " + _loadedDay + "일차";
+            // 화면 이름은 탭 줄이 보여 주므로 여기서는 일차만 적는다(작은 화면이라 줄을 아낀다).
+            headerText.text = _loadedDay + "일차";
         }
 
         if (bodyText != null)
         {
-            if (_rules.Count == 0)
-            {
-                bodyText.text = "오늘 배정된 수칙이 없습니다.";
-            }
-            else
-            {
-                System.Text.StringBuilder sb = new System.Text.StringBuilder();
-                int first = _page * rulesPerPage;
-                for (int i = first; i < first + rulesPerPage && i < _rules.Count; i++)
-                {
-                    if (sb.Length > 0) sb.Append("\n\n");
-                    // 카드 ID는 제작자용이라 보여 주지 않고, 덱 순서대로 번호만 붙인다.
-                    sb.Append(i + 1).Append(". ").Append(_rules[i].PlayerText);
-                }
-                bodyText.text = sb.ToString();
-            }
+            bodyText.text = _tab == Tab.Rules ? BuildRulesPage() : BuildTasksPage();
         }
 
         if (pageText != null)
         {
-            pageText.text = _rules.Count == 0 ? string.Empty : (_page + 1) + " / " + PageCount;
+            // 수행 지침은 한 화면에 다 넣으므로 쪽 번호를 쓰지 않는다.
+            bool showPage = _tab == Tab.Rules && _rules.Count > 0;
+            pageText.text = showPage ? (_page + 1) + " / " + PageCount : string.Empty;
         }
+
+        // 글자가 바뀌었으니 글리치가 들고 있던 원본도 새로 잡게 한다.
+        if (_glitch == null) _glitch = GetComponent<TabletGlitch>();
+        if (_glitch != null) _glitch.RefreshCleanText();
+    }
+
+    /// <summary>보고 있는 탭을 밝게, 나머지는 흐리게 적는다.</summary>
+    private void RenderTabLine()
+    {
+        if (tabText == null) return;
+
+        int pending = taskList != null ? taskList.PendingCount : 0;
+        string tasksLabel = pending > 0 ? "수행 지침 ●" : "수행 지침";
+
+        tabText.text = _tab == Tab.Rules
+            ? "<b>근무수칙</b>   <color=#4C5D66>" + tasksLabel + "</color>"
+            : "<color=#4C5D66>근무수칙</color>   <b>" + tasksLabel + "</b>";
+    }
+
+    private string BuildRulesPage()
+    {
+        if (_rules.Count == 0) return "오늘 배정된 수칙이 없습니다.";
+
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        int first = _page * rulesPerPage;
+        for (int i = first; i < first + rulesPerPage && i < _rules.Count; i++)
+        {
+            if (sb.Length > 0) sb.Append("\n\n");
+            // 카드 ID는 제작자용이라 보여 주지 않고, 덱 순서대로 번호만 붙인다.
+            sb.Append(i + 1).Append(". ").Append(_rules[i].PlayerText);
+        }
+        return sb.ToString();
+    }
+
+    private string BuildTasksPage()
+    {
+        return taskList != null ? taskList.BuildText() : "지시받은 일이 없습니다.";
     }
 }

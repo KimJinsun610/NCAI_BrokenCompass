@@ -35,6 +35,7 @@ public class HandIdleMotion : MonoBehaviour
     private readonly List<float> _weights = new List<float>();   // 마디별 세기
     private readonly List<int> _fingerIndex = new List<int>();   // 같은 손가락이면 같은 박자를 쓴다
     private float _seed;
+    private float _clock;   // 일시정지 중에는 멈추는 자체 시계
 
     private void Start()
     {
@@ -85,7 +86,12 @@ public class HandIdleMotion : MonoBehaviour
     {
         if (degrees <= 0.001f) return;
 
-        float t = Time.unscaledTime * speed;
+        // 일시정지 중에는 손가락도 그대로 멈춘다.
+        float dt = ViewmodelTime.Delta;
+        if (dt <= 0f) return;
+        _clock += dt;
+
+        float t = _clock * speed;
 
         for (int i = 0; i < bones.Count; i++)
         {

@@ -70,6 +70,7 @@ public class ViewmodelSway : MonoBehaviour
     private float _walkVelocity;
     private float _smoothedSpeed;
     private float _noiseSeed;
+    private float _clock;          // 일시정지 중에는 멈추는 자체 시계
 
     private void Awake()
     {
@@ -93,8 +94,13 @@ public class ViewmodelSway : MonoBehaviour
     {
         if (_cameraTransform == null) return;
 
-        float dt = Time.unscaledDeltaTime;
+        // 일시정지 중에는 손도 그 자리에 멈춰 있어야 한다.
+        float dt = ViewmodelTime.Delta;
         if (dt <= 0f) return;
+
+        // 자체 시계를 쓴다. Time.unscaledTime을 쓰면 멈춰 있는 동안에도 위상이 흘러서
+        // 다시 시작할 때 손이 엉뚱한 지점으로 튄다.
+        _clock += dt;
 
         // 올라오는 동안 흔들림이 선형으로 끼어들면 붙는 순간이 느껴진다. 곡선을 태워 부드럽게 섞는다.
         float open = _tablet.OpenAmount;
@@ -115,7 +121,7 @@ public class ViewmodelSway : MonoBehaviour
     /// <summary>느린 사인파에 약간의 노이즈를 섞는다. 순수한 사인파만 쓰면 기계처럼 보인다.</summary>
     private void AddBreathing(ref Vector3 posOffset, ref Vector3 rotOffset)
     {
-        float t = Time.unscaledTime;
+        float t = _clock;
         float phase = breathSeconds > 0.01f ? t / breathSeconds * Mathf.PI * 2f : 0f;
         float wave = Mathf.Sin(phase);
         float drift = Mathf.PerlinNoise(_noiseSeed, t * 0.15f) * 2f - 1f;   // -1 ~ 1

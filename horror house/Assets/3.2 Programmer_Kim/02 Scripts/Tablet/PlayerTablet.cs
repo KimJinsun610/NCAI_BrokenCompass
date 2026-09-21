@@ -73,6 +73,9 @@ public class PlayerTablet : MonoBehaviour
 
     private void Update()
     {
+        // 일시정지 중에는 키도 받지 않고 움직이지도 않는다.
+        if (ViewmodelTime.Paused) return;
+
         if (readInput && Input.GetKeyDown(toggleKey))
         {
             Toggle();
@@ -83,9 +86,9 @@ public class PlayerTablet : MonoBehaviour
         {
             // 일정 속도로 움직이면 시작·끝이 딱 끊긴다. 스프링처럼 감속하며 붙게 한다.
             // 올라오는 도중에 다시 누르면 속도를 이어받아 부드럽게 방향을 튼다.
-            // 태블릿을 여는 동안 시간이 멈출 수 있으므로 unscaled를 쓴다.
+            // 시간은 ViewmodelTime을 쓴다(일시정지 중에는 0이라 그 자리에 멈춘다).
             float smoothTime = Mathf.Max(0.02f, moveSeconds * 0.45f);
-            _t = Mathf.SmoothDamp(_t, target, ref _tVelocity, smoothTime, Mathf.Infinity, Time.unscaledDeltaTime);
+            _t = Mathf.SmoothDamp(_t, target, ref _tVelocity, smoothTime, Mathf.Infinity, ViewmodelTime.Delta);
 
             if (Mathf.Abs(_t - target) < 0.0015f)
             {

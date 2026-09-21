@@ -14,12 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
   _cardId: C4
   _space: 3
-  _playerText: "\uCE60\uD310 \uAE01\uB294 \uC18C\uB9AC\uC640 \uC758\uC790 \uB044\uB294
-    \uC18C\uB9AC\uAC00 \uACB9\uCE5C\uB2E4\uBA74, \uAD50\uD0C1 \uCABD\uC73C\uB85C\uB294
-    \uBC1C\uC744 \uB4E4\uC774\uC9C0 \uB9C8\uC2ED\uC2DC\uC624. \uB450 \uC18C\uB9AC\uAC00
-    \uBAA8\uB450 \uBA4E\uC73C\uBA74 \uC810\uAC80\uC744 \uACC4\uC18D\uD558\uC154\uB3C4
-    \uB429\uB2C8\uB2E4. \uB450 \uC18C\uB9AC\uB97C \uD568\uAED8 \uB0B4\uB824\uBA74,
-    \uC190\uC774 \uB124 \uAC1C \uD544\uC694\uD569\uB2C8\uB2E4."
+  _playerText: "\uCE60\uD310 \uC18C\uB9AC\uC640 \uC758\uC790 \uC18C\uB9AC\uAC00 \uACB9\uCE58\uB294
+    \uB3D9\uC548\uC5D0\uB294, \uAD50\uD0C1\uC5D0 \uC811\uADFC\uD558\uC9C0 \uB9C8\uC2ED\uC2DC\uC624."
   _isLongTerm: 0
   _useEligibleBand: 1
   _eligibleAxis: 0
@@ -37,7 +33,7 @@ MonoBehaviour:
   _cancelCondition:
     rid: -2
   _settleAt: 0
-  _successDelta: 2
+  _successDelta: 4
   _failureAxis: 0
   _failureDelta: 15
   _paradoxId: P10

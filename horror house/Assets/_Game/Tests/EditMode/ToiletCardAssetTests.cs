@@ -93,11 +93,18 @@ namespace NightDuty.Tests
             CollectionAssert.IsEmpty(errors);
             Assert.IsTrue(Load("T1").IsLongTerm, "T1은 장기(그날 칸 개폐 금지)");
             Assert.IsTrue(Load("T6").IsLongTerm, "T6은 장기(밤 종료까지 칸 진입 금지)");
-            Assert.IsFalse(Load("T6").UseEligibleBand, "T6은 구간 검사 대신 두 칸 개방 식별로 시작");
+            // 2026-09-21 재설계: T6에 배치 Band3~Band4 자격이 되살아났다(구간 검사 끔 → 켬).
+            // 두 칸 개방 식별 신호는 여전히 필요하다 — 자격과 트리거는 별개다.
+            RuleSO t6 = Load("T6");
+            Assert.IsTrue(t6.UseEligibleBand, "T6은 배치 구간 검사를 쓴다");
+            Assert.AreEqual(FearAxis.Layout, t6.EligibleAxis, "T6 자격 축은 배치");
+            Assert.AreEqual(Band.Band3, t6.EligibleFrom, "T6 자격 하한은 Band3");
+            Assert.AreEqual(Band.Band4, t6.EligibleTo, "T6 자격 상한은 Band4");
         }
 
         // ───────── T1 ─────────
         // 기획서 검증: 자동 움직임 후 출입문 E: 0. 칸 문 E: 배치 +12. 처음부터 열린 칸만 관찰: T1 미시작.
+        // 2026-09-21 재설계: 준수 신뢰 +2 → +4.
 
         private RuleBook StartT1()
         {
@@ -108,7 +115,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void T1_자동움직임후_출입문E는_0_밤종료에_신뢰2()
+        public void T1_자동움직임후_출입문E는_0_밤종료에_신뢰4()
         {
             RuleBook book = StartT1();
             book.Dispatch(Door(EntranceDoor, false));
@@ -117,7 +124,7 @@ namespace NightDuty.Tests
             book.EndNight();
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 0, 2);
+            AssertAllAxes(0, 0, 0, 4);   // 2026-09-21 재설계: 준수 신뢰 +2 → +4
         }
 
         [Test]
@@ -174,12 +181,13 @@ namespace NightDuty.Tests
             book.Dispatch(JudgeSignal.DoorCommand(OuterStall, false, ActionSource.Direction));
             book.EndNight();
 
-            AssertAllAxes(0, 0, 0, 2);
+            AssertAllAxes(0, 0, 0, 4);   // 2026-09-21 재설계: 준수 신뢰 +2 → +4
         }
 
-        // 자격: 배치 0~74.
-        [TestCase(74, true)]
-        [TestCase(75, false)]
+        // 자격: 배치 0~71(Band0~Band2).
+        // 2026-09-21 재설계: 구간 경계가 50/75 → 48/72로 밀려 상한이 74 → 71이 됐다. 경계 양쪽을 모두 건다.
+        [TestCase(71, true)]
+        [TestCase(72, false)]
         public void T1_배치구간자격(int layout, bool expectActive)
         {
             Setup(FearAxis.Layout, layout);
@@ -190,10 +198,13 @@ namespace NightDuty.Tests
         }
 
         // ───────── T2 ─────────
-        // 기획서 검증: 11.9초에 실외: 신뢰 +3. 정확히 12초에 퇴실: 청각 +15. 5초에 Tab 10초 열고 닫기: 남은 게임플레이 시간 7초.
+        // 기획서 검증: 11.9초에 실외: 신뢰 +5. 정확히 12초에 퇴실: 청각 +15. 5초에 Tab 10초 열고 닫기: 남은 게임플레이 시간 7초.
+        // 2026-09-21 재설계: 준수 신뢰 +3 → +5. 청각 구간 자격은 없어졌다(항상 자격 통과).
 
         private RuleBook StartT2()
         {
+            // 2026-09-21 재설계: T2의 청각 자격이 없어졌다. 아래 25는 자격용이 아니라
+            // 위반 시 청각 누적(25 + 15 = 40)을 확인하기 위한 초기값일 뿐이다.
             Setup(FearAxis.Auditory, 25);
             RuleBook book = Book("T2");
             book.Dispatch(T(SignalKind.ClueDelivered, Flush));
@@ -202,13 +213,13 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void T2_11초9에_실외는_신뢰3()
+        public void T2_11초9에_실외는_신뢰5()
         {
             RuleBook book = StartT2();
             TestKit.Advance(book, 11.9f);
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
 
-            AssertAllAxes(25, 0, 0, 3);
+            AssertAllAxes(25, 0, 0, 5);   // 2026-09-21 재설계: 준수 신뢰 +3 → +5
         }
 
         // 같은 프레임이면 Tick이 이동 신호보다 먼저 온다(연결 약속 보완) → 12초 퇴실은 실패.
@@ -264,24 +275,30 @@ namespace NightDuty.Tests
             book.Dispatch(T(SignalKind.ClueDelivered, Flush));
             TestKit.Advance(book, 13f);
 
-            AssertAllAxes(25, 0, 0, 3);
+            AssertAllAxes(25, 0, 0, 5);   // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (재채점이 없으므로 여전히 1회분)
         }
 
+        // 2026-09-21 재설계: T2의 청각 구간 자격이 사라져(항상 자격 통과) 「청각 24에서는 시작하지 않는다」의
+        // 전제 자체가 없어졌다. 뜻을 뒤집어 「구간과 무관하게(청각 0에서도) 시작한다」를 검증한다.
         [Test]
-        public void T2_청각24에서는_시작하지않는다()
+        public void T2_청각0에서도_시작한다()
         {
-            Setup(FearAxis.Auditory, 24);
             RuleBook book = Book("T2");
             book.Dispatch(T(SignalKind.ClueDelivered, Flush));
 
-            Assert.AreEqual(CardState.Waiting, book.Watchers[0].State);
+            Assert.AreEqual(CardState.Active, book.Watchers[0].State);
+            Assert.AreEqual(0, _axes.GetValue(FearAxis.Auditory), "청각은 손대지 않았다");
         }
 
         // ───────── T3 ─────────
-        // 기획서 검증: 관찰 후 열린 채 퇴실: 배치 +15. 닫기 완료·퇴실: 신뢰 +3. 닫고 재개방·퇴실: 배치 +15 한 번. 관찰 전 개폐: T3 0.
+        // 기획서 검증: 관찰 후 열린 채 퇴실: 배치 +15. 닫기 완료·퇴실: 신뢰 +5. 닫고 재개방·퇴실: 배치 +15 한 번. 관찰 전 개폐: T3 0.
+        // 2026-09-21 재설계: T3에 배치 Band2~Band4(48 이상) 자격이 새로 걸렸고 준수 신뢰가 +3 → +5가 됐다.
+        // 그래서 아래 테스트들의 배치 기대값은 「자격 기준선 48 + 위반 델타」다.
 
         private RuleBook StartT3()
         {
+            // 2026-09-21 재설계: T3 자격이 배치 Band2(48 이상)라 관찰로 시작시키기 전에 배치를 올려 둔다.
+            Setup(FearAxis.Layout, 48);
             RuleBook book = Book("T3");
             book.Dispatch(T(SignalKind.ModelObserved, "scene.ta"));
             Assert.AreEqual(CardState.Active, book.Watchers[0].State);
@@ -295,11 +312,11 @@ namespace NightDuty.Tests
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
 
             Assert.AreEqual(CardState.Violated, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 15, 0);
+            AssertAllAxes(0, 0, 63, 0);   // 2026-09-21 재설계: 자격 기준선 48 + 위반 15
         }
 
         [Test]
-        public void T3_닫기완료후_퇴실은_신뢰3()
+        public void T3_닫기완료후_퇴실은_신뢰5()
         {
             RuleBook book = StartT3();
             book.Dispatch(Door(InnerStall, true));
@@ -308,7 +325,7 @@ namespace NightDuty.Tests
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 0, 3);
+            AssertAllAxes(0, 0, 48, 5);   // 2026-09-21 재설계: 배치는 자격 기준선 48 그대로, 준수 신뢰 +3 → +5
         }
 
         [Test]
@@ -318,11 +335,11 @@ namespace NightDuty.Tests
             book.Dispatch(Door(InnerStall, true));
             book.Dispatch(T(SignalKind.DoorCloseCompleted, InnerStall));
             book.Dispatch(Door(InnerStall, false));
-            Assert.AreEqual(15, _axes.GetValue(FearAxis.Layout));
+            Assert.AreEqual(63, _axes.GetValue(FearAxis.Layout));   // 2026-09-21 재설계: 자격 기준선 48 + 위반 15
 
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
 
-            AssertAllAxes(0, 0, 15, 0);
+            AssertAllAxes(0, 0, 63, 0);
         }
 
         [Test]
@@ -345,7 +362,7 @@ namespace NightDuty.Tests
             book.Dispatch(Door(InnerStall, true));
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
 
-            AssertAllAxes(0, 0, 15, 0);
+            AssertAllAxes(0, 0, 63, 0);   // 2026-09-21 재설계: 자격 기준선 48 + 위반 15
         }
 
         // 기획서: 시간 제한 없음 — 관찰·닫기 후 실내에 머무르면 아직 진행 중.
@@ -358,7 +375,7 @@ namespace NightDuty.Tests
             TestKit.Advance(book, 60f);
 
             Assert.AreEqual(CardState.Active, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 0, 0);
+            AssertAllAxes(0, 0, 48, 0);   // 2026-09-21 재설계: 아직 정산 전 — 배치는 자격 기준선 48뿐
         }
 
         // 기획서: 관찰 전에 칸을 닫은 것은 위반이 아니다. 다시 열어 확인한 뒤부터 순서를 검사한다
@@ -366,17 +383,18 @@ namespace NightDuty.Tests
         [Test]
         public void T3_관찰전에닫았다가_다시열고관찰하면_그때부터검사()
         {
+            Setup(FearAxis.Layout, 48);   // 2026-09-21 재설계: T3 자격이 배치 Band2(48 이상)다
             RuleBook book = Book("T3");
             book.Dispatch(Door(InnerStall, true));
             book.Dispatch(T(SignalKind.DoorCloseCompleted, InnerStall));
             book.Dispatch(Door(InnerStall, false));
             book.Dispatch(T(SignalKind.ModelObserved, "scene.ta"));
             Assert.AreEqual(CardState.Active, book.Watchers[0].State);
-            Assert.AreEqual(0, _axes.GetValue(FearAxis.Layout));
+            Assert.AreEqual(48, _axes.GetValue(FearAxis.Layout), "시작 전 개폐에는 델타가 없다");
 
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
 
-            AssertAllAxes(0, 0, 15, 0);
+            AssertAllAxes(0, 0, 63, 0);   // 자격 기준선 48 + 위반 15
         }
 
         // 공통 교차 「위반 중복」: 닫기 명령 → 완료 전 재개방 → 열린 채 퇴실 = 배치 +15 한 번.
@@ -389,11 +407,12 @@ namespace NightDuty.Tests
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
             book.EndNight();
 
-            AssertAllAxes(0, 0, 15, 0);
+            AssertAllAxes(0, 0, 63, 0);   // 2026-09-21 재설계: 자격 기준선 48 + 위반 15 한 번
         }
 
         // ───────── T4 ─────────
-        // 기획서 검증: 호출 후 퇴실: 신뢰 +2. 세면대 접근: 청각 +12. Tab을 열지 않고 퇴실해도 준수. T-B 숨소리로 발동 없음.
+        // 기획서 검증: 호출 후 퇴실: 신뢰 +4. 세면대 접근: 청각 +12. Tab을 열지 않고 퇴실해도 준수. T-B 숨소리로 발동 없음.
+        // 2026-09-21 재설계: 준수 신뢰 +2 → +4. 자격은 여전히 청각 Band2~Band4지만 하한이 50 → 48로 밀렸다.
 
         private RuleBook StartT4()
         {
@@ -405,13 +424,13 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void T4_호출후_퇴실은_신뢰2()
+        public void T4_호출후_퇴실은_신뢰4()
         {
             RuleBook book = StartT4();
             book.Dispatch(JudgeSignal.Proximity(Sink, 2f));
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
 
-            AssertAllAxes(50, 0, 0, 2);
+            AssertAllAxes(50, 0, 0, 4);   // 2026-09-21 재설계: 준수 신뢰 +2 → +4
         }
 
         [Test]
@@ -430,7 +449,7 @@ namespace NightDuty.Tests
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            Assert.AreEqual(2, _axes.GetValue(FearAxis.Trust));
+            Assert.AreEqual(4, _axes.GetValue(FearAxis.Trust));   // 2026-09-21 재설계: 준수 신뢰 +2 → +4
         }
 
         // T-B 숨소리는 효과음 — 호출 단서 신호가 아니다.
@@ -446,10 +465,11 @@ namespace NightDuty.Tests
             AssertAllAxes(50, 0, 0, 0);
         }
 
+        // 2026-09-21 재설계: 구간 경계가 밀려 49는 이제 Band2(자격 안)다. 자격 직전 값은 47이다.
         [Test]
-        public void T4_청각49에서는_시작하지않는다()
+        public void T4_청각47에서는_시작하지않는다()
         {
-            Setup(FearAxis.Auditory, 49);
+            Setup(FearAxis.Auditory, 47);
             RuleBook book = Book("T4");
             book.Dispatch(T(SignalKind.ClueDelivered, SinkCall));
 
@@ -457,7 +477,8 @@ namespace NightDuty.Tests
         }
 
         // ───────── T5 ─────────
-        // 기획서 검증: 열린 칸뿐인 상태: 미시작. 식별 후 문을 열고 On 유지: 조도 +12. Off 점검·퇴실: 신뢰 +2.
+        // 기획서 검증: 열린 칸뿐인 상태: 미시작. 식별 후 문을 열고 On 유지: 조도 +12. Off 점검·퇴실: 신뢰 +4.
+        // 2026-09-21 재설계: 준수 신뢰 +2 → +4. 조도 구간 자격은 없어졌다(아래 조도 50은 위반 누적 확인용 초기값).
 
         // 모든 칸이 열려 있으면 새는 빛 식별 대상이 없다(클라이언트 몫) → 시작 신호 없음.
         [Test]
@@ -487,7 +508,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void T5_유예내Off_점검퇴실은_신뢰2()
+        public void T5_유예내Off_점검퇴실은_신뢰4()
         {
             Setup(FearAxis.Illuminance, 50);
             RuleBook book = Book("T5");
@@ -499,7 +520,7 @@ namespace NightDuty.Tests
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.Toilet));
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Toilet));
 
-            AssertAllAxes(0, 50, 0, 2);
+            AssertAllAxes(0, 50, 0, 4);   // 2026-09-21 재설계: 준수 신뢰 +2 → +4
         }
 
         // 기획서: 문 열기 자체는 T5 위반이 아니다. 빛 단서를 지워도 시작된 의무는 유지된다.
@@ -532,7 +553,8 @@ namespace NightDuty.Tests
         }
 
         // ───────── T6 ─────────
-        // 기획서 검증: 문밖 관찰·점검: 밤 종료 신뢰 +2. 바깥 칸 내부 진입도 배치 +15. P4 안쪽 칸 도착: 같은 T6 한 번만 적용.
+        // 기획서 검증: 문밖 관찰·점검: 밤 종료 신뢰 +4. 바깥 칸 내부 진입도 배치 +15. P4 안쪽 칸 도착: 같은 T6 한 번만 적용.
+        // 2026-09-21 재설계: 준수 신뢰 +2 → +4. 자격으로 배치 Band3~Band4(72 이상)가 새로 걸렸다(아래 75는 Band3 안).
 
         private RuleBook StartT6()
         {
@@ -544,7 +566,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void T6_문밖관찰_점검은_밤종료에_신뢰2()
+        public void T6_문밖관찰_점검은_밤종료에_신뢰4()
         {
             RuleBook book = StartT6();
             book.Dispatch(T(SignalKind.ZoneEntered, "toilet.stall.inner.front"));   // 칸 밖 관찰 지점 — 무관
@@ -556,7 +578,7 @@ namespace NightDuty.Tests
             book.EndNight();
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 75, 2);
+            AssertAllAxes(0, 0, 75, 4);   // 2026-09-21 재설계: 준수 신뢰 +2 → +4
         }
 
         [Test]
@@ -593,14 +615,21 @@ namespace NightDuty.Tests
             AssertAllAxes(0, 0, 75, 0);
         }
 
-        // 확정 결정: 구간 검사를 끄고 두 칸 개방 식별로 대신한다(「별도 유효한 두 칸 개방」은 배치 75 미만에서도 시작).
+        // 2026-09-21 재설계: 구간 검사를 되살렸다 — 두 칸 개방 식별만으로는 부족하고 배치 Band3(72 이상)이어야 한다.
+        // 옛 「배치 0에서도 시작한다」는 이제 거짓이므로 뜻을 뒤집어 자격 경계 양쪽을 검증한다.
         [Test]
-        public void T6_배치0에서도_두칸개방식별이면_시작한다()
+        public void T6_배치71에서는_시작하지않고_72에서_시작한다()
         {
-            RuleBook book = Book("T6");
-            book.Dispatch(T(SignalKind.ClueIdentified, BothOpen));
+            Setup(FearAxis.Layout, 71);
+            RuleBook below = Book("T6");
+            below.Dispatch(T(SignalKind.ClueIdentified, BothOpen));
+            Assert.AreEqual(CardState.Waiting, below.Watchers[0].State, "배치 71은 Band2 — 자격 미달");
 
-            Assert.AreEqual(CardState.Active, book.Watchers[0].State);
+            Setup(FearAxis.Layout, 1);   // 71 + 1 = 72 → Band3
+            RuleBook atBand3 = Book("T6");
+            atBand3.Dispatch(T(SignalKind.ClueIdentified, BothOpen));
+
+            Assert.AreEqual(CardState.Active, atBand3.Watchers[0].State, "배치 72는 Band3 — 자격 충족");
         }
 
         // 기획서: 재방문·문 개폐로 금지가 사라지지 않는다(준수 조건을 채운 뒤라도 진입하면 위반).

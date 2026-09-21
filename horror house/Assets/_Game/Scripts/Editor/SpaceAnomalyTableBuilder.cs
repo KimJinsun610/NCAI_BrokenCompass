@@ -77,10 +77,10 @@ namespace NightDuty.Editor
             Add(list, s, FearAxis.Auditory, Band.Band4, "퇴실 파손음 뒤 무거운 물체 놓는 소리 1회", "glass.break", "heavy.drop", "glass.touch.under", "glass.scrape.under");
             AddLight(list, s, 4, 3, 2, 1);
             Add(list, s, FearAxis.Layout, Band.Band0, "기존 실험대·기구 정상 배치", "lab.normal");
-            Add(list, s, FearAxis.Layout, Band.Band1, "일반 소품 배치 유지", "lab.normal");
-            Add(list, s, FearAxis.Layout, Band.Band2, "일반 소품 배치 유지", "lab.normal");
-            Add(list, s, FearAxis.Layout, Band.Band3, "일반 소품 배치 유지", "lab.normal");
-            Add(list, s, FearAxis.Layout, Band.Band4, "일반 소품 배치 유지 (모형 위치는 S-A·S-B 장면으로 별도)", "lab.normal");
+            Add(list, s, FearAxis.Layout, Band.Band1, "의자 하나가 책상에서 빠져나와 전시형 인체모형을 향함", "lab.normal", "chair.toward.model");
+            Add(list, s, FearAxis.Layout, Band.Band2, "여러 의자가 전시형 인체모형을 향함", "lab.normal", "chair.toward.model", "chairs.toward.model");
+            Add(list, s, FearAxis.Layout, Band.Band3, "의자들이 전시형 인체모형을 향한 반원 배치 — 배치축 하이라이트", "lab.normal", "chair.toward.model", "chairs.toward.model", "chairs.semicircle");
+            Add(list, s, FearAxis.Layout, Band.Band4, "반원 배치 유지. 반원 바깥 의자 하나만 출입구를 향함 (모형 위치는 S-A·S-B 장면으로 별도)", "lab.normal", "chair.toward.model", "chairs.toward.model", "chairs.semicircle", "chair.toward.exit");
 
             // ── 화장실 (등 4개) ──
             s = SpaceId.Toilet;

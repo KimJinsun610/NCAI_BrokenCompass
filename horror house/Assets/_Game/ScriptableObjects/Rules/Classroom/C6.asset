@@ -14,11 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
   _cardId: C6
   _space: 3
-  _playerText: "1-1\uACFC 1-3\uC744 \uAC01\uAC01 \uC810\uAC80\uD558\uACE0, \uC9C1\uC811
-    \uC5F4\uC5B4 \uB454 \uBB38\uC740 \uADFC\uBB34 \uC885\uB8CC \uC804\uAE4C\uC9C0
-    \uB2EB\uC73C\uC2ED\uC2DC\uC624. \uC800\uC808\uB85C \uC5F4\uB9B0 \uBB38\uC740
-    \uADF8\uB300\uB85C \uB450\uC2ED\uC2DC\uC624. \uB4A4\uB530\uB77C \uB2EB\uB294
-    \uC0AC\uB78C\uC774 \uB530\uB85C \uC788\uC2B5\uB2C8\uB2E4."
+  _playerText: "1-1\uACFC 1-3\uC744 \uC810\uAC80\uD55C \uB4A4, \uC9C1\uC811 \uC5EC\uC2E0
+    \uBB38\uB9CC \uB2EB\uACE0 \uB098\uC624\uC2ED\uC2DC\uC624."
   _isLongTerm: 1
   _useEligibleBand: 0
   _eligibleAxis: 0
@@ -37,7 +34,7 @@ MonoBehaviour:
   _cancelCondition:
     rid: -2
   _settleAt: 0
-  _successDelta: 3
+  _successDelta: 5
   _failureAxis: 2
   _failureDelta: 12
   _paradoxId: P12

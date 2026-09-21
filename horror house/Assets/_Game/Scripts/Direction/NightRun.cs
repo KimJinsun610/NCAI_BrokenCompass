@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -38,7 +38,23 @@ namespace NightDuty
         private static readonly HashSet<SpaceId> VisitedToday = new HashSet<SpaceId>();
         private static readonly List<RuleSO> DeckToday = new List<RuleSO>();
         private static readonly ParadoxDirector Paradox = new ParadoxDirector();
+        private static DayDirector _director;
         private static DaySummary _lastSummary;
+
+        /// <summary>
+        /// 공간 미방문으로 끝난 카드에 물리는 감각축 벌점(2026-09-21 재설계).
+        /// <para>
+        /// <b>왜 9인가.</b> 가서 어기면 기본 +12다. 미방문이 +9면 <b>가는 쪽이 항상 3만큼 이긴다</b> —
+        /// 도망은 불이익이되 「가서 어기느니 안 가고 만다」가 되지는 않는다.
+        /// 이 한 줄이 없으면 <b>경비실에 숨어 버티기가 최적해</b>가 된다(축이 한 칸도 안 오르고 완주).
+        /// </para>
+        /// <para>
+        /// 기획서 D절은 미판정 벌점을 전 유형 폐기했는데, <b>이 유형 하나만 예외</b>다.
+        /// 방문했으나 단서가 안 났다 · 문자가 안 왔다 · 대상 참조가 없다 · 선택이 불가능했다는
+        /// 전부 0 그대로다 — 그것들은 플레이어의 선택이 아니기 때문이다.
+        /// </para>
+        /// </summary>
+        public const int UnvisitedPenalty = 9;
 
         /// <summary>
         /// 테스트·에디터 도구가 덱을 직접 넣을 때 쓴다. null이면 <see cref="NightDeckTableSO"/>를 읽는다.
@@ -132,6 +148,7 @@ namespace NightDuty
             DeckToday.Clear();
             _lastSummary = default;
             TargetsInUse = null;
+            _director = null;   // 첫 LoadDeck에서 카드 풀을 읽어 만든다.
         }
 
         /// <summary>
@@ -157,13 +174,17 @@ namespace NightDuty
             InspectedToday.Clear();
             VisitedToday.Clear();
 
+            // 일차 하한을 **덱보다 먼저** 적용한다. 카드의 발동 자격이 축 값을 보고 정해지므로
+            // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다(DayFloor 주석 참조).
+            DayFloor.Apply(_axes, Day);
+
             IReadOnlyList<RuleSO> deck = LoadDeck(Day);
             DeckToday.Clear();
             DeckToday.AddRange(deck);
             TargetsInUse = ResolveTargets();
             _book = new RuleBook(deck, _axes, _bands, TargetsInUse);
             _book.Settled += OnSettled;
-            Paradox.BeginNight();
+            Paradox.BeginNight(_axes);   // 그날 상한을 근무 시작 시 신뢰로 고정한다(기획서 C절).
             _book.BeginNight();   // 밤 시작부터 감시하는 장기 카드(C6)를 시작한다.
 
             // 씬이 새로 열렸으므로 연출에 현재 구간을 from == to로 한 번 알린다.
@@ -279,6 +300,7 @@ namespace NightDuty
 
             // TODO(조우 시스템): 필수 점검 완료 · 오늘 조우 관찰·퇴실 완료를 수락 조건으로 검사한다(기획서 공통 명세 1절).
             _book.EndNight();
+            ApplyUnvisitedPenalty();
             // TODO(문자 시스템): P형 미도달 정산은 여기, 수칙 정산 뒤에 온다.
 
             if (IsCaptured)
@@ -321,6 +343,68 @@ namespace NightDuty
                 dutyLog);
         }
 
+        /// <summary>
+        /// 그날 배정된 공간에 <b>한 번도 들어가지 않은</b> 카드에 감각축 <see cref=UnvisitedPenalty/>를 물린다.
+        /// 수칙 정산이 끝난 뒤, 문자 정산보다 앞에서 한 번만 부른다.
+        /// <list type=bullet>
+        /// <item>방문했으면 물리지 않는다 — 갔는데 단서가 안 난 것은 플레이어의 선택이 아니다.</item>
+        /// <item>이미 준수·위반으로 정산된 카드는 건너뛴다. 결과가 났다면 그 공간에 있었다는 뜻이다.</item>
+        /// <item>한 공간에 여러 카드가 걸려 있으면 <b>카드마다</b> 물린다. 안 간 대가는 그 공간이 아니라 수칙 단위다.</item>
+        /// <item>도중에 100에 닿으면 <see cref=FearAxisSystem/>이 잠기므로 남은 카드의 델타는 자동으로 무시된다.</item>
+        /// </list>
+        /// </summary>
+        private static void ApplyUnvisitedPenalty()
+        {
+            if (_axes == null || _axes.IsLocked)
+            {
+                return;
+            }
+
+            for (int i = 0; i < DeckToday.Count; i++)
+            {
+                RuleSO card = DeckToday[i];
+                if (card == null || VisitedToday.Contains(card.Space))
+                {
+                    continue;
+                }
+
+                if (WasSettled(card.CardId))
+                {
+                    continue;
+                }
+
+                _axes.Apply(card.FailureAxis, UnvisitedPenalty, card.CardId + "(미방문)", card.Space);
+
+                if (_axes.IsLocked)
+                {
+                    return;
+                }
+            }
+        }
+
+        /// <summary>그 카드가 준수 또는 위반으로 정산됐는지. 미판정·대기·진행 중은 false.</summary>
+        private static bool WasSettled(string cardId)
+        {
+            if (_book == null)
+            {
+                return false;
+            }
+
+            IReadOnlyList<RuleWatcher> watchers = _book.Watchers;
+            for (int i = 0; i < watchers.Count; i++)
+            {
+                RuleWatcher w = watchers[i];
+                if (w.Card == null || w.Card.CardId != cardId)
+                {
+                    continue;
+                }
+
+                return w.State == CardState.Complied || w.State == CardState.Violated;
+            }
+
+            return false;
+        }
+
         /// <summary>그날 덱 순서대로 근무 일지 줄을 만든다. 같은 카드의 결과가 여럿이면 마지막 것을 쓴다.</summary>
         private static List<DutyLogEntry> BuildDutyLog(List<RuleResult> results)
         {
@@ -348,7 +432,14 @@ namespace NightDuty
                     state = CardState.Waiting;
                 }
 
-                log.Add(new DutyLogEntry(i + 1, card.CardId, card.Space, card.PlayerText, state, VisitedToday.Contains(card.Space)));
+                log.Add(new DutyLogEntry(
+                    i + 1,
+                    card.CardId,
+                    card.Space,
+                    card.PlayerText,
+                    state,
+                    VisitedToday.Contains(card.Space),
+                    Paradox.WasSentToday(card.CardId)));
             }
 
             return log;
@@ -463,7 +554,46 @@ namespace NightDuty
                 return new List<RuleSO>();
             }
 
-            return table.DeckFor(day);
+            // 2026-09-21 재설계: 편성표는 이제 **카드 풀**로만 쓰고, 그날 6장은 DayDirector가 고른다.
+            // 이전에는 일차별 고정 리스트였는데, 그러면 한 공간·한 축에 몰리는 날을 사람이 일일이 막아야 했고
+            // 24장 중 일곱 장은 한 회차에 한 번도 나오지 않았다.
+            if (_director == null)
+            {
+                _director = new DayDirector(CollectPool(table));
+            }
+
+            return _director.BuildDeck(day, _axes);
+        }
+
+        /// <summary>
+        /// 편성표의 모든 일차를 훑어 중복 없는 카드 풀을 만든다.
+        /// 편성표가 「일차별 덱」에서 「풀」로 뜻이 바뀌었지만, 기획팀이 쓰던 에셋을 그대로 살리려고
+        /// 표의 모든 칸을 합쳐서 읽는다. 표가 비어 있으면 빈 풀이 되고, 그날은 카드 없는 밤이 된다.
+        /// </summary>
+        private static List<RuleSO> CollectPool(NightDeckTableSO table)
+        {
+            List<RuleSO> pool = new List<RuleSO>();
+            HashSet<string> seen = new HashSet<string>();
+
+            for (int day = 1; day <= DayFloor.LastDay; day++)
+            {
+                IReadOnlyList<RuleSO> cards = table.DeckFor(day);
+                for (int i = 0; i < cards.Count; i++)
+                {
+                    RuleSO card = cards[i];
+                    if (card != null && seen.Add(card.CardId))
+                    {
+                        pool.Add(card);
+                    }
+                }
+            }
+
+            if (pool.Count == 0)
+            {
+                Debug.LogWarning("[NightRun] 편성표에 카드가 하나도 없습니다. 카드 없이 밤을 시작합니다.");
+            }
+
+            return pool;
         }
 
         private static void EnsureRun()
@@ -494,6 +624,7 @@ namespace NightDuty
             DeckOverride = null;
             RegisteredTargets = null;
             TargetsInUse = null;
+            _director = null;
         }
     }
 }

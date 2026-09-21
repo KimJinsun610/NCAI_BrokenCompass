@@ -14,6 +14,7 @@ using UnityEngine;
 /// <para>중립 구역(복도↔교실 손전등 전환)은 아직 없다. 손전등 카드(H3·C5)를 시험할 때 추가한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(40)]
 public sealed class SpaceZones : MonoBehaviour
 {
     /// <summary>방 하나. y는 층 구분에 쓴다(도서관은 2층이라 y가 다르다).</summary>
@@ -54,17 +55,34 @@ public sealed class SpaceZones : MonoBehaviour
     private SpaceId _current = SpaceId.None;
     private float _dwell;
     private bool _inspectedHere;
-    private float _next;
+    private float _acc;
     private bool[] _inZone;
 
     /// <summary>지금 판정된 공간.</summary>
     public SpaceId Current => _current;
 
+    /// <summary>
+    /// 신호 한 건을 코어와 큐 발신기에 함께 보낸다.
+    /// <para>
+    /// <see cref="AnomalyCueDirector"/>는 공간 진입·구역 진입·통행·점검 완료 시점을 알아야 큐를 무장할 수 있는데,
+    /// <see cref="NightRun"/>은 받은 신호를 되돌려 주지 않는다. 그래서 보내는 쪽에서 한 번 더 알린다.
+    /// </para>
+    /// </summary>
+    private static void Send(in JudgeSignal s)
+    {
+        NightRun.Send(s);
+        AnomalyCueDirector.Observe(s);
+    }
+
     private void Update()
     {
-        if (Time.time < _next) return;
-        float step = sampleSeconds;
-        _next = Time.time + step;
+        // 밤이 아니거나 포획됐거나 Tab이 열려 있으면 샘플하지 않는다.
+        // Tab 중에 _current를 갱신하면 코어는 그 신호를 버리므로 「나간 적 없는 공간에서 나감」 상태가 남는다.
+        if (!NightRun.IsNightActive || NightRun.IsCaptured || PlayerSensors.TabOpen)
+        {
+            _acc = 0f;
+            return;
+        }
 
         if (player == null)
         {
@@ -73,9 +91,27 @@ public sealed class SpaceZones : MonoBehaviour
             player = fp.transform;
         }
 
-        Vector3 p = player.position;
-        UpdateSignalZones(p);
-        UpdateSpace(p, step);
+        float step = sampleSeconds;
+
+        // 고정 간격 누산. Time.time 게이트는 프레임 지터만큼 매 샘플이 뒤로 밀려,
+        // 같은 방식으로 응시를 보내면 H2·C3의 3초가 실제 3.4초가 된다(CLAUDE.md §5.5-18).
+        _acc += Time.deltaTime;
+
+        int guard = 0;
+        while (_acc >= step)
+        {
+            _acc -= step;
+
+            if (++guard > 50)
+            {
+                _acc = 0f;
+                break;
+            }
+
+            Vector3 p = player.position;
+            UpdateSignalZones(p);
+            UpdateSpace(p, step);
+        }
     }
 
     private void UpdateSpace(Vector3 p, float step)
@@ -100,10 +136,10 @@ public sealed class SpaceZones : MonoBehaviour
         {
             if (_inspectedHere)
             {
-                NightRun.Send(JudgeSignal.OfSpace(SignalKind.InspectionCompleted, _current));
+                Send(JudgeSignal.OfSpace(SignalKind.InspectionCompleted, _current));
             }
 
-            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceExited, _current));
+            Send(JudgeSignal.OfSpace(SignalKind.SpaceExited, _current));
         }
 
         _current = space;
@@ -112,7 +148,7 @@ public sealed class SpaceZones : MonoBehaviour
 
         if (_current != SpaceId.None)
         {
-            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, _current));
+            Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, _current));
         }
     }
 
@@ -132,16 +168,16 @@ public sealed class SpaceZones : MonoBehaviour
             string id = signalZones[i].Id;
             if (inside)
             {
-                NightRun.Send(JudgeSignal.Target(SignalKind.ZoneEntered, id));
+                Send(JudgeSignal.Target(SignalKind.ZoneEntered, id));
                 continue;
             }
 
             if (signalZones[i].IsPassage)
             {
-                NightRun.Send(JudgeSignal.Target(SignalKind.PassageCompleted, id));
+                Send(JudgeSignal.Target(SignalKind.PassageCompleted, id));
             }
 
-            NightRun.Send(JudgeSignal.Target(SignalKind.ZoneExited, id));
+            Send(JudgeSignal.Target(SignalKind.ZoneExited, id));
         }
     }
 

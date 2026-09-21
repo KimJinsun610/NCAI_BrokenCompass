@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -235,7 +235,11 @@ namespace NightDuty.Editor
             {
                 CardId = id,
                 SettleAt = SettleAt.WhenSuccessMet,
-                SuccessDelta = 2,
+                // 준수 신뢰 델타는 2026-09-21 재설계로 +2/+3/+4 → +4/+5/+8 로 올렸다.
+                // 근거: 이전 값이면 5일 내내 24장을 전부 준수해도 신뢰가 60~90에 머물러
+                // 역설을 23쌍 중 4쌍밖에 못 본다. 신뢰 Band3~4(하루 3쌍·4쌍)는 도달 불가 구간이었다.
+                // 새 값이면 10쌍까지 열리고 Band3·Band4가 실재하는 구간이 된다.
+                SuccessDelta = 4,
                 FailureAxis = FearAxis.Layout,
                 FailureDelta = 12,
                 Radius = 1.5f
@@ -246,11 +250,11 @@ namespace NightDuty.Editor
                 // ───────────── 교실 ─────────────
 
                 case "C1":
-                    // 청각 0~49 · 1-1 문밖 분필 3획 끝에 시작(장기) · 1-3 점검 완료 → 신뢰 +2 · 그 전에 1-1 실내 진입 → 청각 +12.
+                    // 청각 0~47(Band0~1, 상한형) · 1-1 문밖 분필 3획 끝에 시작(장기) · 1-3 점검 완료 → 신뢰 +4 · 그 전에 1-1 실내 진입 → 청각 +12.
                     // 장기로 둔 이유: 복도 → 1-3 → 1-1로 방문을 넘는 순서 의무이고, 단서가 하루 1회라 방문 몫에 막히면 다시 오지 않는다.
                     // 「그날 1-3 점검을 마친 뒤면 시작 안 함」은 단서 재생기가 맡는다(점검 뒤에는 분필 단서를 전달하지 않음).
                     c.Space = SpaceId.Classroom_1_1;
-                    c.PlayerText = "1-1 문밖에서 분필 소리가 정확히 세 번 들린다면, 점검 순서를 바꾸어 1-3부터 완료하십시오. 순서를 지키지 않고 들어온 사람은, 학생으로 처리됩니다.";
+                    c.PlayerText = "1-1 문밖에서 분필 소리가 세 번 들렸다면, 1-3부터 점검하십시오.";
                     c.IsLongTerm = true;
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
@@ -266,11 +270,17 @@ namespace NightDuty.Editor
                     break;
 
                 case "C2":
-                    // 배치 25~99 또는 C-A(→ 구간 검사 끄고 회전 좌석 식별 신호의 존재로 대신) · 반경 밖 식별로 시작 ·
-                    // 점검 완료 → 신뢰 +2 · 좌석 1.5m 미만 → 배치 +12 · 점검 없이 퇴실 → 대기(다음 방문에 기회).
+                    // 배치 24~99(Band1~) · 반경 밖 식별로 시작 ·
+                    // 점검 완료 → 신뢰 +4 · 좌석 1.5m 미만 → 배치 +12 · 점검 없이 퇴실 → 대기(다음 방문에 기회).
+                    // 2026-09-21 재설계: 기획서 J절의 게이트를 되살렸다. 이전에는 구간 검사를 끄고
+                    // 「회전 좌석 식별 신호의 존재」로 대신했는데, 그러면 배치 Band0에서 열리는 카드가
+                    // H1·C6·T1·C2 넷이 되어 「축당 Band0 개방 3장」 불변식이 깨진다.
                     c.Space = SpaceId.Classroom_1_1;
-                    c.PlayerText = "출입문을 향해 돌아앉은 책상 근처로는 가지 마십시오. 그 자리는 수업을 듣기 위한 자리가 아닙니다. 앉아 있는 쪽에서는 문이 잘 보입니다.";
-                    c.UseEligibleBand = false;
+                    c.PlayerText = "출입문을 향해 돌아앉은 책상이 있다면, 거리를 두고 점검하십시오.";
+                    c.UseEligibleBand = true;
+                    c.EligibleAxis = FearAxis.Layout;
+                    c.EligibleFrom = Band.Band1;
+                    c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TargetIds = new[] { "cls11.desk.turned" };
                     c.Failure = new ProximityCondition(string.Empty);
@@ -282,10 +292,10 @@ namespace NightDuty.Editor
                     break;
 
                 case "C3":
-                    // 청각 50~99 · 퇴실 준비 중 뒷줄 책상 타격음으로 시작 · 실내 경계 이탈 → 신뢰 +2 ·
+                    // 청각 48~99(Band2~) · 퇴실 준비 중 뒷줄 책상 타격음으로 시작 · 실내 경계 이탈 → 신뢰 +4 ·
                     // 유예 2초 뒤 그 책상 3초 연속 응시 → 청각 +15. (타격음 단서 ID = 응시 대상 ID)
                     c.Space = SpaceId.Classroom_1_1;
-                    c.PlayerText = "나가려는 순간 뒤쪽 책상이 울린다면, 그 책상을 오래 바라보지 말고 교실 밖으로 나오십시오. 당신의 이름은, 아직 부르지 않았습니다.";
+                    c.PlayerText = "퇴실하려는 순간 뒤쪽 책상이 울리더라도, 그 책상을 오래 바라보지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
                     c.EligibleFrom = Band.Band2;
@@ -302,10 +312,10 @@ namespace NightDuty.Editor
                     break;
 
                 case "C4":
-                    // 청각 75~99 · 칠판 긁기와 의자 마찰이 겹쳐 들리기 시작할 때 시작 ·
-                    // 전체 시퀀스 종료 또는 그 전 퇴실 → 신뢰 +2 · 교탁 1.5m 미만 → 청각 +15.
+                    // 청각 72~99(Band3~) · 칠판 긁기와 의자 마찰이 겹쳐 들리기 시작할 때 시작 ·
+                    // 전체 시퀀스 종료 또는 그 전 퇴실 → 신뢰 +4 · 교탁 1.5m 미만 → 청각 +15.
                     c.Space = SpaceId.Classroom_1_1;
-                    c.PlayerText = "칠판 긁는 소리와 의자 끄는 소리가 겹친다면, 교탁 쪽으로는 발을 들이지 마십시오. 두 소리가 모두 멎으면 점검을 계속하셔도 됩니다. 두 소리를 함께 내려면, 손이 네 개 필요합니다.";
+                    c.PlayerText = "칠판 소리와 의자 소리가 겹치는 동안에는, 교탁에 접근하지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
                     c.EligibleFrom = Band.Band3;
@@ -323,14 +333,16 @@ namespace NightDuty.Editor
                     break;
 
                 case "C5":
-                    // 조도 50~99(실제 켜진 등 4개 이하) · 두 교실 공통, 진입 지점에서 등 상태 식별로 시작 ·
-                    // 유예 2초 뒤 On 유지로 점검 완료 → 신뢰 +3 · 유예 뒤 Off 또는 이후 Off 전환 → 조도 +12 · 짧은 입구 왕복 → 대기.
+                    // 조도 24~99(Band1~) · 두 교실 공통, 진입 지점에서 등 상태 식별로 시작 ·
+                    // 유예 2초 뒤 On 유지로 점검 완료 → 신뢰 +5 · 유예 뒤 Off 또는 이후 Off 전환 → 조도 +12 · 짧은 입구 왕복 → 대기.
+                    // 2026-09-21 재설계: Band2~ → Band1~ 로 한 칸 내렸다(조도축 Band1 보충).
+                    // 9.20V가 등 개수를 없앴으므로 조건은 색온도 구간이지 켜진 등 수가 아니다.
                     // 공간은 대표값 1-1(두 교실 공통 카드). 두 방 조건은 AnyOf로 모두 받는다.
                     c.Space = SpaceId.Classroom_1_1;
-                    c.PlayerText = "형광등이 네 개 이하로 켜져 있다면, 손전등을 켜고 교실 밖으로 나올 때까지 유지하십시오. 어두운 교실에서는 퇴실이 확인되지 않습니다. 아직 퇴실이 확인되지 않은 근무자가 한 명 있습니다.";
+                    c.PlayerText = "교실 형광등이 주황빛 이하로 어두워지면, 손전등을 켜고 점검하십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Illuminance;
-                    c.EligibleFrom = Band.Band2;
+                    c.EligibleFrom = Band.Band1;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TargetIds = new[] { "cls11.lights", "cls13.lights" };
@@ -342,18 +354,18 @@ namespace NightDuty.Editor
                         new SignalCondition(SignalKind.SpaceExited, string.Empty, SpaceId.Classroom_1_1),
                         new SignalCondition(SignalKind.SpaceExited, string.Empty, SpaceId.Classroom_1_3));
                     c.GraceSeconds = 2f;
-                    c.SuccessDelta = 3;
+                    c.SuccessDelta = 5;
                     c.FailureAxis = FearAxis.Illuminance;
                     c.FailureDelta = 12;
                     c.Radius = 0f;
                     break;
 
                 case "C6":
-                    // 자격 없음 · 덱에 들어오면 밤 시작부터 감시(장기) · 밤 종료에 두 교실 점검 완료·직접 연 문 모두 닫힘 → 신뢰 +3 ·
+                    // 자격 없음 · 덱에 들어오면 밤 시작부터 감시(장기) · 밤 종료에 두 교실 점검 완료·직접 연 문 모두 닫힘 → 신뢰 +5 ·
                     // 밤 종료에 점검 누락 또는 수동 개방 문이 열린 채 남음 → 배치 +12 한 번(같은 밤 종료 신호에서 위반 우선).
                     // 자동 개방 문(DoorAutoOpenObserved·연출 출처 명령)은 의무를 만들지 않는다.
                     c.Space = SpaceId.Classroom_1_1;
-                    c.PlayerText = "1-1과 1-3을 각각 점검하고, 직접 열어 둔 문은 근무 종료 전까지 닫으십시오. 저절로 열린 문은 그대로 두십시오. 뒤따라 닫는 사람이 따로 있습니다.";
+                    c.PlayerText = "1-1과 1-3을 점검한 뒤, 직접 여신 문만 닫고 나오십시오.";
                     c.IsLongTerm = true;
                     c.TriggerKind = SignalKind.NightBegan;
                     c.TargetIds = new[] { "corridor.door.11", "corridor.door.13" };
@@ -365,7 +377,7 @@ namespace NightDuty.Editor
                                 new SignalCondition(SignalKind.InspectionCompleted, string.Empty, SpaceId.Classroom_1_1),
                                 new SignalCondition(SignalKind.InspectionCompleted, string.Empty, SpaceId.Classroom_1_3))),
                         new DoorObligationCondition(string.Empty));
-                    c.SuccessDelta = 3;
+                    c.SuccessDelta = 5;
                     c.FailureAxis = FearAxis.Layout;
                     c.FailureDelta = 12;
                     c.Radius = 0f;
@@ -374,25 +386,25 @@ namespace NightDuty.Editor
                 // ───────────── 과학실 ─────────────
 
                 case "S1":
-                    // 1일차 고정(편성) · 과학실 진입으로 시작 · 보관 모형 얼굴 1초 연속 응시 → 신뢰 +3 ·
+                    // 1일차 고정(편성) · 과학실 진입으로 시작 · 보관 모형 얼굴 1초 연속 응시 → 신뢰 +5 ·
                     // 위반 없음(미관찰은 업무 미완료 — 준수 전용 카드) · 미관찰 퇴실 → 대기.
                     c.Space = SpaceId.ScienceRoom;
-                    c.PlayerText = "첫 근무일에는 과학실 보관 위치의 인체 모형과 눈을 맞춘 뒤 순찰을 시작하십시오. 모형도 같은 순간에 당신을 확인합니다.";
+                    c.PlayerText = "첫 근무는 과학실 보관 위치의 인체 모형을 확인하는 것으로 시작하십시오.";
                     c.TriggerKind = SignalKind.SpaceEntered;
                     c.TargetIds = new[] { "science.model.sa.face" };
                     c.Success = new GazeCondition(string.Empty, 1f, 0f);
                     c.Cancel = new SignalCondition(SignalKind.SpaceExited, string.Empty, SpaceId.ScienceRoom);
                     c.Failure = null;
                     c.FailureDelta = 0;
-                    c.SuccessDelta = 3;
+                    c.SuccessDelta = 5;
                     c.Radius = 0f;
                     break;
 
                 case "S2":
                     // 자격 구간 없음 · 점검 후 퇴실 바깥에서 유리 파손음 전달로 시작(장기) ·
-                    // 밤 종료까지 재진입 없음 → 신뢰 +2 · 과학실 실내 재진입 → 청각 +12(문 E만은 무관).
+                    // 밤 종료까지 재진입 없음 → 신뢰 +4 · 과학실 실내 재진입 → 청각 +12(문 E만은 무관).
                     c.Space = SpaceId.ScienceRoom;
-                    c.PlayerText = "과학실에서 나온 뒤 유리 깨지는 소리가 들린다면, 그날은 다시 들어가지 마십시오. 퇴실 기록 이후의 파손은 안에 남아 있는 사람의 책임입니다. 당신은 이미 나오셨고, 그 사람은 아직입니다.";
+                    c.PlayerText = "과학실에서 나온 뒤 유리 파손음이 들리면, 당일에는 다시 들어가지 마십시오.";
                     c.IsLongTerm = true;
                     c.TriggerKind = SignalKind.ClueDelivered;
                     c.TriggerId = "science.glass.break";
@@ -404,10 +416,10 @@ namespace NightDuty.Editor
                     break;
 
                 case "S3":
-                    // 청각 25~99 · 간격 식별 뒤 접촉음 전달로 시작(식별 선행은 재생기 몫) ·
-                    // 접근 없이 점검 완료 → 신뢰 +2 · 실험대 1.5m 미만 → 청각 +12 · 점검 없이 퇴실 → 대기.
+                    // 청각 24~99(Band1~) · 간격 식별 뒤 접촉음 전달로 시작(식별 선행은 재생기 몫) ·
+                    // 접근 없이 점검 완료 → 신뢰 +4 · 실험대 1.5m 미만 → 청각 +12 · 점검 없이 퇴실 → 대기.
                     c.Space = SpaceId.ScienceRoom;
-                    c.PlayerText = "유리 기구끼리 부딪히는 소리가 나는 실험대가 있는데, 그 기구들은 서로 닿을 수 없는 간격으로 고정되어 있다면, 다가가지 마십시오. 내용물은 모두 비웠습니다. 비운 뒤에도 안에서 무언가 움직입니다.";
+                    c.PlayerText = "닿을 수 없는 간격의 유리 기구가 부딪히면, 그 책상에 다가가지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
                     c.EligibleFrom = Band.Band1;
@@ -424,10 +436,10 @@ namespace NightDuty.Editor
                     break;
 
                 case "S4":
-                    // 조도 75~89(등 1개) · 마지막 등 식별로 시작(식별 0.2초는 응시에 넣지 않음) ·
-                    // 금지 응시 없이 점검 완료 → 신뢰 +2 · 그 등 2초 연속 응시 → 조도 +12 · 점검 없이 퇴실 → 대기.
+                    // 조도 72~89(Band3 창형. 9.20V가 등 개수를 삭제했으므로 색온도 구간이다) · 마지막 등 식별로 시작(식별 0.2초는 응시에 넣지 않음) ·
+                    // 금지 응시 없이 점검 완료 → 신뢰 +4 · 그 등 2초 연속 응시 → 조도 +12 · 점검 없이 퇴실 → 대기.
                     c.Space = SpaceId.ScienceRoom;
-                    c.PlayerText = "천장등이 하나만 남았다면, 그 등을 오래 올려다보지 마십시오. 그 안에서도 이쪽을 봅니다.";
+                    c.PlayerText = "지정 점검등이 짙은 주황빛을 띠면, 그 등을 오래 올려다보지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Illuminance;
                     c.EligibleFrom = Band.Band3;
@@ -445,27 +457,32 @@ namespace NightDuty.Editor
                     break;
 
                 case "S5":
-                    // 구간 없음(일반 S-B) · 반경 밖 S-B 1초 관찰로 시작 · 모형 반경 밖으로 퇴실 → 신뢰 +3 · 모형 1.5m 미만 → 배치 +15.
+                    // 배치 24~99(Band1~) · 반경 밖 S-B 1초 관찰로 시작 · 모형 반경 밖으로 퇴실 → 신뢰 +5 · 모형 1.5m 미만 → 배치 +15.
                     // P1 경유 S-B는 장면 ID를 scene.sb.p1로 따로 보내 S5를 시작하지 않는다.
+                    // 2026-09-21 재설계: 배치축 Band0 개방을 3장(H1·C6·T1)으로 줄이려고 게이트를 걸었다.
                     c.Space = SpaceId.ScienceRoom;
-                    c.PlayerText = "인체 모형이 보관 위치를 벗어난 곳에 서 있다면, 그 모형에 다가가지 말고 과학실에서 나오십시오. 이전 근무자가 시도한 방법은 지침에서 삭제했습니다.";
+                    c.PlayerText = "인체 모형이 보관 위치에 없다면, 거리를 유지한 채 과학실에서 나오십시오.";
+                    c.UseEligibleBand = true;
+                    c.EligibleAxis = FearAxis.Layout;
+                    c.EligibleFrom = Band.Band1;
+                    c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ModelObserved;
                     c.TriggerId = "scene.sb";
                     c.TargetIds = new[] { "science.model.sb" };
                     c.Failure = new ProximityCondition(string.Empty);
                     c.Success = new SignalCondition(SignalKind.SpaceExited, string.Empty, SpaceId.ScienceRoom);
-                    c.SuccessDelta = 3;
+                    c.SuccessDelta = 5;
                     c.FailureAxis = FearAxis.Layout;
                     c.FailureDelta = 15;
                     c.Radius = 1.5f;
                     break;
 
                 case "S6":
-                    // 구간 없음 · 유리 기구 구역 진입으로 시작 · 유예 2초 뒤 Off 유지로 구역 안 1초 점검 후 이탈 → 신뢰 +2 ·
+                    // 구간 없음 · 유리 기구 구역 진입으로 시작 · 유예 2초 뒤 Off 유지로 구역 안 1초 점검 후 이탈 → 신뢰 +4 ·
                     // 유예 뒤 On 또는 이후 On 전환 → 조도 +12 · 점검 없이 이탈 → 대기.
                     // 체류 3초 = 유예 2초 + 점검 1초(구역 점검 완료 신호가 없어 경과 시간으로 표현).
                     c.Space = SpaceId.ScienceRoom;
-                    c.PlayerText = "유리 기구 점검 구역에서는 손전등을 끄고, 그 구역을 나갈 때까지 유지하십시오. 빛을 비추면 목록에 없던 것이 하나씩 늘어납니다.";
+                    c.PlayerText = "유리 기구 점검 구역에서는 손전등을 끄고, 벗어날 때까지 켜지 마십시오.";
                     c.TriggerKind = SignalKind.ZoneEntered;
                     c.TriggerId = "science.zone.glass";
                     c.TargetIds = new[] { "science.zone.glass" };
@@ -483,10 +500,10 @@ namespace NightDuty.Editor
                 // ───────────── 화장실 ─────────────
 
                 case "T1":
-                    // 배치 0~74 · 지정 칸 문(입구 쪽)의 자동 움직임 관찰로 시작(장기) ·
-                    // 밤 종료까지 두 점검칸 수동 개폐 없음 → 신뢰 +2 · 어느 점검칸이든 E 열기/닫기 수락 → 배치 +12(출입문 제외).
+                    // 배치 0~71(Band0~2, 상한형) · 지정 칸 문(입구 쪽)의 자동 움직임 관찰로 시작(장기) ·
+                    // 밤 종료까지 두 점검칸 수동 개폐 없음 → 신뢰 +4 · 어느 점검칸이든 E 열기/닫기 수락 → 배치 +12(출입문 제외).
                     c.Space = SpaceId.Toilet;
-                    c.PlayerText = "칸 문이 눈앞에서 저절로 움직이는 것을 보았다면, 그날은 어떤 칸도 여닫지 마십시오. 안에서 열어 준 문을 다시 열면 두 번째 방문으로 기록됩니다. 첫 번째 방문자가 누구였는지는 확인하지 않습니다.";
+                    c.PlayerText = "칸 문이 저절로 움직이는 것을 보셨다면, 그날은 어느 칸도 여닫지 마십시오.";
                     c.IsLongTerm = true;
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Layout;
@@ -503,29 +520,35 @@ namespace NightDuty.Editor
                     break;
 
                 case "T2":
-                    // 청각 25~99 · 물 내림 시퀀스 시작 전달로 시작 · 12초 미만에 화장실 이탈 → 신뢰 +3 ·
+                    // 구간 없음 · 물 내림 시퀀스 시작 전달로 시작 · 12초 미만에 화장실 이탈 → 신뢰 +5 ·
                     // 12초가 되도록 실내 → 청각 +15(같은 프레임은 Tick이 먼저). 칸→공용부는 퇴실 아님.
+                    // 2026-09-21 재설계: 게이트를 뗐다. 청각축은 Band0에서 C1·S2 둘만 열려 하루 최대 24에
+                    // 머물렀고, 다음 게이트가 25라 1 모자라 영영 안 열리는 데드락이 있었다.
+                    // T2가 Band0에 들어와 C1·S2·T2 세 장이 되면 하루 청각 2장 배정이 항상 성립한다.
                     c.Space = SpaceId.Toilet;
-                    c.PlayerText = "칸 안에서 물 내리는 소리가 들린다면, 소리가 멎기 전에 나오십시오. 안에 계신 분이 먼저 나오도록 양보하지 마십시오. 소리가 멎었다는 것은, 나올 준비가 끝났다는 뜻입니다.";
-                    c.UseEligibleBand = true;
-                    c.EligibleAxis = FearAxis.Auditory;
-                    c.EligibleFrom = Band.Band1;
-                    c.EligibleTo = Band.Band4;
+                    c.PlayerText = "칸 안에서 물 내리는 소리가 시작되면, 끝나기 전에 화장실에서 나오십시오.";
+                    c.UseEligibleBand = false;
                     c.TriggerKind = SignalKind.ClueDelivered;
                     c.TriggerId = "toilet.flush";
                     c.Failure = new ElapsedCondition(12f);
                     c.Success = new SignalCondition(SignalKind.SpaceExited, string.Empty, SpaceId.Toilet);
-                    c.SuccessDelta = 3;
+                    c.SuccessDelta = 5;
                     c.FailureAxis = FearAxis.Auditory;
                     c.FailureDelta = 15;
                     c.Radius = 0f;
                     break;
 
                 case "T3":
-                    // 구간 없음(T-A) · 안쪽 칸 T-A 1초 관찰로 시작 · 닫힘 완료 뒤 재개방 없이 화장실 이탈 → 신뢰 +3 ·
+                    // 배치 48~99(Band2~, T-A) · 안쪽 칸 T-A 1초 관찰로 시작 · 닫힘 완료 뒤 재개방 없이 화장실 이탈 → 신뢰 +5 ·
                     // 닫힘 완료 전 이탈 또는 관찰 뒤 열기 명령 수락 → 배치 +15 한 번. 시간 제한 없음.
+                    // 2026-09-21 재설계: 배치축 Band0 감축 + 중반 풀 보충. T1(배치 0~71 상한형)과는
+                    // 같은 날 배정 금지다 — T1 「수동 개폐 금지」와 T3 「닫고 나가라」가 정면으로 충돌한다.
                     c.Space = SpaceId.Toilet;
-                    c.PlayerText = "안쪽 점검칸에 무언가 서 있다면, 칸 문을 닫고 다시 열지 않은 채 화장실 밖으로 나오십시오. 비품이 들어 있는 칸도 사용 중인 칸으로 분류합니다. 사용이 끝나면 저희가 회수하겠습니다.";
+                    c.PlayerText = "안쪽 점검칸에 무언가 서 있다면, 문을 닫고 화장실에서 나오십시오.";
+                    c.UseEligibleBand = true;
+                    c.EligibleAxis = FearAxis.Layout;
+                    c.EligibleFrom = Band.Band2;
+                    c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ModelObserved;
                     c.TriggerId = "scene.ta";
                     c.TargetIds = new[] { "toilet.stall.inner" };
@@ -537,16 +560,16 @@ namespace NightDuty.Editor
                     c.Success = new AllOfCondition(
                         new SignalCondition(SignalKind.DoorCloseCompleted, string.Empty),
                         new SignalCondition(SignalKind.SpaceExited, string.Empty, SpaceId.Toilet));
-                    c.SuccessDelta = 3;
+                    c.SuccessDelta = 5;
                     c.FailureAxis = FearAxis.Layout;
                     c.FailureDelta = 15;
                     c.Radius = 0f;
                     break;
 
                 case "T4":
-                    // 청각 50~99 · 잠긴 세면대의 '근무자님' 호출음 전달로 시작 · 접근 없이 화장실 이탈 → 신뢰 +2 · 세면대 1.5m 미만 → 청각 +12.
+                    // 청각 48~99(Band2~) · 잠긴 세면대의 '근무자님' 호출음 전달로 시작 · 접근 없이 화장실 이탈 → 신뢰 +4 · 세면대 1.5m 미만 → 청각 +12.
                     c.Space = SpaceId.Toilet;
-                    c.PlayerText = "세면대 쪽에서 당신을 부르는 소리가 나는데, 수도꼭지는 잠긴 채 그대로라면, 그쪽으로 발을 떼지 마십시오. 시설관리팀은 배수구로 연락하지 않습니다. 이름을 안다고 해서, 사람인 것은 아닙니다.";
+                    c.PlayerText = "배관을 누군가 두드리는 소리가 들리면, 세면대에 다가가지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
                     c.EligibleFrom = Band.Band2;
@@ -562,14 +585,15 @@ namespace NightDuty.Editor
                     break;
 
                 case "T5":
-                    // 조도 50~99(닫힌 칸 아래 빛 실재) · 공용부에서 새는 빛 식별로 시작 · 유예 2초 뒤 Off 유지로 공용부 점검 완료 → 신뢰 +2 ·
+                    // 구간 없음 · 공용부에서 새는 빛 식별로 시작 · 유예 2초 뒤 Off 유지로 공용부 점검 완료 → 신뢰 +4 ·
                     // 유예 뒤 On 또는 이후 On 전환 → 조도 +12 · 점검 없이 퇴실 → 대기. 문 열기 자체는 위반 아님.
+                    // 2026-09-21 재설계: 게이트를 뗐다. 조도축 Band0 개방을 H3·S6·T5 세 장으로 채운다 —
+                    // 이전에는 H3·S6 둘뿐이라 하루 최대 24, 다음 게이트 50에 닿지 못했다.
+                    // 단서 자체가 「닫힌 칸 아래 빛」이라 조도가 낮은 밤에는 그 단서가 실재하지 않는다.
+                    // 단서가 제시되지 않으면 시작하지 않으므로(미판정, 델타 0) 구간 검사 없이도 남용되지 않는다.
                     c.Space = SpaceId.Toilet;
-                    c.PlayerText = "닫힌 칸 아래로 빛이 새어나온다면, 손전등을 끄고 공용부 점검을 마치십시오. 문을 열어 확인하실 필요는 없습니다. 그 안에서는 바깥이 어두운 편이 낫다고 합니다.";
-                    c.UseEligibleBand = true;
-                    c.EligibleAxis = FearAxis.Illuminance;
-                    c.EligibleFrom = Band.Band2;
-                    c.EligibleTo = Band.Band4;
+                    c.PlayerText = "닫힌 칸 아래로 빛이 새어 나오면, 손전등을 끄고 공용부만 점검하십시오.";
+                    c.UseEligibleBand = false;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TargetIds = new[] { "toilet.stall.light" };
                     c.Failure = new FlashlightCondition(true);
@@ -582,13 +606,18 @@ namespace NightDuty.Editor
                     break;
 
                 case "T6":
-                    // 배치 75~99 또는 별도 두 칸 개방(→ 구간 검사 끄고 두 칸 개방 식별 신호의 존재로 대신, 수치만으로는 시작 안 함) ·
-                    // 공용부에서 두 칸 개방 식별로 시작(장기) · 공용부 점검 완료 + 밤 종료까지 칸 내부 진입 없음 → 신뢰 +2 ·
-                    // 어느 칸이든 문턱 안 구역 진입 → 배치 +15.
+                    // 배치 72~99(Band3~) · 공용부에서 두 칸 개방 식별로 시작(장기) ·
+                    // 공용부 점검 완료 + 밤 종료까지 칸 내부 진입 없음 → 신뢰 +4 · 어느 칸이든 문턱 안 구역 진입 → 배치 +15.
+                    // 2026-09-21 재설계: 기획서 J절의 게이트를 되살렸다. 구간 검사를 끈 채 두면
+                    // 배치 Band0에서 열리는 카드가 넷이 되어 「축당 Band0 개방 3장」 불변식이 깨진다.
+                    // 두 칸 개방 식별 신호는 여전히 필요하다 — 수치만으로는 시작하지 않는다.
                     c.Space = SpaceId.Toilet;
-                    c.PlayerText = "점검칸이 모두 열린 것을 보았다면, 그날은 어느 칸도 문턱 안으로 들어가지 마십시오. 두 칸이 동시에 열리는 날은 흔치 않습니다. 그런 날 안을 들여다본 근무자가 무엇을 보았는지는, 기록에 없습니다.";
+                    c.PlayerText = "점검칸이 모두 열려 있어도, 문턱 안으로는 들어가지 마십시오.";
                     c.IsLongTerm = true;
-                    c.UseEligibleBand = false;
+                    c.UseEligibleBand = true;
+                    c.EligibleAxis = FearAxis.Layout;
+                    c.EligibleFrom = Band.Band3;
+                    c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TriggerId = "toilet.stalls.bothopen";
                     c.TargetIds = new[] { "toilet.stall.outer.inside", "toilet.stall.inner.inside" };

@@ -16,8 +16,7 @@ MonoBehaviour:
   _space: 1
   _playerText: "\uB4F1 \uB4A4\uC5D0\uC11C \uBB38 \uB2EB\uD788\uB294 \uC18C\uB9AC\uAC00
     \uB09C\uB2E4\uBA74, \uC18C\uB9AC\uAC00 \uB09C \uBB38\uC744 \uC624\uB798 \uBC14\uB77C\uBCF4\uC9C0
-    \uB9C8\uC2ED\uC2DC\uC624. \uB3CC\uC544\uBCF8 \uADFC\uBB34\uC790\uB4E4\uC740 \uBAA8\uB450,
-    \uBB38\uC774 \uC5F4\uB824 \uC788\uC5C8\uB2E4\uACE0 \uBCF4\uACE0\uD588\uC2B5\uB2C8\uB2E4."
+    \uB9C8\uC2ED\uC2DC\uC624."
   _isLongTerm: 0
   _useEligibleBand: 1
   _eligibleAxis: 0
@@ -35,7 +34,7 @@ MonoBehaviour:
   _cancelCondition:
     rid: -2
   _settleAt: 0
-  _successDelta: 2
+  _successDelta: 4
   _failureAxis: 0
   _failureDelta: 15
   _paradoxId: P2

@@ -14,15 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
   _cardId: T5
   _space: 2
-  _playerText: "\uB2EB\uD78C \uCE78 \uC544\uB798\uB85C \uBE5B\uC774 \uC0C8\uC5B4\uB098\uC628\uB2E4\uBA74,
-    \uC190\uC804\uB4F1\uC744 \uB044\uACE0 \uACF5\uC6A9\uBD80 \uC810\uAC80\uC744 \uB9C8\uCE58\uC2ED\uC2DC\uC624.
-    \uBB38\uC744 \uC5F4\uC5B4 \uD655\uC778\uD558\uC2E4 \uD544\uC694\uB294 \uC5C6\uC2B5\uB2C8\uB2E4.
-    \uADF8 \uC548\uC5D0\uC11C\uB294 \uBC14\uAE65\uC774 \uC5B4\uB450\uC6B4 \uD3B8\uC774
-    \uB0AB\uB2E4\uACE0 \uD569\uB2C8\uB2E4."
+  _playerText: "\uB2EB\uD78C \uCE78 \uC544\uB798\uB85C \uBE5B\uC774 \uC0C8\uC5B4
+    \uB098\uC624\uBA74, \uC190\uC804\uB4F1\uC744 \uB044\uACE0 \uACF5\uC6A9\uBD80\uB9CC
+    \uC810\uAC80\uD558\uC2ED\uC2DC\uC624."
   _isLongTerm: 0
-  _useEligibleBand: 1
-  _eligibleAxis: 1
-  _eligibleFrom: 2
+  _useEligibleBand: 0
+  _eligibleAxis: 0
+  _eligibleFrom: 0
   _eligibleTo: 4
   _triggerKind: 31
   _triggerId: 
@@ -36,7 +34,7 @@ MonoBehaviour:
   _cancelCondition:
     rid: 6144270366874271894
   _settleAt: 0
-  _successDelta: 2
+  _successDelta: 4
   _failureAxis: 1
   _failureDelta: 12
   _paradoxId: P22

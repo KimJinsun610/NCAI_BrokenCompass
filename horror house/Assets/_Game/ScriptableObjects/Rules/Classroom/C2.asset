@@ -14,14 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
   _cardId: C2
   _space: 3
-  _playerText: "\uCD9C\uC785\uBB38\uC744 \uD5A5\uD574 \uB3CC\uC544\uC549\uC740 \uCC45\uC0C1
-    \uADFC\uCC98\uB85C\uB294 \uAC00\uC9C0 \uB9C8\uC2ED\uC2DC\uC624. \uADF8 \uC790\uB9AC\uB294
-    \uC218\uC5C5\uC744 \uB4E3\uAE30 \uC704\uD55C \uC790\uB9AC\uAC00 \uC544\uB2D9\uB2C8\uB2E4.
-    \uC549\uC544 \uC788\uB294 \uCABD\uC5D0\uC11C\uB294 \uBB38\uC774 \uC798 \uBCF4\uC785\uB2C8\uB2E4."
+  _playerText: "\uCD9C\uC785\uBB38\uC744 \uD5A5\uD574 \uB3CC\uC544\uC549\uC740 \uCC45\uC0C1\uC774
+    \uC788\uB2E4\uBA74, \uAC70\uB9AC\uB97C \uB450\uACE0 \uC810\uAC80\uD558\uC2ED\uC2DC\uC624."
   _isLongTerm: 0
-  _useEligibleBand: 0
-  _eligibleAxis: 0
-  _eligibleFrom: 0
+  _useEligibleBand: 1
+  _eligibleAxis: 2
+  _eligibleFrom: 1
   _eligibleTo: 4
   _triggerKind: 31
   _triggerId: 
@@ -35,7 +33,7 @@ MonoBehaviour:
   _cancelCondition:
     rid: 6144270366874271839
   _settleAt: 0
-  _successDelta: 2
+  _successDelta: 4
   _failureAxis: 2
   _failureDelta: 12
   _paradoxId: P8

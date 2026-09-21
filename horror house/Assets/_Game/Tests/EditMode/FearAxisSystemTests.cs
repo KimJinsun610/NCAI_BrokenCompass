@@ -120,11 +120,15 @@ namespace NightDuty.Tests
             Assert.AreEqual(30, axes.GetValue(FearAxis.Auditory));
         }
 
+        // 경계는 24/48/72/90이다(2026-09-21 재설계). 각 구간의 상한과 다음 구간의 하한을 쌍으로 건다 —
+        // 한쪽만 걸면 경계가 통째로 밀려도 테스트가 통과한다.
         [TestCase(0, Band.Band0)]
-        [TestCase(24, Band.Band0)]
-        [TestCase(25, Band.Band1)]
-        [TestCase(74, Band.Band2)]
-        [TestCase(75, Band.Band3)]
+        [TestCase(23, Band.Band0)]
+        [TestCase(24, Band.Band1)]
+        [TestCase(47, Band.Band1)]
+        [TestCase(48, Band.Band2)]
+        [TestCase(71, Band.Band2)]
+        [TestCase(72, Band.Band3)]
         [TestCase(89, Band.Band3)]
         [TestCase(90, Band.Band4)]
         [TestCase(99, Band.Band4)]
@@ -141,10 +145,12 @@ namespace NightDuty.Tests
             Assert.AreEqual(1f, Bands.Progress(99, Band.Band4));
         }
 
-        [TestCase(Band.Band2, 46, Band.Band2)]
-        [TestCase(Band.Band2, 45, Band.Band1)]
-        [TestCase(Band.Band2, 20, Band.Band0)]
-        [TestCase(Band.Band1, 50, Band.Band2)]
+        // 하강 조건은 「하한 - 5 "이하"」다(BandResolver.Resolve). Band2 하한 48이므로 43에서 내려가고 44면 남는다.
+        // Band1 하한 24 → 19 이하라야 Band0까지 내려간다.
+        [TestCase(Band.Band2, 44, Band.Band2)]
+        [TestCase(Band.Band2, 43, Band.Band1)]
+        [TestCase(Band.Band2, 19, Band.Band0)]
+        [TestCase(Band.Band1, 48, Band.Band2)]
         public void 히스테리시스_하강은_하한빼기5(Band current, int value, Band expected)
         {
             Assert.AreEqual(expected, BandResolver.Resolve(current, value));

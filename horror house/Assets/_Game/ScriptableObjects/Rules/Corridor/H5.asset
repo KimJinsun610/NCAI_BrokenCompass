@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
   _cardId: H5
   _space: 1
-  _playerText: "\uCC9C\uC7A5\uC5D0\uC11C \uBB34\uC5B8\uAC00 \uB5A8\uC5B4\uC84C\uB2E4\uBA74,
-    \uADF8 \uC790\uB9AC\uB97C \uD53C\uD574 \uC9C0\uB098\uAC00\uC2ED\uC2DC\uC624.
-    \uB5A8\uC5B4\uB728\uB9B0 \uAC83\uC740 \uC544\uC9C1 \uCC9C\uC7A5\uC5D0 \uC788\uC2B5\uB2C8\uB2E4."
+  _playerText: "\uCC9C\uC7A5\uC5D0\uC11C \uB5A8\uC5B4\uC9C4 \uC870\uAC01\uC774 \uC788\uB2E4\uBA74,
+    \uADF8 \uC790\uB9AC\uC640 \uAC70\uB9AC\uB97C \uB450\uACE0 \uC9C0\uB098\uAC00\uC2ED\uC2DC\uC624."
   _isLongTerm: 0
   _useEligibleBand: 1
   _eligibleAxis: 2
@@ -34,7 +33,7 @@ MonoBehaviour:
   _cancelCondition:
     rid: -2
   _settleAt: 0
-  _successDelta: 2
+  _successDelta: 4
   _failureAxis: 2
   _failureDelta: 12
   _paradoxId: P5

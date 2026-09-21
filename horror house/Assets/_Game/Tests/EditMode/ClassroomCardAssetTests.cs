@@ -104,7 +104,7 @@ namespace NightDuty.Tests
         }
 
         // ───────── C1 ─────────
-        // 기획서 검증: 1-3 문턱만 밟고 1-1 진입: 청각 +12. 1-3 점검 완료 후 1-1 진입: 신뢰 +2 한 번. 청각 50 시작: 새 발동 없음.
+        // 기획서 검증: 1-3 문턱만 밟고 1-1 진입: 청각 +12. 1-3 점검 완료 후 1-1 진입: 신뢰 +4 한 번. 청각 50 시작: 새 발동 없음.
 
         [Test]
         public void C1_1_3문턱만밟고_1_1진입은_청각12()
@@ -123,7 +123,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C1_1_3점검완료후_1_1진입은_신뢰2_한번()
+        public void C1_1_3점검완료후_1_1진입은_신뢰4_한번()
         {
             RuleBook book = Book("C1");
             book.Dispatch(T(SignalKind.ClueDelivered, Chalk));
@@ -134,7 +134,8 @@ namespace NightDuty.Tests
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.Classroom_1_3));   // 재점검 — 추가 지급 없음
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            Assert.AreEqual(2, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4 (C1)
+            Assert.AreEqual(4, _axes.GetValue(FearAxis.Trust));
             Assert.AreEqual(0, _axes.GetValue(FearAxis.Auditory));
         }
 
@@ -179,23 +180,32 @@ namespace NightDuty.Tests
         }
 
         // ───────── C2 ─────────
-        // 기획서 검증: C-A 1초 관찰 후 거리 유지·점검·퇴실: 신뢰 +2. 여러 의자 근접: 지정 대상 위반 한 번만 계산.
+        // 기획서 검증: C-A 1초 관찰 후 거리 유지·점검·퇴실: 신뢰 +4. 여러 의자 근접: 지정 대상 위반 한 번만 계산.
+        // 2026-09-21 재설계: C2에 배치 Band1~Band4(24 이상) 자격이 새로 걸렸다 — 시작시키려면 배치를 먼저 24로 올려야 한다.
 
         [Test]
-        public void C2_CA관찰후_거리유지_점검_퇴실은_신뢰2_배치0에서도_시작()
+        public void C2_CA관찰후_거리유지_점검_퇴실은_신뢰4_배치23에서는_시작하지않고_24에서시작()
         {
+            // 2026-09-21 재설계: C2 자격이 「없음(좌석 식별로 대신)」 → 「배치 Band1~Band4(24 이상)」로 바뀌었다.
+            // 「배치 0에서도 시작한다」는 옛 단언은 거짓이 되어, 뜻을 「23에서는 시작하지 않고 24에서 시작한다」로 뒤집었다.
+            Setup(FearAxis.Layout, 23);
             RuleBook book = Book("C2");
             book.Dispatch(Sp(SignalKind.SpaceEntered, SpaceId.Classroom_1_1));
             book.Dispatch(T(SignalKind.ModelObserved, "scene.ca"));
             book.Dispatch(T(SignalKind.ClueIdentified, Desk));
-            Assert.AreEqual(CardState.Active, book.Watchers[0].State, "구간 검사를 끄고 좌석 식별로 시작한다");
+            Assert.AreEqual(CardState.Waiting, book.Watchers[0].State, "배치 23(Band0)에서는 좌석을 식별해도 시작하지 않는다");
+
+            Setup(FearAxis.Layout, 1);   // 23 + 1 = 24 → Band1
+            book.Dispatch(T(SignalKind.ClueIdentified, Desk));
+            Assert.AreEqual(CardState.Active, book.Watchers[0].State, "배치 24(Band1)부터 좌석 식별로 시작한다");
 
             book.Dispatch(JudgeSignal.Proximity(Desk, 1.5f));
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.Classroom_1_1));
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Classroom_1_1));
 
-            Assert.AreEqual(2, _axes.GetValue(FearAxis.Trust));
-            Assert.AreEqual(0, _axes.GetValue(FearAxis.Layout));
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4 (C2)
+            Assert.AreEqual(4, _axes.GetValue(FearAxis.Trust));
+            Assert.AreEqual(24, _axes.GetValue(FearAxis.Layout), "1.50m는 반경 밖 — 위반 델타가 붙지 않아 시작값 그대로다");
         }
 
         [Test]
@@ -217,6 +227,7 @@ namespace NightDuty.Tests
         [Test]
         public void C2_점검없이퇴실은_대기_다음방문에_준수가능()
         {
+            Setup(FearAxis.Layout, 24);   // 2026-09-21 재설계: C2는 배치 Band1~(24 이상)이라야 시작한다
             RuleBook book = Book("C2");
             book.Dispatch(Sp(SignalKind.SpaceEntered, SpaceId.Classroom_1_1));
             book.Dispatch(T(SignalKind.ClueIdentified, Desk));
@@ -228,19 +239,21 @@ namespace NightDuty.Tests
             Assert.AreEqual(CardState.Active, book.Watchers[0].State);
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.Classroom_1_1));
 
-            Assert.AreEqual(2, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4 (C2)
+            Assert.AreEqual(4, _axes.GetValue(FearAxis.Trust));
         }
 
         // 기획서: 수평 거리 1.5m 「미만」이 위반 — 1.50m는 바깥.
         [Test]
         public void C2_1m50은_바깥()
         {
+            Setup(FearAxis.Layout, 24);   // 2026-09-21 재설계: C2는 배치 Band1~(24 이상)이라야 시작한다
             RuleBook book = Book("C2");
             book.Dispatch(T(SignalKind.ClueIdentified, Desk));
             book.Dispatch(JudgeSignal.Proximity(Desk, 1.5f));
 
             Assert.AreEqual(CardState.Active, book.Watchers[0].State);
-            Assert.AreEqual(0, _axes.GetValue(FearAxis.Layout));
+            Assert.AreEqual(24, _axes.GetValue(FearAxis.Layout), "1.50m는 반경 밖 — 위반 델타가 붙지 않아 시작값 그대로다");
         }
 
         // ───────── C3 ─────────
@@ -295,14 +308,15 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C3_유예뒤_2초9응시후퇴실은_신뢰2()
+        public void C3_유예뒤_2초9응시후퇴실은_신뢰4()
         {
             RuleBook book = StartC3();
             TestKit.Advance(book, 2f);
             TestKit.Advance(book, 2.9f, BackDesk);
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Classroom_1_1));
 
-            Assert.AreEqual(2, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4 (C3)
+            Assert.AreEqual(4, _axes.GetValue(FearAxis.Trust));
             Assert.AreEqual(50, _axes.GetValue(FearAxis.Auditory));
         }
 
@@ -319,9 +333,10 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C3_청각49에서는_시작하지않는다()
+        public void C3_청각47에서는_시작하지않는다()
         {
-            Setup(FearAxis.Auditory, 49);
+            // 2026-09-21 재설계: 구간 경계가 50 → 48로 내려가 49는 이제 Band2(자격 통과)다. 직전 값 47로 바꾼다.
+            Setup(FearAxis.Auditory, 47);
             RuleBook book = Book("C3");
             book.Dispatch(T(SignalKind.ClueDelivered, BackDesk));
 
@@ -357,7 +372,8 @@ namespace NightDuty.Tests
         {
             RuleBook book = StartC4();
             book.Dispatch(T(SignalKind.SequenceEnded, LecternNoise));
-            Assert.AreEqual(2, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4 (C4)
+            Assert.AreEqual(4, _axes.GetValue(FearAxis.Trust));
 
             book.Dispatch(JudgeSignal.Proximity(Lectern, 0.5f));
 
@@ -377,14 +393,15 @@ namespace NightDuty.Tests
             Assert.AreEqual(0, _axes.GetValue(FearAxis.Trust));
         }
 
-        // 기획서: 그 전에 안전하게 퇴실하면 신뢰 +2.
+        // 기획서: 그 전에 안전하게 퇴실하면 신뢰 +4.
         [Test]
-        public void C4_종료전퇴실은_신뢰2()
+        public void C4_종료전퇴실은_신뢰4()
         {
             RuleBook book = StartC4();
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.Classroom_1_1));
 
-            Assert.AreEqual(2, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4 (C4)
+            Assert.AreEqual(4, _axes.GetValue(FearAxis.Trust));
         }
 
         // 기획서: 해당 방문에 다른 단기 사건이 없어야 한다.
@@ -403,7 +420,7 @@ namespace NightDuty.Tests
         }
 
         // ───────── C5 ─────────
-        // 기획서 검증: 유예 내 On 후 점검·퇴실: 신뢰 +3. 1-1에서 정산 후 1-3 재점검: 추가 0. 복도로 나온 후 중립 구역에서 Off: 위반 없음.
+        // 기획서 검증: 유예 내 On 후 점검·퇴실: 신뢰 +5. 1-1에서 정산 후 1-3 재점검: 추가 0. 복도로 나온 후 중립 구역에서 Off: 위반 없음.
 
         /// <summary>조도 50에서 1-1 입장 → 식별 → 1초 뒤 On → 3초 → 점검 → 퇴실(준수).</summary>
         private void RunC5Complied(RuleBook book)
@@ -419,13 +436,14 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C5_유예내On후_점검퇴실은_신뢰3()
+        public void C5_유예내On후_점검퇴실은_신뢰5()
         {
             Setup(FearAxis.Illuminance, 50);
             RuleBook book = Book("C5");
             RunC5Complied(book);
 
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (C5)
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));
             Assert.AreEqual(50, _axes.GetValue(FearAxis.Illuminance));
         }
 
@@ -442,7 +460,8 @@ namespace NightDuty.Tests
             TestKit.Advance(book, 3f);
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.Classroom_1_3));
 
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (C5) — 재점검분 추가 지급은 여전히 0
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));
             Assert.AreEqual(50, _axes.GetValue(FearAxis.Illuminance));
         }
 
@@ -512,7 +531,8 @@ namespace NightDuty.Tests
             TestKit.Advance(book, 3f);
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.Classroom_1_3));
 
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (C5)
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));
             Assert.AreEqual(50, _axes.GetValue(FearAxis.Illuminance));
         }
 
@@ -523,7 +543,7 @@ namespace NightDuty.Tests
             Setup(FearAxis.Illuminance, 50);
             RuleBook book = Book("C5", "H3");
             RunC5Complied(book);
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));   // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (C5)
 
             book.Dispatch(JudgeSignal.Flashlight(false));
             book.Dispatch(Sp(SignalKind.SpaceEntered, SpaceId.Corridor));
@@ -535,7 +555,7 @@ namespace NightDuty.Tests
         }
 
         // ───────── C6 ─────────
-        // 기획서 검증: 문 두 개 미폐쇄: 배치 +12 한 번. 자동 개방 문 유지·두 교실 점검: 신뢰 +3. E 재개방 후 미폐쇄: 종료 때 위반.
+        // 기획서 검증: 문 두 개 미폐쇄: 배치 +12 한 번. 자동 개방 문 유지·두 교실 점검: 신뢰 +5. E 재개방 후 미폐쇄: 종료 때 위반.
 
         private RuleBook StartC6(params string[] deck)
         {
@@ -584,7 +604,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C6_자동개방문유지_두교실점검은_신뢰3()
+        public void C6_자동개방문유지_두교실점검은_신뢰5()
         {
             RuleBook book = StartC6();
             book.Dispatch(T(SignalKind.DoorAutoOpenObserved, Door13));
@@ -592,7 +612,8 @@ namespace NightDuty.Tests
             book.EndNight();
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (C6)
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));
             Assert.AreEqual(0, _axes.GetValue(FearAxis.Layout));
         }
 
@@ -611,7 +632,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C6_열고닫기완료_두교실점검은_신뢰3()
+        public void C6_열고닫기완료_두교실점검은_신뢰5()
         {
             RuleBook book = StartC6();
             book.Dispatch(Door(Door11, false));
@@ -619,7 +640,8 @@ namespace NightDuty.Tests
             InspectBoth(book);
             book.EndNight();
 
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (C6)
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));
             Assert.AreEqual(0, _axes.GetValue(FearAxis.Layout));
         }
 
@@ -648,7 +670,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(0, _axes.GetValue(FearAxis.Trust));
 
             book.EndNight();
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));   // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (C6)
         }
 
         // 기획서: 자동 개방 문은 의무를 만들지 않는다(연출 출처 명령 포함).
@@ -660,13 +682,14 @@ namespace NightDuty.Tests
             InspectBoth(book);
             book.EndNight();
 
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (C6)
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));
             Assert.AreEqual(0, _axes.GetValue(FearAxis.Layout));
         }
 
         // 공통 교차 「P3와 C6」: P3를 따라 1-1에 먼저 들어가면 C1 위반, 그래도 1-3 점검 의무는 남고 C6는 따로 준수.
         [Test]
-        public void C6_C1_순서를어겨도_두교실점검하면_청각12_신뢰3()
+        public void C6_C1_순서를어겨도_두교실점검하면_청각12_신뢰5()
         {
             RuleBook book = StartC6("C1", "C6");
             book.Dispatch(T(SignalKind.ClueDelivered, Chalk));
@@ -680,7 +703,8 @@ namespace NightDuty.Tests
             book.EndNight();
 
             Assert.AreEqual(12, _axes.GetValue(FearAxis.Auditory));
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: C1은 위반이라 0, C6 준수분만 +5 (준수 신뢰 +3 → +5)
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));
             Assert.AreEqual(CardState.Violated, book.Watchers[0].State, "C1");
             Assert.AreEqual(CardState.Complied, book.Watchers[1].State, "C6");
         }
@@ -695,7 +719,8 @@ namespace NightDuty.Tests
             book.EndNight();
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            Assert.AreEqual(3, _axes.GetValue(FearAxis.Trust));
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5 (C6)
+            Assert.AreEqual(5, _axes.GetValue(FearAxis.Trust));
         }
     }
 }

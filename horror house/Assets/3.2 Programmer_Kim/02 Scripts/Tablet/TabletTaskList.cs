@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 태블릿의 <b>수행 지침</b> 목록. 오늘 해야 할 일을 담는다.
+/// 태블릿의 <b>수행 지시</b> 목록. 오늘 해야 할 일을 담는다.
 ///
 /// 지금은 인스펙터에 넣은 임시 항목을 보여 주지만, 실제로는 다른 시스템이
 /// 아래 API로 넣고 빼는 것을 전제로 만들었다. 나중에 알람 기능이 생기면 그쪽에서 부르면 된다.
@@ -27,7 +27,7 @@ public class TabletTaskList : MonoBehaviour
     }
 
     [Header("임시 항목")]
-    [Tooltip("실제 지침이 정해지기 전까지 모양을 확인하려고 넣어 둔 것. 기획이 정해지면 코드에서 넣는다.")]
+    [Tooltip("실제 지시가 정해지기 전까지 모양을 확인하려고 넣어 둔 것. 기획이 정해지면 코드에서 넣는다.")]
     public List<Task> tasks = new List<Task>();
 
     [Header("표시")]

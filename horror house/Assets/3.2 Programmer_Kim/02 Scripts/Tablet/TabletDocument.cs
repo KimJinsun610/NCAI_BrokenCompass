@@ -23,6 +23,8 @@ public class TabletDocument : MonoBehaviour
     public TMP_Text bodyText;
     [Tooltip("쪽 번호. 예: 2 / 6")]
     public TMP_Text pageText;
+    [Tooltip("화면 아래 조작 안내 줄. 지금 화면에서 쓸 수 있는 키만 적힌다. 비워 두면 표시하지 않는다.")]
+    public TMP_Text hintText;
 
     [Header("내용")]
     [Tooltip("한 쪽에 보여 줄 수칙 개수.")]
@@ -33,7 +35,7 @@ public class TabletDocument : MonoBehaviour
     public bool useGameSessionDay = true;
     [Min(1)] public int previewDay = 1;
 
-    [Header("수행 지침")]
+    [Header("수행 지시")]
     [Tooltip("할 일 목록. 비워 두면 같은 오브젝트에서 찾는다.")]
     public TabletTaskList taskList;
     [Tooltip("탭 이름을 보여 주는 줄. 보고 있는 쪽이 밝게 표시된다.")]
@@ -58,7 +60,7 @@ public class TabletDocument : MonoBehaviour
     public enum Tab
     {
         Rules,   // 근무수칙
-        Tasks    // 수행 지침
+        Tasks    // 수행 지시
     }
 
     private readonly List<RuleSO> _rules = new List<RuleSO>();
@@ -120,7 +122,7 @@ public class TabletDocument : MonoBehaviour
         else if (Input.GetKeyDown(previousKey) || wheel > 0.01f) PreviousPage();
     }
 
-    /// <summary>근무수칙 ↔ 수행 지침을 오간다.</summary>
+    /// <summary>근무수칙 ↔ 수행 지시를 오간다.</summary>
     public void SwitchTab()
     {
         SetTab(_tab == Tab.Rules ? Tab.Tasks : Tab.Rules);
@@ -152,6 +154,7 @@ public class TabletDocument : MonoBehaviour
         SetAlpha(headerText, alpha);
         SetAlpha(bodyText, alpha);
         SetAlpha(pageText, alpha);
+        SetAlpha(hintText, alpha);
     }
 
     private static void SetAlpha(TMP_Text text, float alpha)
@@ -224,10 +227,12 @@ public class TabletDocument : MonoBehaviour
 
         if (pageText != null)
         {
-            // 수행 지침은 한 화면에 다 넣으므로 쪽 번호를 쓰지 않는다.
+            // 수행 지시는 한 화면에 다 넣으므로 쪽 번호를 쓰지 않는다.
             bool showPage = _tab == Tab.Rules && _rules.Count > 0;
             pageText.text = showPage ? (_page + 1) + " / " + PageCount : string.Empty;
         }
+
+        RenderHintLine();
 
         // 글자가 바뀌었으니 글리치가 들고 있던 원본도 새로 잡게 한다.
         if (_glitch == null) _glitch = GetComponent<TabletGlitch>();
@@ -240,11 +245,42 @@ public class TabletDocument : MonoBehaviour
         if (tabText == null) return;
 
         int pending = taskList != null ? taskList.PendingCount : 0;
-        string tasksLabel = pending > 0 ? "수행 지침 ●" : "수행 지침";
+        string tasksLabel = pending > 0 ? "수행 지시 ●" : "수행 지시";
 
         tabText.text = _tab == Tab.Rules
             ? "<b>근무수칙</b>   <color=#4C5D66>" + tasksLabel + "</color>"
             : "<color=#4C5D66>근무수칙</color>   <b>" + tasksLabel + "</b>";
+    }
+
+    /// <summary>
+    /// 화면 아래에 조작 키를 적는다.
+    /// <b>지금 화면에서 실제로 쓸 수 있는 키만</b> 적는다. 수행 지시에는 쪽이 없으므로 쪽 넘김을 빼는 식이다.
+    /// 키를 인스펙터에서 바꾸면 안내 문구도 따라 바뀐다(문구에 키 이름을 박아 두지 않는다).
+    /// </summary>
+    private void RenderHintLine()
+    {
+        if (hintText == null) return;
+
+        string tabHint = KeyLabel(switchTabKey) + " : 지침 전환";
+
+        // 수칙이 한 쪽뿐이면 넘길 것이 없으므로 안내하지 않는다.
+        bool canTurnPage = _tab == Tab.Rules && PageCount > 1;
+        hintText.text = canTurnPage ? "스크롤 : 페이지 넘김   " + tabHint : tabHint;
+    }
+
+    /// <summary>KeyCode를 화면에 적기 좋은 짧은 이름으로 바꾼다.</summary>
+    private static string KeyLabel(KeyCode key)
+    {
+        switch (key)
+        {
+            case KeyCode.RightArrow: return "→";
+            case KeyCode.LeftArrow: return "←";
+            case KeyCode.UpArrow: return "↑";
+            case KeyCode.DownArrow: return "↓";
+            case KeyCode.Return: return "Enter";
+            case KeyCode.Escape: return "Esc";
+            default: return key.ToString();
+        }
     }
 
     private string BuildRulesPage()

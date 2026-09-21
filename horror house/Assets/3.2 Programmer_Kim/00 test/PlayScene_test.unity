@@ -191022,6 +191022,11 @@ PrefabInstance:
       propertyPath: m_TextStyleHashCode
       value: -1183493901
       objectReference: {fileID: 0}
+    - target: {fileID: 2097230150631226005, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: m_text
+      value: "\uC2A4\uD06C\uB864 : \uD398\uC774\uC9C0 \uB118\uAE40   Q : \uD654\uBA74
+        \uC804\uD658"
+      objectReference: {fileID: 0}
     - target: {fileID: 2159123364928073260, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
       propertyPath: m_Layer
       value: 0
@@ -191030,6 +191035,10 @@ PrefabInstance:
       propertyPath: alarmClip
       value: 
       objectReference: {fileID: 8300000, guid: 546396858728d7e4289910b87d08fab2, type: 3}
+    - target: {fileID: 3221534475864748111, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      propertyPath: intensity
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3229842202808758907, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
       propertyPath: attachTo
       value: 
@@ -191218,6 +191227,9 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 0}
     - targetCorrespondingSourceObject: {fileID: 6024107610205588352, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 1097414375617593867, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
     - targetCorrespondingSourceObject: {fileID: 1231194865410946065, guid: 9a0bc635e0c8fb94a8d3357d4556e494, type: 3}

@@ -58,7 +58,7 @@ public sealed class DevModePanel : MonoBehaviour
     private GUIStyle small;
     private GUIStyle bold;
 
-    // ③ 탭에서 태블릿으로 보낼 수행 지침
+    // ③ 탭에서 태블릿으로 보낼 수행 지시
     private static readonly string[] SampleTasks =
     {
         "복도를 점검하십시오",
@@ -501,13 +501,13 @@ public sealed class DevModePanel : MonoBehaviour
     }
 
     /// <summary>
-    /// 태블릿에 수행 지침을 보내 본다. 지침이 들어가면 알람(진동·소리·화면 표시)도 같이 울린다.
-    /// 알람이 꺼지는지 확인하려면 태블릿을 들고 수행 지침 탭을 보면 된다.
+    /// 태블릿에 수행 지시를 보내 본다. 지시가 들어가면 알람(진동·소리·화면 표시)도 같이 울린다.
+    /// 알람이 꺼지는지 확인하려면 태블릿을 들고 수행 지시 탭을 보면 된다.
     /// </summary>
     private void DrawTaskSender()
     {
         GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label("수행 지침 보내기 (태블릿 알람)", bold);
+        GUILayout.Label("수행 지시 보내기 (태블릿 알람)", bold);
 
         TabletTaskList list = FindAnyObjectByType<TabletTaskList>();
         TabletAlarm alarm = FindAnyObjectByType<TabletAlarm>();
@@ -542,19 +542,19 @@ public sealed class DevModePanel : MonoBehaviour
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("맨 위 지침 완료", GUILayout.Height(22))) Later(() => CompleteFirstTask(list));
+        if (GUILayout.Button("맨 위 지시 완료", GUILayout.Height(22))) Later(() => CompleteFirstTask(list));
         if (GUILayout.Button("목록 비우기", GUILayout.Width(90), GUILayout.Height(22)))
         {
             Later(() =>
             {
                 list.Clear();
-                Note("수행 지침을 모두 비웠습니다.");
+                Note("수행 지시를 모두 비웠습니다.");
             });
         }
         GUILayout.EndHorizontal();
 
         string alarmState = alarm == null ? "알람 컴포넌트 없음" : (alarm.IsActive ? "알람 울리는 중" : "알람 꺼짐");
-        GUILayout.Label("지침 " + list.Tasks.Count + "개 (남은 일 " + list.PendingCount + ") · " + alarmState, small);
+        GUILayout.Label("지시 " + list.Tasks.Count + "개 (남은 일 " + list.PendingCount + ") · " + alarmState, small);
 
         if (alarm != null && alarm.IsActive && GUILayout.Button("알람 강제로 끄기", GUILayout.Height(22)))
         {
@@ -573,7 +573,7 @@ public sealed class DevModePanel : MonoBehaviour
         // 같은 id면 알람이 울리지 않으므로 보낼 때마다 새 id를 만든다.
         taskCounter++;
         list.Add("dev.task." + taskCounter, text);
-        Note("수행 지침 보냄: " + text);
+        Note("수행 지시 보냄: " + text);
     }
 
     private void CompleteFirstTask(TabletTaskList list)
@@ -583,11 +583,11 @@ public sealed class DevModePanel : MonoBehaviour
             if (list.Tasks[i].done) continue;
 
             list.Complete(list.Tasks[i].id);
-            Note("지침 완료 처리: " + list.Tasks[i].text);
+            Note("지시 완료 처리: " + list.Tasks[i].text);
             return;
         }
 
-        Note("완료할 지침이 없습니다.");
+        Note("완료할 지시가 없습니다.");
     }
 
     private void DrawLog()

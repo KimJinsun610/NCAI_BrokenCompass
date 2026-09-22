@@ -58,8 +58,8 @@ public sealed class DevModePanel : MonoBehaviour
     private GUIStyle small;
     private GUIStyle bold;
 
-    // ③ 탭에서 태블릿으로 보낼 수행 지시
-    private static readonly string[] SampleTasks =
+    // ③ 탭에서 태블릿으로 보낼 메시지
+    private static readonly string[] SampleMessages =
     {
         "복도를 점검하십시오",
         "1-1 교실을 점검하십시오",
@@ -67,9 +67,9 @@ public sealed class DevModePanel : MonoBehaviour
         "화장실 칸을 확인하십시오",
         "경비실로 돌아오십시오"
     };
-    private string taskText = string.Empty;
-    private int taskSample;
-    private int taskCounter;
+    private string messageText = string.Empty;
+    private int messageSample;
+    private int messageCounter;
 
     // IMGUI는 Layout과 입력 이벤트에서 컨트롤 수가 같아야 한다. 버튼 동작은 여기에 넣었다가 Update에서 실행한다.
     private readonly List<Action> pending = new List<Action>();
@@ -470,7 +470,7 @@ public sealed class DevModePanel : MonoBehaviour
 
     private void DrawInstructionTab()
     {
-        DrawTaskSender();
+        DrawMessageSender();
 
         GUILayout.Space(8);
         GUILayout.Label("Lee님의 판정 시스템을 연결할 자리입니다. 지금은 버튼만 있고 누르면 기록에 '연결 예정'만 남습니다.", small);
@@ -501,15 +501,15 @@ public sealed class DevModePanel : MonoBehaviour
     }
 
     /// <summary>
-    /// 태블릿에 수행 지시를 보내 본다. 지시가 들어가면 알람(진동·소리·화면 표시)도 같이 울린다.
-    /// 알람이 꺼지는지 확인하려면 태블릿을 들고 수행 지시 탭을 보면 된다.
+    /// 태블릿에 메시지를 보내 본다. 메시지가 들어가면 알람(진동·소리·화면 표시)도 같이 울린다.
+    /// 알람이 꺼지는지 확인하려면 태블릿을 들고 메시지 탭을 보면 된다.
     /// </summary>
-    private void DrawTaskSender()
+    private void DrawMessageSender()
     {
         GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label("수행 지시 보내기 (태블릿 알람)", bold);
+        GUILayout.Label("메시지 보내기 (태블릿 알람)", bold);
 
-        TabletTaskList list = FindAnyObjectByType<TabletTaskList>();
+        TabletMessageList list = FindAnyObjectByType<TabletMessageList>();
         TabletAlarm alarm = FindAnyObjectByType<TabletAlarm>();
 
         if (list == null)
@@ -521,40 +521,47 @@ public sealed class DevModePanel : MonoBehaviour
 
         GUILayout.BeginHorizontal();
         GUILayout.Label("내용", GUILayout.Width(36));
-        taskText = GUILayout.TextField(taskText, GUILayout.MinWidth(150));
+        messageText = GUILayout.TextField(messageText, GUILayout.MinWidth(150));
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("보내기 ▶", GUILayout.Height(24)))
         {
-            string text = string.IsNullOrEmpty(taskText) ? SampleTasks[taskSample % SampleTasks.Length] : taskText;
-            Later(() => SendTask(list, text));
+            string text = string.IsNullOrEmpty(messageText) ? SampleMessages[messageSample % SampleMessages.Length] : messageText;
+            Later(() => SendDevMessage(list, text));
         }
 
         if (GUILayout.Button("예시 문구", GUILayout.Width(80), GUILayout.Height(24)))
         {
             Later(() =>
             {
-                taskSample++;
-                taskText = SampleTasks[taskSample % SampleTasks.Length];
+                messageSample++;
+                messageText = SampleMessages[messageSample % SampleMessages.Length];
             });
         }
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("맨 위 지시 완료", GUILayout.Height(22))) Later(() => CompleteFirstTask(list));
+        if (GUILayout.Button("모두 읽음 처리", GUILayout.Height(22)))
+        {
+            Later(() =>
+            {
+                list.MarkAllRead();
+                Note("메시지를 모두 읽음으로 표시했습니다. 탭 옆 점이 사라집니다.");
+            });
+        }
         if (GUILayout.Button("목록 비우기", GUILayout.Width(90), GUILayout.Height(22)))
         {
             Later(() =>
             {
                 list.Clear();
-                Note("수행 지시를 모두 비웠습니다.");
+                Note("메시지를 모두 비웠습니다.");
             });
         }
         GUILayout.EndHorizontal();
 
         string alarmState = alarm == null ? "알람 컴포넌트 없음" : (alarm.IsActive ? "알람 울리는 중" : "알람 꺼짐");
-        GUILayout.Label("지시 " + list.Tasks.Count + "개 (남은 일 " + list.PendingCount + ") · " + alarmState, small);
+        GUILayout.Label("메시지 " + list.Count + "개 (안 읽음 " + list.UnreadCount + ") · " + alarmState, small);
 
         if (alarm != null && alarm.IsActive && GUILayout.Button("알람 강제로 끄기", GUILayout.Height(22)))
         {
@@ -568,26 +575,12 @@ public sealed class DevModePanel : MonoBehaviour
         GUILayout.EndVertical();
     }
 
-    private void SendTask(TabletTaskList list, string text)
+    private void SendDevMessage(TabletMessageList list, string text)
     {
         // 같은 id면 알람이 울리지 않으므로 보낼 때마다 새 id를 만든다.
-        taskCounter++;
-        list.Add("dev.task." + taskCounter, text);
-        Note("수행 지시 보냄: " + text);
-    }
-
-    private void CompleteFirstTask(TabletTaskList list)
-    {
-        for (int i = 0; i < list.Tasks.Count; i++)
-        {
-            if (list.Tasks[i].done) continue;
-
-            list.Complete(list.Tasks[i].id);
-            Note("지시 완료 처리: " + list.Tasks[i].text);
-            return;
-        }
-
-        Note("완료할 지시가 없습니다.");
+        messageCounter++;
+        list.Add("dev.message." + messageCounter, text);
+        Note("메시지 보냄: " + text);
     }
 
     private void DrawLog()

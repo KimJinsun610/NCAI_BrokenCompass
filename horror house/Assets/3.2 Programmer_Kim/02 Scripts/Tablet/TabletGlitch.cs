@@ -216,7 +216,10 @@ public class TabletGlitch : MonoBehaviour
         _cleanText.Clear();
     }
 
-    /// <summary>글자 내용이 바뀌면(쪽 넘기기 등) 원본을 다시 잡아야 한다.</summary>
+    /// <summary>
+    /// 깨 놓은 글자를 원래 문장으로 되돌리고 들고 있던 원본을 버린다.
+    /// <b>화면 내용을 새로 쓰기 직전에</b> 부를 것. 쓰고 나서 부르면 방금 쓴 내용이 옛 글자로 덮인다.
+    /// </summary>
     public void RefreshCleanText()
     {
         RestoreCleanText();

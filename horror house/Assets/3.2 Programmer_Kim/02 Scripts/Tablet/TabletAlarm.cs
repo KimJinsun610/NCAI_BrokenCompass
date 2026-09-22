@@ -1,14 +1,15 @@
 using TMPro;
+using UnityEngine.Serialization;
 using UnityEngine;
 
 /// <summary>
-/// 태블릿에 새 지시가 왔을 때 울리는 알람.
+/// 태블릿에 새 메시지가 왔을 때 울리는 알람.
 ///
 /// 흐름:
-///   1) 다른 시스템이 <see cref="Raise"/>를 부른다 (수행 지시가 추가되면 자동으로도 울린다)
+///   1) 다른 시스템이 <see cref="Raise"/>를 부른다 (메시지가 들어오면 자동으로도 울린다)
 ///   2) 태블릿이 <b>진동하듯 흔들리고</b>, 내려놓은 상태에서도 <b>알람 화면</b>이 뜨고, <b>소리가 반복</b>된다
-///      (태블릿을 들고 있어도 수행 지시 탭에 들어가기 전까지는 안내 문구가 탭 줄 윗줄에 계속 보인다)
-///   3) 플레이어가 태블릿을 들어 <b>수행 지시</b> 탭을 보면 꺼진다
+///      (태블릿을 들고 있어도 메시지 탭에 들어가기 전까지는 안내 문구가 탭 줄 윗줄에 계속 보인다)
+///   3) 플레이어가 태블릿을 들어 <b>메시지</b> 탭을 보면 꺼진다
 ///
 /// 소리는 클립 칸만 만들어 두었다. 사운드가 나오면 <see cref="alarmClip"/>에 넣으면 된다.
 /// </summary>
@@ -20,8 +21,9 @@ public class TabletAlarm : MonoBehaviour
     public PlayerTablet tablet;
     [Tooltip("비우면 같은 오브젝트에서 찾는다.")]
     public TabletDocument document;
-    [Tooltip("비우면 같은 오브젝트에서 찾는다. 지시가 추가되면 자동으로 알람이 울린다.")]
-    public TabletTaskList taskList;
+    [Tooltip("비우면 같은 오브젝트에서 찾는다. 메시지가 들어오면 자동으로 알람이 울린다.")]
+    [FormerlySerializedAs("taskList")]
+    public TabletMessageList messageList;
     [Tooltip("알람이 울릴 때 화면에 띄울 글자.")]
     public TMP_Text alarmText;
     [Tooltip("알람 글자와 자리가 겹치는 것이 있으면 그동안 감춘다. 지금은 알람 줄이 탭 줄 윗줄에 따로 있어 비워 둔다.")]
@@ -29,7 +31,7 @@ public class TabletAlarm : MonoBehaviour
 
     [Header("알람 화면")]
     [Tooltip("알람이 울릴 때 보여 줄 문구.")]
-    public string alarmMessage = "새 지시 도착";
+    public string alarmMessage = "새 메시지 도착";
     [Tooltip("깜빡이는 주기(초).")]
     public float blinkSeconds = 0.7f;
     [Tooltip("알람 중에는 태블릿을 내려놔도 화면을 켜 둔다.")]
@@ -68,8 +70,8 @@ public class TabletAlarm : MonoBehaviour
     {
         if (tablet == null) tablet = GetComponentInParent<PlayerTablet>();
         if (document == null) document = GetComponentInChildren<TabletDocument>(true);
-        if (taskList == null) taskList = GetComponent<TabletTaskList>();
-        if (taskList == null) taskList = GetComponentInChildren<TabletTaskList>(true);
+        if (messageList == null) messageList = GetComponent<TabletMessageList>();
+        if (messageList == null) messageList = GetComponentInChildren<TabletMessageList>(true);
         if (tablet != null) _sway = tablet.GetComponent<ViewmodelSway>();
 
         if (audioSource == null)
@@ -86,12 +88,12 @@ public class TabletAlarm : MonoBehaviour
 
     private void OnEnable()
     {
-        if (taskList != null) taskList.TaskAdded += OnTaskAdded;
+        if (messageList != null) messageList.MessageReceived += OnMessageReceived;
     }
 
     private void OnDisable()
     {
-        if (taskList != null) taskList.TaskAdded -= OnTaskAdded;
+        if (messageList != null) messageList.MessageReceived -= OnMessageReceived;
         StopAll();
     }
 
@@ -114,7 +116,7 @@ public class TabletAlarm : MonoBehaviour
         }
     }
 
-    /// <summary>알람을 끈다. 수행 지시를 확인하면 저절로 불린다.</summary>
+    /// <summary>알람을 끈다. 메시지를 확인하면 저절로 불린다.</summary>
     public void Acknowledge()
     {
         if (!_active) return;
@@ -123,7 +125,7 @@ public class TabletAlarm : MonoBehaviour
         StopAll();
     }
 
-    private void OnTaskAdded(TabletTaskList.Task task)
+    private void OnMessageReceived(TabletMessageList.Message message)
     {
         Raise();
     }
@@ -150,20 +152,20 @@ public class TabletAlarm : MonoBehaviour
         UpdateBuzz();
     }
 
-    /// <summary>태블릿을 들고 수행 지시를 보고 있으면 확인한 것으로 친다.</summary>
+    /// <summary>태블릿을 들고 메시지를 보고 있으면 확인한 것으로 친다.</summary>
     private bool IsReading()
     {
         if (tablet == null || !tablet.IsOpened) return false;
         if (document == null) return true;   // 문서가 없으면 여는 것만으로 확인
 
-        return document.CurrentTab == TabletDocument.Tab.Tasks;
+        return document.CurrentTab == TabletDocument.Tab.Messages;
     }
 
     private void UpdateBlink()
     {
         if (alarmText == null) return;
 
-        // 태블릿을 들고 있어도 수행 지시 탭에 들어가기 전까지는 알람이 그대로이므로,
+        // 태블릿을 들고 있어도 메시지 탭에 들어가기 전까지는 알람이 그대로이므로,
         // 화면에서도 안내 문구가 계속 보여야 한다. (탭 줄 윗줄에 따로 자리를 잡아 두었다)
         bool on = blinkSeconds <= 0.01f || Mathf.Repeat(_clock, blinkSeconds) < blinkSeconds * 0.5f;
         ShowAlarmText(on);

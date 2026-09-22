@@ -47,6 +47,12 @@ public class GameTime : MonoBehaviour
 
     public string EndTimeText => FormatTime(Mathf.FloorToInt(endSeconds / 60f));
 
+    /// <summary>근무 시작 시각(자정 기준 누적 분). 태블릿 문서의 발행 시각처럼 시작 시각을 기준으로 계산할 때 쓴다.</summary>
+    public int StartMinutes => Mathf.FloorToInt(startSeconds / 60f);
+
+    /// <summary>근무 종료 시각(자정 기준 누적 분). 시작보다 이르면 다음 날이라 1440을 넘을 수 있다.</summary>
+    public int EndMinutes => Mathf.FloorToInt(endSeconds / 60f);
+
     private const float SecondsPerDay = 24f * 60f * 60f;
 
     private float currentSeconds;

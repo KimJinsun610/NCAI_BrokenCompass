@@ -168,7 +168,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "F : \uC190\uC804\uB4F1\nTab : \uADFC\uBB34\uC9C0\uCE68 \uD655\uC778"
+  m_text: "F : \uC190\uC804\uB4F1\nTab : \uD0DC\uBE14\uB9BF"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 42be26844565ea044a627229645b0fe2, type: 2}
   m_sharedMaterial: {fileID: 870466219640010663, guid: 42be26844565ea044a627229645b0fe2, type: 2}

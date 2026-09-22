@@ -16,10 +16,13 @@ MonoBehaviour:
   _space: 3
   _playerText: "\uCD9C\uC785\uBB38\uC744 \uD5A5\uD574 \uB3CC\uC544\uC549\uC740 \uCC45\uC0C1\uC774
     \uC788\uB2E4\uBA74, \uAC70\uB9AC\uB97C \uB450\uACE0 \uC810\uAC80\uD558\uC2ED\uC2DC\uC624."
+  _howTo: "\uC810\uAC80\uD558\uB294 \uBC95: \uADF8 \uBC29 \uC548\uCABD\uC5D0 1\uCD08
+    \uBA38\uBB38 \uB4A4 \uBC29\uC744 \uB098\uC624\uBA74 \uC810\uAC80\uD55C \uAC83\uC774
+    \uB429\uB2C8\uB2E4."
   _isLongTerm: 0
   _useEligibleBand: 1
   _eligibleAxis: 2
-  _eligibleFrom: 1
+  _eligibleFrom: 0
   _eligibleTo: 4
   _triggerKind: 31
   _triggerId: 

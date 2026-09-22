@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e556a7ba3d8797d4f8a34ba65dfef795, type: 3}
+  m_Name: DoorPolicy
+  m_EditorClassIdentifier: Assembly-CSharp::DoorPolicySO
+  storagePrefixes:
+  - Locker
+  - Bookcase
+  - Drawer
+  - TeacherTable
+  - Cabinet
+  - Shelf
+  - Rostrum
+  - Tribune
+  - Wardrobe
+  storageIsOpenable: 1
+  openablePaths:
+  - Exterior/Doors/DoorMain
+  - Interior/Toilet02/DoorNarrowSolid (4)
+  - Interior/Toilet02/ToiletCabin_openable (2)
+  - Interior/Toilet02/ToiletCabin_openable (4)
+  - Interior/Corridors/DoorNarrowSolid (8)
+  - Interior/Corridors/DoorNarrowSolid (3)
+  - Interior/Corridors/DoorNarrow (3)
+  - Interior/Corridors/DoorNarrowSolid (9)
+  - Interior/Classroom01/DoorNarrow
+  - Interior/Toilet01/DoorNarrowSolid
+  openableIds:
+  - corridor.door.auto
+  - corridor.door.back
+  - corridor.door.11
+  - corridor.door.13
+  - science.door
+  - toilet.door
+  - toilet.stall.outer
+  - toilet.stall.inner
+  judgeTargetsAreOpenable: 1
+  openEverything: 0

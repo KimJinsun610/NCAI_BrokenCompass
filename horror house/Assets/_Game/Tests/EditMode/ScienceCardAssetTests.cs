@@ -393,13 +393,15 @@ namespace NightDuty.Tests
         // 2026-09-21 재설계: 구간 경계가 24의 배수로 바뀌어 24는 이제 Band1(자격 안)이다.
         // S3는 청각 Band1~Band4 자격이므로 자격 직전 값은 Band0 최댓값 23이다.
         [Test]
-        public void S3_청각23에서는_시작하지않는다()
+        public void S3_청각0에서도_시작한다()
         {
-            Setup(FearAxis.Auditory, 23);
+            // 2026-09-22 자격 재설계: S3 자격이 Band1(24↑) → **Band0**다. 청각 Band0 풀이
+            // 3장(C1·S2·T2)뿐이라 1·2일차 청각 카드가 사실상 고정이었다. 네 장이 되면 그 자리가 갈린다.
+            Setup(FearAxis.Auditory, 0);
             RuleBook book = Book("S3");
             book.Dispatch(T(SignalKind.ClueDelivered, Clink));
 
-            Assert.AreEqual(CardState.Waiting, book.Watchers[0].State);
+            Assert.AreEqual(CardState.Active, book.Watchers[0].State);
         }
 
         // 해석(분석 문서 Q-S3-1): 점검 없이 퇴실하면 대기로 돌아간다.
@@ -445,11 +447,11 @@ namespace NightDuty.Tests
             Assert.AreEqual(87, _axes.GetValue(FearAxis.Illuminance));
         }
 
-        // 처음부터 등 0개(조도 90~99)면 대상이 없고, 71 이하는 자격 밖이다.
-        // 2026-09-21 재설계: S4는 조도 Band3 전용(72~89) 창형이다. 74는 이제 창 안이라
-        // 아래쪽 밖 71(Band2 최댓값)과 위쪽 밖 90(Band4 하한) 양쪽을 찍는다.
-        [TestCase(71)]
-        [TestCase(90)]
+        // 2026-09-21: S4는 조도 Band3 전용(72~89) 창형이었다 — 18칸.
+        // 2026-09-22 자격 재설계: **Band2~Band4(48~99)**로 넓혔다. 조도 카드가 다섯 장뿐인데
+        // 그중 하나가 18칸 창에 갇혀 있어 실질 풀이 네 장이었고, 5일차에만 98% 확률로 나왔다.
+        // 이제 밖은 아래쪽 47(Band1 최댓값) 하나다.
+        [TestCase(47)]
         public void S4_자격구간밖에서는_미발동(int illuminance)
         {
             Setup(FearAxis.Illuminance, illuminance);
@@ -457,6 +459,17 @@ namespace NightDuty.Tests
             book.Dispatch(T(SignalKind.ClueIdentified, LastLight));
 
             Assert.AreEqual(CardState.Waiting, book.Watchers[0].State);
+        }
+
+        /// <summary>조도 90~99에서도 열린다 — 등이 0개라 대상이 없을 뿐, 자격으로 막지 않는다.</summary>
+        [Test]
+        public void S4_조도90에서도_자격은_통과한다()
+        {
+            Setup(FearAxis.Illuminance, 90);
+            RuleBook book = Book("S4");
+            book.Dispatch(T(SignalKind.ClueIdentified, LastLight));
+
+            Assert.AreEqual(CardState.Active, book.Watchers[0].State);
         }
 
         // 기획서: 연속 시선이 끊기면 응시 시간만 0으로 초기화한다.
@@ -497,8 +510,11 @@ namespace NightDuty.Tests
 
         // ───────── S5 ─────────
         // 기획서 검증: 빈 보관 위치 관찰: 미시작. 문 옆 S-B 관찰 후 거리 유지·퇴실: 신뢰 +5. P1 중 근접: S5 0.
-        // 2026-09-21 재설계: S5에 배치 Band1~Band4(24 이상) 자격이 새로 걸렸다.
-        // 아래 시나리오는 카드를 시작시키기 전에 배치를 24로 올려 두며, 그 24는 끝까지 남는다.
+        // 2026-09-21: S5에 배치 Band1~Band4(24 이상) 자격이 걸렸다.
+        // 2026-09-22 자격 재설계: **Band0~Band4**로 되돌렸다. 이 카드의 트리거 ID가 조우 장면 scene.sb라,
+        // 자격이 24↑면 S-B 장면을 3일차 이전에 깔 수 없었다(기획서 v6 §4와 충돌).
+        // 아래 시나리오는 배치 24를 그대로 둔다 — 자격 안이므로 결과가 달라지지 않고,
+        // 「자격용으로 올린 값이 끝까지 남는다」는 단언도 그대로 성립한다.
 
         [Test]
         public void S5_빈보관위치관찰은_미시작()

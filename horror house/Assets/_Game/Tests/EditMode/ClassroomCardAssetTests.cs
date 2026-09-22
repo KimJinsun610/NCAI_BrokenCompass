@@ -140,9 +140,11 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C1_청각50에서_단서는_새발동없음()
+        public void C1_청각72에서_단서는_새발동없음()
         {
-            Setup(FearAxis.Auditory, 50);
+            // 2026-09-22 자격 재설계: C1 상한이 Band1(47) → Band2(71)로 올라가 50은 이제 자격 안이다.
+            // 「첫 수칙이 후반에 사라진다」는 그대로지만, 사라지는 지점이 4일차에서 5일차로 밀렸다.
+            Setup(FearAxis.Auditory, 72);
             RuleBook book = Book("C1");
             book.Dispatch(T(SignalKind.ClueDelivered, Chalk));
             Assert.AreEqual(CardState.Waiting, book.Watchers[0].State);
@@ -150,7 +152,7 @@ namespace NightDuty.Tests
             book.EndNight();
 
             Assert.AreEqual(CardState.Undetermined, book.Watchers[0].State);
-            Assert.AreEqual(50, _axes.GetValue(FearAxis.Auditory));
+            Assert.AreEqual(72, _axes.GetValue(FearAxis.Auditory));
             Assert.AreEqual(0, _axes.GetValue(FearAxis.Trust));
         }
 
@@ -184,20 +186,17 @@ namespace NightDuty.Tests
         // 2026-09-21 재설계: C2에 배치 Band1~Band4(24 이상) 자격이 새로 걸렸다 — 시작시키려면 배치를 먼저 24로 올려야 한다.
 
         [Test]
-        public void C2_CA관찰후_거리유지_점검_퇴실은_신뢰4_배치23에서는_시작하지않고_24에서시작()
+        public void C2_CA관찰후_거리유지_점검_퇴실은_신뢰4_배치0에서도_시작한다()
         {
-            // 2026-09-21 재설계: C2 자격이 「없음(좌석 식별로 대신)」 → 「배치 Band1~Band4(24 이상)」로 바뀌었다.
-            // 「배치 0에서도 시작한다」는 옛 단언은 거짓이 되어, 뜻을 「23에서는 시작하지 않고 24에서 시작한다」로 뒤집었다.
-            Setup(FearAxis.Layout, 23);
+            // 2026-09-21: 자격이 「없음」 → 「배치 Band1~Band4(24↑)」였다.
+            // 2026-09-22 자격 재설계: 다시 **Band0~Band4**다. 배치 Band0 풀이 3장(C6·H1·T1)뿐이라
+            // 1·2일차 덱이 사실상 고정이었다 — 실측으로 2일차 6장 중 평균 4장이 1일차와 겹쳤다.
+            Setup(FearAxis.Layout, 0);
             RuleBook book = Book("C2");
             book.Dispatch(Sp(SignalKind.SpaceEntered, SpaceId.Classroom_1_1));
             book.Dispatch(T(SignalKind.ModelObserved, "scene.ca"));
             book.Dispatch(T(SignalKind.ClueIdentified, Desk));
-            Assert.AreEqual(CardState.Waiting, book.Watchers[0].State, "배치 23(Band0)에서는 좌석을 식별해도 시작하지 않는다");
-
-            Setup(FearAxis.Layout, 1);   // 23 + 1 = 24 → Band1
-            book.Dispatch(T(SignalKind.ClueIdentified, Desk));
-            Assert.AreEqual(CardState.Active, book.Watchers[0].State, "배치 24(Band1)부터 좌석 식별로 시작한다");
+            Assert.AreEqual(CardState.Active, book.Watchers[0].State, "배치 0(Band0)에서도 좌석 식별로 시작한다");
 
             book.Dispatch(JudgeSignal.Proximity(Desk, 1.5f));
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.Classroom_1_1));
@@ -205,7 +204,7 @@ namespace NightDuty.Tests
 
             // 2026-09-21 재설계: 준수 신뢰 +2 → +4 (C2)
             Assert.AreEqual(4, _axes.GetValue(FearAxis.Trust));
-            Assert.AreEqual(24, _axes.GetValue(FearAxis.Layout), "1.50m는 반경 밖 — 위반 델타가 붙지 않아 시작값 그대로다");
+            Assert.AreEqual(0, _axes.GetValue(FearAxis.Layout), "1.50m는 반경 밖 — 위반 델타가 붙지 않아 시작값 그대로다");
         }
 
         [Test]
@@ -333,10 +332,11 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C3_청각47에서는_시작하지않는다()
+        public void C3_청각23에서는_시작하지않는다()
         {
-            // 2026-09-21 재설계: 구간 경계가 50 → 48로 내려가 49는 이제 Band2(자격 통과)다. 직전 값 47로 바꾼다.
-            Setup(FearAxis.Auditory, 47);
+            // 2026-09-21: 경계가 50 → 48로 내려가 직전 값이 47이었다.
+            // 2026-09-22 자격 재설계: 자격이 Band2(48↑) → **Band1(24↑)**라 경계가 23/24다.
+            Setup(FearAxis.Auditory, 23);
             RuleBook book = Book("C3");
             book.Dispatch(T(SignalKind.ClueDelivered, BackDesk));
 

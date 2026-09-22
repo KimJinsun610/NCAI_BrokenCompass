@@ -93,12 +93,13 @@ namespace NightDuty.Tests
             CollectionAssert.IsEmpty(errors);
             Assert.IsTrue(Load("T1").IsLongTerm, "T1은 장기(그날 칸 개폐 금지)");
             Assert.IsTrue(Load("T6").IsLongTerm, "T6은 장기(밤 종료까지 칸 진입 금지)");
-            // 2026-09-21 재설계: T6에 배치 Band3~Band4 자격이 되살아났다(구간 검사 끔 → 켬).
+            // 2026-09-21: T6에 배치 자격이 되살아났다(구간 검사 끔 → 켬).
+            // 2026-09-22 자격 재설계: 하한이 Band3 → Band2다.
             // 두 칸 개방 식별 신호는 여전히 필요하다 — 자격과 트리거는 별개다.
             RuleSO t6 = Load("T6");
             Assert.IsTrue(t6.UseEligibleBand, "T6은 배치 구간 검사를 쓴다");
             Assert.AreEqual(FearAxis.Layout, t6.EligibleAxis, "T6 자격 축은 배치");
-            Assert.AreEqual(Band.Band3, t6.EligibleFrom, "T6 자격 하한은 Band3");
+            Assert.AreEqual(Band.Band2, t6.EligibleFrom, "T6 자격 하한은 Band2");
             Assert.AreEqual(Band.Band4, t6.EligibleTo, "T6 자격 상한은 Band4");
         }
 
@@ -184,10 +185,12 @@ namespace NightDuty.Tests
             AssertAllAxes(0, 0, 0, 4);   // 2026-09-21 재설계: 준수 신뢰 +2 → +4
         }
 
-        // 자격: 배치 0~71(Band0~Band2).
-        // 2026-09-21 재설계: 구간 경계가 50/75 → 48/72로 밀려 상한이 74 → 71이 됐다. 경계 양쪽을 모두 건다.
-        [TestCase(71, true)]
-        [TestCase(72, false)]
+        // 자격: 배치 0~89(Band0~Band3).
+        // 2026-09-21: 경계가 50/75 → 48/72로 밀려 상한이 74 → 71이었다.
+        // 2026-09-22 자격 재설계: 상한을 Band2(71) → **Band3(89)**로 올렸다. 일차 하한이 5일차에 72라
+        // 이 장기 카드가 마지막 날에 절대 안 열렸다(실측 5일차 0%). 경계 양쪽을 모두 건다.
+        [TestCase(89, true)]
+        [TestCase(90, false)]
         public void T1_배치구간자격(int layout, bool expectActive)
         {
             Setup(FearAxis.Layout, layout);
@@ -467,9 +470,10 @@ namespace NightDuty.Tests
 
         // 2026-09-21 재설계: 구간 경계가 밀려 49는 이제 Band2(자격 안)다. 자격 직전 값은 47이다.
         [Test]
-        public void T4_청각47에서는_시작하지않는다()
+        public void T4_청각23에서는_시작하지않는다()
         {
-            Setup(FearAxis.Auditory, 47);
+            // 2026-09-22 자격 재설계: 자격이 Band2(48↑) → **Band1(24↑)**라 경계가 23/24다.
+            Setup(FearAxis.Auditory, 23);
             RuleBook book = Book("T4");
             book.Dispatch(T(SignalKind.ClueDelivered, SinkCall));
 
@@ -554,7 +558,9 @@ namespace NightDuty.Tests
 
         // ───────── T6 ─────────
         // 기획서 검증: 문밖 관찰·점검: 밤 종료 신뢰 +4. 바깥 칸 내부 진입도 배치 +15. P4 안쪽 칸 도착: 같은 T6 한 번만 적용.
-        // 2026-09-21 재설계: 준수 신뢰 +2 → +4. 자격으로 배치 Band3~Band4(72 이상)가 새로 걸렸다(아래 75는 Band3 안).
+        // 2026-09-21: 준수 신뢰 +2 → +4. 자격으로 배치 Band3~Band4(72↑)가 걸렸다.
+        // 2026-09-22 자격 재설계: **Band2~Band4(48↑)**로 한 칸 내렸다 — 5일차에만 나오던 카드였다(회차당 0.75회).
+        // 아래 75는 여전히 자격 안이라 시나리오는 그대로 성립한다.
 
         private RuleBook StartT6()
         {
@@ -615,21 +621,21 @@ namespace NightDuty.Tests
             AssertAllAxes(0, 0, 75, 0);
         }
 
-        // 2026-09-21 재설계: 구간 검사를 되살렸다 — 두 칸 개방 식별만으로는 부족하고 배치 Band3(72 이상)이어야 한다.
-        // 옛 「배치 0에서도 시작한다」는 이제 거짓이므로 뜻을 뒤집어 자격 경계 양쪽을 검증한다.
+        // 2026-09-21: 구간 검사를 되살렸다 — 두 칸 개방 식별만으로는 부족하고 배치 자격이 필요하다.
+        // 2026-09-22 자격 재설계: 하한이 Band3(72) → Band2(48)라 경계가 47/48이다.
         [Test]
-        public void T6_배치71에서는_시작하지않고_72에서_시작한다()
+        public void T6_배치47에서는_시작하지않고_48에서_시작한다()
         {
-            Setup(FearAxis.Layout, 71);
+            Setup(FearAxis.Layout, 47);
             RuleBook below = Book("T6");
             below.Dispatch(T(SignalKind.ClueIdentified, BothOpen));
-            Assert.AreEqual(CardState.Waiting, below.Watchers[0].State, "배치 71은 Band2 — 자격 미달");
+            Assert.AreEqual(CardState.Waiting, below.Watchers[0].State, "배치 47은 Band1 — 자격 미달");
 
-            Setup(FearAxis.Layout, 1);   // 71 + 1 = 72 → Band3
-            RuleBook atBand3 = Book("T6");
-            atBand3.Dispatch(T(SignalKind.ClueIdentified, BothOpen));
+            Setup(FearAxis.Layout, 1);   // 47 + 1 = 48 → Band2
+            RuleBook atBand2 = Book("T6");
+            atBand2.Dispatch(T(SignalKind.ClueIdentified, BothOpen));
 
-            Assert.AreEqual(CardState.Active, atBand3.Watchers[0].State, "배치 72는 Band3 — 자격 충족");
+            Assert.AreEqual(CardState.Active, atBand2.Watchers[0].State, "배치 48은 Band2 — 자격 충족");
         }
 
         // 기획서: 재방문·문 개폐로 금지가 사라지지 않는다(준수 조건을 채운 뒤라도 진입하면 위반).

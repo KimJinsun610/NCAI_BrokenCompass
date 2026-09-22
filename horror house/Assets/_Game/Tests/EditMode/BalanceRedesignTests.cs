@@ -349,6 +349,66 @@ namespace NightDuty.Tests
             Assert.AreEqual(DayDirector.DeckSize, deck.Count, _director.LastReport);
             Assert.AreEqual(DayDirector.FirstDayFixedCardId, deck[0].CardId, "회차를 새로 시작하면 고정 카드가 다시 온다");
         }
+
+        /// <summary>
+        /// <b>장면 ID가 곧 트리거인 카드는 그 장면이 깔린 날에만 덱에 든다</b>(S5 ↔ S-B · T3 ↔ T-A).
+        /// <para>
+        /// 장면이 없는 날에 들어가면 <b>시작할 방법이 없어 미판정으로 끝난다</b> — 하루 여섯 자리 중
+        /// 한 자리를 헛되이 쓴다. 2026-09-22 자격 재설계로 두 카드가 Band0이 되면서
+        /// 「자격이 곧 그 장면이 깔리는 날」이던 우연한 일치가 사라져 이 검사가 필요해졌다.
+        /// </para>
+        /// </summary>
+        [Test]
+        public void 장면에_묶인_카드는_그_장면이_깔린_날에만_덱에_든다()
+        {
+            // 풀에 이미 S5가 있으므로(배치 6장) 겹치지 않는 ID를 쓴다 — 여기서 보는 것은 카드 이름이 아니라
+            // 「트리거가 조우 장면 ID인 카드」라는 모양이다.
+            RuleSO bound = _kit.Card(c =>
+            {
+                c.CardId = "S6";
+                c.Space = SpaceId.ScienceRoom;
+                c.FailureAxis = FearAxis.Layout;
+                c.TriggerKind = SignalKind.ModelObserved;
+                c.TriggerId = EncounterDirector.SceneSB;
+                c.TargetIds = new[] { "science.model.sb" };
+                c.Failure = new ProximityCondition("science.model.sb", 1.5f);
+                c.Success = new SignalCondition(SignalKind.SpaceExited, string.Empty, SpaceId.ScienceRoom);
+            });
+
+            List<RuleSO> pool = new List<RuleSO>(_pool);
+            pool.Add(bound);
+
+            // ① 그 장면이 깔린 날 — 들어갈 수 있어야 한다.
+            DayDirector open = new DayDirector(pool, new System.Random(Seed));
+            open.IsEncounterActive = delegate (string sceneId) { return sceneId == EncounterDirector.SceneSB; };
+
+            bool seenWhenLaid = false;
+            for (int day = 1; day <= 5 && !seenWhenLaid; day++)
+            {
+                IReadOnlyList<RuleSO> deck = open.BuildDeck(day, _axes);
+                for (int i = 0; i < deck.Count; i++)
+                {
+                    if (deck[i].CardId == "S6") { seenWhenLaid = true; break; }
+                }
+            }
+
+            Assert.IsTrue(seenWhenLaid, "장면이 깔린 날에도 카드가 한 번도 안 들어갔다 — 게이트가 너무 세다");
+
+            // ② 그 장면이 없는 날 — 어느 일차에서도 들어가면 안 된다.
+            DayDirector closed = new DayDirector(pool, new System.Random(Seed));
+            closed.IsEncounterActive = delegate { return false; };
+
+            for (int day = 1; day <= 5; day++)
+            {
+                IReadOnlyList<RuleSO> deck = closed.BuildDeck(day, _axes);
+                for (int i = 0; i < deck.Count; i++)
+                {
+                    Assert.AreNotEqual("S6", deck[i].CardId,
+                                       day + "일차에 S-B가 안 깔렸는데 장면에 묶인 카드가 덱에 들어갔다 — 시작할 방법이 없는 헛자리다. "
+                                           + closed.LastReport);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -530,15 +590,26 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 미방문인데_위반까지_난_줄은_문자를_받았으면_지시를따름으로_적힌다()
+        public void 미방문인데_위반까지_난_줄은_문자를_받았어도_어김이다()
         {
-            // 현재 코드의 동작을 그대로 못박아 둔다(DutyLogEntry.Mark).
-            // Mark는 「어긴 줄 가운데 State == Violated인 것」만 지시를 따름으로 본다.
-            // 실제 진행에서는 위반 판정이 났다면 그 공간에 있었다는 뜻이라 이 조합이 나오기 어렵다.
+            // 「가지 않았으면 지시를 따른 것이 아니다」가 설계 의도다(DutyLogEntry.Mark 주석).
+            // 2026-09-21 이전에는 Mark가 Visited를 보지 않아 이 조합에서 Instructed가 나왔다 — 버그였다.
+            // 이 조합은 실제로 일어난다: C6는 밤 시작 트리거라 그 교실에 한 번도 안 가고도 위반이 나고,
+            // T1·S2 같은 장기 카드도 공간 밖에서 위반이 성립할 수 있다.
             DutyLogEntry entry = Entry(CardState.Violated, false, true);
 
             Assert.IsTrue(entry.Struck);
-            Assert.AreEqual(DutyMark.Instructed, entry.Mark);
+            Assert.AreEqual(DutyMark.Struck, entry.Mark, "가지 않은 줄은 문자를 받았어도 「어김」이다");
+        }
+
+        [Test]
+        public void 방문했고_문자를_받고_어긴_줄만_지시를따름이다()
+        {
+            // 위 테스트의 짝. 셋 중 하나라도 빠지면 「지시를 따름」이 아니다.
+            Assert.AreEqual(DutyMark.Instructed, Entry(CardState.Violated, true, true).Mark, "방문 + 위반 + 문자");
+            Assert.AreEqual(DutyMark.Struck, Entry(CardState.Violated, true, false).Mark, "문자를 안 받았으면 그냥 어김");
+            Assert.AreEqual(DutyMark.Struck, Entry(CardState.Violated, false, true).Mark, "안 갔으면 그냥 어김");
+            Assert.AreEqual(DutyMark.None, Entry(CardState.Complied, true, true).Mark, "지켰으면 표시 없음");
         }
     }
 }

@@ -17,7 +17,13 @@ namespace NightDuty.Editor
     public static class SpaceAnomalyTableBuilder
     {
         /// <summary>에셋 경로.</summary>
-        public const string AssetPath = "Assets/_Game/ScriptableObjects/SpaceAnomalyTable.asset";
+        /// <summary>
+        /// 만들 자리. <b>Resources 아래여야 한다</b> — <c>AnomalyCueDirector</c>가 인스펙터 참조가 비었을 때
+        /// <c>Resources.Load&lt;SpaceAnomalyTableSO&gt;("SpaceAnomalyTable")</c>로 물러서기 때문이다.
+        /// 2026-09-22까지 <c>ScriptableObjects/</c>에 있어 그 폴백이 언제나 null이었고,
+        /// 씬에 표를 손으로 꽂지 않은 <c>AnomalyCueDirector</c>는 <b>단서를 한 건도 보내지 못했다</b>.
+        /// </summary>
+        public const string AssetPath = "Assets/_Game/Resources/SpaceAnomalyTable.asset";
 
         /// <summary>메뉴: 이상현상 표 에셋 생성.</summary>
         [MenuItem("NightDuty/이상현상 표 에셋 생성", false, 121)]
@@ -77,10 +83,10 @@ namespace NightDuty.Editor
             Add(list, s, FearAxis.Auditory, Band.Band4, "퇴실 파손음 뒤 무거운 물체 놓는 소리 1회", "glass.break", "heavy.drop", "glass.touch.under", "glass.scrape.under");
             AddLight(list, s, 4, 3, 2, 1);
             Add(list, s, FearAxis.Layout, Band.Band0, "기존 실험대·기구 정상 배치", "lab.normal");
-            Add(list, s, FearAxis.Layout, Band.Band1, "의자 하나가 책상에서 빠져나와 전시형 인체모형을 향함", "lab.normal", "chair.toward.model");
-            Add(list, s, FearAxis.Layout, Band.Band2, "여러 의자가 전시형 인체모형을 향함", "lab.normal", "chair.toward.model", "chairs.toward.model");
-            Add(list, s, FearAxis.Layout, Band.Band3, "의자들이 전시형 인체모형을 향한 반원 배치 — 배치축 하이라이트", "lab.normal", "chair.toward.model", "chairs.toward.model", "chairs.semicircle");
-            Add(list, s, FearAxis.Layout, Band.Band4, "반원 배치 유지. 반원 바깥 의자 하나만 출입구를 향함 (모형 위치는 S-A·S-B 장면으로 별도)", "lab.normal", "chair.toward.model", "chairs.toward.model", "chairs.semicircle", "chair.toward.exit");
+            Add(list, s, FearAxis.Layout, Band.Band1, "일반 소품 배치 유지", "lab.normal");
+            Add(list, s, FearAxis.Layout, Band.Band2, "일반 소품 배치 유지", "lab.normal");
+            Add(list, s, FearAxis.Layout, Band.Band3, "일반 소품 배치 유지", "lab.normal");
+            Add(list, s, FearAxis.Layout, Band.Band4, "일반 소품 배치 유지 (모형 위치는 S-A·S-B 장면으로 별도)", "lab.normal");
 
             // ── 화장실 (등 4개) ──
             s = SpaceId.Toilet;

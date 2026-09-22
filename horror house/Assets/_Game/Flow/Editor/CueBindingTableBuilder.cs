@@ -25,7 +25,7 @@ public static class CueBindingTableBuilder
     /// </summary>
     private const string AssetPath = "Assets/_Game/Resources/CueBindingTable.asset";
 
-    private const string AnomalyPath = "Assets/_Game/ScriptableObjects/SpaceAnomalyTable.asset";
+    private const string AnomalyPath = "Assets/_Game/Resources/SpaceAnomalyTable.asset";
 
     [MenuItem("NightDuty/큐 바인딩 표 에셋 생성", false, 40)]
     public static void Build()

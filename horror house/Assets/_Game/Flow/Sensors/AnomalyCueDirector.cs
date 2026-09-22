@@ -96,6 +96,14 @@ public sealed class AnomalyCueDirector : MonoBehaviour
     private static AnomalyCueDirector s_active;
 
     /// <summary>지금 살아 있는 발신기. 없으면 null.</summary>
+    /// <summary>
+    /// 큐를 실제로 내보낸 순간. <b>음원이 없는 동안 이 소리를 대신 보여 주려고</b> 낸 통로다(2026-09-22).
+    /// 인자는 (보낸 신호, 판정 대상 ID, 바인딩)이고, 바인딩에 큐 ID·공간·축·획 수가 들어 있다.
+    /// <para>구독자가 없어도 아무 일도 하지 않는다. 나중에 진짜 음원이 오면 <see cref="cueAudio"/>로 재생하고
+    /// 이 이벤트는 그대로 두면 된다 — 자막·접근성·개발용 표시가 같은 자리에서 붙는다.</para>
+    /// </summary>
+    public static event System.Action<SignalKind, string, CueBindingTableSO.Binding> CueFired;
+
     public static AnomalyCueDirector Active
     {
         get { return s_active; }
@@ -711,6 +719,19 @@ public sealed class AnomalyCueDirector : MonoBehaviour
 
         NightRun.Send(JudgeSignal.Target(kind, targetId));
 
+        // ── 음원이 오면 여기서 PlayOneShot. 그때도 이 알림은 그대로 둔다. ──
+        if (CueFired != null)
+        {
+            try
+            {
+                CueFired(kind, targetId, b);
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogException(e, this);   // 구독자가 터져도 판정은 그대로 간다.
+            }
+        }
+
         if (logCues)
         {
             Debug.Log("[Cue] 발신 " + kind + "('" + targetId + "')  ← 큐 " + b.CueId +
@@ -719,6 +740,13 @@ public sealed class AnomalyCueDirector : MonoBehaviour
     }
 
     /// <summary>포획 이후·Tab 중·밤이 아닐 때는 아무것도 보내지 않는다.</summary>
+    /// <summary>정적 이벤트는 도메인 리로드를 넘어 살아남는다. 플레이 시작마다 비운다(EventBus와 같은 약속).</summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ClearStatics()
+    {
+        CueFired = null;
+    }
+
     private static bool CanSend()
     {
         return NightRun.IsNightActive && !NightRun.IsCaptured && !PlayerSensors.TabOpen;

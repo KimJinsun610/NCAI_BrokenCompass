@@ -26,7 +26,8 @@ namespace NightDuty
     /// 구간 보류(<see cref="BandResolver"/>)를 쓰려면 호출자가 <c>axes.ValueChanged += bands.OnValueChanged</c>도 연결해야 한다.
     /// </para>
     /// <para>
-    /// 아직 없는 것(다음 단계): 조우·문자·역설(P형) 정산, 덱 배정. 밤 종료 순서의 P형 미도달 정산 자리는
+    /// 역설 문자 발송은 <see cref="ParadoxDirector"/>가, 덱 배정은 <see cref="DayDirector"/>가 이미 맡고 있다.
+    /// 아직 없는 것(다음 단계): <b>조우와 P형 미도달 정산</b>뿐이다. 밤 종료 순서의 P형 미도달 정산 자리는
     /// <see cref="EndNight"/>에 표시해 두었다.
     /// </para>
     /// </summary>

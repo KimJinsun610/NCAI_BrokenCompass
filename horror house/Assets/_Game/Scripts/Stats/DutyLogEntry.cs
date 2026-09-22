@@ -79,6 +79,14 @@ namespace NightDuty
                     return DutyMark.None;
                 }
 
+                if (!Visited)
+                {
+                    // 그 공간에 가지 않았으면 「지시를 따른 것」이 아니다. 문자를 받았더라도 그냥 어김이다.
+                    // 미방문인데 위반으로 정산되는 카드는 실제로 있다 — C6는 밤 시작 트리거이고,
+                    // T1·S2 같은 장기 카드도 공간 밖에서 위반이 성립할 수 있다.
+                    return DutyMark.Struck;
+                }
+
                 return Instructed && State == CardState.Violated ? DutyMark.Instructed : DutyMark.Struck;
             }
         }

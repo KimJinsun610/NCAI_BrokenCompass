@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
 namespace NightDuty.Editor
 {
     /// <summary>
-    /// 교실(C1~C6) · 과학실(S1~S6) · 화장실(T1~T6) 근무수칙 카드 에셋을 만들고, 임시 편성표에 2~4일차를 채운다.
+    /// 교실(C1~C6) · 과학실(S1~S6) · 화장실(T1~T6) 근무수칙 카드 에셋을 만들고, 카드 풀 표의 2~4일차 칸을 채운다.
+    /// <para>표의 칸은 「그날 나올 덱」이 아니라 <b>풀에 넣을 카드 목록</b>이다 — <see cref="NightRun"/>이 모든 칸을 합쳐 중복 없이 읽는다.</para>
     /// <para>
     /// 판정 상세의 정본은 기획서(2026-09-12)다. 여기서는 그 내용을 조건 조합으로 옮긴 <b>초기값</b>만 만든다
     /// (근거: 교실·과학실·화장실 카드 표현 가능성 분석 문서 §2).
@@ -121,9 +122,10 @@ namespace NightDuty.Editor
         }
 
         /// <summary>
-        /// 임시 편성표(<see cref="CorridorCardBuilder.DeckPath"/>)를 2일차 = C1~C6, 3일차 = S1~S6, 4일차 = T1~T6으로 늘린다.
+        /// 카드 풀 표(<see cref="CorridorCardBuilder.DeckPath"/>)의 칸을 2일차 = C1~C6, 3일차 = S1~S6, 4일차 = T1~T6으로 채운다.
         /// <para>
-        /// 디버그용 임시 편성: 기획서의 S1 1일차 고정·T1/T3 같은 날 금지 규칙은 DayDirector가 맡는다.
+        /// 칸을 어떻게 나누든 <see cref="NightRun"/>이 전부 합쳐 24장 풀로 읽으므로 배치에 의미는 없다.
+        /// S1 1일차 고정·T1/T3 같은 날 금지 같은 규칙은 전부 <see cref="DayDirector"/>가 맡는다.
         /// (그래서 3일차에 S1이, 4일차에 T1·T3가 함께 들어가는 것은 디버그 편성이라 허용한다.)
         /// </para>
         /// <para>
@@ -207,7 +209,7 @@ namespace NightDuty.Editor
             EditorUtility.SetDirty(table);
             AssetDatabase.SaveAssets();
 
-            Debug.Log("[공간 카드 편성] 디버그 임시 편성 채움: " + string.Join(", ", filled)
+            Debug.Log("[공간 카드 편성] 카드 풀 표 채움: " + string.Join(", ", filled)
                       + " / 일차 수 " + oldCount + " → " + result.Length
                       + (waiting.Count > 0 ? " / 대기(그 공간 메뉴 실행 뒤 채움): " + string.Join(", ", waiting) : string.Empty));
         }
@@ -250,16 +252,17 @@ namespace NightDuty.Editor
                 // ───────────── 교실 ─────────────
 
                 case "C1":
-                    // 청각 0~47(Band0~1, 상한형) · 1-1 문밖 분필 3획 끝에 시작(장기) · 1-3 점검 완료 → 신뢰 +4 · 그 전에 1-1 실내 진입 → 청각 +12.
+                    // 청각 0~71(Band0~2, 상한형) · 1-1 문밖 분필 3획 끝에 시작(장기) · 1-3 점검 완료 → 신뢰 +4 · 그 전에 1-1 실내 진입 → 청각 +12.
                     // 장기로 둔 이유: 복도 → 1-3 → 1-1로 방문을 넘는 순서 의무이고, 단서가 하루 1회라 방문 몫에 막히면 다시 오지 않는다.
                     // 「그날 1-3 점검을 마친 뒤면 시작 안 함」은 단서 재생기가 맡는다(점검 뒤에는 분필 단서를 전달하지 않음).
                     c.Space = SpaceId.Classroom_1_1;
+                    c.HowTo = DayBriefText.InspectionHowTo;
                     c.PlayerText = "1-1 문밖에서 분필 소리가 세 번 들렸다면, 1-3부터 점검하십시오.";
                     c.IsLongTerm = true;
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
                     c.EligibleFrom = Band.Band0;
-                    c.EligibleTo = Band.Band1;
+                    c.EligibleTo = Band.Band2;
                     c.TriggerKind = SignalKind.ClueDelivered;
                     c.TriggerId = "cls11.chalk3";
                     c.Failure = new SignalCondition(SignalKind.SpaceEntered, string.Empty, SpaceId.Classroom_1_1);   // 문 E는 무관
@@ -270,16 +273,17 @@ namespace NightDuty.Editor
                     break;
 
                 case "C2":
-                    // 배치 24~99(Band1~) · 반경 밖 식별로 시작 ·
+                    // 배치 0~99(Band0~) · 반경 밖 식별로 시작 ·
                     // 점검 완료 → 신뢰 +4 · 좌석 1.5m 미만 → 배치 +12 · 점검 없이 퇴실 → 대기(다음 방문에 기회).
                     // 2026-09-21 재설계: 기획서 J절의 게이트를 되살렸다. 이전에는 구간 검사를 끄고
                     // 「회전 좌석 식별 신호의 존재」로 대신했는데, 그러면 배치 Band0에서 열리는 카드가
                     // H1·C6·T1·C2 넷이 되어 「축당 Band0 개방 3장」 불변식이 깨진다.
                     c.Space = SpaceId.Classroom_1_1;
+                    c.HowTo = DayBriefText.InspectionHowTo;
                     c.PlayerText = "출입문을 향해 돌아앉은 책상이 있다면, 거리를 두고 점검하십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Layout;
-                    c.EligibleFrom = Band.Band1;
+                    c.EligibleFrom = Band.Band0;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TargetIds = new[] { "cls11.desk.turned" };
@@ -292,13 +296,13 @@ namespace NightDuty.Editor
                     break;
 
                 case "C3":
-                    // 청각 48~99(Band2~) · 퇴실 준비 중 뒷줄 책상 타격음으로 시작 · 실내 경계 이탈 → 신뢰 +4 ·
+                    // 청각 24~99(Band1~) · 퇴실 준비 중 뒷줄 책상 타격음으로 시작 · 실내 경계 이탈 → 신뢰 +4 ·
                     // 유예 2초 뒤 그 책상 3초 연속 응시 → 청각 +15. (타격음 단서 ID = 응시 대상 ID)
                     c.Space = SpaceId.Classroom_1_1;
                     c.PlayerText = "퇴실하려는 순간 뒤쪽 책상이 울리더라도, 그 책상을 오래 바라보지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
-                    c.EligibleFrom = Band.Band2;
+                    c.EligibleFrom = Band.Band1;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueDelivered;
                     c.TargetIds = new[] { "cls11.desk.back" };
@@ -312,13 +316,13 @@ namespace NightDuty.Editor
                     break;
 
                 case "C4":
-                    // 청각 72~99(Band3~) · 칠판 긁기와 의자 마찰이 겹쳐 들리기 시작할 때 시작 ·
+                    // 청각 48~99(Band2~) · 칠판 긁기와 의자 마찰이 겹쳐 들리기 시작할 때 시작 ·
                     // 전체 시퀀스 종료 또는 그 전 퇴실 → 신뢰 +4 · 교탁 1.5m 미만 → 청각 +15.
                     c.Space = SpaceId.Classroom_1_1;
                     c.PlayerText = "칠판 소리와 의자 소리가 겹치는 동안에는, 교탁에 접근하지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
-                    c.EligibleFrom = Band.Band3;
+                    c.EligibleFrom = Band.Band2;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueDelivered;
                     c.TriggerId = "cls11.lectern.noise";
@@ -333,16 +337,19 @@ namespace NightDuty.Editor
                     break;
 
                 case "C5":
-                    // 조도 24~99(Band1~) · 두 교실 공통, 진입 지점에서 등 상태 식별로 시작 ·
+                    // 조도 0~99(Band0~) · 두 교실 공통, 진입 지점에서 등 상태 식별로 시작 ·
                     // 유예 2초 뒤 On 유지로 점검 완료 → 신뢰 +5 · 유예 뒤 Off 또는 이후 Off 전환 → 조도 +12 · 짧은 입구 왕복 → 대기.
                     // 2026-09-21 재설계: Band2~ → Band1~ 로 한 칸 내렸다(조도축 Band1 보충).
+                    // 2026-09-22 재설계: Band1~ → Band0~. 조도 Band0 풀이 3장뿐이라 1·2일차 조도 카드가
+                    // 사실상 고정이었다(H3·S6·T5 중 2장). 네 장이 되면 그 자리가 갈린다.
                     // 9.20V가 등 개수를 없앴으므로 조건은 색온도 구간이지 켜진 등 수가 아니다.
                     // 공간은 대표값 1-1(두 교실 공통 카드). 두 방 조건은 AnyOf로 모두 받는다.
                     c.Space = SpaceId.Classroom_1_1;
+                    c.HowTo = DayBriefText.InspectionHowTo;
                     c.PlayerText = "교실 형광등이 주황빛 이하로 어두워지면, 손전등을 켜고 점검하십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Illuminance;
-                    c.EligibleFrom = Band.Band1;
+                    c.EligibleFrom = Band.Band0;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TargetIds = new[] { "cls11.lights", "cls13.lights" };
@@ -365,6 +372,7 @@ namespace NightDuty.Editor
                     // 밤 종료에 점검 누락 또는 수동 개방 문이 열린 채 남음 → 배치 +12 한 번(같은 밤 종료 신호에서 위반 우선).
                     // 자동 개방 문(DoorAutoOpenObserved·연출 출처 명령)은 의무를 만들지 않는다.
                     c.Space = SpaceId.Classroom_1_1;
+                    c.HowTo = DayBriefText.InspectionHowToBothRooms;
                     c.PlayerText = "1-1과 1-3을 점검한 뒤, 직접 여신 문만 닫고 나오십시오.";
                     c.IsLongTerm = true;
                     c.TriggerKind = SignalKind.NightBegan;
@@ -388,8 +396,18 @@ namespace NightDuty.Editor
                 case "S1":
                     // 1일차 고정(편성) · 과학실 진입으로 시작 · 보관 모형 얼굴 1초 연속 응시 → 신뢰 +5 ·
                     // 위반 없음(미관찰은 업무 미완료 — 준수 전용 카드) · 미관찰 퇴실 → 대기.
+                    //
+                    // 본문은 시나리오 기획서 v6 §3-3이 정본이다(2026-09-22). 「첫 근무는 …」이라는
+                    // 이전 문구는 되살리지 말 것 — 프롤로그의 첫 불안이 「이전 근무자가 마지막으로
+                    // 확인한 것을 확인하러 갔는데 사람이 아니라 모형이 있다」이므로, 본문이 그 사실을
+                    // 먼저 말해야 한다.
+                    //
+                    // 조작 안내는 기획서가 <b>수칙 본문과 구분해</b> 표시하라고 했다. 2026-09-22에
+                    // RuleSO에 HowTo 필드를 더했고, 문구는 DayBriefText.FirstCardHowTo가 정본이다.
+                    // PlayerText에 붙이지 말 것 — 붙이는 순간 구분이 사라진다.
                     c.Space = SpaceId.ScienceRoom;
-                    c.PlayerText = "첫 근무는 과학실 보관 위치의 인체 모형을 확인하는 것으로 시작하십시오.";
+                    c.HowTo = DayBriefText.FirstCardHowTo;
+                    c.PlayerText = "이전 근무자의 마지막 확인 장소는 과학실입니다.\n과학실 보관 위치를 확인한 뒤 순찰을 시작하십시오.";
                     c.TriggerKind = SignalKind.SpaceEntered;
                     c.TargetIds = new[] { "science.model.sa.face" };
                     c.Success = new GazeCondition(string.Empty, 1f, 0f);
@@ -416,13 +434,14 @@ namespace NightDuty.Editor
                     break;
 
                 case "S3":
-                    // 청각 24~99(Band1~) · 간격 식별 뒤 접촉음 전달로 시작(식별 선행은 재생기 몫) ·
+                    // 청각 0~99(Band0~) · 간격 식별 뒤 접촉음 전달로 시작(식별 선행은 재생기 몫) ·
                     // 접근 없이 점검 완료 → 신뢰 +4 · 실험대 1.5m 미만 → 청각 +12 · 점검 없이 퇴실 → 대기.
                     c.Space = SpaceId.ScienceRoom;
+                    c.HowTo = DayBriefText.InspectionHowTo;
                     c.PlayerText = "닿을 수 없는 간격의 유리 기구가 부딪히면, 그 책상에 다가가지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
-                    c.EligibleFrom = Band.Band1;
+                    c.EligibleFrom = Band.Band0;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueDelivered;
                     c.TriggerId = "science.bench.glass.clink";
@@ -439,11 +458,12 @@ namespace NightDuty.Editor
                     // 조도 72~89(Band3 창형. 9.20V가 등 개수를 삭제했으므로 색온도 구간이다) · 마지막 등 식별로 시작(식별 0.2초는 응시에 넣지 않음) ·
                     // 금지 응시 없이 점검 완료 → 신뢰 +4 · 그 등 2초 연속 응시 → 조도 +12 · 점검 없이 퇴실 → 대기.
                     c.Space = SpaceId.ScienceRoom;
+                    c.HowTo = DayBriefText.InspectionHowTo;
                     c.PlayerText = "지정 점검등이 짙은 주황빛을 띠면, 그 등을 오래 올려다보지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Illuminance;
-                    c.EligibleFrom = Band.Band3;
-                    c.EligibleTo = Band.Band3;
+                    c.EligibleFrom = Band.Band2;
+                    c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TargetIds = new[] { "science.light.last" };
                     c.Failure = new GazeCondition(TargetMatchIds.Trigger, 0f, 0f);   // 유예 없음, 시간은 카드 응시 2초
@@ -457,14 +477,14 @@ namespace NightDuty.Editor
                     break;
 
                 case "S5":
-                    // 배치 24~99(Band1~) · 반경 밖 S-B 1초 관찰로 시작 · 모형 반경 밖으로 퇴실 → 신뢰 +5 · 모형 1.5m 미만 → 배치 +15.
+                    // 배치 0~99(Band0~) · 반경 밖 S-B 1초 관찰로 시작 · 모형 반경 밖으로 퇴실 → 신뢰 +5 · 모형 1.5m 미만 → 배치 +15.
                     // P1 경유 S-B는 장면 ID를 scene.sb.p1로 따로 보내 S5를 시작하지 않는다.
                     // 2026-09-21 재설계: 배치축 Band0 개방을 3장(H1·C6·T1)으로 줄이려고 게이트를 걸었다.
                     c.Space = SpaceId.ScienceRoom;
                     c.PlayerText = "인체 모형이 보관 위치에 없다면, 거리를 유지한 채 과학실에서 나오십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Layout;
-                    c.EligibleFrom = Band.Band1;
+                    c.EligibleFrom = Band.Band0;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ModelObserved;
                     c.TriggerId = "scene.sb";
@@ -500,7 +520,7 @@ namespace NightDuty.Editor
                 // ───────────── 화장실 ─────────────
 
                 case "T1":
-                    // 배치 0~71(Band0~2, 상한형) · 지정 칸 문(입구 쪽)의 자동 움직임 관찰로 시작(장기) ·
+                    // 배치 0~89(Band0~3, 상한형) · 지정 칸 문(입구 쪽)의 자동 움직임 관찰로 시작(장기) ·
                     // 밤 종료까지 두 점검칸 수동 개폐 없음 → 신뢰 +4 · 어느 점검칸이든 E 열기/닫기 수락 → 배치 +12(출입문 제외).
                     c.Space = SpaceId.Toilet;
                     c.PlayerText = "칸 문이 저절로 움직이는 것을 보셨다면, 그날은 어느 칸도 여닫지 마십시오.";
@@ -508,7 +528,7 @@ namespace NightDuty.Editor
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Layout;
                     c.EligibleFrom = Band.Band0;
-                    c.EligibleTo = Band.Band2;
+                    c.EligibleTo = Band.Band3;
                     c.TriggerKind = SignalKind.DoorAutoOpenObserved;
                     c.TriggerId = "toilet.stall.outer";
                     c.TargetIds = new[] { "toilet.stall.outer", "toilet.stall.inner" };
@@ -539,15 +559,18 @@ namespace NightDuty.Editor
                     break;
 
                 case "T3":
-                    // 배치 48~99(Band2~, T-A) · 안쪽 칸 T-A 1초 관찰로 시작 · 닫힘 완료 뒤 재개방 없이 화장실 이탈 → 신뢰 +5 ·
+                    // 배치 0~99(Band0~, T-A) · 안쪽 칸 T-A 1초 관찰로 시작 · 닫힘 완료 뒤 재개방 없이 화장실 이탈 → 신뢰 +5 ·
                     // 닫힘 완료 전 이탈 또는 관찰 뒤 열기 명령 수락 → 배치 +15 한 번. 시간 제한 없음.
-                    // 2026-09-21 재설계: 배치축 Band0 감축 + 중반 풀 보충. T1(배치 0~71 상한형)과는
+                    // 2026-09-22 재설계: Band2~ → Band0~. 이 카드의 트리거 ID가 조우 장면 scene.ta라,
+                    // 자격이 48↑이면 T-A 장면을 3일차 이전에 깔 수 없었다(장면은 있는데 카드가 없는 밤).
+                    // 기획서 v6 §4 「날짜별 공간을 고정하지 않는다」를 지키려면 이 카드가 0부터 열려야 한다.
+                    // 2026-09-21 재설계: 배치축 Band0 감축 + 중반 풀 보충. T1(배치 0~89 상한형)과는
                     // 같은 날 배정 금지다 — T1 「수동 개폐 금지」와 T3 「닫고 나가라」가 정면으로 충돌한다.
                     c.Space = SpaceId.Toilet;
                     c.PlayerText = "안쪽 점검칸에 무언가 서 있다면, 문을 닫고 화장실에서 나오십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Layout;
-                    c.EligibleFrom = Band.Band2;
+                    c.EligibleFrom = Band.Band0;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ModelObserved;
                     c.TriggerId = "scene.ta";
@@ -567,12 +590,12 @@ namespace NightDuty.Editor
                     break;
 
                 case "T4":
-                    // 청각 48~99(Band2~) · 잠긴 세면대의 '근무자님' 호출음 전달로 시작 · 접근 없이 화장실 이탈 → 신뢰 +4 · 세면대 1.5m 미만 → 청각 +12.
+                    // 청각 24~99(Band1~) · 잠긴 세면대의 '근무자님' 호출음 전달로 시작 · 접근 없이 화장실 이탈 → 신뢰 +4 · 세면대 1.5m 미만 → 청각 +12.
                     c.Space = SpaceId.Toilet;
                     c.PlayerText = "배관을 누군가 두드리는 소리가 들리면, 세면대에 다가가지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
-                    c.EligibleFrom = Band.Band2;
+                    c.EligibleFrom = Band.Band1;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueDelivered;
                     c.TriggerId = "toilet.sink.call";
@@ -592,6 +615,7 @@ namespace NightDuty.Editor
                     // 단서 자체가 「닫힌 칸 아래 빛」이라 조도가 낮은 밤에는 그 단서가 실재하지 않는다.
                     // 단서가 제시되지 않으면 시작하지 않으므로(미판정, 델타 0) 구간 검사 없이도 남용되지 않는다.
                     c.Space = SpaceId.Toilet;
+                    c.HowTo = DayBriefText.InspectionHowTo;
                     c.PlayerText = "닫힌 칸 아래로 빛이 새어 나오면, 손전등을 끄고 공용부만 점검하십시오.";
                     c.UseEligibleBand = false;
                     c.TriggerKind = SignalKind.ClueIdentified;
@@ -606,17 +630,18 @@ namespace NightDuty.Editor
                     break;
 
                 case "T6":
-                    // 배치 72~99(Band3~) · 공용부에서 두 칸 개방 식별로 시작(장기) ·
+                    // 배치 48~99(Band2~) · 공용부에서 두 칸 개방 식별로 시작(장기) ·
                     // 공용부 점검 완료 + 밤 종료까지 칸 내부 진입 없음 → 신뢰 +4 · 어느 칸이든 문턱 안 구역 진입 → 배치 +15.
                     // 2026-09-21 재설계: 기획서 J절의 게이트를 되살렸다. 구간 검사를 끈 채 두면
                     // 배치 Band0에서 열리는 카드가 넷이 되어 「축당 Band0 개방 3장」 불변식이 깨진다.
                     // 두 칸 개방 식별 신호는 여전히 필요하다 — 수치만으로는 시작하지 않는다.
                     c.Space = SpaceId.Toilet;
+                    c.HowTo = DayBriefText.InspectionHowTo;
                     c.PlayerText = "점검칸이 모두 열려 있어도, 문턱 안으로는 들어가지 마십시오.";
                     c.IsLongTerm = true;
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Layout;
-                    c.EligibleFrom = Band.Band3;
+                    c.EligibleFrom = Band.Band2;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TriggerId = "toilet.stalls.bothopen";

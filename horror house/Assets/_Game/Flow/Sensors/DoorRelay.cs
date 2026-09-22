@@ -31,9 +31,12 @@ using UnityEngine;
 /// 자동 개방을 본 뒤 <b>플레이어가</b> 닫기 명령을 낸 것이다. 섞으면 H1·C6·T3가 통째로 오판한다.</para>
 ///
 /// <para><b>출처를 어떻게 정하는가.</b>
-/// ① 연출이 움직이기 직전에 <see cref="BeginDirectionMove"/>를 부르면 그 움직임은 무조건 <c>Direction</c>이다(권장).
-/// ② 그런 예약이 없으면 <see cref="playerClaimSeconds"/> 안에 상호작용 키가 눌렸는지로 본다.
-/// ③ 둘 다 아니면 <c>Direction</c>이다 — 벤더 문은 플레이어의 E 없이는 스스로 움직이지 않으므로,
+/// ① 연출이 움직이기 직전에 <see cref="BeginDirectionMove"/>를 부르면 그 움직임은 무조건 <c>Direction</c>이다.
+/// ② 플레이어가 움직이기 직전에 <see cref="BeginPlayerMove"/>를 부르면 <c>Player</c>다 —
+/// <see cref="PlayerInteractor"/>가 조준한 문에만 부른다. <b>①②가 정상 경로이고, 아래 둘은 폴백이다.</b>
+/// ③ 예약이 없으면 <see cref="playerClaimSeconds"/> 안에 상호작용 키가 눌렸는지로 본다 —
+/// 어느 문을 겨눴는지는 모르므로 추측이다.
+/// ④ 그것도 아니면 <c>Direction</c>이다 — 문은 플레이어의 E 없이는 스스로 움직이지 않으므로,
 /// 키 없이 시작된 움직임은 연출이라고 보는 쪽이 안전하다.</para>
 /// </summary>
 [DisallowMultipleComponent]
@@ -68,6 +71,7 @@ public sealed class DoorRelay : MonoBehaviour
     private bool _autoOpenReported;
     private float _lastKeyTime = -999f;
     private float _directionClaimUntil = -999f;
+    private float _playerClaimUntil = -999f;
 
     /// <summary>이 문의 판정 ID.</summary>
     public string DoorId
@@ -200,6 +204,16 @@ public sealed class DoorRelay : MonoBehaviour
         _directionClaimUntil = Time.time + Mathf.Max(0.05f, seconds);
     }
 
+    /// <summary>
+    /// 플레이어가 이 문을 움직이기 <b>직전</b>에 부른다. 이 예약 동안 시작된 움직임은 <see cref="ActionSource.Player"/>다.
+    /// <see cref="PlayerInteractor"/>가 조준한 문에만 부르므로, 「0.4초 안에 아무 데서나 키가 눌렸나」라는
+    /// <see cref="playerClaimSeconds"/> 추측보다 정확하다. 그 추측은 상호작용기가 없을 때의 폴백으로 남는다.
+    /// </summary>
+    public void BeginPlayerMove(float seconds = 1f)
+    {
+        _playerClaimUntil = Time.time + Mathf.Max(0.05f, seconds);
+    }
+
     /// <summary>애니메이션이 아닌 문 구현이 쓸 수동 보고(명령 수락).</summary>
     public void ReportMoveStarted(bool isClose, ActionSource source)
     {
@@ -259,6 +273,11 @@ public sealed class DoorRelay : MonoBehaviour
         if (Time.time <= _directionClaimUntil)
         {
             return ActionSource.Direction;
+        }
+
+        if (Time.time <= _playerClaimUntil)
+        {
+            return ActionSource.Player;
         }
 
         if (Time.time - _lastKeyTime <= playerClaimSeconds)

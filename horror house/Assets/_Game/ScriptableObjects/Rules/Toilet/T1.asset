@@ -21,7 +21,7 @@ MonoBehaviour:
   _useEligibleBand: 1
   _eligibleAxis: 2
   _eligibleFrom: 0
-  _eligibleTo: 2
+  _eligibleTo: 3
   _triggerKind: 12
   _triggerId: toilet.stall.outer
   _triggerSpace: 0

@@ -8,7 +8,9 @@ using UnityEngine;
 /// <item><b>실시간 라이트만</b> 켜고 끌 수 있다. Mixed·Baked는 꺼도 화면이 어두워지지 않는다 — 에디터 메뉴로 변환한다.</item>
 /// <item>같은 구간을 여러 번 받아도 결과가 같아야 한다(<c>from == to</c> 재방송이 온다).</item>
 /// </list>
-/// C5·S4처럼 "실제로 켜진 등 개수"를 조건으로 쓰는 카드가 있어서 <see cref="LitCount"/>를 공개한다.
+/// <b>판정은 등 개수를 보지 않는다.</b> 9.20V가 "실제로 켜진 등 개수"를 판정 조건에서 없앴고,
+/// 한때 그렇게 쓸 것으로 적혀 있던 C5는 <c>FlashlightCondition</c>, S4는 <c>GazeCondition</c>으로 판정한다.
+/// 이 컴포넌트는 표가 정한 개수를 <b>그리기만</b> 한다.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class SpaceLights : MonoBehaviour, ISpacePresenter
@@ -27,7 +29,14 @@ public sealed class SpaceLights : MonoBehaviour, ISpacePresenter
     /// <inheritdoc/>
     public SpaceId Space => space;
 
-    /// <summary>지금 켜져 있는 등 개수.</summary>
+    /// <summary>
+    /// 지금 켜져 있는 등 개수. <b>연출 확인·디버그용이다.</b>
+    /// <para>
+    /// <b>2026-09-21 기준 읽는 코드는 프로젝트 전체에 0곳.</b> 9.20V가 등 개수를 판정 조건에서 없앴으므로
+    /// <b>새 코드에서 판정에 쓰지 마십시오</b> — 판정은 카드의 조건 컴포넌트(손전등·응시 등)가 맡는다.
+    /// 지우지 않고 남겨 둔 것은 연출·툴 쪽에서 현재 상태를 읽어 볼 여지가 있어서다.
+    /// </para>
+    /// </summary>
     public int LitCount => _lit;
 
     private void OnEnable()

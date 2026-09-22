@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
 namespace NightDuty.Editor
 {
     /// <summary>
-    /// 복도 근무수칙 H1~H6 카드 에셋과 임시 편성표를 만든다.
+    /// 복도 근무수칙 H1~H6 카드 에셋과 카드 풀 표를 만든다.
+    /// <para>편성표는 2026-09-21부터 「일차별 덱」이 아니라 <b>카드 풀의 공급원</b>이다 — 그날 6장은 <see cref="DayDirector"/>가 고른다.</para>
     /// <para>
     /// 판정 상세의 정본은 기획서(2026-09-12)다. 여기서는 그 내용을 조건 조합으로 옮긴 <b>초기값</b>만 만든다.
     /// <b>이미 있는 에셋은 건드리지 않는다</b> — 기획팀이 인스펙터에서 고친 값을 덮어쓰지 않기 위해서다.
@@ -125,11 +126,11 @@ namespace NightDuty.Editor
                     break;
 
                 case "H2":
-                    // 청각 48~99(Band2~). 대상 문과 음원은 같은 ID. 유예 2초 뒤 그 문을 3초 연속 응시하면 위반.
+                    // 청각 24~99(Band1~). 대상 문과 음원은 같은 ID. 유예 2초 뒤 그 문을 3초 연속 응시하면 위반.
                     c.PlayerText = "등 뒤에서 문 닫히는 소리가 난다면, 소리가 난 문을 오래 바라보지 마십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Auditory;
-                    c.EligibleFrom = Band.Band2;
+                    c.EligibleFrom = Band.Band1;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueDelivered;
                     c.TargetIds = new[] { "corridor.door.back" };
@@ -156,12 +157,12 @@ namespace NightDuty.Editor
                     break;
 
                 case "H4":
-                    // 배치 24~99(Band1~). 상자 식별 후 밤 종료까지 1.5m 미만 금지. 안전 통행 1회 이상이면 밤 종료에 준수.
+                    // 배치 0~99(Band0~). 상자 식별 후 밤 종료까지 1.5m 미만 금지. 안전 통행 1회 이상이면 밤 종료에 준수.
                     c.PlayerText = "복도 중앙에 상자가 있다면, 다가가지 말고 벽 쪽으로 지나가십시오.";
                     c.IsLongTerm = true;
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Layout;
-                    c.EligibleFrom = Band.Band1;
+                    c.EligibleFrom = Band.Band0;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TargetIds = new[] { "corridor.box" };
@@ -170,11 +171,11 @@ namespace NightDuty.Editor
                     break;
 
                 case "H5":
-                    // 배치 72~99(Band3~). 떨어진 조각 식별 후 1.5m 미만 금지. 우회해 통행을 마치면 준수.
+                    // 배치 48~99(Band2~). 떨어진 조각 식별 후 1.5m 미만 금지. 우회해 통행을 마치면 준수.
                     c.PlayerText = "천장에서 떨어진 조각이 있다면, 그 자리와 거리를 두고 지나가십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Layout;
-                    c.EligibleFrom = Band.Band3;
+                    c.EligibleFrom = Band.Band2;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TargetIds = new[] { "corridor.debris" };
@@ -182,11 +183,13 @@ namespace NightDuty.Editor
                     break;
 
                 case "H6":
-                    // 배치 90~99(Band4). 나무 중심 2m 미만(풀 영역) 진입 시 배치 +15 (기획서 J절·12절 P6).
+                    // 배치 72~99(Band3~). 나무 중심 2m 미만(풀 영역) 진입 시 배치 +15 (기획서 J절·12절 P6).
+                    // 2026-09-22 재설계: Band4 전용이었다. 일차 하한이 5일차에 72(Band3)까지만 가므로
+                    // 준수만 하는 플레이어는 이 카드를 **회차당 0.00회** 만났다 — 24장 중 유일하게 죽은 카드였다.
                     c.PlayerText = "본교 복도에 나무는 없습니다. 보이더라도 두 미터 이상 떨어져 지나가십시오.";
                     c.UseEligibleBand = true;
                     c.EligibleAxis = FearAxis.Layout;
-                    c.EligibleFrom = Band.Band4;
+                    c.EligibleFrom = Band.Band3;
                     c.EligibleTo = Band.Band4;
                     c.TriggerKind = SignalKind.ClueIdentified;
                     c.TargetIds = new[] { "corridor.tree" };

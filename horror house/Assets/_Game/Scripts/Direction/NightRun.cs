@@ -8,7 +8,9 @@ namespace NightDuty
     /// 회차·하룻밤 연결 창구. 클라이언트(게임 플로우)가 부르는 판정 코어의 유일한 진입점이다.
     /// <para>
     /// 씬이 바뀌어도 살아 있도록 정적 클래스로 두었다. <b>4축은 회차 내내 누적</b>되고 다음 날에도 초기화하지 않는다.
-    /// 새 회차는 <see cref="StartNewRun"/>으로만 시작한다.
+    /// 새 회차를 <b>명시적으로</b> 시작하는 길은 <see cref="StartNewRun"/> 하나뿐이지만,
+    /// 회차가 아직 없는 상태(<c>_axes == null</c>)에서 다른 진입점을 부르면 내부의 <c>EnsureRun()</c>이
+    /// <see cref="StartNewRun"/>을 대신 불러 준다 — 씬에서 바로 <see cref="BeginNight"/>부터 시작해도 터지지 않게 한 안전망이다.
     /// </para>
     /// <para>
     /// 하룻밤 순서: <see cref="BeginNight"/> → (<see cref="Tick"/> · <see cref="Send"/> 반복) → <see cref="RequestEndNight"/>.
@@ -17,8 +19,11 @@ namespace NightDuty
     /// 이후 판정·정산은 멈춘다. 이때 결과는 <see cref="BuildSummary"/>로 가져간다(DayEnded는 보내지 않는다).
     /// </para>
     /// <para>
-    /// 아직 없는 것: 덱 배정 규칙(DayDirector) — 지금은 <see cref="NightDeckTableSO"/> 임시 편성표를 쓴다.
-    /// 조우·문자·역설 정산, 종료 요청 수락 조건(필수 점검·오늘 조우 완료) — 조우 시스템이 생기기 전까지 요청은 항상 수락한다.
+    /// 덱 배정은 <see cref="DayDirector"/>가 맡는다(<c>LoadDeck</c>에서 만들어 매일 6장을 고른다).
+    /// <see cref="NightDeckTableSO"/>는 일차별 덱이 아니라 <b>카드 풀의 공급원</b>이다 — <c>CollectPool</c>이 모든 일차를 합쳐 중복 없이 읽는다.
+    /// 역설 문자 발송은 <see cref="ParadoxDirector"/>가 맡는다.
+    /// 아직 없는 것: <b>조우(EncounterDirector)와 P형 미도달 정산.</b>
+    /// 종료 요청 수락 조건(필수 점검·오늘 조우 완료)도 그래서 비어 있다 — 조우 시스템이 생기기 전까지 요청은 항상 수락한다.
     /// 대상 참조 검사: <see cref="RegisteredTargets"/>를 직접 넣었으면(null이 아니면) 그것을, 아니면 씬의 <see cref="JudgeTargetRegistry"/>를 쓴다.
     /// <see cref="RegisteredTargets"/>가 null이고 등록부에도 ID가 없으면 검사를 건너뛴다.
     /// 등록부는 밤 시작 순간 <b>켜져 있는</b> 표식만 담는다.
@@ -39,6 +44,7 @@ namespace NightDuty
         private static readonly List<RuleSO> DeckToday = new List<RuleSO>();
         private static readonly ParadoxDirector Paradox = new ParadoxDirector();
         private static DayDirector _director;
+        private static EncounterDirector _encounter;
         private static DaySummary _lastSummary;
 
         /// <summary>
@@ -149,6 +155,7 @@ namespace NightDuty
             _lastSummary = default;
             TargetsInUse = null;
             _director = null;   // 첫 LoadDeck에서 카드 풀을 읽어 만든다.
+            _encounter = null;  // 첫 BeginNight에서 조우 표를 읽어 만든다.
         }
 
         /// <summary>
@@ -177,6 +184,14 @@ namespace NightDuty
             // 일차 하한을 **덱보다 먼저** 적용한다. 카드의 발동 자격이 축 값을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다(DayFloor 주석 참조).
             DayFloor.Apply(_axes, Day);
+
+            // 조우를 **덱보다 먼저** 정한다. DayDirector가 「그날 조우 공간의 카드 1장」을 보장하려면
+            // 그 공간을 이미 알고 있어야 한다. 조우 배정은 축을 읽지 않으므로 하한 뒤·덱 앞이 안전하다.
+            EnsureEncounter();
+            if (_encounter != null)
+            {
+                _encounter.BeginNight(Day);
+            }
 
             IReadOnlyList<RuleSO> deck = LoadDeck(Day);
             DeckToday.Clear();
@@ -207,7 +222,9 @@ namespace NightDuty
                 return;
             }
 
-            _book.Dispatch(JudgeSignal.Tick(judgeSeconds));
+            JudgeSignal tick = JudgeSignal.Tick(judgeSeconds);
+            _book.Dispatch(tick);
+            ObserveEncounter(tick);   // 시야에 걸려 대기 중인 배치를 여기서 푼다.
             PollParadox();
             CloseIfCaptured();
         }
@@ -232,8 +249,121 @@ namespace NightDuty
             }
 
             _book.Dispatch(signal);
+            ObserveEncounter(signal);
             PollParadox();
             CloseIfCaptured();
+        }
+
+        /// <summary>
+        /// 그날 조우 연출기. 씬(구동기)이 <see cref="EncounterDirector.IsVisible"/>과
+        /// <see cref="EncounterDirector.PlaceModel"/>을 채워 준다. 회차가 시작되기 전에는 null이다.
+        /// <para>
+        /// <b>씬 쪽 연결이 없으면 조우가 통째로 멈추지 않고, 「항상 시야 밖」으로 보고 배치를 지시만 한다.</b>
+        /// 반대(항상 보임)로 두면 조우가 조용히 사라져 빈 게임이 되는데 그게 알아채기 훨씬 어렵다.
+        /// </para>
+        /// </summary>
+        public static EncounterDirector Encounter
+        {
+            get { return _encounter; }
+        }
+
+        /// <summary>
+        /// 조우 연출기를 준비한다. <c>Resources</c>에 조우 표가 없으면 만들지 않고 경고만 남긴다 —
+        /// 표가 없다고 밤이 시작되지 못하면 수칙 판정까지 같이 죽는다.
+        /// </summary>
+        private static void EnsureEncounter()
+        {
+            if (_encounter != null)
+            {
+                return;
+            }
+
+            EncounterTableSO table = Resources.Load<EncounterTableSO>(EncounterTableSO.ResourcePath);
+            if (table == null)
+            {
+                Debug.LogWarning("[NightRun] Resources/" + EncounterTableSO.ResourcePath + " 조우 표가 없습니다. " +
+                                 "조우·유도 문자 없이 밤을 시작합니다. 수칙 판정은 그대로 돕니다.");
+                return;
+            }
+
+            _encounter = new EncounterDirector(table);
+            _encounter.ClockMinutes = CurrentMinute;
+            _encounter.ParadoxSentToday = ParadoxSentToday;
+            _encounter.BeginRun();
+        }
+
+        /// <summary>그날 조우 장면이 쓰는 공간. 조우가 없으면 빈 목록.</summary>
+        private static IReadOnlyList<SpaceId> EncounterSpacesToday()
+        {
+            List<SpaceId> spaces = new List<SpaceId>();
+            if (_encounter == null)
+            {
+                return spaces;
+            }
+
+            IReadOnlyList<string> scenes = _encounter.TodayScenes;
+            for (int i = 0; i < scenes.Count; i++)
+            {
+                SpaceId space = _encounter.SpaceOf(scenes[i]);
+                if (space != SpaceId.None && !spaces.Contains(space))
+                {
+                    spaces.Add(space);
+                }
+            }
+
+            return spaces;
+        }
+
+        /// <summary>그 조우 장면이 오늘 깔렸는지. 조우가 없으면 false.</summary>
+        private static bool IsEncounterActive(string sceneId)
+        {
+            return _encounter != null && _encounter.IsActive(sceneId);
+        }
+
+        /// <summary>오늘 역설 문자를 한 통이라도 보냈는지. N1(재방문)이 같은 날 겹치지 않게 하려고 쓴다.</summary>
+        private static bool ParadoxSentToday()
+        {
+            return Paradox.Today.Count > 0;
+        }
+
+        /// <summary>
+        /// 조우 연출기에 신호를 흘린다. <b>수칙 판정이 먼저 본 뒤</b>에 부른다 —
+        /// 모형 배치가 카드 판정에 끼어들지 않게 하기 위해서다. Tab 중·포획 뒤에는 보내지 않는다.
+        /// </summary>
+        private static void ObserveEncounter(in JudgeSignal signal)
+        {
+            if (_encounter == null || _book == null || _book.World.TabOpen || IsCaptured)
+            {
+                return;
+            }
+
+            try
+            {
+                _encounter.Observe(signal);
+            }
+            catch (Exception e)
+            {
+                // 조우가 넘어져도 수칙 판정은 계속 돌아야 한다.
+                Debug.LogException(e);
+            }
+        }
+
+        /// <summary>밤을 닫으며 미관찰 장면을 다음 날로 이월한다. 정상 종료·중단 모두에서 부른다.</summary>
+        private static void EndEncounterNight()
+        {
+            if (_encounter == null)
+            {
+                return;
+            }
+
+            try
+            {
+                _encounter.EndNight();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+            }
         }
 
         /// <summary>오늘 보낸 역설 문자(발송 순서).</summary>
@@ -283,6 +413,7 @@ namespace NightDuty
             }
 
             _book.Abandon();
+            EndEncounterNight();
             _lastSummary = BuildSummary();
             CloseNight();
         }
@@ -300,6 +431,7 @@ namespace NightDuty
 
             // TODO(조우 시스템): 필수 점검 완료 · 오늘 조우 관찰·퇴실 완료를 수락 조건으로 검사한다(기획서 공통 명세 1절).
             _book.EndNight();
+            EndEncounterNight();
             ApplyUnvisitedPenalty();
             // TODO(문자 시스템): P형 미도달 정산은 여기, 수칙 정산 뒤에 온다.
 
@@ -344,13 +476,16 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 그날 배정된 공간에 <b>한 번도 들어가지 않은</b> 카드에 감각축 <see cref=UnvisitedPenalty/>를 물린다.
+        /// 그날 배정된 공간에 <b>한 번도 들어가지 않은</b> 카드에 감각축 <see cref="UnvisitedPenalty"/>를 물린다.
         /// 수칙 정산이 끝난 뒤, 문자 정산보다 앞에서 한 번만 부른다.
-        /// <list type=bullet>
+        /// <list type="bullet">
         /// <item>방문했으면 물리지 않는다 — 갔는데 단서가 안 난 것은 플레이어의 선택이 아니다.</item>
         /// <item>이미 준수·위반으로 정산된 카드는 건너뛴다. 결과가 났다면 그 공간에 있었다는 뜻이다.</item>
         /// <item>한 공간에 여러 카드가 걸려 있으면 <b>카드마다</b> 물린다. 안 간 대가는 그 공간이 아니라 수칙 단위다.</item>
-        /// <item>도중에 100에 닿으면 <see cref=FearAxisSystem/>이 잠기므로 남은 카드의 델타는 자동으로 무시된다.</item>
+        /// <item>도중에 100에 닿으면 <see cref="FearAxisSystem"/>이 잠긴다. 다만 그 잠금에 기대지 않고
+        /// 루프 안의 <c>if (_axes.IsLocked) return;</c>로 <b>직접 끊는다</b> — 그래야 포획 뒤의 카드가
+        /// 벌점 기록(<c>Apply</c> 호출)을 남기지 않아, 종료 원인이 어느 카드였는지가 로그에서 흐려지지 않는다.
+        /// 이 가드는 중복이 아니다.</item>
         /// </list>
         /// </summary>
         private static void ApplyUnvisitedPenalty()
@@ -560,6 +695,8 @@ namespace NightDuty
             if (_director == null)
             {
                 _director = new DayDirector(CollectPool(table));
+                _director.EncounterSpacesToday = EncounterSpacesToday;
+                _director.IsEncounterActive = IsEncounterActive;
             }
 
             return _director.BuildDeck(day, _axes);
@@ -625,6 +762,7 @@ namespace NightDuty
             RegisteredTargets = null;
             TargetsInUse = null;
             _director = null;
+            _encounter = null;
         }
     }
 }

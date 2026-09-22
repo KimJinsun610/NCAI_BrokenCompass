@@ -16,11 +16,14 @@ MonoBehaviour:
   _space: 3
   _playerText: "1-1 \uBB38\uBC16\uC5D0\uC11C \uBD84\uD544 \uC18C\uB9AC\uAC00 \uC138
     \uBC88 \uB4E4\uB838\uB2E4\uBA74, 1-3\uBD80\uD130 \uC810\uAC80\uD558\uC2ED\uC2DC\uC624."
+  _howTo: "\uC810\uAC80\uD558\uB294 \uBC95: \uADF8 \uBC29 \uC548\uCABD\uC5D0 1\uCD08
+    \uBA38\uBB38 \uB4A4 \uBC29\uC744 \uB098\uC624\uBA74 \uC810\uAC80\uD55C \uAC83\uC774
+    \uB429\uB2C8\uB2E4."
   _isLongTerm: 1
   _useEligibleBand: 1
   _eligibleAxis: 0
   _eligibleFrom: 0
-  _eligibleTo: 1
+  _eligibleTo: 2
   _triggerKind: 30
   _triggerId: cls11.chalk3
   _triggerSpace: 0

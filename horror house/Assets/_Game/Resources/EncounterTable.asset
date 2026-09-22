@@ -1,0 +1,98 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d835cd1d797f01c42a7fc1b15cb27404, type: 3}
+  m_Name: EncounterTable
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.EncounterTableSO
+  _scenes:
+  - SceneId: scene.ha
+    Space: 1
+    IsDiscovery: 0
+    MessageId: G-H1
+    MessageText: "(G-H1 \uBB38\uAD6C \uBBF8\uC815 \u2014 \uAE30\uD68D\uC11C 10-3\uC808)"
+    ApproachTargetIds:
+    - scene.ha.1
+    - scene.ha.2
+    - scene.ha.3
+    ExitGateTargetId: 
+  - SceneId: scene.hb
+    Space: 1
+    IsDiscovery: 1
+    MessageId: G-H2
+    MessageText: "(G-H2 \uBB38\uAD6C \uBBF8\uC815 \u2014 \uAE30\uD68D\uC11C 10-3\uC808)"
+    ApproachTargetIds:
+    - scene.hb.1
+    - scene.hb.2
+    - scene.hb.3
+    ExitGateTargetId: scene.hb.gate
+  - SceneId: scene.ca
+    Space: 3
+    IsDiscovery: 0
+    MessageId: G-C1
+    MessageText: "(G-C1 \uBB38\uAD6C \uBBF8\uC815 \u2014 \uAE30\uD68D\uC11C 10-3\uC808)"
+    ApproachTargetIds:
+    - scene.ca.1
+    - scene.ca.2
+    - scene.ca.3
+    ExitGateTargetId: 
+  - SceneId: scene.cb
+    Space: 3
+    IsDiscovery: 1
+    MessageId: G-C2
+    MessageText: "(G-C2 \uBB38\uAD6C \uBBF8\uC815 \u2014 \uAE30\uD68D\uC11C 10-3\uC808)"
+    ApproachTargetIds:
+    - scene.cb.1
+    - scene.cb.2
+    - scene.cb.3
+    ExitGateTargetId: 
+  - SceneId: scene.sa
+    Space: 5
+    IsDiscovery: 0
+    MessageId: 
+    MessageText: 
+    ApproachTargetIds:
+    - scene.sa.1
+    - scene.sa.2
+    - scene.sa.3
+    ExitGateTargetId: 
+  - SceneId: scene.sb
+    Space: 5
+    IsDiscovery: 0
+    MessageId: G-S1
+    MessageText: "(G-S1 \uBB38\uAD6C \uBBF8\uC815 \u2014 \uAE30\uD68D\uC11C 10-3\uC808)"
+    ApproachTargetIds:
+    - scene.sb.1
+    - scene.sb.2
+    - scene.sb.3
+    ExitGateTargetId: scene.sb.gate
+  - SceneId: scene.ta
+    Space: 2
+    IsDiscovery: 0
+    MessageId: G-T1
+    MessageText: "(G-T1 \uBB38\uAD6C \uBBF8\uC815 \u2014 \uAE30\uD68D\uC11C 10-3\uC808)"
+    ApproachTargetIds:
+    - scene.ta.1
+    - scene.ta.2
+    - scene.ta.3
+    ExitGateTargetId: scene.ta.gate
+  - SceneId: scene.tb
+    Space: 2
+    IsDiscovery: 1
+    MessageId: G-T2
+    MessageText: "(G-T2 \uBB38\uAD6C \uBBF8\uC815 \u2014 \uAE30\uD68D\uC11C 10-3\uC808)"
+    ApproachTargetIds:
+    - scene.tb.1
+    - scene.tb.2
+    - scene.tb.3
+    ExitGateTargetId: 
+  _noticeMessageId: N1
+  _noticeText: "(N1 \uBB38\uAD6C \uBBF8\uC815 \u2014 \uAE30\uD68D\uC11C 10-3\uC808)"
+  _noticeSpace: 0

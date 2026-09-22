@@ -19,7 +19,7 @@ MonoBehaviour:
   _isLongTerm: 1
   _useEligibleBand: 1
   _eligibleAxis: 2
-  _eligibleFrom: 1
+  _eligibleFrom: 0
   _eligibleTo: 4
   _triggerKind: 31
   _triggerId: 

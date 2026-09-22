@@ -293,28 +293,42 @@ MonoBehaviour:
   - Space: 5
     Axis: 2
     Band: 1
-    Label: "\uC77C\uBC18 \uC18C\uD488 \uBC30\uCE58 \uC720\uC9C0"
+    Label: "\uC758\uC790 \uD558\uB098\uAC00 \uCC45\uC0C1\uC5D0\uC11C \uBE60\uC838\uB098\uC640
+      \uC804\uC2DC\uD615 \uC778\uCCB4\uBAA8\uD615\uC744 \uD5A5\uD568"
     Cues:
     - lab.normal
+    - chair.toward.model
   - Space: 5
     Axis: 2
     Band: 2
-    Label: "\uC77C\uBC18 \uC18C\uD488 \uBC30\uCE58 \uC720\uC9C0"
+    Label: "\uC5EC\uB7EC \uC758\uC790\uAC00 \uC804\uC2DC\uD615 \uC778\uCCB4\uBAA8\uD615\uC744
+      \uD5A5\uD568"
     Cues:
     - lab.normal
+    - chair.toward.model
+    - chairs.toward.model
   - Space: 5
     Axis: 2
     Band: 3
-    Label: "\uC77C\uBC18 \uC18C\uD488 \uBC30\uCE58 \uC720\uC9C0"
+    Label: "\uC758\uC790\uB4E4\uC774 \uC804\uC2DC\uD615 \uC778\uCCB4\uBAA8\uD615\uC744
+      \uD5A5\uD55C \uBC18\uC6D0 \uBC30\uCE58 \u2014 \uBC30\uCE58\uCD95 \uD558\uC774\uB77C\uC774\uD2B8"
     Cues:
     - lab.normal
+    - chair.toward.model
+    - chairs.toward.model
+    - chairs.semicircle
   - Space: 5
     Axis: 2
     Band: 4
-    Label: "\uC77C\uBC18 \uC18C\uD488 \uBC30\uCE58 \uC720\uC9C0 (\uBAA8\uD615 \uC704\uCE58\uB294
+    Label: "\uBC18\uC6D0 \uBC30\uCE58 \uC720\uC9C0. \uBC18\uC6D0 \uBC14\uAE65 \uC758\uC790
+      \uD558\uB098\uB9CC \uCD9C\uC785\uAD6C\uB97C \uD5A5\uD568 (\uBAA8\uD615 \uC704\uCE58\uB294
       S-A\xB7S-B \uC7A5\uBA74\uC73C\uB85C \uBCC4\uB3C4)"
     Cues:
     - lab.normal
+    - chair.toward.model
+    - chairs.toward.model
+    - chairs.semicircle
+    - chair.toward.exit
   - Space: 2
     Axis: 0
     Band: 0

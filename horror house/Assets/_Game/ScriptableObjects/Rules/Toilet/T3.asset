@@ -15,14 +15,10 @@ MonoBehaviour:
   _cardId: T3
   _space: 2
   _playerText: "\uC548\uCABD \uC810\uAC80\uCE78\uC5D0 \uBB34\uC5B8\uAC00 \uC11C \uC788\uB2E4\uBA74,
-    \uCE78 \uBB38\uC744 \uB2EB\uACE0 \uB2E4\uC2DC \uC5F4\uC9C0 \uC54A\uC740 \uCC44
-    \uD654\uC7A5\uC2E4 \uBC16\uC73C\uB85C \uB098\uC624\uC2ED\uC2DC\uC624. \uBE44\uD488\uC774
-    \uB4E4\uC5B4 \uC788\uB294 \uCE78\uB3C4 \uC0AC\uC6A9 \uC911\uC778 \uCE78\uC73C\uB85C
-    \uBD84\uB958\uD569\uB2C8\uB2E4. \uC0AC\uC6A9\uC774 \uB05D\uB098\uBA74 \uC800\uD76C\uAC00
-    \uD68C\uC218\uD558\uACA0\uC2B5\uB2C8\uB2E4."
+    \uBB38\uC744 \uB2EB\uACE0 \uD654\uC7A5\uC2E4\uC5D0\uC11C \uB098\uC624\uC2ED\uC2DC\uC624."
   _isLongTerm: 0
-  _useEligibleBand: 0
-  _eligibleAxis: 0
+  _useEligibleBand: 1
+  _eligibleAxis: 2
   _eligibleFrom: 0
   _eligibleTo: 4
   _triggerKind: 50
@@ -37,9 +33,14 @@ MonoBehaviour:
   _cancelCondition:
     rid: -2
   _settleAt: 0
-  _successDelta: 3
+  _successDelta: 5
   _failureAxis: 2
   _failureDelta: 15
+  _paradoxId: P20
+  _paradoxText: "\uBC29\uAE08 \uB2EB\uC73C\uC2E0 \uC548\uCABD \uC810\uAC80\uCE78
+    \uBB38\uC744 \uB2E4\uC2DC \uC5F4\uC5B4 \uC8FC\uC2ED\uC2DC\uC624. \uC774\uC6A9\uC774
+    \uB05D\uB09C \uAC83\uC73C\uB85C \uC815\uC815\uB418\uC5C8\uC2B5\uB2C8\uB2E4. \uC548\uC5D0
+    \uACC4\uC2E0 \uBD84\uB3C4 \uB450 \uBC88\uC9F8 \uD655\uC778\uC744 \uC694\uCCAD\uD558\uC168\uC2B5\uB2C8\uB2E4."
   _radius: 0
   _graceSeconds: 0
   _gazeSeconds: 0

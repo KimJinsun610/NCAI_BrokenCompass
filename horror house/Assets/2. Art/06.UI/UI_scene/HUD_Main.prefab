@@ -146,7 +146,6 @@ GameObject:
   - component: {fileID: 4336065824563649263}
   - component: {fileID: 8905874081753748693}
   - component: {fileID: 7788393723222784951}
-  - component: {fileID: 51369599972285644}
   m_Layer: 5
   m_Name: HUD_Main
   m_TagString: Untagged
@@ -253,26 +252,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HUDActions
   resumeButton: {fileID: 0}
---- !u!114 &51369599972285644
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 137453730476348243}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1dc68b5c1e162f746a9cad384ffd5a04, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NCUIFigmaMotion
-  effect: 1
-  target1: {fileID: 5872051148432294054}
-  target2: {fileID: 0}
-  target3: {fileID: 0}
-  playOnEnable: 1
-  loop: 0
-  reduceMotion: 0
-  distanceMultiplier: 1
 --- !u!1 &1971428698835541714
 GameObject:
   m_ObjectHideFlags: 0

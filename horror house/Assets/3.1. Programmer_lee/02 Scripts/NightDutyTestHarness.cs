@@ -775,6 +775,13 @@ public sealed class NightDutyTestHarness : MonoBehaviour
             return;
         }
 
+        // 제품 구동기(EncounterStager)가 서 있으면 그쪽이 정본이다. 둘이 같은 자리에 꽂으면
+        // 나중에 꽂은 쪽이 이기는데, 어느 쪽이 나중인지는 프레임 순서에 달려 있어 재현이 안 된다.
+        if (FindAnyObjectByType<EncounterStager>() != null)
+        {
+            return;
+        }
+
         EncounterDirector director = NightRun.Encounter;
         if (director == null || director == _hookedDirector)
         {

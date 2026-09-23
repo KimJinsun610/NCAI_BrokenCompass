@@ -100,6 +100,9 @@ public class TabletDocument : MonoBehaviour
     [Tooltip("메시지 시각을 적을 색(16진수).")]
     public string messageTimeColor = "#738C99";
 
+    [Tooltip("수칙 아래에 붙는 조작 안내의 색. 수칙 본문과 섞이지 않게 한 단 낮춘 색을 쓴다.")]
+    public string howToColor = "#7FA6B8";
+
     [Header("조작")]
     [Tooltip("탭을 오가는 키.")]
     public KeyCode switchTabKey = KeyCode.Q;
@@ -294,6 +297,26 @@ public class TabletDocument : MonoBehaviour
         _rules.Clear();
         _loadedDay = day;
 
+        // 정본은 <b>판정 코어가 오늘 실제로 건 덱</b>이다(NightRun.TodayDeck).
+        // 편성표(NightDeckTableSO)는 밤이 시작되기 전이나 씬 단독 확인용 폴백이다 —
+        // 둘이 어긋나면 플레이어가 읽는 수칙과 채점되는 수칙이 달라진다.
+        if (NightRun.IsNightActive)
+        {
+            IReadOnlyList<RuleSO> live = NightRun.TodayDeck;
+            if (live != null && live.Count > 0)
+            {
+                for (int i = 0; i < live.Count; i++)
+                {
+                    if (live[i] != null && !string.IsNullOrEmpty(live[i].PlayerText))
+                    {
+                        _rules.Add(live[i]);
+                    }
+                }
+
+                return;
+            }
+        }
+
         NightDeckTableSO table = deckTable;
         if (table == null) table = Resources.Load<NightDeckTableSO>(NightDeckTableSO.ResourcePath);
         if (table == null)
@@ -484,6 +507,14 @@ public class TabletDocument : MonoBehaviour
             if (sb.Length > 0) sb.Append('\n');
             // 카드 ID는 제작자용이라 보여 주지 않고, 덱 순서대로 번호만 붙인다.
             sb.Append(i + 1).Append(". ").Append(_rules[i].PlayerText).Append('\n');
+
+            // 조작 안내는 수칙 본문과 같은 문단에 섞지 않는다(기획서 3-3). 들여쓰기와 색으로 갈라 놓는다.
+            // 대부분의 카드는 비어 있고, 점검을 요구하는 카드와 S1에만 들어 있다.
+            string howTo = _rules[i].HowTo;
+            if (howTo.Length > 0)
+            {
+                sb.Append("   <color=").Append(howToColor).Append('>').Append(howTo).Append("</color>\n");
+            }
         }
         return sb.ToString();
     }

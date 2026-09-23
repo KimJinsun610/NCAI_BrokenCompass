@@ -97,6 +97,7 @@ MonoBehaviour:
   gameTime: {fileID: 0}
   messageList: {fileID: 5732383902102684654}
   messageTimeColor: '#738C99'
+  howToColor: '#7FA6B8'
   switchTabKey: 113
   scrollDownKey: 274
   scrollUpKey: 273
@@ -1326,10 +1327,10 @@ MonoBehaviour:
   startOpened: 0
   readInput: 1
   attachTo: {fileID: 0}
-  openedPosition: {x: -0.015, y: -0.03, z: 0.42}
-  openedRotation: {x: 10, y: -4, z: -7}
-  closedPosition: {x: -0.2, y: -0.2, z: 0.34}
-  closedRotation: {x: 10, y: -4, z: -7}
+  openedPosition: {x: -0.16, y: -0.095, z: 0.395}
+  openedRotation: {x: 11, y: 12, z: -9}
+  closedPosition: {x: -0.2, y: -0.19, z: 0.365}
+  closedRotation: {x: 33, y: 12, z: -9}
   moveSeconds: 0.25
   screenOnAt: 0.55
   screenRoot: {fileID: 580549034923437953}

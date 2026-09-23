@@ -72,18 +72,6 @@ public class TabletDocument : MonoBehaviour
     [Tooltip("하단 고정 안내 문구.")]
     [TextArea(2, 3)] public string disclaimer = "본 지침 미준수로 발생한 사고 및 심리적 손상에 대해 회사는 책임지지 않습니다.";
 
-    [Header("안전 안내")]
-    [Tooltip("태블릿을 켜면 가장 먼저 보이는 안내문. 날짜와 상관없이 늘 같다.\n" +
-             "근무수칙(RuleSO)과 달리 판정 대상이 아니다. 여기 적은 문장으로 플레이어를 채점하지 않는다.")]
-    [TextArea(1, 3)] public string[] safetyNotices =
-    {
-        "근무 중에는 지급된 태블릿을 항상 휴대하십시오.",
-        "정전 시 손전등을 사용하고, 배전반을 임의로 조작하지 마십시오.",
-        "시설 내 이상을 발견하면 근무 수칙에 따라 조치하십시오.",
-        "비상 상황에는 경비실로 복귀하십시오.",
-        "본 안내는 근무 수칙에 우선하지 않습니다."
-    };
-
     [Header("내용")]
     [Tooltip("비워 두면 Resources에서 편성표를 찾는다.")]
     public NightDeckTableSO deckTable;
@@ -125,17 +113,16 @@ public class TabletDocument : MonoBehaviour
     /// <summary>태블릿에 띄울 수 있는 화면 종류. <b>적힌 순서대로</b> 탭 줄에 놓이고 Q로 돌아간다.</summary>
     public enum Tab
     {
-        Safety,    // 안전 안내 — 태블릿을 처음 켜면 이 화면이 먼저 보인다
-        Rules,     // 근무 수칙
+        Rules,     // 근무 수칙 — 태블릿을 처음 켜면 이 화면이 먼저 보인다
         Messages   // 수신 메시지
     }
 
-    private static readonly Tab[] TabOrder = { Tab.Safety, Tab.Rules, Tab.Messages };
+    private static readonly Tab[] TabOrder = { Tab.Rules, Tab.Messages };
 
     private readonly List<RuleSO> _rules = new List<RuleSO>();
     private int _loadedDay = -1;
     private TabletGlitch _glitch;
-    private Tab _tab = Tab.Safety;
+    private Tab _tab = Tab.Rules;
 
     // 스크롤: 지금 맨 위에 보이는 줄 번호와, 마지막으로 잰 전체 줄 수
     private int _scrollLine;
@@ -149,7 +136,6 @@ public class TabletDocument : MonoBehaviour
     {
         get
         {
-            if (_tab == Tab.Safety) return safetyNotices != null ? safetyNotices.Length : 0;
             if (_tab == Tab.Rules) return _rules.Count;
             return messageList != null ? messageList.Count : 0;
         }
@@ -168,8 +154,8 @@ public class TabletDocument : MonoBehaviour
 
     private void OnEnable()
     {
-        // 화면을 켤 때마다 첫 탭(안전 안내)으로 되돌린다.
-        // 태블릿을 들 때마다 화면이 꺼졌다 켜지므로, 열 때는 언제나 안전 안내가 먼저 보인다.
+        // 화면을 켤 때마다 첫 탭(근무 수칙)으로 되돌린다.
+        // 태블릿을 들 때마다 화면이 꺼졌다 켜지므로, 열 때는 언제나 근무 수칙이 먼저 보인다.
         _tab = TabOrder[0];
         _scrollLine = 0;
 
@@ -201,7 +187,7 @@ public class TabletDocument : MonoBehaviour
         else if (Input.GetKeyDown(scrollUpKey) || wheel > 0.01f) ScrollBy(-linesPerScroll);
     }
 
-    /// <summary>안전 안내 → 근무 수칙 → 메시지 순서로 돌아간다.</summary>
+    /// <summary>근무 수칙 ↔ 메시지를 오간다.</summary>
     public void SwitchTab()
     {
         SetTab(NextTab(_tab));
@@ -221,7 +207,6 @@ public class TabletDocument : MonoBehaviour
     {
         switch (tab)
         {
-            case Tab.Safety: return "안전 안내";
             case Tab.Rules: return "근무 수칙";
             default: return "메시지";
         }
@@ -355,8 +340,7 @@ public class TabletDocument : MonoBehaviour
 
         if (bodyText != null)
         {
-            if (_tab == Tab.Safety) bodyText.text = BuildSafety();
-            else if (_tab == Tab.Rules) bodyText.text = BuildRules();
+            if (_tab == Tab.Rules) bodyText.text = BuildRules();
             else bodyText.text = BuildMessages();
 
             ApplyScroll();
@@ -475,26 +459,6 @@ public class TabletDocument : MonoBehaviour
         int minutes = gameTime.StartMinutes - issueMinutesBeforeShift;
         minutes = ((minutes % 1440) + 1440) % 1440;
         return gameTime.FormatTime(minutes);
-    }
-
-    /// <summary>
-    /// 안전 안내. 날마다 바뀌는 수칙과 달리 늘 같은 문장이라 인스펙터 값에서 그대로 읽는다.
-    /// <b>판정 대상이 아니다.</b> 여기 적힌 문장으로 플레이어를 채점하지 않는다.
-    /// </summary>
-    private string BuildSafety()
-    {
-        if (safetyNotices == null || safetyNotices.Length == 0) return "안내 사항이 없습니다.";
-
-        System.Text.StringBuilder sb = new System.Text.StringBuilder();
-        for (int i = 0; i < safetyNotices.Length; i++)
-        {
-            if (string.IsNullOrEmpty(safetyNotices[i])) continue;
-
-            if (sb.Length > 0) sb.Append('\n');
-            // 수칙은 번호, 안내는 점으로 구분해서 서로 다른 문서라는 걸 알게 한다.
-            sb.Append("· ").Append(safetyNotices[i]).Append('\n');
-        }
-        return sb.ToString();
     }
 
     private string BuildRules()

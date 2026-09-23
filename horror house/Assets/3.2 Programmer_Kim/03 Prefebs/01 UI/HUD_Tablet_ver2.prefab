@@ -1287,7 +1287,7 @@ GameObject:
   - component: {fileID: 2218645924055311511}
   - component: {fileID: 3037416985620321534}
   m_Layer: 8
-  m_Name: HUD_Tablet
+  m_Name: HUD_Tablet_ver2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

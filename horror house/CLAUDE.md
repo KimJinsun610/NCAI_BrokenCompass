@@ -3,6 +3,12 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
+> **개정: 2026-09-23(12차). 일시정지가 소리까지 멈추게 했습니다(§5.6).**
+> ⓐ **`GamePause` 신설**(`3.2 Programmer_Kim/02 Scripts/GameFlow/`). `Time.timeScale`과 **`AudioListener.pause`를 함께** 다루는 단일 창구입니다. `FPController.PauseGame/ResumeGame`과 `SceneFlow.GoTo`가 이걸 씁니다.
+> ⓑ **`Time.timeScale = 0`은 소리를 멈추지 않습니다.** 태블릿 알람이 Esc로 멈춘 뒤에도 울렸습니다 — 연출·시계·판정 Tick은 전부 timeScale을 보는데 `AudioSource`만 보지 않습니다.
+> ⓒ **`FPController.Update`에서 `TogglePause()`가 맨 앞으로** 갔고, 일시정지 중에는 그 뒤가 전부 건너뛰어집니다. `Input.GetKeyDown`은 timeScale을 보지 않아 **Tab이 멈춘 화면에서도 먹었습니다.**
+> **되살리지 마십시오:** 「일시정지는 `timeScale`만 0으로 하면 된다」 · 「`SceneFlow`는 `Time.timeScale = 1f`만 되돌리면 된다」(`AudioListener.pause`가 남아 다음 씬이 무음이 됩니다).
+
 > **개정: 2026-09-22(11차). 단서 배선을 개통하고, 발신기가 없는 신호 둘을 하네스가 대신 보내게 했습니다. EditMode 362/362 통과.**
 > ⓐ **`SpaceAnomalyTable.asset`을 `Resources/`로 옮겼습니다.** `AnomalyCueDirector`가 `Resources.Load`로 찾는데 `ScriptableObjects/`에 있어 그 폴백이 **언제나 null**이었습니다 — 씬에 표를 손으로 꽂지 않으면 단서를 한 건도 못 보냈습니다.
 > ⓑ **`Resources/CueBindingTable.asset` 생성**(38줄). 빌더에 표 본문이 이미 다 있었고 에셋만 없었습니다. 「카드가 기다리는 판정 ID를 아무도 안 보낸다」 경고가 **0건**입니다.
@@ -795,6 +801,19 @@ Play 씬 로드 ─ GameTime이 있으면 NightRunDriver 자동 생성 (Assets/_
 21. **`JudgeTarget.IdOf`는 `GetComponentInParent`로 ID를 찾습니다.** 따라서 **콜라이더가 없는 빈 오브젝트는 레이가 영원히 맞히지 못합니다.** 식별·응시 대상에는 작은 `BoxCollider`를 붙이고 Renderer는 꺼 두십시오. 근접은 **수평(XZ) 거리**만 보므로 높이는 아무래도 좋습니다.
 22. **`JudgeWorld.FlashlightOn`은 매 밤 `false`로 시작합니다.** 손전등을 **켜 둔 채 밤이 시작되면, 초기 1회를 보내지 않는 한 코어는 꺼진 것으로 압니다.** `Flashlight(isOn)`은 상태가 바뀔 때마다(에지) **그리고 밤 시작 직후 현재 상태 1회**를 보내야 합니다. 유예 2초는 코어가 세므로 센서 쪽에 타이머를 만들지 마십시오.
 23. **런타임에 만든 오브젝트에 `HideFlags.DontSave`를 붙이지 마십시오.** 이름과 정반대로 동작합니다 — 씬이 내려갈 때 **파괴를 면해** 에디터 메모리에 남고, 플레이할 때마다 쌓입니다(2026-09-22 실측: 두 번 플레이에 잔재 80개, 다음 플레이에서 중복 인스턴스 2개). 런타임 생성물은 hideFlags를 **건드리지 않는 것**이 맞습니다: 플레이 종료 시 씬과 함께 사라지고, 플레이 중에는 씬 저장 자체가 막혀 있어 씬 파일이 더러워질 일이 없습니다. 잔재가 이미 있으면 `Resources.FindObjectsOfTypeAll<GameObject>()`로 이름을 훑어 `DestroyImmediate`로 지웁니다(`FindAnyObjectByType`로는 안 잡힙니다 — §3.3-4).
+
+### 5.6 일시정지 — 시간만 멈추면 소리가 남습니다 (2026-09-23)
+
+**규칙: 일시정지하면 일시정지 메뉴를 뺀 모든 게임 플레이가 멈춥니다. 시간뿐 아니라 소리도.**
+
+`Time.timeScale = 0`은 **소리를 멈추지 않습니다.** 태블릿 알람이 Esc로 멈춘 뒤에도 계속 울린 것이 그 때문입니다 — 연출(`ViewmodelTime`)·게임 시계·판정 `Tick`은 전부 timeScale을 보고 멈추는데 `AudioSource`만 그대로 돌아서, **소리만 남아** 더 이상하게 들렸습니다.
+
+24. **일시정지는 `GamePause`(정적, `3.2 Programmer_Kim/02 Scripts/GameFlow/`) 한곳에서만 켜고 끕니다.** `Set(bool)`이 `Time.timeScale`과 **`AudioListener.pause`를 함께** 바꿉니다. `Clear()`는 무조건 원상복구이며 씬 전환에서 부릅니다 — **timeScale만 되돌리면 `AudioListener.pause`가 남아 다음 씬이 통째로 무음**이 됩니다. `IsPaused` · `Changed(bool)`로 읽습니다. 여기저기서 `timeScale`을 직접 만지지 마십시오.
+25. **`Time.deltaTime`을 쓰는 코드는 저절로 멈추지만 `Input.GetKeyDown`은 멈추지 않습니다.** `FPController.Update`는 `TogglePause()`를 **맨 앞**에 두고(멈춘 상태에서도 Esc로 풀어야 합니다) `GamePause.IsPaused`면 그 뒤를 전부 건너뜁니다. 새 조작을 추가할 때 같은 게이트 안에 넣으십시오.
+26. **일시정지 메뉴에 소리를 붙일 때는 그 AudioSource에 `ignoreListenerPause = true`를 켜십시오.** `AudioListener.pause`는 예외 없이 전부 멈추므로 버튼 소리까지 사라집니다. 현재 AudioSource를 가진 프리팹은 `HUD_Tablet` 하나뿐입니다(2026-09-23 실측).
+
+> **실측 확인 방법:** 음소거와 진짜 정지는 다릅니다. `audioSource.time`이 **여러 프레임 동안 고정**되는지 보십시오(2026-09-23: 1828프레임 동안 1.008초 고정, 해제 후 그 지점부터 이어서 재생).
+> **`FPController.PauseGame()`은 일시정지 UI가 없으면 NullReference로 터집니다.** `PlayScene_test`처럼 UI를 안 꽂은 시험 씬에서는 `GamePause.Set(true)`를 직접 부르십시오. 메뉴 없이 멈추면 풀 방법이 없어 일부러 null 가드를 넣지 않았습니다.
 
 ---
 

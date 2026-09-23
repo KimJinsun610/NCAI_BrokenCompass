@@ -53,8 +53,9 @@ public static class SceneFlow
 
         isTransitioning = true;
 
-        // 일시정지(timeScale 0) 상태에서 전환해도 다음 씬이 멈춘 채 시작하지 않도록 복구
-        Time.timeScale = 1f;
+        // 일시정지 상태에서 전환해도 다음 씬이 멈춘 채, 소리가 꺼진 채 시작하지 않도록 복구.
+        // (timeScale만 되돌리면 AudioListener.pause가 남아 다음 씬이 통째로 무음이 된다)
+        GamePause.Clear();
 
         SceneManager.LoadScene(loadPath);
     }

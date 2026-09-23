@@ -104,13 +104,18 @@ public class FPController : MonoBehaviour
 
     void Update()
     {
+        // 일시정지 토글이 먼저다. 멈춘 상태에서도 Esc로 풀 수 있어야 한다.
+        TogglePause();
+
+        // 일시정지 중에는 일시정지 메뉴 말고는 아무것도 받지 않는다.
+        // (시점·이동은 Time.deltaTime이 0이라 저절로 멈추지만, 키 입력을 받는 Tab은 그렇지 않다)
+        if (GamePause.IsPaused) return;
+
         CameraLook();
 
         PlayerMove();
 
         ToggleDocumentUI();
-
-        TogglePause();
     }
 
     void ToggleDocumentUI()
@@ -140,14 +145,15 @@ public class FPController : MonoBehaviour
     public void PauseGame()
     {
         pauseUIInstance.SetActive(true);
-        Time.timeScale = 0f;
+        // 시간과 소리를 함께 멈춘다. timeScale만 0으로 두면 이미 재생 중인 소리는 계속 울린다.
+        GamePause.Set(true);
         Cursor.visible = true;
     }
 
     public void ResumeGame()
     {
         pauseUIInstance.SetActive(false);
-        Time.timeScale = 1f;
+        GamePause.Set(false);
         Cursor.visible = false;
     }
 

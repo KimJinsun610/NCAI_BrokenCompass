@@ -1,5 +1,6 @@
 using NightDuty;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 손전등 발신기. On/Off 토글 입력을 받아 실제 라이트를 켜고 끄고 <see cref="SignalKind.FlashlightChanged"/>를 보낸다.
@@ -51,6 +52,72 @@ public sealed class FlashlightRelay : MonoBehaviour
 
     /// <summary>씬에 하나뿐인 발신기(있으면). 다른 코드가 상태를 읽을 때 쓴다.</summary>
     public static FlashlightRelay Active { get; private set; }
+
+    /// <summary>
+    /// 근무 씬이 열릴 때 발신기가 없으면 <b>플레이어 루트(FPController)</b>에 하나 붙이고,
+    /// <see cref="flashlightRoot"/>로 손전등 오브젝트를 가리킨다.
+    /// <para><b>손전등 오브젝트에 직접 붙이면 안 된다.</b> 게임은 손전등을 켜고 끌 때 그 오브젝트를
+    /// 통째로 SetActive로 여닫는다 — 2026-09-24 시험에서 <c>Flashlight_ON_FirstPerson</c>이
+    /// <c>activeInHierarchy=False</c>가 되면서 그 위에 올려 둔 발신기가 같이 죽었다.
+    /// 항상 켜져 있는 플레이어 루트에 붙이고 대상만 가리키는 것이 맞다.</para>
+    /// </summary>
+    // ────────────────────────────────────────────────────────────────────────
+    // 자동 설치 (2026-09-24) — NightRunDriver·TabletBridge와 같은 방식
+    // ────────────────────────────────────────────────────────────────────────
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void Install()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void InstallForFirstScene()
+    {
+        EnsureFor(SceneManager.GetActiveScene());
+    }
+
+    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        EnsureFor(scene);
+    }
+    private static void EnsureFor(Scene scene)
+    {
+        if (!FlowAutoInstall.IsDutyScene(scene)) return;
+        if (FlowAutoInstall.Exists<FlashlightRelay>(scene)) return;
+
+        Camera cam = FlowAutoInstall.FindCamera(scene);
+        if (cam == null) return;
+
+        Transform lamp = FindFlashlightHost(cam.transform);
+        if (lamp == null)
+        {
+            Debug.LogWarning("[FlashlightRelay] 카메라 아래에서 손전등을 찾지 못해 설치하지 못했습니다.");
+            return;
+        }
+
+        // 발신기는 항상 켜져 있는 플레이어 루트에 두고, 켜고 끌 대상만 가리킨다.
+        FlashlightRelay relay = cam.transform.root.gameObject.AddComponent<FlashlightRelay>();
+        relay.flashlightRoot = lamp.gameObject;
+    }
+
+    /// <summary>카메라 아래에서 이름에 Flashlight가 들어가고 Light를 가진 첫 가지.</summary>
+    private static Transform FindFlashlightHost(Transform cam)
+    {
+        Transform[] all = cam.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < all.Length; i++)
+        {
+            if (all[i] == cam) continue;
+            if (all[i].name.IndexOf("Flashlight", System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+            if (all[i].GetComponentInChildren<Light>(true) == null) continue;
+            return all[i];
+        }
+
+        // 이름이 달라졌을 때의 폴백: 카메라 아래 첫 Light의 부모.
+        Light light = cam.GetComponentInChildren<Light>(true);
+        return light != null ? light.transform.parent : null;
+    }
 
     private void OnEnable()
     {

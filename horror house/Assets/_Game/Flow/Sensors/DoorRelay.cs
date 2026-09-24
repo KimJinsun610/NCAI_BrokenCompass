@@ -1,5 +1,6 @@
 using NightDuty;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 문 발신기. 문 하나에 붙어 <see cref="SignalKind.DoorCommandAccepted"/>·
@@ -83,6 +84,77 @@ public sealed class DoorRelay : MonoBehaviour
     public bool IsMoving
     {
         get { return _wasMoving; }
+    }
+
+    /// <summary>
+    /// 근무 씬이 열릴 때, 문으로 보이는 오브젝트마다 발신기를 하나씩 붙인다.
+    /// <para>이 발신기는 <b>문 하나에 하나씩</b> 필요하므로 자동 설치도 전수로 한다.</para>
+    /// </summary>
+    // ────────────────────────────────────────────────────────────────────────
+    // 자동 설치 (2026-09-24) — NightRunDriver·TabletBridge와 같은 방식
+    // ────────────────────────────────────────────────────────────────────────
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void Install()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+
+        // 씬 전환 타이밍에 따라 sceneLoaded 시점에 아직 잡히지 않는 문이 있었다(2026-09-24: 8개 중 7개).
+        // 문이 실제로 필요해지는 시점은 밤이 열릴 때이므로 그때 한 번 더 훑는다.
+        EventBus.DayStarted -= OnDayStarted;
+        EventBus.DayStarted += OnDayStarted;
+    }
+
+    private static void OnDayStarted(int day, ClauseZeroType clause)
+    {
+        EnsureFor(SceneManager.GetActiveScene());
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void InstallForFirstScene()
+    {
+        EnsureFor(SceneManager.GetActiveScene());
+    }
+
+    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        EnsureFor(scene);
+    }
+    private static void EnsureFor(Scene scene)
+    {
+        if (!FlowAutoInstall.IsDutyScene(scene)) return;
+
+        Animation[] anims = FindObjectsByType<Animation>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        int added = 0;
+        for (int i = 0; i < anims.Length; i++)
+        {
+            Animation anim = anims[i];
+            if (anim == null || anim.gameObject.scene != scene) continue;
+            if (anim.GetComponent<DoorRelay>() != null) continue;
+
+            JudgeTarget target = anim.GetComponentInChildren<JudgeTarget>(true);
+            if (target == null || !LooksLikeDoor(target.PrimaryId)) continue;
+
+            anim.gameObject.AddComponent<DoorRelay>();
+            added++;
+        }
+
+        if (added > 0)
+        {
+            Debug.Log("[DoorRelay] 문 발신기 " + added + "개를 자동 설치했습니다.");
+        }
+    }
+
+    /// <summary>
+    /// 문으로 볼 ID인가. <b>표식으로 거르는 이유:</b> 씬에는 Animation을 가진 교탁·실험대도 있어서
+    /// (<c>cls11.lectern</c> · <c>science.bench.glass</c>) 전부에 붙이면 책상이 움직일 때마다 문 신호가 나간다.
+    /// </summary>
+    private static bool LooksLikeDoor(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return false;
+        return id.IndexOf(".door", System.StringComparison.Ordinal) >= 0
+            || id.IndexOf(".stall", System.StringComparison.Ordinal) >= 0;
     }
 
     private void OnEnable()

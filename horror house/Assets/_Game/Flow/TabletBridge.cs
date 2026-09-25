@@ -113,6 +113,9 @@ public sealed class TabletBridge : MonoBehaviour
     {
         EventBus.MessageSent -= OnMessageSent;
 
+        // 씬을 떠날 때 Tab 상태가 열린 채로 남으면 다음 씬의 센서가 영원히 침묵한다.
+        PlayerSensors.SetTabOpen(false);
+
         // 태블릿을 연 채로 씬을 떠나면 시계가 멈춘 채로 남는다.
         RestoreClock();
     }
@@ -142,6 +145,10 @@ public sealed class TabletBridge : MonoBehaviour
             JudgeSignal signal = JudgeSignal.Tab(open);
             NightRun.Send(signal);
         }
+
+        // 센서 허브는 Tab이 열린 동안 아무 신호도 보내지 않아야 한다(정본 공통 명세 2절).
+        // 이 창구가 유일한 호출자다 — 다른 곳에서 부르면 상태가 두 번 뒤집힌다.
+        PlayerSensors.SetTabOpen(open);
 
         if (!freezeClockWhileOpen || gameTime == null) return;
 

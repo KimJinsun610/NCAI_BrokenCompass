@@ -69,9 +69,14 @@
 # 기타 YAML 계열 에셋은 일반 텍스트로 취급 (diff 가능하도록 유지)
 *.mat text
 *.asset text
+LightingData.asset      -text -diff merge=binary
+LightingData-*.asset    -text -diff merge=binary
+NavMesh.asset           -text -diff merge=binary
+NavMesh-*.asset         -text -diff merge=binary
 *.controller text
 *.anim text
 *.meta text
 
 # C# 스크립트는 C# 전용 diff 알고리즘 사용
 *.cs text diff=csharp
+

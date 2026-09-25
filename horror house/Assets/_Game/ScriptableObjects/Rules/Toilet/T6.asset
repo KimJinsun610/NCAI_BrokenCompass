@@ -14,16 +14,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
   _cardId: T6
   _space: 2
-  _playerText: "\uC810\uAC80\uCE78\uC774 \uBAA8\uB450 \uC5F4\uB9B0 \uAC83\uC744 \uBCF4\uC558\uB2E4\uBA74,
-    \uADF8\uB0A0\uC740 \uC5B4\uB290 \uCE78\uB3C4 \uBB38\uD131 \uC548\uC73C\uB85C
-    \uB4E4\uC5B4\uAC00\uC9C0 \uB9C8\uC2ED\uC2DC\uC624. \uB450 \uCE78\uC774 \uB3D9\uC2DC\uC5D0
-    \uC5F4\uB9AC\uB294 \uB0A0\uC740 \uD754\uCE58 \uC54A\uC2B5\uB2C8\uB2E4. \uADF8\uB7F0
-    \uB0A0 \uC548\uC744 \uB4E4\uC5EC\uB2E4\uBCF8 \uADFC\uBB34\uC790\uAC00 \uBB34\uC5C7\uC744
-    \uBCF4\uC558\uB294\uC9C0\uB294, \uAE30\uB85D\uC5D0 \uC5C6\uC2B5\uB2C8\uB2E4."
+  _playerText: "\uC810\uAC80\uCE78\uC774 \uBAA8\uB450 \uC5F4\uB824 \uC788\uC5B4\uB3C4,
+    \uBB38\uD131 \uC548\uC73C\uB85C\uB294 \uB4E4\uC5B4\uAC00\uC9C0 \uB9C8\uC2ED\uC2DC\uC624."
+  _howTo: "\uC810\uAC80\uD558\uB294 \uBC95: \uADF8 \uBC29 \uC548\uCABD\uC5D0 1\uCD08
+    \uBA38\uBB38 \uB4A4 \uBC29\uC744 \uB098\uC624\uBA74 \uC810\uAC80\uD55C \uAC83\uC774
+    \uB429\uB2C8\uB2E4."
   _isLongTerm: 1
-  _useEligibleBand: 0
-  _eligibleAxis: 0
-  _eligibleFrom: 0
+  _useEligibleBand: 1
+  _eligibleAxis: 2
+  _eligibleFrom: 2
   _eligibleTo: 4
   _triggerKind: 31
   _triggerId: toilet.stalls.bothopen
@@ -38,9 +37,14 @@ MonoBehaviour:
   _cancelCondition:
     rid: -2
   _settleAt: 1
-  _successDelta: 2
+  _successDelta: 4
   _failureAxis: 2
   _failureDelta: 15
+  _paradoxId: P23
+  _paradoxText: "\uC5F4\uB9B0 \uC810\uAC80\uCE78\uC758 \uBB38\uD131 \uC548\uC73C\uB85C
+    \uB4E4\uC5B4\uAC00 \uC8FC\uC2ED\uC2DC\uC624. \uACF5\uC6A9\uBD80\uC5D0\uC11C\uB294
+    \uBE48 \uCE78\uC73C\uB85C \uBCF4\uC77C \uC218 \uC788\uC2B5\uB2C8\uB2E4. \uC548\uC5D0\uC11C\uB3C4
+    \uBE44\uC5B4 \uC788\uB294\uC9C0 \uD655\uC778\uC774 \uD544\uC694\uD569\uB2C8\uB2E4."
   _radius: 0
   _graceSeconds: 0
   _gazeSeconds: 0

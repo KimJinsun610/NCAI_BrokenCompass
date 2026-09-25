@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
   _cardId: H3
   _space: 1
-  _playerText: "\uBCF5\uB3C4\uB97C \uC9C0\uB0A0 \uB54C\uB294 \uC190\uC804\uB4F1\uC744
-    \uAEBC \uC8FC\uC2ED\uC2DC\uC624. \uBD88\uBE5B\uC740 \uADFC\uBB34\uC790\uBCF4\uB2E4
-    \uC55E\uC11C \uAC77\uC2B5\uB2C8\uB2E4."
+  _playerText: "\uBC29 \uC548\uC5D0\uC11C \uCF1C\uC168\uB354\uB77C\uB3C4, \uBCF5\uB3C4\uC5D0
+    \uB4E4\uC5B4\uC11C\uBA74 \uC190\uC804\uB4F1\uC744 \uAEBC \uC8FC\uC2ED\uC2DC\uC624."
   _isLongTerm: 0
   _useEligibleBand: 0
   _eligibleAxis: 0
@@ -34,9 +33,14 @@ MonoBehaviour:
   _cancelCondition:
     rid: 6144270366874271828
   _settleAt: 0
-  _successDelta: 2
+  _successDelta: 4
   _failureAxis: 1
   _failureDelta: 12
+  _paradoxId: P3
+  _paradoxText: "\uC774\uBC88 \uBCF5\uB3C4 \uD1B5\uD589\uC5D0 \uD55C\uD574 \uC190\uC804\uB4F1\uC744
+    \uCF20 \uCC44 \uB05D\uAE4C\uC9C0 \uC774\uB3D9\uD558\uC2ED\uC2DC\uC624. \uBD88\uBE5B\uC774
+    \uC788\uC5B4\uC57C \uADFC\uBB34\uC790 \uD55C \uBD84\uC774 \uC9C0\uB098\uAC00\uC2E0
+    \uAC83\uC73C\uB85C \uD655\uC778\uB429\uB2C8\uB2E4."
   _radius: 0
   _graceSeconds: 2
   _gazeSeconds: 0

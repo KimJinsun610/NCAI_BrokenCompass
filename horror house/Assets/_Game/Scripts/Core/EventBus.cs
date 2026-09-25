@@ -52,6 +52,11 @@ namespace NightDuty
         /// </summary>
         public static event Action<FearAxis> AxisCritical;
 
+        /// <summary>
+        /// 태블릿으로 문자가 왔다. 태블릿 UI가 메시지 탭에 실으면 된다(발신자 표시 없음).
+        /// </summary>
+        public static event Action<ParadoxMessage> MessageSent;
+
         /// <summary><see cref="BandChanged"/>를 발생시킨다.</summary>
         public static void RaiseBandChanged(SpaceId space, FearAxis axis, Band from, Band to)
         {
@@ -168,6 +173,29 @@ namespace NightDuty
             }
         }
 
+        /// <summary><see cref="MessageSent"/>를 발생시킨다.</summary>
+        public static void RaiseMessageSent(ParadoxMessage message)
+        {
+            Action<ParadoxMessage> handler = MessageSent;
+            if (handler == null)
+            {
+                return;
+            }
+
+            Delegate[] targets = handler.GetInvocationList();
+            for (int i = 0; i < targets.Length; i++)
+            {
+                try
+                {
+                    ((Action<ParadoxMessage>)targets[i])(message);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+            }
+        }
+
         /// <summary><see cref="AxisCritical"/>을 발생시킨다.</summary>
         public static void RaiseAxisCritical(FearAxis axis)
         {
@@ -209,6 +237,7 @@ namespace NightDuty
             DayStarted = null;
             DayEnded = null;
             AxisCritical = null;
+            MessageSent = null;
         }
 
         /// <summary>

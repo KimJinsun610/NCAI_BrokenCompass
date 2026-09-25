@@ -32,6 +32,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/0. Main/01 Scene/PlayScene.unity
     guid: a5de06311d109244e90721bcbecf3d63
+  - enabled: 1
+    path: Assets/3.2 Programmer_Kim/00 test/PlayScene_test.unity
+    guid: 1acbf601ee48fe04186dda72c8599a50
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

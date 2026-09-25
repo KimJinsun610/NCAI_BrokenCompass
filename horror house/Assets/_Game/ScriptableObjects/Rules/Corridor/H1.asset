@@ -14,9 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: NightDuty.Core::NightDuty.RuleSO
   _cardId: H1
   _space: 1
-  _playerText: "\uBCF5\uB3C4\uB97C \uC9C0\uB098\uB358 \uC911 \uBB38\uC774 \uC800\uC808\uB85C
-    \uC5F4\uB9B0\uB2E4\uBA74, \uB2EB\uC9C0 \uB9D0\uACE0 \uADF8\uB300\uB85C \uC9C0\uB098\uAC00\uC2ED\uC2DC\uC624.
-    \uADF8 \uBB38\uC744 \uC5F0 \uAC83\uC740 \uC544\uC9C1 \uB098\uC624\uC9C0 \uC54A\uC558\uC2B5\uB2C8\uB2E4."
+  _playerText: "\uBCF5\uB3C4 \uBB38\uC774 \uC800\uC808\uB85C \uC5F4\uB9AC\uB354\uB77C\uB3C4,
+    \uB2EB\uC9C0 \uB9D0\uACE0 \uADF8\uB300\uB85C \uC9C0\uB098\uAC00\uC2ED\uC2DC\uC624."
   _isLongTerm: 0
   _useEligibleBand: 0
   _eligibleAxis: 0
@@ -35,9 +34,14 @@ MonoBehaviour:
   _cancelCondition:
     rid: -2
   _settleAt: 0
-  _successDelta: 2
+  _successDelta: 4
   _failureAxis: 2
   _failureDelta: 12
+  _paradoxId: P1
+  _paradoxText: "\uAC1C\uBC29 \uC0C1\uD0DC\uAC00 \uC798\uBABB \uC804\uB2EC\uB418\uC5C8\uC2B5\uB2C8\uB2E4.
+    \uC800\uC808\uB85C \uC5F4\uB9B0 \uBCF5\uB3C4 \uBB38\uC740 \uC9C1\uC811 \uB2EB\uACE0
+    \uC9C0\uB098\uAC00 \uC8FC\uC2ED\uC2DC\uC624. \uBA3C\uC800 \uB098\uC640\uC57C
+    \uD560 \uBD84\uC740 \uB098\uC624\uC2E0 \uAC83\uC73C\uB85C \uCC98\uB9AC\uD558\uACA0\uC2B5\uB2C8\uB2E4."
   _radius: 0
   _graceSeconds: 0
   _gazeSeconds: 0

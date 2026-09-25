@@ -86,6 +86,8 @@ GameObject:
   - component: {fileID: 6461060359213525353}
   - component: {fileID: 71903933687708922}
   - component: {fileID: 2461339111152588588}
+  - component: {fileID: 8322130920131021494}
+  - component: {fileID: 7268462896074336937}
   m_Layer: 0
   m_Name: PlaySystems
   m_TagString: Untagged
@@ -122,11 +124,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb5935b6d59585445b552199e20a57e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameTime
-  startHour: 0
+  startHour: 2
   startMinute: 0
-  endHour: 6
+  endHour: 4
   endMinute: 0
-  timeMultiplier: 20
+  timeMultiplier: 30
   use12HourFormat: 1
 --- !u!114 &2461339111152588588
 MonoBehaviour:
@@ -193,6 +195,39 @@ MonoBehaviour:
     imprintAxis: 1
     violationTimes:
     - 12:41
+--- !u!114 &8322130920131021494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6172537089138824876}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16a69db38ead70a41ab8d0d374aad39e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInteractor
+  reachMeters: 1.8
+  aimCamera: {fileID: 0}
+  interactKey: 101
+  logActions: 0
+--- !u!114 &7268462896074336937
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6172537089138824876}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fe15069b5e980148ba94c6c8cb95892, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::InteractionHud
+  hud: {fileID: 0}
+  reticle: {fileID: 0}
+  prompt: {fileID: 0}
+  promptOffset: 64
+  promptFontSize: 28
 --- !u!1 &7225339741911405781
 GameObject:
   m_ObjectHideFlags: 0

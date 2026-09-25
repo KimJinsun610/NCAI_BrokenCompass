@@ -219,10 +219,12 @@ namespace NightDuty.Tests
             Assert.AreEqual(50, _kit.Axes.GetValue(FearAxis.Auditory));
         }
 
+        // 2026-09-21 재설계: 구간 경계가 24의 배수로 바뀌어 49는 이제 Band2(자격 안)다.
+        // H2는 청각 Band2~Band4 자격이므로 자격 직전 값은 Band1 최댓값 47이다.
         [Test]
-        public void H2_청각49에서는_시작하지않는다()
+        public void H2_청각47에서는_시작하지않는다()
         {
-            _kit.Axes.Apply(FearAxis.Auditory, 49, "setup", SpaceId.None);
+            _kit.Axes.Apply(FearAxis.Auditory, 47, "setup", SpaceId.None);
             RuleBook book = _kit.Book(H2());
             book.Dispatch(T(SignalKind.ClueDelivered, "H2.door"));
 

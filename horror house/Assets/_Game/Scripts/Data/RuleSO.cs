@@ -34,6 +34,9 @@ namespace NightDuty
         [SerializeField, TextArea(3, 8), Tooltip("태블릿에 노출하는 수칙 본문. 기획서 문구를 그대로 옮긴다")]
         private string _playerText = string.Empty;
 
+        [SerializeField, TextArea(1, 4), Tooltip("조작 안내. 수칙 본문과 구분해 표시한다(기획서 §3-3). 대부분 비어 있다 — S1만 있다")]
+        private string _howTo = string.Empty;
+
         [SerializeField, Tooltip("밤 전체 금지처럼 방문을 넘어 감시하는 장기 의무인지. 단기 사건은 한 방문에 하나만 시작한다")]
         private bool _isLongTerm;
 
@@ -76,7 +79,7 @@ namespace NightDuty
         private SettleAt _settleAt;
 
         [Header("델타 — 준수는 신뢰, 위반은 감각축")]
-        [SerializeField, Tooltip("준수 시 신뢰 델타 (+2~+4)")]
+        [SerializeField, Tooltip("준수 시 신뢰 델타 (+4 / +5 / +8)")]
         private int _successDelta = 2;
 
         [SerializeField, Tooltip("위반 시 오르는 축 (청각·조도·배치)")]
@@ -84,6 +87,13 @@ namespace NightDuty
 
         [SerializeField, Tooltip("위반 델타 (+12~+25)")]
         private int _failureDelta = 12;
+
+        [Header("역설 문자 — 이 카드와 정면으로 부딪히는 태블릿 문자 (S1은 없음)")]
+        [SerializeField, Tooltip("역설 ID (예: P1). 비우면 이 카드에는 역설이 없다")]
+        private string _paradoxId = string.Empty;
+
+        [SerializeField, TextArea(2, 5), Tooltip("태블릿에 노출하는 역설 문자 전문. 따르면 이 카드의 위반 델타가 그대로 적용된다")]
+        private string _paradoxText = string.Empty;
 
         [Header("설정값 — 조건이 0/음수로 두면 이 값을 쓴다")]
         [SerializeField, Tooltip("금지 반경(m). 기본 1.5, H6만 2")]
@@ -103,6 +113,12 @@ namespace NightDuty
 
         /// <summary>태블릿 노출 본문.</summary>
         public string PlayerText { get { return _playerText; } }
+
+        /// <summary>
+        /// 조작 안내. <b>수칙 본문과 같은 문단에 섞지 않는다</b> — 기획서 §3-3이 구분 표시를 요구한다.
+        /// 대부분의 카드는 비어 있다. 지금은 S1(「화면 중앙에 1초간」)만 채워져 있다.
+        /// </summary>
+        public string HowTo { get { return _howTo ?? string.Empty; } }
 
         /// <summary>장기 의무 여부.</summary>
         public bool IsLongTerm { get { return _isLongTerm; } }
@@ -151,6 +167,15 @@ namespace NightDuty
 
         /// <summary>위반 델타.</summary>
         public int FailureDelta { get { return _failureDelta; } }
+
+        /// <summary>역설 ID(P1~P23). 비어 있으면 이 카드에는 역설이 없다(S1).</summary>
+        public string ParadoxId { get { return _paradoxId ?? string.Empty; } }
+
+        /// <summary>역설 문자 전문. 따르면 이 카드의 위반 델타가 적용되고, 거절하면 이 카드의 준수 델타(신뢰)가 오른다.</summary>
+        public string ParadoxText { get { return _paradoxText ?? string.Empty; } }
+
+        /// <summary>이 카드에 역설 문자가 붙어 있는지.</summary>
+        public bool HasParadox { get { return !string.IsNullOrEmpty(_paradoxId) && !string.IsNullOrEmpty(_paradoxText); } }
 
         /// <summary>기본 금지 반경(m).</summary>
         public float Radius { get { return _radius; } }
@@ -322,6 +347,7 @@ namespace NightDuty
             _cardId = config.CardId;
             _space = config.Space;
             _playerText = config.PlayerText;
+            _howTo = config.HowTo;
             _isLongTerm = config.IsLongTerm;
             _useEligibleBand = config.UseEligibleBand;
             _eligibleAxis = config.EligibleAxis;
@@ -338,6 +364,8 @@ namespace NightDuty
             _successDelta = config.SuccessDelta;
             _failureAxis = config.FailureAxis;
             _failureDelta = config.FailureDelta;
+            _paradoxId = config.ParadoxId;
+            _paradoxText = config.ParadoxText;
             _radius = config.Radius;
             _graceSeconds = config.GraceSeconds;
             _gazeSeconds = config.GazeSeconds;
@@ -349,6 +377,7 @@ namespace NightDuty
             public string CardId = string.Empty;
             public SpaceId Space;
             public string PlayerText = "테스트 본문";
+            public string HowTo = string.Empty;
             public bool IsLongTerm;
             public bool UseEligibleBand;
             public FearAxis EligibleAxis;
@@ -365,6 +394,8 @@ namespace NightDuty
             public int SuccessDelta = 2;
             public FearAxis FailureAxis = FearAxis.Layout;
             public int FailureDelta = 12;
+            public string ParadoxId = string.Empty;
+            public string ParadoxText = string.Empty;
             public float Radius = 1.5f;
             public float GraceSeconds;
             public float GazeSeconds;

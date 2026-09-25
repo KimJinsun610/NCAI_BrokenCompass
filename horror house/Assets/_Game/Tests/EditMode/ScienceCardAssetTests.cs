@@ -105,12 +105,13 @@ namespace NightDuty.Tests
             RuleSO s1 = Load("S1");
             Assert.IsNull(s1.FailureCondition);
             Assert.AreEqual(0, s1.FailureDelta);
-            Assert.AreEqual(3, s1.SuccessDelta);
+            // 2026-09-21 재설계: 준수 신뢰 델타가 +3 → +5로 올랐다(S1·S5·C5·C6·T2·T3).
+            Assert.AreEqual(5, s1.SuccessDelta);
             Assert.IsTrue(Load("S2").IsLongTerm, "S2는 장기(밤 종료까지 재진입 금지)");
         }
 
         // ───────── S1 ─────────
-        // 기획서 검증: 얼굴 0.9초 후 시선 이탈: 미완료. 연속 1초: 신뢰 +3. 재방문 재응시: 0. 첫날 다른 방 선방문: S1 벌점 없음.
+        // 기획서 검증: 얼굴 0.9초 후 시선 이탈: 미완료. 연속 1초: 신뢰 +5. 재방문 재응시: 0. 첫날 다른 방 선방문: S1 벌점 없음.
 
         private RuleBook EnterScienceWithS1()
         {
@@ -133,13 +134,14 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void S1_연속1초는_신뢰3()
+        public void S1_연속1초는_신뢰5()
         {
             RuleBook book = EnterScienceWithS1();
             TestKit.Advance(book, 1f, Face);
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 0, 3);
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5.
+            AssertAllAxes(0, 0, 0, 5);
         }
 
         [Test]
@@ -151,7 +153,8 @@ namespace NightDuty.Tests
             book.Dispatch(Sp(SignalKind.SpaceEntered, SpaceId.ScienceRoom));
             TestKit.Advance(book, 1f, Face);
 
-            AssertAllAxes(0, 0, 0, 3);
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5. 재응시 몫은 여전히 0이라 합계도 5뿐이다.
+            AssertAllAxes(0, 0, 0, 5);
         }
 
         [Test]
@@ -193,7 +196,8 @@ namespace NightDuty.Tests
             Assert.AreEqual(CardState.Active, book.Watchers[0].State, "이전 방문의 0.5초는 이어지지 않는다");
             TestKit.Advance(book, 0.5f, Face);
 
-            AssertAllAxes(0, 0, 0, 3);
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5.
+            AssertAllAxes(0, 0, 0, 5);
         }
 
         // 기획서: 미관찰은 업무 미완료 — 벌점 없음(밤 종료에 미판정, 델타 0).
@@ -233,7 +237,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void S2_문E개방만은_0_밤종료에_신뢰2()
+        public void S2_문E개방만은_0_밤종료에_신뢰4()
         {
             RuleBook book = StartS2();
             book.Dispatch(T(SignalKind.ClueDelivered, GlassBreak));
@@ -244,7 +248,8 @@ namespace NightDuty.Tests
             book.EndNight();   // 단서 뒤 Tick이 없어도 밤 종료 신호로 준수
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 0, 2);
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4.
+            AssertAllAxes(0, 0, 0, 4);
         }
 
         [Test]
@@ -354,13 +359,14 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void S3_다른실험대접근은_추가벌점없음_점검완료로_신뢰2()
+        public void S3_다른실험대접근은_추가벌점없음_점검완료로_신뢰4()
         {
             RuleBook book = StartS3();
             book.Dispatch(JudgeSignal.Proximity("science.bench.b", 0.3f));
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.ScienceRoom));
 
-            AssertAllAxes(25, 0, 0, 2);
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4.
+            AssertAllAxes(25, 0, 0, 4);
         }
 
         // 기획서: 단서 없는 첫 방문은 미판정이며 다른 유효 방문에 발생 가능.
@@ -380,17 +386,22 @@ namespace NightDuty.Tests
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.ScienceRoom));
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.ScienceRoom));
 
-            AssertAllAxes(25, 0, 0, 2);
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4.
+            AssertAllAxes(25, 0, 0, 4);
         }
 
+        // 2026-09-21 재설계: 구간 경계가 24의 배수로 바뀌어 24는 이제 Band1(자격 안)이다.
+        // S3는 청각 Band1~Band4 자격이므로 자격 직전 값은 Band0 최댓값 23이다.
         [Test]
-        public void S3_청각24에서는_시작하지않는다()
+        public void S3_청각0에서도_시작한다()
         {
-            Setup(FearAxis.Auditory, 24);
+            // 2026-09-22 자격 재설계: S3 자격이 Band1(24↑) → **Band0**다. 청각 Band0 풀이
+            // 3장(C1·S2·T2)뿐이라 1·2일차 청각 카드가 사실상 고정이었다. 네 장이 되면 그 자리가 갈린다.
+            Setup(FearAxis.Auditory, 0);
             RuleBook book = Book("S3");
             book.Dispatch(T(SignalKind.ClueDelivered, Clink));
 
-            Assert.AreEqual(CardState.Waiting, book.Watchers[0].State);
+            Assert.AreEqual(CardState.Active, book.Watchers[0].State);
         }
 
         // 해석(분석 문서 Q-S3-1): 점검 없이 퇴실하면 대기로 돌아간다.
@@ -436,9 +447,11 @@ namespace NightDuty.Tests
             Assert.AreEqual(87, _axes.GetValue(FearAxis.Illuminance));
         }
 
-        // 처음부터 등 0개(조도 90~99)면 대상이 없고, 74 이하는 자격 밖이다.
-        [TestCase(74)]
-        [TestCase(90)]
+        // 2026-09-21: S4는 조도 Band3 전용(72~89) 창형이었다 — 18칸.
+        // 2026-09-22 자격 재설계: **Band2~Band4(48~99)**로 넓혔다. 조도 카드가 다섯 장뿐인데
+        // 그중 하나가 18칸 창에 갇혀 있어 실질 풀이 네 장이었고, 5일차에만 98% 확률로 나왔다.
+        // 이제 밖은 아래쪽 47(Band1 최댓값) 하나다.
+        [TestCase(47)]
         public void S4_자격구간밖에서는_미발동(int illuminance)
         {
             Setup(FearAxis.Illuminance, illuminance);
@@ -446,6 +459,17 @@ namespace NightDuty.Tests
             book.Dispatch(T(SignalKind.ClueIdentified, LastLight));
 
             Assert.AreEqual(CardState.Waiting, book.Watchers[0].State);
+        }
+
+        /// <summary>조도 90~99에서도 열린다 — 등이 0개라 대상이 없을 뿐, 자격으로 막지 않는다.</summary>
+        [Test]
+        public void S4_조도90에서도_자격은_통과한다()
+        {
+            Setup(FearAxis.Illuminance, 90);
+            RuleBook book = Book("S4");
+            book.Dispatch(T(SignalKind.ClueIdentified, LastLight));
+
+            Assert.AreEqual(CardState.Active, book.Watchers[0].State);
         }
 
         // 기획서: 연속 시선이 끊기면 응시 시간만 0으로 초기화한다.
@@ -462,14 +486,15 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void S4_금지응시없이_점검퇴실은_신뢰2()
+        public void S4_금지응시없이_점검퇴실은_신뢰4()
         {
             RuleBook book = StartS4();
             TestKit.Advance(book, 3f);
             book.Dispatch(Sp(SignalKind.InspectionCompleted, SpaceId.ScienceRoom));
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.ScienceRoom));
 
-            AssertAllAxes(0, 75, 0, 2);
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4.
+            AssertAllAxes(0, 75, 0, 4);
         }
 
         // 해석(분석 문서 Q-S4-1): 점검 없이 나가면 대기로 돌아간다(다음 방문에 다시 식별 필요).
@@ -484,11 +509,17 @@ namespace NightDuty.Tests
         }
 
         // ───────── S5 ─────────
-        // 기획서 검증: 빈 보관 위치 관찰: 미시작. 문 옆 S-B 관찰 후 거리 유지·퇴실: 신뢰 +3. P1 중 근접: S5 0.
+        // 기획서 검증: 빈 보관 위치 관찰: 미시작. 문 옆 S-B 관찰 후 거리 유지·퇴실: 신뢰 +5. P1 중 근접: S5 0.
+        // 2026-09-21: S5에 배치 Band1~Band4(24 이상) 자격이 걸렸다.
+        // 2026-09-22 자격 재설계: **Band0~Band4**로 되돌렸다. 이 카드의 트리거 ID가 조우 장면 scene.sb라,
+        // 자격이 24↑면 S-B 장면을 3일차 이전에 깔 수 없었다(기획서 v6 §4와 충돌).
+        // 아래 시나리오는 배치 24를 그대로 둔다 — 자격 안이므로 결과가 달라지지 않고,
+        // 「자격용으로 올린 값이 끝까지 남는다」는 단언도 그대로 성립한다.
 
         [Test]
         public void S5_빈보관위치관찰은_미시작()
         {
+            Setup(FearAxis.Layout, 24);
             RuleBook book = Book("S5");
             book.Dispatch(T(SignalKind.ClueIdentified, Shelf));
 
@@ -496,45 +527,52 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void S5_SB관찰후_거리유지_퇴실은_신뢰3()
+        public void S5_SB관찰후_거리유지_퇴실은_신뢰5()
         {
+            Setup(FearAxis.Layout, 24);
             RuleBook book = Book("S5");
             book.Dispatch(T(SignalKind.ModelObserved, "scene.sb"));
             Assert.AreEqual(CardState.Active, book.Watchers[0].State);
             book.Dispatch(JudgeSignal.Proximity(ModelSB, 1.5f));
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.ScienceRoom));
 
-            AssertAllAxes(0, 0, 0, 3);
+            // 2026-09-21 재설계: 준수 신뢰 +3 → +5. 배치 24는 자격을 열려고 미리 올린 값이라 그대로 남는다.
+            AssertAllAxes(0, 0, 24, 5);
         }
 
         // P1 경유 S-B는 장면 ID를 scene.sb.p1로 따로 보낸다(연결 약속 보완).
         [Test]
         public void S5_P1중_근접은_S5_0()
         {
+            Setup(FearAxis.Layout, 24);
             RuleBook book = Book("S5");
             book.Dispatch(T(SignalKind.ModelObserved, "scene.sb.p1"));
             book.Dispatch(JudgeSignal.Proximity(ModelSB, 0.5f));
 
             Assert.AreEqual(CardState.Waiting, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 0, 0);
+            // 배치 24는 자격을 열려고 미리 올린 값이다 — 시작하지 않았으니 여기서 더 오르지 않는다.
+            AssertAllAxes(0, 0, 24, 0);
         }
 
         [Test]
         public void S5_관찰후_1m4는_배치15_이후퇴실해도_신뢰0()
         {
+            Setup(FearAxis.Layout, 24);
             RuleBook book = Book("S5");
             book.Dispatch(T(SignalKind.ModelObserved, "scene.sb"));
             book.Dispatch(JudgeSignal.Proximity(ModelSB, 1.4f));
             book.Dispatch(Sp(SignalKind.SpaceExited, SpaceId.ScienceRoom));
 
             Assert.AreEqual(CardState.Violated, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 15, 0);
+            // 2026-09-21 재설계: 위반 델타는 그대로 +15지만, 자격용 배치 24 위에 얹혀 24 + 15 = 39가 된다.
+            AssertAllAxes(0, 0, 39, 0);
         }
 
         // 기획서: 모형을 먼저 발견해도 유효하다.
         [Test]
         public void S5_보관위치확인전_모형먼저발견도_유효()
         {
+            Setup(FearAxis.Layout, 24);
             RuleBook book = Book("S5");
             book.Dispatch(Sp(SignalKind.SpaceEntered, SpaceId.ScienceRoom));
             book.Dispatch(T(SignalKind.ModelObserved, "scene.sb"));
@@ -544,10 +582,10 @@ namespace NightDuty.Tests
         }
 
         // ───────── S6 ─────────
-        // 기획서 검증: 유예 내 Off·1초 점검·구역 이탈: 신뢰 +2. 과학실 다른 구역에서 On: 위반 없음. S-B 방문: 미시작.
+        // 기획서 검증: 유예 내 Off·1초 점검·구역 이탈: 신뢰 +4. 과학실 다른 구역에서 On: 위반 없음. S-B 방문: 미시작.
 
         [Test]
-        public void S6_유예내Off_점검후_구역이탈은_신뢰2()
+        public void S6_유예내Off_점검후_구역이탈은_신뢰4()
         {
             RuleBook book = Book("S6");
             book.Dispatch(JudgeSignal.Flashlight(true));
@@ -559,7 +597,8 @@ namespace NightDuty.Tests
             book.Dispatch(T(SignalKind.ZoneExited, GlassZone));
 
             Assert.AreEqual(CardState.Complied, book.Watchers[0].State);
-            AssertAllAxes(0, 0, 0, 2);
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4.
+            AssertAllAxes(0, 0, 0, 4);
         }
 
         [Test]
@@ -578,6 +617,8 @@ namespace NightDuty.Tests
         [Test]
         public void S6_SB방문에서는_미시작()
         {
+            // 2026-09-21 재설계: S5는 배치 Band1~ 자격이라, 배치를 24로 올려야 방문 몫을 쥔다.
+            Setup(FearAxis.Layout, 24);
             RuleBook book = Book("S5", "S6");
             book.Dispatch(Sp(SignalKind.SpaceEntered, SpaceId.ScienceRoom));
             book.Dispatch(T(SignalKind.ModelObserved, "scene.sb"));
@@ -632,7 +673,8 @@ namespace NightDuty.Tests
             TestKit.Advance(book, 3f);
             book.Dispatch(T(SignalKind.ZoneExited, GlassZone));
 
-            AssertAllAxes(0, 0, 0, 2);
+            // 2026-09-21 재설계: 준수 신뢰 +2 → +4.
+            AssertAllAxes(0, 0, 0, 4);
         }
 
         // 체류 3초(유예 2초 + 점검 1초) 전에 나가면 On이었어도 위반·준수 모두 없다(대기).

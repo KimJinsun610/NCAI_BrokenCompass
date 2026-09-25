@@ -10,15 +10,15 @@ using UnityEngine;
 public class GameTime : MonoBehaviour
 {
     [Header("근무 시간 (24시간 기준, 0 = 자정)")]
-    [SerializeField, Range(0, 23)] private int startHour = 0;
+    [SerializeField, Range(0, 23)] private int startHour = 2;
     [SerializeField, Range(0, 59)] private int startMinute = 0;
     [Tooltip("시작 시각보다 이르거나 같으면 다음 날로 계산한다 (예: 23:00 → 1:00)")]
-    [SerializeField, Range(0, 23)] private int endHour = 1;
+    [SerializeField, Range(0, 23)] private int endHour = 6;
     [SerializeField, Range(0, 59)] private int endMinute = 0;
 
     [Header("속도")]
-    [Tooltip("현실 1초 동안 흐르는 게임 시간(초). 20 = 20배속 (인게임 1시간 = 현실 3분)")]
-    [SerializeField, Min(0.1f)] private float timeMultiplier = 20f;
+    [Tooltip("현실 1초 동안 흐르는 게임 시간(초). 30 = 30배속 (인게임 1시간 = 현실 2분)")]
+    [SerializeField, Min(0.1f)] private float timeMultiplier = 30f;
 
     [Header("표시")]
     [Tooltip("켜면 12시간제(0시 → 12:00, 13시 → 1:00), 끄면 24시간제(00:00)")]
@@ -32,6 +32,9 @@ public class GameTime : MonoBehaviour
 
     public string CurrentTimeText { get; private set; }
 
+    /// <summary>현재 게임 시각(자정 기준 누적 분). 판정 코어가 위반 시각을 기록할 때 읽는다. 표시는 FormatTime으로.</summary>
+    public int CurrentMinutes => Mathf.FloorToInt(currentSeconds / 60f);
+
     public bool IsEnded => ended;
 
     /// <summary>시계가 흐르는 중인지. 연출 등으로 멈춰 두면 false.</summary>
@@ -43,6 +46,12 @@ public class GameTime : MonoBehaviour
     public string StartTimeText => FormatTime(Mathf.FloorToInt(startSeconds / 60f));
 
     public string EndTimeText => FormatTime(Mathf.FloorToInt(endSeconds / 60f));
+
+    /// <summary>근무 시작 시각(자정 기준 누적 분). 태블릿 문서의 발행 시각처럼 시작 시각을 기준으로 계산할 때 쓴다.</summary>
+    public int StartMinutes => Mathf.FloorToInt(startSeconds / 60f);
+
+    /// <summary>근무 종료 시각(자정 기준 누적 분). 시작보다 이르면 다음 날이라 1440을 넘을 수 있다.</summary>
+    public int EndMinutes => Mathf.FloorToInt(endSeconds / 60f);
 
     private const float SecondsPerDay = 24f * 60f * 60f;
 

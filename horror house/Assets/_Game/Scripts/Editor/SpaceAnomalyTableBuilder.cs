@@ -17,7 +17,13 @@ namespace NightDuty.Editor
     public static class SpaceAnomalyTableBuilder
     {
         /// <summary>에셋 경로.</summary>
-        public const string AssetPath = "Assets/_Game/ScriptableObjects/SpaceAnomalyTable.asset";
+        /// <summary>
+        /// 만들 자리. <b>Resources 아래여야 한다</b> — <c>AnomalyCueDirector</c>가 인스펙터 참조가 비었을 때
+        /// <c>Resources.Load&lt;SpaceAnomalyTableSO&gt;("SpaceAnomalyTable")</c>로 물러서기 때문이다.
+        /// 2026-09-22까지 <c>ScriptableObjects/</c>에 있어 그 폴백이 언제나 null이었고,
+        /// 씬에 표를 손으로 꽂지 않은 <c>AnomalyCueDirector</c>는 <b>단서를 한 건도 보내지 못했다</b>.
+        /// </summary>
+        public const string AssetPath = "Assets/_Game/Resources/SpaceAnomalyTable.asset";
 
         /// <summary>메뉴: 이상현상 표 에셋 생성.</summary>
         [MenuItem("NightDuty/이상현상 표 에셋 생성", false, 121)]

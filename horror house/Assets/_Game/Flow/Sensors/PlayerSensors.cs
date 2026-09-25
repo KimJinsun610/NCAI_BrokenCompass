@@ -1,6 +1,7 @@
 using System;
 using NightDuty;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 플레이어 센서 허브. <b>0.1초 누산 틱</b>으로 <see cref="GazeProbe"/>·<see cref="ProximityProbe"/>를
@@ -98,6 +99,52 @@ public sealed class PlayerSensors : MonoBehaviour
     public static void SetTabOpen(bool open)
     {
         s_tabOpen = open;
+    }
+
+    /// <summary>
+    /// <b>씬에 직접 놓지 않아도 된다.</b> 근무 씬이 열릴 때 허브가 없으면 플레이어 루트에 하나 붙인다.
+    /// <para>2026-09-24에 PlayScene에 이 허브가 저장돼 있지 않아 <b>응시·근접 판정이 통째로 죽어</b> 있던 것을
+    /// 막는 안전장치다. 씬에 직접 놓아 두면(인스펙터로 값을 맞추려면) 자동 생성은 건너뛴다.</para>
+    /// </summary>
+    // ────────────────────────────────────────────────────────────────────────
+    // 자동 설치 (2026-09-24) — NightRunDriver·TabletBridge와 같은 방식
+    // ────────────────────────────────────────────────────────────────────────
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void Install()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void InstallForFirstScene()
+    {
+        EnsureFor(SceneManager.GetActiveScene());
+    }
+
+    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        EnsureFor(scene);
+    }
+    private static void EnsureFor(Scene scene)
+    {
+        if (!FlowAutoInstall.IsDutyScene(scene)) return;
+        if (FlowAutoInstall.Exists<PlayerSensors>(scene)) return;
+
+        Camera cam = FlowAutoInstall.FindCamera(scene);
+        if (cam == null)
+        {
+            Debug.LogWarning("[PlayerSensors] 근무 씬에 카메라가 없어 센서 허브를 설치하지 못했습니다.");
+            return;
+        }
+
+        // 근접은 발밑 기준점을 쓰므로 카메라의 최상위 부모(FPController)에 붙인다.
+        PlayerSensors hub = cam.transform.root.gameObject.AddComponent<PlayerSensors>();
+        hub.gazeCamera = cam;
+        hub.playerRoot = cam.transform.root;
+
+        // tabRootToWatch는 비워 둔다 — TabletBridge가 SetTabOpen으로 직접 알려 준다.
     }
 
     private void OnEnable()

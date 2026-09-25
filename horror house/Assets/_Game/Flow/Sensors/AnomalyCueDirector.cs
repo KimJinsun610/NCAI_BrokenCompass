@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// 이상현상 큐 발신기. <see cref="SpaceAnomalyTableSO"/>(공간 × 축 × 구간)를 읽어 이번 방문에 재생할 큐 목록을 정하고,
@@ -118,6 +119,39 @@ public sealed class AnomalyCueDirector : MonoBehaviour
     // ────────────────────────────────────────────────────────────────────────
     // 수명
     // ────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// 근무 씬이 열릴 때 연출기가 없으면 하나 만든다. 표 세 개는 OnEnable이 Resources에서 직접 읽으므로
+    /// 참조를 꽂아 줄 필요가 없다.
+    /// </summary>
+    // ────────────────────────────────────────────────────────────────────────
+    // 자동 설치 (2026-09-24) — NightRunDriver·TabletBridge와 같은 방식
+    // ────────────────────────────────────────────────────────────────────────
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void Install()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    private static void InstallForFirstScene()
+    {
+        EnsureFor(SceneManager.GetActiveScene());
+    }
+
+    private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        EnsureFor(scene);
+    }
+    private static void EnsureFor(Scene scene)
+    {
+        if (!FlowAutoInstall.IsDutyScene(scene)) return;
+        if (FlowAutoInstall.Exists<AnomalyCueDirector>(scene)) return;
+
+        FlowAutoInstall.CreateHost<AnomalyCueDirector>(scene, "AnomalyCueDirector (auto)");
+    }
 
     private void OnEnable()
     {

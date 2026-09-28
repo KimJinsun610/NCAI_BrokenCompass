@@ -20,6 +20,10 @@ public class HorrorEvent : MonoBehaviour
     [SerializeField] private PlayableDirector director;
     [Tooltip("켜면 한 번 재생한 뒤로는 다시 재생하지 않는다.")]
     [SerializeField] private bool playOnce = true;
+    [Tooltip("Timeline 전체의 재생 배속. 1 = 원래 속도, 3 = 3배 빠르게.\n움직임·소리 위치·반복 주기가 함께 빨라진다. 소리는 음 높이도 같이 올라간다.")]
+    [SerializeField, Min(0.01f)] private float playbackSpeed = 1f;
+    [Tooltip("Director의 Wrap Mode가 Loop일 때만 쓴다. 이 시간(초) 동안 반복한 뒤, 돌고 있던 한 바퀴를 끝까지 재생하고 멈춘다.\n0이면 무한 반복. 게임 시간 기준이라 일시정지 중에는 세지 않고, 재생 배속과 상관없이 실제 초다.")]
+    [SerializeField, Min(0f)] private float loopSeconds = 0f;
 
     [Header("재생 조건")]
     [Tooltip("이 연출이 끝난 뒤에만 재생한다(테스트 키도 마찬가지). 비워 두면 조건 없음.\n재생이 시작되면 그 연출의 Director를 멈추고 이어받는다 — 같은 오브젝트를 두 Timeline이 번갈아 움직일 때 쓴다(예: 문 열림 → 쾅 닫힘).")]
@@ -50,6 +54,11 @@ public class HorrorEvent : MonoBehaviour
     private bool waiting;
     private float waitTime;
     private float unseenTime;
+
+    // 반복 시간 제한
+    private float playTime;          // 이번 재생이 시작된 뒤 흐른 게임 시간
+    private bool stopAtLoopEnd;      // 제한 시간이 지나 「이번 바퀴가 끝나면 멈춤」이 걸렸는가
+    private double lastDirectorTime; // 되감김(한 바퀴 끝)을 알아채기 위한 직전 시간
 
     /// <summary>재생 중인지</summary>
     public bool IsPlaying { get; private set; }
@@ -98,6 +107,8 @@ public class HorrorEvent : MonoBehaviour
 
         if (waiting) UpdateWaiting();
 
+        if (IsPlaying) UpdateLoopLimit();
+
         // Wrap Mode가 Hold면 끝나도 Director가 멈추지 않으므로 시간으로 끝을 잡는다.
         if (IsPlaying && (director.state != PlayState.Playing || director.time >= director.duration))
         {
@@ -124,10 +135,45 @@ public class HorrorEvent : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 반복 시간이 다 되면 「이번 바퀴가 끝나면 멈춤」을 건다. 중간에 뚝 끊지 않고, 돌던 한 바퀴를 끝까지 재생한 뒤
+    /// Timeline을 정확히 마지막 프레임에 세워 끝 자세로 멈춘다.
+    /// <para>
+    /// Wrap Mode를 재생 중에 Hold로 바꾸는 방법은 쓰지 않는다 — Director가 그 순간의 누적 시간으로 곧장 끝으로 건너뛰어
+    /// 바퀴 중간에서 끊길 수 있다. 끝을 직접 잡는 편이 확실하다.
+    /// </para>
+    /// </summary>
+    private void UpdateLoopLimit()
+    {
+        if (loopSeconds <= 0f || director.extrapolationMode != DirectorWrapMode.Loop) return;
+
+        playTime += Time.deltaTime;
+        if (!stopAtLoopEnd && playTime >= loopSeconds) stopAtLoopEnd = true;
+
+        double now = director.time;
+        if (stopAtLoopEnd)
+        {
+            // 다음 프레임에 끝을 넘길 참이거나(예측), 이미 되감겼으면(한 프레임 늦게 알아챔) 여기서 끝낸다.
+            bool reachingEnd = now + Time.deltaTime * playbackSpeed >= director.duration;
+            bool wrapped = now < lastDirectorTime;
+            if (reachingEnd || wrapped)
+            {
+                director.time = director.duration;
+                director.Evaluate();   // 끝 자세를 쓴다
+                director.Pause();      // 그래프를 살려 둔 채 멈춘다 → 끝 자세가 유지되고, 아래 판정이 Finish를 부른다
+            }
+        }
+        lastDirectorTime = now;
+    }
+
     private void StartTimeline()
     {
         IsPlaying = true;
         HasPlayed = true;
+
+        playTime = 0f;
+        stopAtLoopEnd = false;
+        lastDirectorTime = 0.0;
 
         if (lockPlayer) LockPlayers();
 
@@ -136,8 +182,32 @@ public class HorrorEvent : MonoBehaviour
 
         director.time = 0;
         director.Play();
+        ApplySpeed();
         director.Evaluate();   // 같은 프레임에 첫 자세를 써서, 앞 연출을 멈춘 순간의 튐이 화면에 나오지 않게 한다
     }
+
+    /// <summary>
+    /// 재생 배속을 Timeline 그래프에 적용한다. 그래프는 Play()에서 만들어지므로 그 뒤에 불러야 한다.
+    /// Director에는 배속 설정이 없어서 그래프의 루트에 직접 건다.
+    /// </summary>
+    private void ApplySpeed()
+    {
+        if (director == null || !director.playableGraph.IsValid()) return;
+
+        PlayableGraph graph = director.playableGraph;
+        for (int i = 0; i < graph.GetRootPlayableCount(); i++)
+        {
+            graph.GetRootPlayable(i).SetSpeed(playbackSpeed);
+        }
+    }
+
+#if UNITY_EDITOR
+    // 플레이 중에 인스펙터에서 배속을 바꾸면 바로 반영한다(튜닝용).
+    private void OnValidate()
+    {
+        if (Application.isPlaying && IsPlaying) ApplySpeed();
+    }
+#endif
 
     /// <summary>Hold로 붙잡고 있던 끝 자세를 놓는다. 뒤이은 연출이 이어받을 때 부른다.</summary>
     private void StopDirector()

@@ -3,7 +3,12 @@ guid: 3317251aa5f826c449c6f402e65f4f34
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Raspberry_WetLiquid
+    second: {fileID: 2100000, guid: a68250fdb67453d49a5a759afb61faa6, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

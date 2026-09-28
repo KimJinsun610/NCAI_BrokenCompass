@@ -1,9 +1,34 @@
 fileFormatVersion: 2
-guid: 9103205fb2f9a1c42aa527a6b3b76918
+guid: 42a41236edd235044a8d1545b5d38e11
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 01_Head
+    second: {fileID: 2100000, guid: e531c1535c1f3e9439b362c3723cf094, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 02_Torso
+    second: {fileID: 2100000, guid: 98a29b79bed842745b0a19fc54c3bb79, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 03_Arms_Hands
+    second: {fileID: 2100000, guid: f3f5fea73bfa05d49a76eb277775495a, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 04_Legs
+    second: {fileID: 2100000, guid: 474f6d1060b42c74dab7d35070350773, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: 05_Feet
+    second: {fileID: 2100000, guid: 2c2286ec365eb2f42a09b7b45b4d1f70, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

@@ -243,7 +243,7 @@ PlayableDirector:
   serializedVersion: 3
   m_PlayableAsset: {fileID: 11400000, guid: ce1adfdfb9d1f144d96ca09bcdf89a7d, type: 2}
   m_InitialState: 0
-  m_WrapMode: 0
+  m_WrapMode: 2
   m_DirectorUpdateMode: 1
   m_InitialTime: 0
   m_SceneBindings:
@@ -267,10 +267,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HorrorEvent
   director: {fileID: 4239009173405470868}
   playOnce: 1
+  playbackSpeed: 1
+  loopSeconds: 0
+  after: {fileID: 0}
   waitUntilUnseen: {fileID: 8625636179327804648}
   unseenBoxSize: {x: 0.6, y: 1.8, z: 0.6}
   maxWaitSeconds: 8
   lockPlayer: 0
+  useDebugKey: 1
   debugKey: 50
 --- !u!1001 &6582580768729847771
 PrefabInstance:

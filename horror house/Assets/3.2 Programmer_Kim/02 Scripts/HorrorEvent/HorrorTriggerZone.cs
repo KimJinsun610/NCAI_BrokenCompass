@@ -25,6 +25,18 @@ public class HorrorTriggerZone : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        TryPlay(other);
+    }
+
+    // 앞 연출이 끝나기 전에 이미 구역 안에 들어와 있었다면 Enter는 다시 오지 않는다. 머무는 동안에도 계속 청한다.
+    // 이미 재생했거나 조건이 안 되면 Play가 알아서 무시한다.
+    private void OnTriggerStay(Collider other)
+    {
+        TryPlay(other);
+    }
+
+    private void TryPlay(Collider other)
+    {
         if (target == null) return;
         if (other.GetComponentInParent<FPController>() == null) return;
 

@@ -22,6 +22,8 @@ public class HorrorEvent : MonoBehaviour
     [SerializeField] private bool playOnce = true;
 
     [Header("재생 조건")]
+    [Tooltip("이 연출이 끝난 뒤에만 재생한다(테스트 키도 마찬가지). 비워 두면 조건 없음.\n재생이 시작되면 그 연출의 Director를 멈추고 이어받는다 — 같은 오브젝트를 두 Timeline이 번갈아 움직일 때 쓴다(예: 문 열림 → 쾅 닫힘).")]
+    [SerializeField] private HorrorEvent after;
     [Tooltip("이 자리가 플레이어 화면에 보이지 않을 때까지 기다렸다가 재생한다.\n인체모형은 시야 밖에서만 나타나야 하므로 모형의 Transform(발밑)을 넣는다.")]
     [SerializeField] private Transform waitUntilUnseen;
     [Tooltip("시야 판정에 쓸 상자 크기(m). 발밑 기준으로 위로 세운다.")]
@@ -75,6 +77,7 @@ public class HorrorEvent : MonoBehaviour
         if (director == null || director.playableAsset == null) return;
         if (IsPlaying || waiting) return;
         if (playOnce && HasPlayed) return;
+        if (after != null && (!after.HasPlayed || after.IsPlaying)) return;
 
         if (waitUntilUnseen != null)
         {
@@ -128,8 +131,18 @@ public class HorrorEvent : MonoBehaviour
 
         if (lockPlayer) LockPlayers();
 
+        // 앞 연출은 Hold로 끝 자세를 계속 쓰고 있다. 멈추지 않으면 두 Director가 같은 오브젝트를 번갈아 써서 떨린다.
+        if (after != null) after.StopDirector();
+
         director.time = 0;
         director.Play();
+        director.Evaluate();   // 같은 프레임에 첫 자세를 써서, 앞 연출을 멈춘 순간의 튐이 화면에 나오지 않게 한다
+    }
+
+    /// <summary>Hold로 붙잡고 있던 끝 자세를 놓는다. 뒤이은 연출이 이어받을 때 부른다.</summary>
+    private void StopDirector()
+    {
+        if (director != null) director.Stop();
     }
 
     private void Finish()

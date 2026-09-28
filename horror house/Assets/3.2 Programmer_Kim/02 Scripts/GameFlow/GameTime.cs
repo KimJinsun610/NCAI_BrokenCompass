@@ -3,7 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// 근무 시간 시계. 시작 시각부터 종료 시각까지 흐르고, 종료 시각이 되면 ShiftEnded를 발생시킨다.
-/// 기본값: 0:00(12시간제 표기로 12:00) → 1:00, 현실보다 20배 빠르게 (인게임 1시간 = 현실 3분).
+/// 기본값: 02:00 → 05:00, 현실보다 30배 빠르게 (인게임 1시간 = 현실 2분, 하루 = 현실 6분).
+/// 실제 값은 PlaySystems 프리팹에 저장된 값이 우선한다.
 /// Time.deltaTime 기준이라 일시정지(timeScale 0) 중에는 시계도 멈춘다.
 /// DayIntro 같은 연출이 SetRunning(false)로 잠시 멈춰 둘 수 있다.
 /// </summary>
@@ -13,7 +14,7 @@ public class GameTime : MonoBehaviour
     [SerializeField, Range(0, 23)] private int startHour = 2;
     [SerializeField, Range(0, 59)] private int startMinute = 0;
     [Tooltip("시작 시각보다 이르거나 같으면 다음 날로 계산한다 (예: 23:00 → 1:00)")]
-    [SerializeField, Range(0, 23)] private int endHour = 6;
+    [SerializeField, Range(0, 23)] private int endHour = 5;
     [SerializeField, Range(0, 59)] private int endMinute = 0;
 
     [Header("속도")]

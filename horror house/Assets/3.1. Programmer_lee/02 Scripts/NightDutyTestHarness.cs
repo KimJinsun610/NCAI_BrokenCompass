@@ -17,7 +17,7 @@ using NightDuty;
 /// - ③ 빠진 판정 대상: 카드가 요구하는데 씬에 없는 ID를 임시 표식으로 만들어 그 공간의 존 안에 흩뜨립니다.
 /// - ④ 콜라이더 보충: 표식은 있는데 레이가 맞힐 콜라이더가 없는 대상에 작은 상자를 붙입니다.
 /// - ⑤ 조우 대상: 조우 표가 요구하는 27종 지점을 만들고, NightRun.Encounter에 시야·배치 통로를 꽂습니다.
-/// - ⑥ 게임 시계: GameTime의 endHour·timeMultiplier를 런타임 값으로만 바꿉니다(리플렉션).
+/// - (⑥ 게임 시계 덮어쓰기는 2026-09-28 삭제 — 시계 값은 PlaySystems 프리팹의 GameTime이 정본이다.)
 /// - ⑦ 응시로 대신 보내기: <b>아직 발신기가 없는 신호 둘</b>을 응시로 흉내 냅니다(아래).
 ///
 /// <b>⑦이 메우는 구멍</b>
@@ -49,9 +49,6 @@ public sealed class NightDutyTestHarness : MonoBehaviour
 
     /// <summary>임시 표식의 콜라이더 한 변(m). 기획 수치가 아니라 「레이가 맞힐 수 있는 가장 작은 크기」다.</summary>
     private const float MarkerSize = 0.4f;
-
-    /// <summary>근무 종료 시각. 기획서 B절 「04:00 무조건 자동 종료」.</summary>
-    private const int EndHour = 4;
 
     /// <summary>
     /// 대역 신호를 보내기까지 필요한 연속 응시 시간(초). 기획서의 모형 관찰 시간과 같은 1초다 —
@@ -110,13 +107,6 @@ public sealed class NightDutyTestHarness : MonoBehaviour
 
     [Tooltip("⑤ 조우 대상 27종을 만들고 NightRun.Encounter에 시야·배치 통로를 꽂는다.")]
     [SerializeField] private bool wireEncounter = true;
-
-    [Header("게임 시계 (런타임 값만 바꾼다)")]
-    [Tooltip("⑥ 켜면 GameTime의 endHour를 4로, 배속을 아래 값으로 덮는다. 씬 파일은 바뀌지 않는다.")]
-    [SerializeField] private bool fixClock = true;
-
-    [Tooltip("게임 시계 배속. 재설계 배속은 30~34다.")]
-    [SerializeField, Min(1f)] private float timeMultiplier = 32f;
 
     [Header("화면")]
     [Tooltip("개발용 상태판을 보일지. 플레이 중 F3으로 바꿀 수 있다. 기본은 꺼짐 — 지침은 F1 태블릿에서 봅니다.")]
@@ -238,7 +228,6 @@ public sealed class NightDutyTestHarness : MonoBehaviour
         Step("③ 빠진 판정 대상", FillMissingTargets);
         Step("④ 콜라이더 보충", EnsureColliders);
         Step("⑤ 조우 대상", WireEncounter);
-        Step("⑥ 게임 시계", TuneClock);
 
         Debug.Log("[하네스] 준비 완료 — 부착 " + _attached + " · 문 " + _doorsWired + " · 만든 대상 " + _created +
                   " · 콜라이더 " + _collidersAdded, this);
@@ -897,68 +886,6 @@ public sealed class NightDutyTestHarness : MonoBehaviour
         }
 
         Debug.Log("[조우] " + sceneId + " → " + targetId, this);
-    }
-
-    // ─────────────────────────────── ⑥ 게임 시계 ───────────────────────────────
-
-    /// <summary>
-    /// <c>GameTime</c>의 <c>endHour</c>를 기획값 4로, 배속을 인스펙터 값으로 덮는다.
-    /// <para><b>리플렉션으로 런타임 필드만 바꾼다</b> — 인스펙터에서 고치면 씬 파일이 바뀌고, 그것은 이 하네스의 금기다.
-    /// <c>GameTime</c>은 다른 담당자의 폴더에 있어 타입을 직접 참조하지 않고 이름으로 찾는다.</para>
-    /// </summary>
-    private void TuneClock()
-    {
-        if (!fixClock)
-        {
-            return;
-        }
-
-        Component clock = FindByTypeName("GameTime");
-        if (clock == null)
-        {
-            Warn("씬에서 GameTime을 찾지 못해 시계를 손대지 못했습니다.");
-            return;
-        }
-
-        bool a = SetPrivate(clock, "endHour", EndHour);
-        bool b = SetPrivate(clock, "timeMultiplier", timeMultiplier);
-
-        // endHour만 바꾸면 소용없다 — GameTime은 Awake에서 endSeconds를 미리 계산해 두고
-        // Update는 그 값만 본다. 그리고 GameTime의 Awake는 이 하네스보다 먼저 끝나 있다
-        // (하네스는 AfterSceneLoad에서 생기므로 씬 오브젝트의 Awake 뒤다).
-        // 그래서 계산된 값을 같은 규칙으로 다시 써 준다. 2026-09-22 실측:
-        // 이 줄이 없을 때 하네스는 「종료 4시」라고 찍으면서 실제로는 6:00에 끝나고 있었다.
-        bool c = RecomputeEndSeconds(clock);
-
-        if (a || b)
-        {
-            Note("게임 시계(런타임) — 종료 " + (a && c ? EndHour + "시" : a ? "4시로 못 바꿈(endSeconds 실패)" : "그대로") +
-                 " · 배속 " + (b ? timeMultiplier.ToString("0") : "그대로"));
-        }
-    }
-
-    /// <summary><c>GameTime.endSeconds</c>를 <c>endHour</c>·<c>endMinute</c>에서 다시 계산한다. Awake의 식과 같아야 한다.</summary>
-    private bool RecomputeEndSeconds(Component clock)
-    {
-        FieldInfo endSec = FindField(clock.GetType(), "endSeconds");
-        FieldInfo startSec = FindField(clock.GetType(), "startSeconds");
-        FieldInfo hour = FindField(clock.GetType(), "endHour");
-        FieldInfo minute = FindField(clock.GetType(), "endMinute");
-        if (endSec == null || startSec == null || hour == null || minute == null)
-        {
-            WarnOnce("GameTime.endSeconds");
-            return false;
-        }
-
-        float start = System.Convert.ToSingle(startSec.GetValue(clock));
-        float end = (System.Convert.ToInt32(hour.GetValue(clock)) * 60 + System.Convert.ToInt32(minute.GetValue(clock))) * 60f;
-        if (end <= start)
-        {
-            end += 24f * 60f * 60f;   // 자정을 넘는 근무. Awake와 같은 처리다.
-        }
-
-        endSec.SetValue(clock, end);
-        return true;
     }
 
     // ─────────────────────────────── 표식 만들기 ───────────────────────────────

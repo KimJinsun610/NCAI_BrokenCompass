@@ -136,16 +136,22 @@ public sealed class DevModePanel : MonoBehaviour
 
     // ─────────────────────────────── 조작 ───────────────────────────────
 
+    /// <summary>
+    /// '-' 키가 눌렸는가. <b>입력 방식은 하나만 본다.</b>
+    /// 두 방식(Input System · 기존 Input Manager)을 함께 보면, 같은 한 번의 입력이 서로 다른 프레임에
+    /// 「눌림」으로 잡혀 열리자마자 닫히는 일이 생긴다. Input System이 있으면 그것만 보고, 없을 때만 기존 방식을 쓴다.
+    /// </summary>
     private static bool TogglePressed()
     {
 #if ENABLE_INPUT_SYSTEM
         Keyboard keyboard = Keyboard.current;
-        if (keyboard != null && (keyboard.minusKey.wasPressedThisFrame || keyboard.numpadMinusKey.wasPressedThisFrame)) return true;
+        if (keyboard != null) return keyboard.minusKey.wasPressedThisFrame || keyboard.numpadMinusKey.wasPressedThisFrame;
 #endif
 #if ENABLE_LEGACY_INPUT_MANAGER
-        if (Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.KeypadMinus)) return true;
-#endif
+        return Input.GetKeyDown(KeyCode.Minus) || Input.GetKeyDown(KeyCode.KeypadMinus);
+#else
         return false;
+#endif
     }
 
     private void SetShow(bool value)
@@ -473,6 +479,9 @@ public sealed class DevModePanel : MonoBehaviour
         DrawMessageSender();
 
         GUILayout.Space(8);
+        DrawMessageEvents();
+
+        GUILayout.Space(8);
         GUILayout.Label("Lee님의 판정 시스템을 연결할 자리입니다. 지금은 버튼만 있고 누르면 기록에 '연결 예정'만 남습니다.", small);
 
         GUILayout.BeginHorizontal();
@@ -569,6 +578,79 @@ public sealed class DevModePanel : MonoBehaviour
             {
                 alarm.Acknowledge();
                 Note("알람을 강제로 껐습니다.");
+            });
+        }
+
+        GUILayout.EndVertical();
+    }
+
+    /// <summary>
+    /// CSV(Resources/TabletMessageEvents.csv)에 적어 둔 메시지 연출 이벤트를 실행한다.
+    /// 첫 메시지는 바로, 그 뒤로는 CSV에 적은 간격마다 하나씩 태블릿에 들어온다.
+    /// </summary>
+    private void DrawMessageEvents()
+    {
+        GUILayout.BeginVertical(GUI.skin.box);
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("메시지 연출 이벤트 (CSV)", bold);
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("CSV 다시 읽기", GUILayout.Width(100)))
+        {
+            Later(() =>
+            {
+                TabletMessageEvents.Reload();
+                Note("CSV를 다시 읽었습니다. 이벤트 " + TabletMessageEvents.EventNames.Count + "개.");
+            });
+        }
+        GUILayout.EndHorizontal();
+
+        IReadOnlyList<string> names = TabletMessageEvents.EventNames;
+        if (names.Count == 0)
+        {
+            GUILayout.Label("이벤트가 없습니다. Resources/" + TabletMessageEvents.ResourceName + ".csv 를 확인하십시오.", small);
+        }
+
+        for (int i = 0; i < names.Count; i++)
+        {
+            string name = names[i];
+            TabletMessageEvents.EventData data = TabletMessageEvents.Get(name);
+            bool playing = TabletMessageEvents.IsPlaying(name);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(name + "  (" + data.Messages.Length + "개 · " + data.Interval.ToString("0.##") + "초)", small);
+
+            Color saved = GUI.backgroundColor;
+            GUI.backgroundColor = playing ? ViolateColor : ComplyColor;
+            if (GUILayout.Button(playing ? "멈춤" : "실행 ▶", GUILayout.Width(70), GUILayout.Height(22)))
+            {
+                if (playing)
+                {
+                    Later(() =>
+                    {
+                        TabletMessageEvents.Stop(name);
+                        Note("이벤트 멈춤: " + name);
+                    });
+                }
+                else
+                {
+                    Later(() =>
+                    {
+                        if (TabletMessageEvents.Play(name)) Note("이벤트 실행: " + name);
+                        else Note("이벤트를 실행하지 못했습니다: " + name + " (콘솔 경고 확인)");
+                    });
+                }
+            }
+            GUI.backgroundColor = saved;
+            GUILayout.EndHorizontal();
+        }
+
+        if (names.Count > 0 && GUILayout.Button("모두 멈춤", GUILayout.Height(22)))
+        {
+            Later(() =>
+            {
+                TabletMessageEvents.StopAll();
+                Note("진행 중인 이벤트를 모두 멈췄습니다.");
             });
         }
 

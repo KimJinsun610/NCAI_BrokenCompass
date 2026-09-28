@@ -11,8 +11,10 @@ using UnityEngine;
 ///
 /// <para><b>데이터</b> — 엑셀에서 「CSV UTF-8」로 저장해 <c>Resources/TabletMessageEvents.csv</c>에 둔다.</para>
 /// <code>
-///   A열 이벤트 이름 | B열 간격(초) | C열 메시지 (여러 개는 | 로 구분)
+///   A열 이벤트 이름 | B열 간격(초) | C열 메시지 (여러 개는 | 로 구분) | D열 글씨 색 (선택)
 ///   첫 줄은 제목 줄이라 읽지 않는다. 이벤트 이름이 빈 줄과 #으로 시작하는 줄도 건너뛴다.
+///   D열: hex 코드(#FF3030, FF3030, #FF303080). 하나만 적으면 모든 메시지에, | 로 여러 개 적으면
+///        메시지 순서대로 적용하고 모자라면 마지막 색을 이어 쓴다. 빈 칸은 기본색.
 /// </code>
 /// <para>
 /// 첫 메시지는 실행 즉시 보낸다. 그 뒤로는 <b>플레이어가 앞 메시지를 확인해야</b> 간격(B열)을 세기 시작하고,
@@ -47,6 +49,8 @@ public class TabletMessageEvents : MonoBehaviour
         public string Name;
         public float Interval;
         public string[] Messages;
+        /// <summary>메시지별 글씨 색(#RRGGBBAA). Messages와 길이가 같고, 빈 문자열은 기본색.</summary>
+        public string[] Colors;
     }
 
     private static Dictionary<string, EventData> table;
@@ -218,7 +222,7 @@ public class TabletMessageEvents : MonoBehaviour
             // 같은 id면 알람이 울리지 않으므로 보낼 때마다 새 id를 만든다.
             sendCounter++;
             lastId = "event." + data.Name + "." + sendCounter;
-            list.Add(lastId, data.Messages[i]);
+            list.Add(lastId, data.Messages[i], data.Colors[i]);
         }
 
         running.Remove(key);
@@ -294,9 +298,50 @@ public class TabletMessageEvents : MonoBehaviour
                 continue;
             }
 
-            table[name] = new EventData { Name = name, Interval = Mathf.Max(0f, interval), Messages = messages.ToArray() };
+            table[name] = new EventData
+            {
+                Name = name,
+                Interval = Mathf.Max(0f, interval),
+                Messages = messages.ToArray(),
+                Colors = ParseColors(Cell(row, 3), messages.Count, r + 1, name)
+            };
             order.Add(name);
         }
+    }
+
+    /// <summary>
+    /// D열의 글씨 색을 메시지 수만큼 펼친다. 하나면 전부에, 여러 개면 순서대로, 모자라면 마지막 색을 이어 쓴다.
+    /// 읽지 못한 값은 경고를 남기고 기본색(빈 문자열)으로 둔다.
+    /// </summary>
+    private static string[] ParseColors(string cell, int count, int line, string name)
+    {
+        var result = new string[count];
+        for (int i = 0; i < count; i++) result[i] = string.Empty;
+        if (cell.Length == 0 || count == 0) return result;
+
+        string[] parts = cell.Split(MessageSeparator);
+        string last = string.Empty;
+        for (int i = 0; i < count; i++)
+        {
+            if (i < parts.Length) last = NormalizeColor(parts[i].Trim(), line, name);
+            result[i] = last;
+        }
+        return result;
+    }
+
+    /// <summary>「FF3030」「#ff3030」「#FF303080」을 TMP가 읽는 「#FF3030FF」 꼴로 맞춘다. 빈 칸은 기본색.</summary>
+    private static string NormalizeColor(string value, int line, string name)
+    {
+        if (value.Length == 0) return string.Empty;
+
+        string hex = value.StartsWith("#") ? value : "#" + value;
+        if (ColorUtility.TryParseHtmlString(hex, out Color color))
+        {
+            return "#" + ColorUtility.ToHtmlStringRGBA(color);
+        }
+
+        Debug.LogWarning($"[TabletMessageEvents] {line}행 '{name}': 글씨 색 '{value}'을(를) 읽지 못해 기본색으로 씁니다. #RRGGBB 형식으로 적어 주십시오.");
+        return string.Empty;
     }
 
     private static string Cell(List<string> row, int index)

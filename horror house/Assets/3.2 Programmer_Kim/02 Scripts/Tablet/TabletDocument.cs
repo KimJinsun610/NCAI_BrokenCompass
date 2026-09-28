@@ -503,7 +503,15 @@ public class TabletDocument : MonoBehaviour
                 sb.Append("<color=").Append(messageTimeColor).Append('>').Append(time).Append("</color>  ");
             }
 
-            sb.Append(message.text).Append('\n');
+            // 글씨 색이 지정된 메시지는 본문만 그 색으로 칠한다(시각 색은 그대로).
+            if (!string.IsNullOrEmpty(message.color))
+            {
+                sb.Append("<color=").Append(message.color).Append('>').Append(message.text).Append("</color>\n");
+            }
+            else
+            {
+                sb.Append(message.text).Append('\n');
+            }
         }
         return sb.ToString();
     }

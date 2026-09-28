@@ -32,6 +32,8 @@ public class TabletMessageList : MonoBehaviour
         public int receivedMinutes = -1;
         [Tooltip("아직 읽지 않았는가. 메시지 탭을 열면 모두 읽음이 된다.")]
         public bool unread = true;
+        [Tooltip("본문 글씨 색(#RRGGBB 또는 #RRGGBBAA). 비워 두면 기본색.")]
+        public string color = string.Empty;
     }
 
     [Header("임시 항목")]
@@ -73,10 +75,23 @@ public class TabletMessageList : MonoBehaviour
     /// <summary>메시지를 받는다. 같은 id가 이미 있으면 본문만 고치고 알람은 울리지 않는다.</summary>
     public void Add(string id, string text, int receivedMinutes)
     {
+        Add(id, text, receivedMinutes, string.Empty);
+    }
+
+    /// <summary>글씨 색을 지정해 메시지를 받는다. 색은 #RRGGBB(AA), 비우면 기본색. 수신 시각은 게임 시계에서 읽는다.</summary>
+    public void Add(string id, string text, string color)
+    {
+        Add(id, text, CurrentGameMinutes(), color);
+    }
+
+    /// <summary>글씨 색을 지정해 메시지를 받는다. 같은 id가 이미 있으면 본문·색만 고치고 알람은 울리지 않는다.</summary>
+    public void Add(string id, string text, int receivedMinutes, string color)
+    {
         Message found = Find(id);
         if (found != null)
         {
             found.text = text;
+            found.color = color ?? string.Empty;
             Raise();
             return;
         }
@@ -86,7 +101,8 @@ public class TabletMessageList : MonoBehaviour
             id = id,
             text = text,
             receivedMinutes = receivedMinutes,
-            unread = true
+            unread = true,
+            color = color ?? string.Empty
         };
         messages.Add(message);
 

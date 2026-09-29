@@ -71,7 +71,8 @@ public class PlayResultRouter : MonoBehaviour
         if (finished) return;
         finished = true;
 
-        if (gameTime != null) gameTime.SetRunning(false);
+        // 자기 몫으로 멈춘다. 이 뒤에 태블릿을 닫아도 시계가 다시 흐르지 않는다.
+        if (gameTime != null) gameTime.Hold(this);
         foreach (FPController player in FindObjectsByType<FPController>(FindObjectsSortMode.None))
         {
             player.enabled = false;

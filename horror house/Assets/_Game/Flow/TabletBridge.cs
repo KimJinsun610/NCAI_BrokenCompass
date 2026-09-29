@@ -8,7 +8,8 @@ using UnityEngine.SceneManagement;
 ///
 /// <list type="bullet">
 /// <item><b>Tab 신호</b> — 태블릿을 들고 내릴 때 <see cref="JudgeSignal.Tab"/>을 보낸다.
-/// 정본 명세상 Tab 중에는 게임 시계와 판정 타이머가 멈춰야 하므로 <see cref="GameTime.SetRunning"/>도 함께 끈다.</item>
+/// 정본 명세는 Tab 중 게임 시계 정지지만, 2026-09-29 결정으로 <b>시계는 흐르게</b> 했다(<see cref="freezeClockWhileOpen"/> = false).
+/// 켜면 <see cref="GameTime.Hold"/>로 시계도 함께 멈춘다.</item>
 /// <item><b>역설 문자</b> — <see cref="EventBus.MessageSent"/>를 받아 태블릿 메시지함에 넣는다.
 /// 넣는 순간 <see cref="TabletAlarm"/>이 울린다(TabletMessageList.MessageReceived 경유).</item>
 /// <item><b>화면 글리치</b> — 역설 문자가 도착할 때만 잠깐 올린다.
@@ -23,7 +24,7 @@ using UnityEngine.SceneManagement;
 /// <para>
 /// <b>시계를 멈추는 방법이 둘인데 하나만 맞다.</b> <c>Time.timeScale = 0</c>을 쓰면
 /// <see cref="ViewmodelTime.Paused"/>가 참이 되어 태블릿 리그 전체(토글 키·스크롤·글리치·알람)가 같이 얼어붙는다.
-/// 그래서 시계만 멈추는 <see cref="GameTime.SetRunning"/>을 쓰고, 혹시 누군가 timeScale로 멈추더라도
+/// 그래서 시계만 멈추는 <see cref="GameTime.Hold"/>를 쓰고, 혹시 누군가 timeScale로 멈추더라도
 /// 태블릿은 계속 살아 있도록 <see cref="ViewmodelTime.ignoreTimeScale"/>을 Tab 동안 켜 둔다.
 /// </para>
 /// </summary>
@@ -46,11 +47,13 @@ public sealed class TabletBridge : MonoBehaviour
     [SerializeField] private TabletGlitch glitch;
     [SerializeField] private GameTime gameTime;
 
-    [Tooltip("Tab을 여는 동안 게임 시계를 멈춘다(기획서 Tab 규칙). 끄면 신호만 보내고 시계는 계속 흐른다.")]
-    [SerializeField] private bool freezeClockWhileOpen = true;
+    // 2026-09-29 김진선 결정: 태블릿을 보는 동안에도 인게임 시간은 흐른다. 모든 것이 멈추는 것은 일시정지(GamePause)뿐이다.
+    // 기획서 Tab 규칙(「Tab 중 게임 시계 정지」)과 다르므로, 되돌리려면 이 값만 true로 바꾼다.
+    [Tooltip("Tab을 여는 동안 게임 시계를 멈춘다(기획서 Tab 규칙). 끄면 신호만 보내고 시계는 계속 흐른다. 현재 결정은 끔.")]
+    [SerializeField] private bool freezeClockWhileOpen = false;
 
     private bool _wasOpen;
-    private bool _clockWasRunning;
+    private bool _clockHeld;
     private float _glitchUntil;
     private bool _glitchOn;
 
@@ -154,8 +157,10 @@ public sealed class TabletBridge : MonoBehaviour
 
         if (open)
         {
-            _clockWasRunning = gameTime.IsRunning;
-            if (_clockWasRunning) gameTime.SetRunning(false);
+            // 시계가 이미 (DayIntro 등으로) 멈춰 있어도 태블릿 몫으로 따로 멈춰 둔다.
+            // 「멈춰 있었으면 건너뛴다」로 두면, 태블릿을 연 채로 그 연출이 끝나는 순간 시계가 흘러 버린다.
+            gameTime.Hold(this);
+            _clockHeld = true;
 
             // 누군가 timeScale로 멈추더라도 태블릿은 계속 읽을 수 있어야 한다.
             ViewmodelTime.ignoreTimeScale = true;
@@ -166,14 +171,15 @@ public sealed class TabletBridge : MonoBehaviour
         }
     }
 
+    /// <summary>태블릿 몫만 푼다. 사망 화면 · DayIntro가 멈춰 둔 것은 그대로 남는다.</summary>
     private void RestoreClock()
     {
         ViewmodelTime.ignoreTimeScale = false;
 
-        if (gameTime == null || !_clockWasRunning) return;
+        if (gameTime == null || !_clockHeld) return;
 
-        _clockWasRunning = false;
-        if (!gameTime.IsEnded) gameTime.SetRunning(true);
+        _clockHeld = false;
+        gameTime.Release(this);
     }
 
     /// <summary>

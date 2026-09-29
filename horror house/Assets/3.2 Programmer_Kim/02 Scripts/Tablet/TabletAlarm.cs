@@ -32,6 +32,8 @@ public class TabletAlarm : MonoBehaviour
     [Header("알람 화면")]
     [Tooltip("알람이 울릴 때 보여 줄 문구.")]
     public string alarmMessage = "새 메시지 도착";
+    [Tooltip("확인하지 않은 메시지 개수를 문구 뒤에 붙이는 형식. {0} = 개수. 비우면 붙이지 않는다.")]
+    public string countFormat = " ({0})";
     [Tooltip("깜빡이는 주기(초).")]
     public float blinkSeconds = 0.7f;
     [Tooltip("알람 중에는 태블릿을 내려놔도 화면을 켜 둔다.")]
@@ -61,8 +63,15 @@ public class TabletAlarm : MonoBehaviour
     /// <summary>지금 알람이 울리고 있는가.</summary>
     public bool IsActive { get { return _active; } }
 
+    /// <summary>알람이 울린 뒤 확인하기 전까지 도착한 메시지 수. 확인하면 0이 된다.</summary>
+    public int PendingCount { get { return _pending; } }
+
+    /// <summary>알람 상태(울림 · 개수)가 바뀔 때. 탭 줄 강조처럼 알람을 따라 그리는 쪽이 듣는다.</summary>
+    public event System.Action StateChanged;
+
     private ViewmodelSway _sway;
     private bool _active;
+    private int _pending;
     private float _clock;
     private float _buzzStartedAt;
 
@@ -88,12 +97,20 @@ public class TabletAlarm : MonoBehaviour
 
     private void OnEnable()
     {
-        if (messageList != null) messageList.MessageReceived += OnMessageReceived;
+        if (messageList != null)
+        {
+            messageList.MessageReceived += OnMessageReceived;
+            messageList.Changed += OnListChanged;
+        }
     }
 
     private void OnDisable()
     {
-        if (messageList != null) messageList.MessageReceived -= OnMessageReceived;
+        if (messageList != null)
+        {
+            messageList.MessageReceived -= OnMessageReceived;
+            messageList.Changed -= OnListChanged;
+        }
         StopAll();
     }
 
@@ -104,6 +121,7 @@ public class TabletAlarm : MonoBehaviour
 
         _active = true;
         _buzzStartedAt = _clock;
+        RaiseStateChanged();
 
         if (keepScreenOn && tablet != null) tablet.ForceScreenOn = true;
 
@@ -122,12 +140,39 @@ public class TabletAlarm : MonoBehaviour
         if (!_active) return;
 
         _active = false;
+        _pending = 0;
         StopAll();
+        RaiseStateChanged();
     }
 
     private void OnMessageReceived(TabletMessageList.Message message)
     {
-        Raise();
+        _pending++;
+        Raise();                       // 이미 울리는 중이면 개수만 는다
+        if (_active) RaiseStateChanged();
+    }
+
+    /// <summary>
+    /// 목록이 비워지거나 줄면(메시지 전부 지움 등) 개수도 맞춘다. 목록에 없는 메시지를 세면 안 된다.
+    /// </summary>
+    private void OnListChanged()
+    {
+        if (messageList == null || _pending <= messageList.Count) return;
+
+        _pending = messageList.Count;
+        RaiseStateChanged();
+    }
+
+    private void RaiseStateChanged()
+    {
+        if (StateChanged != null) StateChanged();
+    }
+
+    /// <summary>알람 줄에 띄울 글자. 개수가 있으면 「새 메시지 도착 (3)」처럼 붙인다.</summary>
+    private string AlarmLabel()
+    {
+        if (_pending <= 0 || string.IsNullOrEmpty(countFormat)) return alarmMessage;
+        return alarmMessage + string.Format(countFormat, _pending);
     }
 
     private void Update()
@@ -199,7 +244,11 @@ public class TabletAlarm : MonoBehaviour
     {
         if (alarmText != null)
         {
-            if (show && alarmText.text != alarmMessage) alarmText.text = alarmMessage;
+            if (show)
+            {
+                string label = AlarmLabel();
+                if (alarmText.text != label) alarmText.text = label;
+            }
             if (alarmText.gameObject.activeSelf != show) alarmText.gameObject.SetActive(show);
         }
 

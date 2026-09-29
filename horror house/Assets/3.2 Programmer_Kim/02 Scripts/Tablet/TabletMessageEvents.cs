@@ -12,15 +12,20 @@ using UnityEngine;
 /// <para><b>데이터</b> — 엑셀에서 「CSV UTF-8」로 저장해 <c>Resources/TabletMessageEvents.csv</c>에 둔다.</para>
 /// <code>
 ///   A열 이벤트 이름 | B열 간격(초) | C열 메시지 (여러 개는 | 로 구분) | D열 글씨 색 (선택)
+///   E열 반복(인게임 분, 선택) | F열 확인 대기(선택) | G열 끝나면(선택)
 ///   첫 줄은 제목 줄이라 읽지 않는다. 이벤트 이름이 빈 줄과 #으로 시작하는 줄도 건너뛴다.
 ///   D열: hex 코드(#FF3030, FF3030, #FF303080). 하나만 적으면 모든 메시지에, | 로 여러 개 적으면
 ///        메시지 순서대로 적용하고 모자라면 마지막 색을 이어 쓴다. 빈 칸은 기본색.
+///   E열: 빈 칸 · 0이면 메시지를 한 번씩만 보낸다. 값이 있으면 그 인게임 시간(분) 동안 메시지를 처음부터 다시 돌려 보낸다.
+///   F열: 빈 칸이면 앞 메시지를 확인해야 다음이 온다(기존 동작). N이면 확인과 상관없이 간격마다 보낸다.
+///   G열: 끝까지 간 뒤 할 일. clear = 메시지 전부 지움 · 이벤트 이름 = 그 이벤트 실행 · clear>이벤트 이름 = 둘 다.
+///        중간에 멈추면(<see cref="Stop"/>) 하지 않는다.
 /// </code>
 /// <para>
 /// 첫 메시지는 실행 즉시 보낸다. 그 뒤로는 <b>플레이어가 앞 메시지를 확인해야</b> 간격(B열)을 세기 시작하고,
-/// 간격이 지나면 다음 메시지를 보낸다. 확인하지 않으면 다음 메시지는 오지 않는다.
+/// 간격이 지나면 다음 메시지를 보낸다. 확인하지 않으면 다음 메시지는 오지 않는다(F열이 N이면 기다리지 않는다).
 /// 「확인」은 알람이 꺼지는 조건과 같다 — 태블릿을 들고 메시지 탭을 보고 있거나, 그 메시지가 읽음 처리됐을 때.
-/// 간격은 게임 시간이라 일시정지 중에는 멈춘다.
+/// 간격(B열)은 현실 초, 반복(E열)은 인게임 분이다. 둘 다 일시정지 중에는 멈춘다.
 /// </para>
 ///
 /// <para><b>실행</b></para>
@@ -43,6 +48,15 @@ public class TabletMessageEvents : MonoBehaviour
     /// <summary>한 칸에 적은 메시지들을 나누는 기호.</summary>
     public const char MessageSeparator = '|';
 
+    /// <summary>G열에서 「메시지 전부 지움」을 뜻하는 말.</summary>
+    public const string ClearCommand = "clear";
+
+    /// <summary>G열에서 지우기와 다음 이벤트를 잇는 기호(clear>이벤트).</summary>
+    public const char ThenSeparator = '>';
+
+    /// <summary>반복(E열) 중에는 간격이 이보다 짧을 수 없다. 0이면 한 프레임에 메시지가 쏟아진다.</summary>
+    public const float MinRepeatInterval = 0.2f;
+
     /// <summary>CSV 한 줄 = 이벤트 하나.</summary>
     public sealed class EventData
     {
@@ -51,7 +65,20 @@ public class TabletMessageEvents : MonoBehaviour
         public string[] Messages;
         /// <summary>메시지별 글씨 색(#RRGGBBAA). Messages와 길이가 같고, 빈 문자열은 기본색.</summary>
         public string[] Colors;
+        /// <summary>반복할 인게임 시간(분). 0이면 한 번씩만 보낸다.</summary>
+        public float RepeatMinutes;
+        /// <summary>앞 메시지를 확인해야 다음을 보내는가.</summary>
+        public bool WaitForRead = true;
+        /// <summary>끝까지 간 뒤 메시지를 전부 지우는가.</summary>
+        public bool ClearOnEnd;
+        /// <summary>끝까지 간 뒤 이어서 실행할 이벤트. 없으면 빈 문자열.</summary>
+        public string Next = string.Empty;
     }
+
+    /// <summary>
+    /// 이벤트가 <b>끝까지</b> 갔을 때(G열 처리 직전) 이벤트 이름과 함께 발생한다. <see cref="Stop"/>으로 멈춘 경우는 오지 않는다.
+    /// </summary>
+    public static event Action<string> Finished;
 
     private static Dictionary<string, EventData> table;
     private static List<string> order;
@@ -68,6 +95,7 @@ public class TabletMessageEvents : MonoBehaviour
         // 에디터에서 CSV를 고치고 다시 플레이하면 새로 읽도록 비운다.
         table = null;
         order = null;
+        Finished = null;
     }
 
     // ─────────────────────────────── 실행 ───────────────────────────────
@@ -207,25 +235,50 @@ public class TabletMessageEvents : MonoBehaviour
 
     private IEnumerator Run(string key, EventData data)
     {
+        bool repeat = data.RepeatMinutes > 0f;
+        float elapsedMinutes = 0f;   // 반복(E열)은 첫 메시지를 보낸 순간부터 센다
         string lastId = null;
 
-        for (int i = 0; i < data.Messages.Length; i++)
+        for (int i = 0; repeat || i < data.Messages.Length; i++)
         {
             if (lastId != null)
             {
-                // 앞 메시지를 확인할 때까지 기다린 뒤, 거기서부터 간격을 센다.
-                // WaitForSeconds는 게임 시간이라 일시정지 중에는 멈춘다.
-                while (!IsRead(lastId)) yield return null;
-                if (data.Interval > 0f) yield return new WaitForSeconds(data.Interval);
+                // 앞 메시지를 확인할 때까지 기다린 뒤(F열), 거기서부터 간격을 센다.
+                // 기다리는 동안에도 반복 시간은 흐르므로, 매 프레임 끝났는지 본다.
+                while (data.WaitForRead && !IsRead(lastId))
+                {
+                    yield return null;
+                    elapsedMinutes += GameMinutes.Delta;
+                    if (repeat && elapsedMinutes >= data.RepeatMinutes) break;
+                }
+
+                // deltaTime은 게임 시간이라 일시정지 중에는 멈춘다.
+                float waited = 0f;
+                while (waited < data.Interval && !(repeat && elapsedMinutes >= data.RepeatMinutes))
+                {
+                    yield return null;
+                    waited += Time.deltaTime;
+                    elapsedMinutes += GameMinutes.Delta;
+                }
+
+                if (repeat && elapsedMinutes >= data.RepeatMinutes) break;
             }
 
             // 같은 id면 알람이 울리지 않으므로 보낼 때마다 새 id를 만든다.
+            int index = i % data.Messages.Length;
             sendCounter++;
             lastId = "event." + data.Name + "." + sendCounter;
-            list.Add(lastId, data.Messages[i], data.Colors[i]);
+            list.Add(lastId, data.Messages[index], data.Colors[index]);
         }
 
         running.Remove(key);
+
+        // 받는 쪽이 터져도 G열(지우기 · 다음 이벤트)은 그대로 한다.
+        try { Finished?.Invoke(data.Name); }
+        catch (Exception e) { Debug.LogException(e); }
+
+        if (data.ClearOnEnd) list.Clear();
+        if (data.Next.Length > 0) PlayEvent(data.Next);
     }
 
     /// <summary>
@@ -298,14 +351,74 @@ public class TabletMessageEvents : MonoBehaviour
                 continue;
             }
 
-            table[name] = new EventData
+            var data = new EventData
             {
                 Name = name,
                 Interval = Mathf.Max(0f, interval),
                 Messages = messages.ToArray(),
-                Colors = ParseColors(Cell(row, 3), messages.Count, r + 1, name)
+                Colors = ParseColors(Cell(row, 3), messages.Count, r + 1, name),
+                RepeatMinutes = ParseRepeat(Cell(row, 4), r + 1, name),
+                WaitForRead = ParseWaitForRead(Cell(row, 5))
             };
+            ParseThen(Cell(row, 6), data, r + 1);
+
+            if (data.RepeatMinutes > 0f && data.Interval < MinRepeatInterval)
+            {
+                Debug.LogWarning($"[TabletMessageEvents] {r + 1}행 '{name}': 반복 중에는 간격이 {MinRepeatInterval}초보다 짧을 수 없어 {MinRepeatInterval}초로 씁니다.");
+                data.Interval = MinRepeatInterval;
+            }
+
+            table[name] = data;
             order.Add(name);
+        }
+    }
+
+    /// <summary>E열 반복 시간(인게임 분). 빈 칸은 0(반복 안 함).</summary>
+    private static float ParseRepeat(string cell, int line, string name)
+    {
+        if (cell.Length == 0) return 0f;
+        if (float.TryParse(cell, NumberStyles.Float, CultureInfo.InvariantCulture, out float minutes)) return Mathf.Max(0f, minutes);
+
+        Debug.LogWarning($"[TabletMessageEvents] {line}행 '{name}': 반복 '{cell}'을(를) 숫자로 읽지 못해 반복하지 않습니다.");
+        return 0f;
+    }
+
+    /// <summary>F열 확인 대기. N · 아니오 · 0 · false면 기다리지 않는다. 빈 칸은 기다린다(기존 동작).</summary>
+    private static bool ParseWaitForRead(string cell)
+    {
+        switch (cell.ToLowerInvariant())
+        {
+            case "n":
+            case "no":
+            case "false":
+            case "0":
+            case "아니오":
+            case "x":
+                return false;
+            default:
+                return true;
+        }
+    }
+
+    /// <summary>G열 「끝나면」. clear · 이벤트 이름 · clear>이벤트 이름.</summary>
+    private static void ParseThen(string cell, EventData data, int line)
+    {
+        if (cell.Length == 0) return;
+
+        foreach (string part in cell.Split(ThenSeparator))
+        {
+            string word = part.Trim();
+            if (word.Length == 0) continue;
+
+            if (string.Equals(word, ClearCommand, StringComparison.OrdinalIgnoreCase)) data.ClearOnEnd = true;
+            else if (data.Next.Length == 0) data.Next = word;
+            else Debug.LogWarning($"[TabletMessageEvents] {line}행 '{data.Name}': 다음 이벤트는 하나만 적을 수 있어 '{word}'은(는) 무시합니다.");
+        }
+
+        if (string.Equals(data.Next, data.Name, StringComparison.Ordinal))
+        {
+            Debug.LogWarning($"[TabletMessageEvents] {line}행 '{data.Name}': 자기 자신을 다음 이벤트로 적으면 끝나지 않아 무시합니다. 계속 돌리려면 E열 반복을 쓰십시오.");
+            data.Next = string.Empty;
         }
     }
 

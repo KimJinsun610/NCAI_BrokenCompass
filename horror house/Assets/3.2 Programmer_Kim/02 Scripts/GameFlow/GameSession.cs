@@ -15,9 +15,16 @@ public static class GameSession
 
     public static DayResult LastResult { get; private set; }
 
+    /// <summary>
+    /// 회차 번호. <see cref="StartNewRun"/>마다 1씩 오른다. 「회차에 한 번」 연출이 새 회차인지 가릴 때 쓴다.
+    /// 메인을 거치지 않고 Play 씬을 바로 켜면 0이다.
+    /// </summary>
+    public static int RunNumber { get; private set; }
+
     /// <summary>새 회차 시작 — 메인의 시작 버튼, 사망 후 "처음부터"</summary>
     public static void StartNewRun()
     {
+        RunNumber++;
         CurrentDay = 1;
         NightDuty.NightRun.StartNewRun(); // 판정 코어의 회차(4축)도 함께 새로 시작
         ClearResult();
@@ -53,6 +60,7 @@ public static class GameSession
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStaticState()
     {
+        RunNumber = 0;
         CurrentDay = 1;
         ClearResult();
     }

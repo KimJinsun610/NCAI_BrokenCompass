@@ -58,22 +58,7 @@ public class HorrorGazeTrigger : MonoBehaviour
 
     private bool IsLooking()
     {
-        Camera cam = Camera.main;
-        if (cam == null) return false;
-
-        Vector3 from = cam.transform.position;
-        Vector3 to = lookPoint.position;
-        Vector3 dir = to - from;
-
-        if (dir.magnitude > maxDistance) return false;
-        if (Vector3.Angle(cam.transform.forward, dir) > maxAngle) return false;
-
-        if (Physics.Linecast(from, to, out RaycastHit hit, ~0, QueryTriggerInteraction.Ignore))
-        {
-            return lookObject != null && hit.collider.transform.IsChildOf(lookObject);
-        }
-
-        return true;
+        return HorrorGaze.IsLooking(lookPoint, lookObject, maxAngle, maxDistance);
     }
 
     private void OnDrawGizmosSelected()

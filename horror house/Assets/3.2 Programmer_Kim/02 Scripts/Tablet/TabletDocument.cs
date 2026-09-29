@@ -87,6 +87,10 @@ public class TabletDocument : MonoBehaviour
     public TabletMessageList messageList;
     [Tooltip("메시지 시각을 적을 색(16진수).")]
     public string messageTimeColor = "#738C99";
+    [Tooltip("확인하지 않은 메시지가 있을 때 탭 줄의 「메시지」를 칠할 색. 알람 문구와 같은 색을 쓴다.")]
+    public string messageAlertColor = "#F27359";
+    [Tooltip("알람. 비워 두면 부모에서 찾는다. 알람이 울리는 동안 「메시지」 탭을 강조한다.")]
+    public TabletAlarm alarm;
 
     [Tooltip("수칙 아래에 붙는 조작 안내의 색. 수칙 본문과 섞이지 않게 한 단 낮춘 색을 쓴다.")]
     public string howToColor = "#7FA6B8";
@@ -150,10 +154,12 @@ public class TabletDocument : MonoBehaviour
         if (messageList == null) messageList = GetComponent<TabletMessageList>();
         if (messageList == null) messageList = GetComponentInParent<TabletMessageList>();
         if (gameTime == null) gameTime = FindAnyObjectByType<GameTime>();
+        if (alarm == null) alarm = GetComponentInParent<TabletAlarm>();
     }
 
     private void OnEnable()
     {
+        if (alarm != null) alarm.StateChanged += Render;
         // 화면을 켤 때마다 첫 탭(근무 수칙)으로 되돌린다.
         // 태블릿을 들 때마다 화면이 꺼졌다 켜지므로, 열 때는 언제나 근무 수칙이 먼저 보인다.
         _tab = TabOrder[0];
@@ -167,6 +173,7 @@ public class TabletDocument : MonoBehaviour
     private void OnDisable()
     {
         if (messageList != null) messageList.Changed -= Render;
+        if (alarm != null) alarm.StateChanged -= Render;
     }
 
     private void Update()
@@ -389,12 +396,16 @@ public class TabletDocument : MonoBehaviour
             : day + "   " + range + "   " + points;
     }
 
-    /// <summary>보고 있는 탭을 밝게, 나머지는 흐리게 적는다. 안 읽은 메시지가 있으면 점을 붙인다.</summary>
+    /// <summary>
+    /// 보고 있는 탭을 밝게, 나머지는 흐리게 적는다. 안 읽은 메시지가 있으면 점을 붙인다.
+    /// 확인하지 않은 메시지가 있으면 「메시지」를 알람 색 + 굵게 칠해 흐린 탭 사이에서 튀게 한다.
+    /// </summary>
     private void RenderTabLine()
     {
         if (tabText == null) return;
 
         bool unread = messageList != null && messageList.HasUnread;
+        bool alert = IsMessageAlert(unread);
 
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
         for (int i = 0; i < TabOrder.Length; i++)
@@ -404,10 +415,24 @@ public class TabletDocument : MonoBehaviour
             if (tab == Tab.Messages && unread) label += " ●";
 
             if (sb.Length > 0) sb.Append("  ");
-            if (tab == _tab) sb.Append("<b>").Append(label).Append("</b>");
+            if (tab == Tab.Messages && alert)
+            {
+                sb.Append("<color=").Append(messageAlertColor).Append("><b>").Append(label).Append("</b></color>");
+            }
+            else if (tab == _tab) sb.Append("<b>").Append(label).Append("</b>");
             else sb.Append("<color=#4C5D66>").Append(label).Append("</color>");
         }
         tabText.text = sb.ToString();
+    }
+
+    /// <summary>
+    /// 「메시지」를 강조할 때인가 — 알람이 울리는 중이거나, 다른 탭을 보는 동안 안 읽은 메시지가 있을 때.
+    /// 메시지 탭을 보고 있으면 이미 읽는 중이라 강조하지 않는다(그 탭을 보는 중에 온 메시지는 읽음 표시가 늦게 붙는다).
+    /// </summary>
+    private bool IsMessageAlert(bool unread)
+    {
+        if (alarm != null && alarm.IsActive) return true;
+        return unread && _tab != Tab.Messages;
     }
 
     /// <summary>

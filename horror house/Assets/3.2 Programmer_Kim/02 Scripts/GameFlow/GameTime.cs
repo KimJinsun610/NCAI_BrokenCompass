@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -6,7 +7,7 @@ using UnityEngine;
 /// 기본값: 02:00 → 05:00, 현실보다 30배 빠르게 (인게임 1시간 = 현실 2분, 하루 = 현실 6분).
 /// 실제 값은 PlaySystems 프리팹에 저장된 값이 우선한다.
 /// Time.deltaTime 기준이라 일시정지(timeScale 0) 중에는 시계도 멈춘다.
-/// DayIntro 같은 연출이 SetRunning(false)로 잠시 멈춰 둘 수 있다.
+/// DayIntro · 태블릿 · 사망 화면이 각자 Hold(this)로 멈춰 두고 Release(this)로 푼다 — 모두 풀어야 다시 흐른다.
 /// </summary>
 public class GameTime : MonoBehaviour
 {
@@ -38,8 +39,8 @@ public class GameTime : MonoBehaviour
 
     public bool IsEnded => ended;
 
-    /// <summary>시계가 흐르는 중인지. 연출 등으로 멈춰 두면 false.</summary>
-    public bool IsRunning => running;
+    /// <summary>시계가 흐르는 중인지. 누구든 <see cref="Hold"/>로 멈춰 두었으면 false.</summary>
+    public bool IsRunning => holds.Count == 0;
 
     /// <summary>현실 1초 동안 흐르는 게임 시간(초)</summary>
     public float TimeMultiplier => timeMultiplier;
@@ -61,7 +62,14 @@ public class GameTime : MonoBehaviour
     private float endSeconds;
     private int lastShownMinute = -1;
     private bool ended;
-    private bool running = true;
+
+    // 시계를 멈춰 둔 주체들. 하나라도 남아 있으면 멈춘다.
+    // bool 하나를 여럿이 켜고 끄면 마지막에 쓴 쪽이 이긴다 — DayIntro가 끝나며 켠 순간
+    // 태블릿이 열려 있어도 시계가 흘렀다(2026-09-29 재현). 그래서 각자 자기 몫만 풀게 한다.
+    private readonly HashSet<object> holds = new HashSet<object>();
+
+    // SetRunning(bool)을 쓰는 옛 호출부의 몫. 서로 구분하지 못하므로 새 코드는 Hold/Release를 쓴다.
+    private static readonly object LegacyHold = new object();
 
     private void Awake()
     {
@@ -78,7 +86,7 @@ public class GameTime : MonoBehaviour
 
     private void Update()
     {
-        if (ended || !running) return;
+        if (ended || holds.Count > 0) return;
 
         currentSeconds += Time.deltaTime * timeMultiplier;
         if (currentSeconds >= endSeconds)
@@ -93,10 +101,29 @@ public class GameTime : MonoBehaviour
         RefreshText(false);
     }
 
-    /// <summary>시계를 멈추거나(false) 다시 흐르게(true) 한다.</summary>
+    /// <summary>
+    /// <paramref name="owner"/> 몫으로 시계를 멈춘다. 같은 주체가 여러 번 불러도 한 번으로 친다.
+    /// 다른 주체가 멈춰 둔 것은 건드리지 않는다 — 모든 주체가 <see cref="Release"/>해야 다시 흐른다.
+    /// </summary>
+    public void Hold(object owner)
+    {
+        if (owner != null) holds.Add(owner);
+    }
+
+    /// <summary><paramref name="owner"/>가 멈춰 둔 몫을 푼다. 멈춘 적이 없으면 아무 일도 없다.</summary>
+    public void Release(object owner)
+    {
+        if (owner != null) holds.Remove(owner);
+    }
+
+    /// <summary>
+    /// 옛 방식: 시계를 멈추거나(false) 다시 흐르게(true) 한다. 호출부끼리 구분하지 못해
+    /// 서로의 정지를 풀어 버릴 수 있으므로 새 코드에서는 <see cref="Hold"/>/<see cref="Release"/>를 쓴다.
+    /// </summary>
     public void SetRunning(bool value)
     {
-        running = value;
+        if (value) Release(LegacyHold);
+        else Hold(LegacyHold);
     }
 
     /// <summary>테스트용: 다음 프레임에 종료 시각으로 건너뛴다 (정상 종료 경로를 그대로 탄다).</summary>

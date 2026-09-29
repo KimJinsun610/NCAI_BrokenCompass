@@ -54,7 +54,7 @@ public class DayIntro : MonoBehaviour
 
         // 다른 오브젝트의 Update가 돌기 전에 멈춰 둔다
         if (gameTime == null) gameTime = FindAnyObjectByType<GameTime>();
-        if (gameTime != null) gameTime.SetRunning(false);
+        if (gameTime != null) gameTime.Hold(this);
 
         if (lockPlayer)
         {
@@ -90,7 +90,8 @@ public class DayIntro : MonoBehaviour
         }
         lockedPlayers.Clear();
 
-        if (gameTime != null) gameTime.SetRunning(true);
+        // 자기 몫만 푼다. 연출 도중 태블릿을 열었으면 시계는 태블릿을 닫을 때까지 계속 멈춰 있다.
+        if (gameTime != null) gameTime.Release(this);
 
         IsPlaying = false;
 

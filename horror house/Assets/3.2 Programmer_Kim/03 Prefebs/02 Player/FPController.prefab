@@ -172,6 +172,7 @@ GameObject:
   - component: {fileID: 3918401188593456985}
   - component: {fileID: 5918593991904231597}
   - component: {fileID: 8282405189132691889}
+  - component: {fileID: 5375907100382350657}
   m_Layer: 0
   m_Name: FPController
   m_TagString: Untagged
@@ -270,7 +271,27 @@ MonoBehaviour:
   jump: 32
   sight: 0
   sightPrefab: {fileID: 0}
+  documentUI: {fileID: 0}
+  toggleDocumentUI: 9
+  pauseUI: {fileID: 0}
+  togglePause: 27
   hideCursor: 1
+--- !u!114 &5375907100382350657
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7211598377816875816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ece0dcbaa80cc64ebb7661778b830c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlashlightSound
+  onClip: {fileID: 8300000, guid: e76bf7b256420464fb4f3c513775b456, type: 3}
+  offClip: {fileID: 8300000, guid: 14efff7b74fcdd145995164f8009263e, type: 3}
+  volume: 0.8
+  audioSource: {fileID: 0}
 --- !u!1001 &567076255461659194
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -391,7 +412,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 566296604828198966}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 24ff1feaacba2174388ea3962eeef6eb, type: 3}
   m_Name: 

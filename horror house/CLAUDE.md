@@ -802,6 +802,8 @@ Play 씬 로드 ─ GameTime이 있으면 NightRunDriver 자동 생성 (Assets/_
 22. **`JudgeWorld.FlashlightOn`은 매 밤 `false`로 시작합니다.** 손전등을 **켜 둔 채 밤이 시작되면, 초기 1회를 보내지 않는 한 코어는 꺼진 것으로 압니다.** `Flashlight(isOn)`은 상태가 바뀔 때마다(에지) **그리고 밤 시작 직후 현재 상태 1회**를 보내야 합니다. 유예 2초는 코어가 세므로 센서 쪽에 타이머를 만들지 마십시오.
 23. **런타임에 만든 오브젝트에 `HideFlags.DontSave`를 붙이지 마십시오.** 이름과 정반대로 동작합니다 — 씬이 내려갈 때 **파괴를 면해** 에디터 메모리에 남고, 플레이할 때마다 쌓입니다(2026-09-22 실측: 두 번 플레이에 잔재 80개, 다음 플레이에서 중복 인스턴스 2개). 런타임 생성물은 hideFlags를 **건드리지 않는 것**이 맞습니다: 플레이 종료 시 씬과 함께 사라지고, 플레이 중에는 씬 저장 자체가 막혀 있어 씬 파일이 더러워질 일이 없습니다. 잔재가 이미 있으면 `Resources.FindObjectsOfTypeAll<GameObject>()`로 이름을 훑어 `DestroyImmediate`로 지웁니다(`FindAnyObjectByType`로는 안 잡힙니다 — §3.3-4).
 
+23′. **손전등은 `FlashlightRelay` 하나만 켜고 끕니다(2026-09-29).** 벤더 `Flashlight.cs`가 같은 오브젝트(`FPController/Camera/Flashlight_ON_FirstPerson`)에서 같은 F키로 `Light`를 뒤집고 있어 **두 번에 한 번만 켜졌고**, 판정은 「켜짐」인데 화면은 어두운 상태가 생겼습니다. 벤더 컴포넌트는 `FPController.prefab`에서 **꺼 두었습니다**(삭제하지 않음). 근본 원인은 자동 설치 순서입니다 — `AddComponent` 순간 `OnEnable`이 `flashlightRoot`가 채워지기 **전에** 돌아 플레이어 아래 Light를 전부 끕니다. 그래서 `ApplyToWorld`가 **켤 때 안쪽 Light도 함께 켭니다.** 벤더 스크립트를 다시 켜지 마십시오. 딸깍 소리는 `FlashlightSound`(클라이언트, `FPController` 루트)가 `FlashlightRelay.Active.IsOn` 변화를 보고 냅니다.
+
 ### 5.6 일시정지 — 시간만 멈추면 소리가 남습니다 (2026-09-23)
 
 **규칙: 일시정지하면 일시정지 메뉴를 뺀 모든 게임 플레이가 멈춥니다. 시간뿐 아니라 소리도.**

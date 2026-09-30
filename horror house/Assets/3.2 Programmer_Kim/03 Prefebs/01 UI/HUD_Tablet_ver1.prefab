@@ -81,22 +81,14 @@ MonoBehaviour:
   disclaimer: "\uBCF8 \uC9C0\uCE68 \uBBF8\uC900\uC218\uB85C \uBC1C\uC0DD\uD55C \uC0AC\uACE0
     \uBC0F \uC2EC\uB9AC\uC801 \uC190\uC0C1\uC5D0 \uB300\uD574 \uD68C\uC0AC\uB294
     \uCC45\uC784\uC9C0\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
-  safetyNotices:
-  - "\uADFC\uBB34 \uC911\uC5D0\uB294 \uC9C0\uAE09\uB41C \uD0DC\uBE14\uB9BF\uC744
-    \uD56D\uC0C1 \uD734\uB300\uD558\uC2ED\uC2DC\uC624."
-  - "\uC815\uC804 \uC2DC \uC190\uC804\uB4F1\uC744 \uC0AC\uC6A9\uD558\uACE0, \uBC30\uC804\uBC18\uC744
-    \uC784\uC758\uB85C \uC870\uC791\uD558\uC9C0 \uB9C8\uC2ED\uC2DC\uC624."
-  - "\uC2DC\uC124 \uB0B4 \uC774\uC0C1\uC744 \uBC1C\uACAC\uD558\uBA74 \uADFC\uBB34
-    \uC218\uCE59\uC5D0 \uB530\uB77C \uC870\uCE58\uD558\uC2ED\uC2DC\uC624."
-  - "\uBE44\uC0C1 \uC0C1\uD669\uC5D0\uB294 \uACBD\uBE44\uC2E4\uB85C \uBCF5\uADC0\uD558\uC2ED\uC2DC\uC624."
-  - "\uBCF8 \uC548\uB0B4\uB294 \uADFC\uBB34 \uC218\uCE59\uC5D0 \uC6B0\uC120\uD558\uC9C0
-    \uC54A\uC2B5\uB2C8\uB2E4."
   deckTable: {fileID: 0}
   useGameSessionDay: 1
   previewDay: 1
   gameTime: {fileID: 0}
   messageList: {fileID: 5732383902102684654}
   messageTimeColor: '#738C99'
+  messageAlertColor: '#F27359'
+  alarm: {fileID: 0}
   howToColor: '#7FA6B8'
   switchTabKey: 113
   scrollDownKey: 274
@@ -1403,14 +1395,17 @@ MonoBehaviour:
     text: "\uBCF5\uB3C4\uB97C \uC810\uAC80\uD558\uC2ED\uC2DC\uC624"
     receivedMinutes: -1
     unread: 1
+    color: 
   - id: patrol.class11
     text: "1-1 \uAD50\uC2E4\uC744 \uC810\uAC80\uD558\uC2ED\uC2DC\uC624"
     receivedMinutes: -1
     unread: 1
+    color: 
   - id: check.light
     text: "\uC18C\uB4F1 \uC0C1\uD0DC\uB97C \uD655\uC778\uD558\uC2ED\uC2DC\uC624"
     receivedMinutes: -1
     unread: 1
+    color: 
 --- !u!82 &2218645924055311511
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1526,6 +1521,7 @@ MonoBehaviour:
   alarmText: {fileID: 6105175449376683939}
   hideWhileAlarm: []
   alarmMessage: "\uC0C8 \uBA54\uC2DC\uC9C0 \uB3C4\uCC29"
+  countFormat: ' ({0})'
   blinkSeconds: 0.7
   keepScreenOn: 1
   shakePosition: 0.006
@@ -1537,6 +1533,8 @@ MonoBehaviour:
   audioSource: {fileID: 2218645924055311511}
   volume: 0.6
   loopSound: 1
+  messageClip: {fileID: 8300000, guid: facc83c3e248a66478cfd08e5f1fdc0e, type: 3}
+  messageVolume: 0.7
 --- !u!1 &5398940748433174745
 GameObject:
   m_ObjectHideFlags: 0

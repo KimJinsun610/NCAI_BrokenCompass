@@ -226,6 +226,19 @@ public sealed class FlashlightRelay : MonoBehaviour
         if (flashlightRoot != null)
         {
             flashlightRoot.SetActive(on);
+
+            // 켤 때는 안쪽 Light도 반드시 켠다. 자동 설치(EnsureFor)와 하네스는 AddComponent 직후에 flashlightRoot를
+            // 채우는데, 그 전에 OnEnable이 먼저 돌아 「내 아래 Light 전부」(플레이어 손전등 포함)를 꺼 버린다.
+            // 그 뒤로는 오브젝트만 여닫아 Light가 영영 꺼진 채였다 — 벤더 Flashlight.cs가 F마다 Light를 뒤집어
+            // 두 번에 한 번만 켜지던 것이 그 증상이다(2026-09-29). 판정은 켜짐인데 화면은 어두운 상태도 생겼다.
+            if (on)
+            {
+                Light[] inside = flashlightRoot.GetComponentsInChildren<Light>(true);
+                for (int i = 0; i < inside.Length; i++)
+                {
+                    if (inside[i] != null) inside[i].enabled = true;
+                }
+            }
             return;
         }
 

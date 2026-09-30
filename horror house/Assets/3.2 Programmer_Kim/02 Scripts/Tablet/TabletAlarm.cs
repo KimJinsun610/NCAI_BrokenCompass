@@ -60,6 +60,11 @@ public class TabletAlarm : MonoBehaviour
     [Tooltip("켜면 확인할 때까지 계속 반복한다. 끄면 한 번만 울린다.")]
     public bool loopSound = true;
 
+    [Header("메시지 탭을 보는 중 도착음")]
+    [Tooltip("메시지 탭을 보고 있을 때 새 메시지가 오면 알람 대신 이 소리를 한 번 낸다. 비우면 소리 없음.")]
+    public AudioClip messageClip;
+    [Range(0f, 1f)] public float messageVolume = 0.7f;
+
     /// <summary>지금 알람이 울리고 있는가.</summary>
     public bool IsActive { get { return _active; } }
 
@@ -147,6 +152,14 @@ public class TabletAlarm : MonoBehaviour
 
     private void OnMessageReceived(TabletMessageList.Message message)
     {
+        // 이미 메시지 탭을 보고 있으면 그 자리에서 읽는 것이다. 알람(반복 차임 · 진동 · 알람 줄)을 울리면
+        // 다음 프레임에 바로 확인 처리되어 차임이 한 번 끊겨 들리므로, 짧은 도착음만 낸다.
+        if (IsReading())
+        {
+            if (messageClip != null && audioSource != null) audioSource.PlayOneShot(messageClip, messageVolume);
+            return;
+        }
+
         _pending++;
         Raise();                       // 이미 울리는 중이면 개수만 는다
         if (_active) RaiseStateChanged();

@@ -86,7 +86,7 @@ namespace NightDuty
         private FearAxis _failureAxis = FearAxis.Layout;
 
         [SerializeField, Tooltip("위반 델타 (+12~+25)")]
-        private int _failureDelta = 12;
+        private int _failureDelta = Deltas.RuleViolation;
 
         [Header("역설 문자 — 이 카드와 정면으로 부딪히는 태블릿 문자 (S1은 없음)")]
         [SerializeField, Tooltip("역설 ID (예: P1). 비우면 이 카드에는 역설이 없다")]

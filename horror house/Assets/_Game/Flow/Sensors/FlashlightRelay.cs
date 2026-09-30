@@ -144,22 +144,31 @@ public sealed class FlashlightRelay : MonoBehaviour
             return;
         }
 
-        // Tab 중에는 손전등 조작이 멈춘다(기획 정본 공통 명세 2절). 신호도 보내지 않는다.
+        // 일시정지 중에는 받지 않는다. Input은 timeScale을 보지 않아 멈춘 화면에서도 눌린다(CLAUDE.md §5.6).
+        if (GamePause.IsPaused)
+        {
+            return;
+        }
+
+        // 기획 변경(2026-09-30): 손전등은 태블릿을 연 채로도 켜고 끌 수 있다.
+        // 이전에는 「Tab 중 손전등 조작 정지」(기획 정본 공통 명세 2절)라 여기서 입력째 막았다.
+        // 입력은 받되, Tab 중에는 코어가 신호를 버리므로 SetOn이 초기 1회를 다시 무장해 두고
+        // 태블릿을 닫은 첫 프레임에 아래에서 현재 상태를 보낸다.
+        if (ReadToggleInput())
+        {
+            Toggle();
+        }
+
         if (PlayerSensors.TabOpen)
         {
             return;
         }
 
-        // 밤 시작 직후 현재 상태 1회. 밤마다 다시 보낸다.
+        // 밤 시작 직후 현재 상태 1회 + Tab 중에 바뀐 상태를 닫은 뒤 1회.
         if (_sentForDay != NightRun.Day)
         {
             _sentForDay = NightRun.Day;
             NightRun.Send(JudgeSignal.Flashlight(_isOn));
-        }
-
-        if (ReadToggleInput())
-        {
-            Toggle();
         }
     }
 

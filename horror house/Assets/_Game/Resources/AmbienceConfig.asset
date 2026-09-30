@@ -1,0 +1,148 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7a5db1dbc6586849b8ea7e97c5596b6, type: 3}
+  m_Name: AmbienceConfig
+  m_EditorClassIdentifier: Assembly-CSharp::AmbienceConfigSO
+  enabledInGame: 1
+  masterVolume: 1
+  zones:
+  - label: "\uACBD\uBE44\uC2E4"
+    roomClip: Ambience/Rooms/amb_guardroom
+    box:
+      m_Center: {x: 34.05, y: 3.4, z: 46.15}
+      m_Extent: {x: 3.75, y: 2, z: 1.9499989}
+    bandSource: 2
+    space: 0
+    oneShots:
+    - Ambience/OneShots/os_wind_gust
+    - Ambience/OneShots/os_knock_1a
+    - Ambience/OneShots/os_knock_2a
+    - Ambience/OneShots/os_floor_creak_a
+    roomVolume: 1
+  - label: "\uACFC\uD559\uC2E4"
+    roomClip: Ambience/Rooms/amb_science
+    box:
+      m_Center: {x: 48.699997, y: 3.4, z: 41.9}
+      m_Extent: {x: 5.3999996, y: 2, z: 1.6999989}
+    bandSource: 0
+    space: 5
+    oneShots:
+    - Ambience/OneShots/os_electric_pop
+    - Ambience/OneShots/os_metal_groan_a
+    - Ambience/OneShots/os_pipe_clank_a
+    - Ambience/OneShots/os_floor_creak_b
+    - Ambience/OneShots/os_fluoro_flicker
+    roomVolume: 1
+  - label: "\uAD50\uC2E4"
+    roomClip: Ambience/Rooms/amb_classroom
+    box:
+      m_Center: {x: 44.05, y: 3.4, z: 34.85}
+      m_Extent: {x: 5.75, y: 2, z: 4.8500004}
+    bandSource: 0
+    space: 4
+    oneShots:
+    - Ambience/OneShots/os_debris
+    - Ambience/OneShots/os_floor_creak_a
+    - Ambience/OneShots/os_floor_creak_c
+    - Ambience/OneShots/os_wind_gust
+    - Ambience/OneShots/os_knock_2b
+    roomVolume: 1
+  - label: "\uD654\uC7A5\uC2E4"
+    roomClip: Ambience/Rooms/amb_toilet
+    box:
+      m_Center: {x: 1.45, y: 3.4, z: 35.65}
+      m_Extent: {x: 4.55, y: 2, z: 4.3500004}
+    bandSource: 0
+    space: 2
+    oneShots:
+    - Ambience/OneShots/os_drip_a
+    - Ambience/OneShots/os_drip_b
+    - Ambience/OneShots/os_pipe_clank_b
+    - Ambience/OneShots/os_knock_4a
+    - Ambience/OneShots/os_metal_groan_b
+    roomVolume: 1
+  - label: "\uB3C4\uC11C\uAD00"
+    roomClip: Ambience/Rooms/amb_library
+    box:
+      m_Center: {x: 8.2, y: 3.4, z: 48}
+      m_Extent: {x: 6.2, y: 2, z: 8}
+    bandSource: 0
+    space: 1
+    oneShots:
+    - Ambience/OneShots/os_floor_creak_c
+    - Ambience/OneShots/os_thud_upstairs
+    - Ambience/OneShots/os_knock_1a
+    - Ambience/OneShots/os_electric_pop
+    roomVolume: 1
+  - label: "\uB3C4\uC11C\uAD00"
+    roomClip: Ambience/Rooms/amb_library
+    box:
+      m_Center: {x: 16.2, y: 3.4, z: 52.25}
+      m_Extent: {x: 1.8000002, y: 2, z: 3.75}
+    bandSource: 0
+    space: 1
+    oneShots:
+    - Ambience/OneShots/os_floor_creak_c
+    - Ambience/OneShots/os_thud_upstairs
+    - Ambience/OneShots/os_knock_1a
+    - Ambience/OneShots/os_electric_pop
+    roomVolume: 1
+  defaultZone:
+    label: "\uBCF5\uB3C4"
+    roomClip: Ambience/Rooms/amb_corridor
+    box:
+      m_Center: {x: 0, y: 0, z: 0}
+      m_Extent: {x: 0, y: 0, z: 0}
+    bandSource: 0
+    space: 1
+    oneShots:
+    - Ambience/OneShots/os_knock_1a
+    - Ambience/OneShots/os_knock_2a
+    - Ambience/OneShots/os_knock_2b
+    - Ambience/OneShots/os_knock_4a
+    - Ambience/OneShots/os_door_slam
+    - Ambience/OneShots/os_thud_upstairs
+    - Ambience/OneShots/os_pipe_clank_a
+    - Ambience/OneShots/os_pipe_clank_b
+    - Ambience/OneShots/os_metal_groan_a
+    - Ambience/OneShots/os_metal_groan_b
+    - Ambience/OneShots/os_fluoro_flicker
+    - Ambience/OneShots/os_floor_creak_b
+    roomVolume: 1
+  building:
+    m_Center: {x: 20, y: 3.4, z: 42}
+    m_Extent: {x: 35, y: 2, z: 15}
+  roomFadeSeconds: 2.5
+  dreadClips:
+  - Ambience/Dread/dread_b1
+  - Ambience/Dread/dread_b2
+  - Ambience/Dread/dread_b3
+  - Ambience/Dread/dread_b4
+  dreadVolumes:
+  - 1
+  - 1
+  - 1
+  - 1
+  dreadVolume: 1
+  dreadFadeSeconds: 6
+  oneShotInterval:
+  - {x: 45, y: 90}
+  - {x: 30, y: 60}
+  - {x: 20, y: 40}
+  - {x: 12, y: 28}
+  - {x: 7, y: 18}
+  oneShotVolume: 0.8
+  oneShotDistance: {x: 6, y: 14}
+  oneShotMinDistance: 3
+  oneShotMaxDistance: 35
+  stingerVolume: 1
+  captureFadeSeconds: 1

@@ -3,11 +3,20 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
-> **개정: 2026-09-23(12차). 일시정지가 소리까지 멈추게 했습니다(§5.6).**
-> ⓐ **`GamePause` 신설**(`3.2 Programmer_Kim/02 Scripts/GameFlow/`). `Time.timeScale`과 **`AudioListener.pause`를 함께** 다루는 단일 창구입니다. `FPController.PauseGame/ResumeGame`과 `SceneFlow.GoTo`가 이걸 씁니다.
-> ⓑ **`Time.timeScale = 0`은 소리를 멈추지 않습니다.** 태블릿 알람이 Esc로 멈춘 뒤에도 울렸습니다 — 연출·시계·판정 Tick은 전부 timeScale을 보는데 `AudioSource`만 보지 않습니다.
-> ⓒ **`FPController.Update`에서 `TogglePause()`가 맨 앞으로** 갔고, 일시정지 중에는 그 뒤가 전부 건너뛰어집니다. `Input.GetKeyDown`은 timeScale을 보지 않아 **Tab이 멈춘 화면에서도 먹었습니다.**
-> **되살리지 마십시오:** 「일시정지는 `timeScale`만 0으로 하면 된다」 · 「`SceneFlow`는 `Time.timeScale = 1f`만 되돌리면 된다」(`AudioListener.pause`가 남아 다음 씬이 무음이 됩니다).
+> **개정: 2026-09-30(13차). 엠비언트 재생기와 CCTV 소리를 넣었습니다(§3.8). 씬 파일은 고치지 않았습니다. EditMode 362/362 통과.**
+> ⓐ **`AmbiencePlayer`가 플레이할 때 스스로 설치됩니다**(`FPController`가 있는 씬). 공간 룸톤 6종(복도·교실·과학실·화장실·도서관·경비실)을 크로스페이드하고, 그 공간의 **청각축 표시 구간**만큼 불안 레이어 1~4를 쌓고, 공간별 원샷을 플레이어 주변 6~14m에서 3D로 냅니다.
+> ⓑ 소리 파일은 **`Resources/Ambience/…`, `Resources/Cctv/cctv_*`에서 이름으로** 읽습니다. 설정은 `Resources/AmbienceConfig.asset`. 파일이 없으면 그 겹만 빠지고 경고 한 줄. 파일 36개(코드 합성)는 2026-09-30 낮에 프로젝트에 모두 넣었습니다 — 가져오기 규칙 적용·「36개 전부 있습니다」 확인.
+> ⓒ `CctvSystem`에 소리: 모니터 험(3D 루프), 채널 전환 「틱-지직」(들여다볼 때도), `Signal`이 낮으면 지직 루프. 볼륨은 `CctvConfigSO`의 `humVolume`·`switchVolume`·`staticVolume`.
+> ⓓ 가져오기 규칙 `AmbienceAudioImportRules` — 위 두 폴더의 루프는 CompressedInMemory, 원샷은 DecompressOnLoad(Vorbis).
+> **되살리지 마십시오:** 「엠비언트 공간은 `SpaceZones` 상자로 판정한다」(도서관·경비실 상자가 없습니다 — 소리는 `AmbienceConfigSO`의 실측 상자) · 「분위기 원샷에 3번 노크」(C1 분필 3획과 헷갈립니다 — 노크는 1·2·4번만) · 「분위기 소리가 판정 신호를 보낸다」(§2.7).
+
+> **개정: 2026-09-30(12차). 경비실 CCTV를 넣었습니다(§3.7). 씬 파일은 고치지 않았습니다. EditMode 362/362 통과.**
+> ⓐ **`CctvSystem`이 플레이할 때 스스로 설치됩니다**(`PlayerInteractor`와 같은 자동 설치). 경비실 `Old CRT Monitor`에 화면 쿼드를 붙이고, 카메라 5대(복도·교실·과학실·화장실·도서관)를 만들어 **렌더 텍스처 하나**에 고른 채널만 그립니다.
+> ⓑ 설정은 `Resources/CctvConfig.asset`(`CctvConfigSO`) 하나. 채널 자리는 인스펙터의 [씬 뷰로 보기]/[현재 씬 뷰로 저장]으로 고칩니다.
+> ⓒ **레이어를 새로 만들지 않았습니다.** 카메라별 적외선 조명과 「CCTV에만 보이는 물체」(`CctvOnlyVisible`)는 URP `beginCameraRendering`/`endCameraRendering`에서 켰다 끕니다 — 프로젝트 설정 변경 없음.
+> ⓓ `InteractionHud`에 **`ExternalPrompt`/`ExternalHot`** 정적 속성을 넣었습니다. 문 프롬프트가 없을 때만 이 줄이 뜹니다(「[E] CCTV 보기」).
+> ⓔ 이번에 **뺀 것**: 녹화 영상 채널 · 플레이어 본인이 화면에 보이는 연출 · 6번째 채널 · 경비실 뒷모습 채널 · CCTV와 실제가 어긋나는 연출. 판정(K1·K2) 연결도 아직 없습니다 — 이벤트만 열어 두었습니다.
+> **되살리지 마십시오:** 「CCTV 화면 증폭 2.4 · 노이즈 0.12 · 적외선 4」(하얗게 날아가고 도서관이 알갱이에 묻혔습니다 → 1.3 · 0.035 · 2.5, 화장실만 1.2) · 「CCTV는 전용 레이어가 있어야 한다」 · 「CCTV 카메라는 씬에 둔다」.
 
 > **개정: 2026-09-22(11차). 단서 배선을 개통하고, 발신기가 없는 신호 둘을 하네스가 대신 보내게 했습니다. EditMode 362/362 통과.**
 > ⓐ **`SpaceAnomalyTable.asset`을 `Resources/`로 옮겼습니다.** `AnomalyCueDirector`가 `Resources.Load`로 찾는데 `ScriptableObjects/`에 있어 그 폴백이 **언제나 null**이었습니다 — 씬에 표를 손으로 꽂지 않으면 단서를 한 건도 못 보냈습니다.
@@ -426,7 +435,7 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 | ③ | 빠진 판정 대상 | 카드가 요구하는데 씬에 없는 ID를 임시 표식으로 만들어 그 공간의 존 상자 안에 격자로 흩뜨립니다 |
 | ④ | 콜라이더 보충 | 표식은 있는데 레이가 맞힐 콜라이더가 없는 대상에 0.4m 상자(§5.5-21). **구역 ID는 건너뜁니다** — 통행 구역에 상자를 세우면 사람을 막습니다 |
 | ⑤ | 조우 대상 | 조우 표가 요구하는 27종 지점을 만들고 `NightRun.Encounter`에 시야·배치 통로를 꽂습니다 |
-| ~~⑥~~ | ~~게임 시계~~ | **2026-09-28 삭제.** 종료 04:00 · ×32로 덮어써 프리팹 값과 어긋났습니다. 시계 값은 `PlaySystems.prefab`의 `GameTime`이 정본입니다. 되살리지 마십시오 |
+| ⑥ | 게임 시계 | `GameTime`의 `endHour`·`timeMultiplier`를 **런타임 값으로만** 덮습니다(리플렉션) |
 | ⑦ | 없는 발신기 대신 | **1초 응시**로 `ModelObserved`·`DoorAutoOpenObserved`를 대신 보냅니다(아래) |
 
 **⑦이 메우는 구멍 둘.** 둘 다 **시험용 대역**이며, 진짜 발신기가 생기면 `fakeMissingSignals`를 끕니다.
@@ -480,6 +489,33 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 3. **기획에 없는 문이 잔뜩 열려 있었습니다.** 지금은 `Resources/DoorPolicy.asset`이 가립니다(§4.6) — 실측 수납가구 30 · 열리는 문 10 · 잠긴 문 16. 밖으로 나가는 길은 **정문 `Exterior/Doors/DoorMain` (27.6, 1.5, 49.0)**입니다. 시험 동안 잠금을 건너뛰려면 하네스 **F4**, 정책까지 무시하려면 **F5**입니다.
 
 ---
+
+### 3.7 경비실 CCTV (2026-09-30)
+
+씬을 고치지 않는 런타임 설치입니다. 파일은 `Assets/_Game/Flow/Cctv/`(`CctvSystem`·`CctvConfigSO`·`CctvOnlyVisible`·`Editor/CctvConfigSOEditor`)와 `Assets/_Game/Resources/Cctv/CctvScreen.shader`, `Assets/_Game/Resources/CctvConfig.asset`입니다.
+
+- **설치.** `RuntimeInitializeOnLoadMethod(AfterSceneLoad)` + `SceneManager.sceneLoaded`. 흐름이 Main→Loading→PlayScene이라 첫 씬만 보면 놓칩니다. 모니터(`CctvConfigSO.MonitorPath`, 못 찾으면 이름으로)가 **있는 씬에서만** 루트 `CCTV (auto)`를 만듭니다. 런타임 오브젝트에 `DontSave`를 붙이지 않습니다(§3.4와 같은 이유).
+- **렌더.** 320×240 RT 하나. 카메라 5대는 전부 꺼 두고, 고른 채널 하나만 **한 프레임 켜서** 그립니다 — 들여다보는 중 12fps, 곁눈 6fps. 플레이어가 모니터 5m 안이고 화면이 시야 절두체 안일 때만 그립니다. 카메라는 후처리·그림자·AA·HDR·MSAA·오클루전 컬링 모두 끔.
+- **밤이라 새까만 문제.** 카메라마다 자식 스폿 조명 `IR`을 두고, **그 카메라가 그리는 동안만** 켭니다. 플레이어 시야에는 이 빛이 절대 안 보입니다.
+- **화면.** `NightDuty/CctvScreen`(URP 언릿 HLSL): 흑백 → 증폭(`_Gain`) → 감마 → 노이즈 → 굴러가는 띠 → 주사선 → 채널 전환 지직거림(`_Static`)·신호(`_Signal`) → 비네트. **노이즈는 작게 두십시오** — 화면이 플레이어 카메라의 후처리를 한 번 더 거쳐서, 0.1만 돼도 어두운 채널(도서관)이 알갱이뿐입니다.
+- **모니터 메시.** `Old CRT Monitor`는 **로컬 Z가 위, −Y가 앞**입니다. 화면 중심 로컬 (0, −0.472, 0.075), 크기 0.30×0.225m(메시 실측). 쿼드는 `MeshCollider` 대신 얇은 `BoxCollider`.
+- **조작.** 화면을 조준하면 「[E] CCTV 보기」. 들어가면 `FPController` 끔 · `PlayerTablet.readInput=false` · 뷰모델 렌더러 숨김, 카메라가 화면 앞 0.32m로 0.35초 보간. **A/D·←/→·휠·숫자 1~5**로 채널, **E/Esc/S**로 나옵니다. `NightRun.IsCaptured`이거나 `timeScale <= 0`이면 강제로 나옵니다.
+- **글자.** 화면 위 TextMeshPro 「CAM01  복도 / REC  hh:mm」(시계는 `GameTime.CurrentTimeText`). 한글 글리프가 있는 TMP 폰트를 찾아 쓰고, 없으면 「CAM01」만 씁니다.
+- **CCTV에만 보이는 물체.** 아무 오브젝트에 `CctvOnlyVisible`을 붙이면 평소엔 렌더러가 꺼지고 CCTV 카메라가 그릴 때만 보입니다. `channel = -1`이면 전 채널, 0~4면 그 채널에서만. 그림자는 끕니다(그림자로 들킵니다).
+- **판정용 이벤트.** `CctvSystem.ChannelChanged(int)` · `ViewEntered` · `ViewExited`, 조회용 `Active`·`IsViewing`·`CurrentChannel`·`ChannelLabel(i)`·`ChannelCamera(i)`·`SetChannel(i)`. **K1·K2 판정은 아직 이 이벤트에 붙어 있지 않습니다**(§12.1).
+- **실측(2026-09-30 플레이).** 5채널 모두 화면·글자 정상, 좌우 반전 없음(비상구 표지 방향을 카메라 직접 렌더와 대조). 04:00 자동 종료 → ResultScene 전환도 막지 않았습니다. 성능 계측은 아직 안 했습니다.
+
+### 3.8 엠비언트 (2026-09-30)
+
+파일: `Assets/_Game/Flow/Ambience/`(`AmbiencePlayer`·`AmbienceConfigSO`·`Editor/AmbienceEditorTools`), `Assets/_Game/Resources/AmbienceConfig.asset`. 설치 방식은 §3.7 CCTV와 같습니다.
+
+- **세 겹.** ① 룸톤 — 카메라(귀) 위치가 든 상자의 루프, 2.5초 크로스페이드. 상자 목록 순서가 우선순위이고, 어디에도 없고 건물 안이면 복도. ② 불안 레이어 — 청각 구간 n이면 `dread_b1..bn`이 6초에 걸쳐 차오름(등전력). ③ 원샷 — 공간별 목록에서 무작위, 간격은 구간별(B0 45~90초 → B4 7~18초), 같은 파일 연속 금지, 피치 ±6%.
+- **구간은 `EventBus.BandChanged`(청각)로만** 받습니다. 도서관은 판정 공간이 없어 **복도 구간**을, 경비실은 **전 공간 최고 구간 − 1**을 따릅니다(`BandSource`). 밤이 아니면(`!NightRun.IsNightActive`) 구간 0, 붙잡히면 1초에 걸쳐 전부 끔.
+- **공개 API**: `AmbiencePlayer.Active`, `PlayAt(경로|파일명, 위치, 볼륨)`, `PlayStinger("stinger_hit"|"stinger_riser"|"stinger_breath"|"stinger_whisper")`, `Duck(레벨, 초)`, `CurrentZone`, `CurrentBand`, 이벤트 `OneShotPlayed`.
+- **소리 파일은 코드 합성**(numpy, 48kHz, OGG Vorbis). 루프는 전부 원형 합성이라 이음새가 없고, 크기는 A가중으로 맞췄습니다(룸톤 −38, 도서관만 −44 dBFS). 합성 스크립트는 세션 스크래치에만 있고 저장소에는 없습니다.
+- **단서와 겹치는 소리를 만들지 않았습니다**: 3번 노크(C1)·분필·교탁 긁힘(C4)·유리(S3)·물 내림(T2)·세면대(T4).
+- 메뉴: `NightDuty/엠비언트 설정 에셋 만들기`, `NightDuty/엠비언트 소리 파일 검사`(없는 파일 목록).
+- 실측(2026-09-30 플레이, 가짜 클립 주입): 경비실→복도 이동 시 룸톤 전환, 청각 Band3 주입 시 레이어 1~3 켜짐·4 꺼짐, `PlayAt` 재생, 채널 전환음 재생. 콘솔 오류 0.
 
 ## 4. 코드 구조
 
@@ -802,21 +838,6 @@ Play 씬 로드 ─ GameTime이 있으면 NightRunDriver 자동 생성 (Assets/_
 22. **`JudgeWorld.FlashlightOn`은 매 밤 `false`로 시작합니다.** 손전등을 **켜 둔 채 밤이 시작되면, 초기 1회를 보내지 않는 한 코어는 꺼진 것으로 압니다.** `Flashlight(isOn)`은 상태가 바뀔 때마다(에지) **그리고 밤 시작 직후 현재 상태 1회**를 보내야 합니다. 유예 2초는 코어가 세므로 센서 쪽에 타이머를 만들지 마십시오.
 23. **런타임에 만든 오브젝트에 `HideFlags.DontSave`를 붙이지 마십시오.** 이름과 정반대로 동작합니다 — 씬이 내려갈 때 **파괴를 면해** 에디터 메모리에 남고, 플레이할 때마다 쌓입니다(2026-09-22 실측: 두 번 플레이에 잔재 80개, 다음 플레이에서 중복 인스턴스 2개). 런타임 생성물은 hideFlags를 **건드리지 않는 것**이 맞습니다: 플레이 종료 시 씬과 함께 사라지고, 플레이 중에는 씬 저장 자체가 막혀 있어 씬 파일이 더러워질 일이 없습니다. 잔재가 이미 있으면 `Resources.FindObjectsOfTypeAll<GameObject>()`로 이름을 훑어 `DestroyImmediate`로 지웁니다(`FindAnyObjectByType`로는 안 잡힙니다 — §3.3-4).
 
-23′. **손전등은 `FlashlightRelay` 하나만 켜고 끕니다(2026-09-29).** 벤더 `Flashlight.cs`가 같은 오브젝트(`FPController/Camera/Flashlight_ON_FirstPerson`)에서 같은 F키로 `Light`를 뒤집고 있어 **두 번에 한 번만 켜졌고**, 판정은 「켜짐」인데 화면은 어두운 상태가 생겼습니다. 벤더 컴포넌트는 `FPController.prefab`에서 **꺼 두었습니다**(삭제하지 않음). 근본 원인은 자동 설치 순서입니다 — `AddComponent` 순간 `OnEnable`이 `flashlightRoot`가 채워지기 **전에** 돌아 플레이어 아래 Light를 전부 끕니다. 그래서 `ApplyToWorld`가 **켤 때 안쪽 Light도 함께 켭니다.** 벤더 스크립트를 다시 켜지 마십시오. 딸깍 소리는 `FlashlightSound`(클라이언트, `FPController` 루트)가 `FlashlightRelay.Active.IsOn` 변화를 보고 냅니다.
-
-### 5.6 일시정지 — 시간만 멈추면 소리가 남습니다 (2026-09-23)
-
-**규칙: 일시정지하면 일시정지 메뉴를 뺀 모든 게임 플레이가 멈춥니다. 시간뿐 아니라 소리도.**
-
-`Time.timeScale = 0`은 **소리를 멈추지 않습니다.** 태블릿 알람이 Esc로 멈춘 뒤에도 계속 울린 것이 그 때문입니다 — 연출(`ViewmodelTime`)·게임 시계·판정 `Tick`은 전부 timeScale을 보고 멈추는데 `AudioSource`만 그대로 돌아서, **소리만 남아** 더 이상하게 들렸습니다.
-
-24. **일시정지는 `GamePause`(정적, `3.2 Programmer_Kim/02 Scripts/GameFlow/`) 한곳에서만 켜고 끕니다.** `Set(bool)`이 `Time.timeScale`과 **`AudioListener.pause`를 함께** 바꿉니다. `Clear()`는 무조건 원상복구이며 씬 전환에서 부릅니다 — **timeScale만 되돌리면 `AudioListener.pause`가 남아 다음 씬이 통째로 무음**이 됩니다. `IsPaused` · `Changed(bool)`로 읽습니다. 여기저기서 `timeScale`을 직접 만지지 마십시오.
-25. **`Time.deltaTime`을 쓰는 코드는 저절로 멈추지만 `Input.GetKeyDown`은 멈추지 않습니다.** `FPController.Update`는 `TogglePause()`를 **맨 앞**에 두고(멈춘 상태에서도 Esc로 풀어야 합니다) `GamePause.IsPaused`면 그 뒤를 전부 건너뜁니다. 새 조작을 추가할 때 같은 게이트 안에 넣으십시오.
-26. **일시정지 메뉴에 소리를 붙일 때는 그 AudioSource에 `ignoreListenerPause = true`를 켜십시오.** `AudioListener.pause`는 예외 없이 전부 멈추므로 버튼 소리까지 사라집니다. 현재 AudioSource를 가진 프리팹은 `HUD_Tablet` 하나뿐입니다(2026-09-23 실측).
-
-> **실측 확인 방법:** 음소거와 진짜 정지는 다릅니다. `audioSource.time`이 **여러 프레임 동안 고정**되는지 보십시오(2026-09-23: 1828프레임 동안 1.008초 고정, 해제 후 그 지점부터 이어서 재생).
-> **`FPController.PauseGame()`은 일시정지 UI가 없으면 NullReference로 터집니다.** `PlayScene_test`처럼 UI를 안 꽂은 시험 씬에서는 `GamePause.Set(true)`를 직접 부르십시오. 메뉴 없이 멈추면 풀 방법이 없어 일부러 null 가드를 넣지 않았습니다.
-
 ---
 
 ## 6. 폴더 구조
@@ -860,8 +881,7 @@ Play 씬 로드 ─ GameTime이 있으면 NightRunDriver 자동 생성 (Assets/_
 
 **기획서와 어긋나 있는 현행 씬·에셋·코드 (2026-09-20 실측, 전부 고쳐야 할 것):**
 
-7. **2026-09-28 갱신 — 근무 시간은 02:00~05:00 · ×30입니다**(기획 변경 · 사용자 결정, 하루 = 현실 6분). 아래 00:00~04:00 서술은 옛 값입니다. 하네스의 시계 덮어쓰기(§3.4 ⑥)도 삭제했습니다.
-   ~~**게임 시계가 0:00~6:00**~~ — **2026-09-22 해결.** `PlaySystems.prefab`을 **00:00~04:00**으로 고쳤습니다(기획서 v6 §3-4 「04:00 유예안 삭제」). **배속은 아직 ×20**이라 하루가 현실 12분입니다 — 기획 잠정값 ×30~34로 가면 7~8분입니다. 바꾸기 전에 한 번 걸어서 실제 동선 시간을 재야 합니다(§12.1-5).
+7. ~~**게임 시계가 0:00~6:00**~~ — **2026-09-22 해결.** `PlaySystems.prefab`을 **00:00~04:00**으로 고쳤습니다(기획서 v6 §3-4 「04:00 유예안 삭제」). **배속은 아직 ×20**이라 하루가 현실 12분입니다 — 기획 잠정값 ×30~34로 가면 7~8분입니다. 바꾸기 전에 한 번 걸어서 실제 동선 시간을 재야 합니다(§12.1-5).
 8. **`FPController`에 달리기(`runSpeed`, LeftShift)와 점프(`jumpForce`, Space)가 남아 있습니다.** 기획서 9절은 걷기만입니다(§2.6). 제거 대상입니다.
 11. `corridor.box`(34.3, 3.4, 44.5)가 경비실 제외 상자(z 44.55~47.85) 경계에서 **0.05m** 떨어져 있습니다. H4 시험 전에 확인하십시오.
 12. **C6의 문 절반은 현재 검증되지 않습니다.** 문 신호가 없으니 `DoorObligationCondition`은 늘 「의무 없음」이고 두 교실 점검 여부만으로 판정됩니다. 준수가 나와도 절반짜리입니다.
@@ -1141,6 +1161,8 @@ A와 B는 **병렬 가능**합니다 — 씬 파일과 코드가 겹치지 않�
 6. ~~**`DayDirector`**~~ — **2026-09-21 완료**(§4.3′). 하루 6장, 축 쿼터 2·2·2, 하드 제약 3종. 남은 2건(그날 조우 공간 카드 강제 · S2 활성 중 S-B 금지)은 `EncounterDirector` 대기.
 7. ~~**`EncounterDirector`**~~ — **2026-09-22 완료**(§4.3″). 코드·표·테스트 19개. 남은 것은 **씬 대상 27종**과 **G/N1 문구**(기획서 10-3절), 그리고 아트의 선/앉은 모형 프리팹입니다. 이전 서술: G의 주인은 카드가 아니라 **조우 장면**이라(§2.7) `EncounterDirector`와 태블릿 UI가 둘 다 있어야 합니다. 문자 작업 중 의존이 가장 많으므로 **앞으로 당기지 마십시오.**
 
+- **엠비언트 후속(2026-09-30).** ① ~~소리 파일 넣기~~ (완료) ② 걸어 다니며 볼륨 튜닝(`AmbienceConfig`) ③ CCTV 수칙 교체안(K1′·K2′·K5, 별도 문서) 채택 여부 결정.
+- **CCTV 후속(2026-09-30).** ① K1·K2 판정을 `CctvSystem.ChannelChanged`/`ViewEntered`에 연결 ② 채널 자리·적외선 세기 튜닝(민, `CctvConfig` 인스펙터) ③ 경비실 조우 등에서 `CctvOnlyVisible` 활용 ④ 성능 계측(렌더는 한 번에 카메라 1대, 모니터 5m 밖이면 0대).
 - **다음 주로 미루는 청소:** 결과창 「충돌 처리」 숨김·`ImprintAxis` 제거, 로딩 팁 §0 문구 정리, `Conflicts*` 정리, `Bands.RedThreshold`(값이 옛 Band3 하한 75, 참조 0건 — 지울지 민 결정), 통일 씬이 들어오면 구동기 동작 재확인.
   **끝난 것:** H6 +25 → +15 · 과학실 배치 이상현상 4칸 · `ParadoxDirector` 상한 스냅숏 (전부 2026-09-20).
 - **아직 하지 않는 것:** `SpaceAnomalyTable`을 읽는 실제 `ISpacePresenter`(**조명 개수 맞추기는 하지 않습니다** — 9.20V가 등 개수를 삭제했습니다, §2.4), 면제 API(`RuleBook.Waive` — C6 동선 봉쇄, S4 대상 소실), 역설 정책 SO의 본격 구현(§2.9).

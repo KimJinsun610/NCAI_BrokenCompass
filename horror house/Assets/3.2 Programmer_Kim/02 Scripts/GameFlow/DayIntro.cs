@@ -3,9 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
-/// Play 씬 시작 연출: 검은 화면에 "Day n" 표시 → 페이드 아웃 → 게임 시작.
+/// Play 씬 시작 연출: 검은 화면에 일차 표시 → 페이드 아웃 → 게임 시작.
+/// 일차 표시는 그날의 이미지(<see cref="daySprites"/>)가 있으면 이미지로, 없으면 "Day n" 글자로 한다.
 /// 연출 동안 게임 시간(GameTime)과 플레이어 조작(FPController)을 멈춰 둔다.
 /// PlaySystems 프리팹의 Canvas_DayIntro에 붙어 있다.
 /// </summary>
@@ -14,9 +16,16 @@ public class DayIntro : MonoBehaviour
     [Header("UI")]
     [Tooltip("검은 배경과 텍스트를 묶은 그룹. alpha 1 = 가림")]
     [SerializeField] private CanvasGroup overlay;
+    [Tooltip("그날의 이미지가 없을 때 대신 쓰는 글자")]
     [SerializeField] private TMP_Text dayText;
     [Tooltip("{0} = 현재 일차")]
     [SerializeField] private string dayFormat = "Day {0}";
+
+    [Header("일차 이미지")]
+    [Tooltip("일차 이미지를 띄울 Image. 비워 두면 글자만 쓴다.")]
+    [SerializeField] private Image dayImage;
+    [Tooltip("일차별 이미지. 0번 = 1일차(ui_logo_DAY1). 그날 칸이 비어 있으면 글자로 대신한다.")]
+    [SerializeField] private Sprite[] daySprites = new Sprite[0];
 
     [Header("연출 시간 (초)")]
     [Tooltip("검은 화면에서 글자가 나타나는 시간")]
@@ -46,11 +55,7 @@ public class DayIntro : MonoBehaviour
             overlay.alpha = 1f;
             overlay.blocksRaycasts = true;
         }
-        if (dayText != null)
-        {
-            dayText.text = string.Format(dayFormat, GameSession.CurrentDay);
-            dayText.alpha = 0f;
-        }
+        SetupDayLabel(GameSession.CurrentDay);
 
         // 다른 오브젝트의 Update가 돌기 전에 멈춰 둔다
         if (gameTime == null) gameTime = FindAnyObjectByType<GameTime>();
@@ -75,7 +80,7 @@ public class DayIntro : MonoBehaviour
         // 씬 활성화 직후 프레임은 시간 간격이 커서 연출이 건너뛰어지므로 한 프레임 쉰다
         yield return null;
 
-        yield return Animate(a => { if (dayText != null) dayText.alpha = a; }, 0f, 1f, textFadeInDuration);
+        yield return Animate(SetLabelAlpha, 0f, 1f, textFadeInDuration);
         yield return Wait(holdDuration);
         yield return Animate(a => { if (overlay != null) overlay.alpha = a; }, 1f, 0f, fadeOutDuration);
 
@@ -99,6 +104,55 @@ public class DayIntro : MonoBehaviour
         {
             overlay.blocksRaycasts = false;
             overlay.gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 그날 이미지가 있으면 이미지를 켜고 글자를 끈다. 없으면 이미지를 끄고 글자를 쓴다.
+    /// 둘 다 투명하게 시작해 <see cref="SetLabelAlpha"/>로 함께 나타난다.
+    /// </summary>
+    private void SetupDayLabel(int day)
+    {
+        Sprite sprite = null;
+        int index = day - 1;
+        if (daySprites != null && index >= 0 && index < daySprites.Length)
+        {
+            sprite = daySprites[index];
+        }
+
+        bool useImage = dayImage != null && sprite != null;
+
+        if (dayImage != null)
+        {
+            dayImage.gameObject.SetActive(useImage);
+            if (useImage)
+            {
+                dayImage.sprite = sprite;
+            }
+        }
+
+        if (dayText != null)
+        {
+            dayText.gameObject.SetActive(!useImage);
+            dayText.text = string.Format(dayFormat, day);
+        }
+
+        SetLabelAlpha(0f);
+    }
+
+    /// <summary>켜져 있는 쪽(이미지 또는 글자)의 투명도를 바꾼다.</summary>
+    private void SetLabelAlpha(float alpha)
+    {
+        if (dayImage != null)
+        {
+            Color c = dayImage.color;
+            c.a = alpha;
+            dayImage.color = c;
+        }
+
+        if (dayText != null)
+        {
+            dayText.alpha = alpha;
         }
     }
 

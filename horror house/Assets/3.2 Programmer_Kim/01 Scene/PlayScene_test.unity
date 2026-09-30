@@ -36951,29 +36951,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4904172556032576, guid: 166d41c130928d84ea8e365fc1f1d25f, type: 3}
   m_PrefabInstance: {fileID: 326468356}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &326961092 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6172537089138824876, guid: 2d17b90cdca22f14bb332f0b93f13775, type: 3}
-  m_PrefabInstance: {fileID: 446462099}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &326961093
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 326961092}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 796ffc9f3ba6994448e0beaa31844430, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ScreenWobble
-  amplitude: 0.012
-  frequency: 9
-  speed: 1
-  chroma: 0.008
-  userScale: 1
-  previewWeight: 0
 --- !u!1001 &327085395
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -50587,10 +50564,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6172537089138824876, guid: 2d17b90cdca22f14bb332f0b93f13775, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 326961093}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2d17b90cdca22f14bb332f0b93f13775, type: 3}
 --- !u!1001 &446544901
 PrefabInstance:

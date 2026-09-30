@@ -88,6 +88,7 @@ GameObject:
   - component: {fileID: 2461339111152588588}
   - component: {fileID: 8322130920131021494}
   - component: {fileID: 7268462896074336937}
+  - component: {fileID: 6235149446408950780}
   m_Layer: 0
   m_Name: PlaySystems
   m_TagString: Untagged
@@ -228,6 +229,24 @@ MonoBehaviour:
   prompt: {fileID: 0}
   promptOffset: 64
   promptFontSize: 28
+--- !u!114 &6235149446408950780
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6172537089138824876}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 796ffc9f3ba6994448e0beaa31844430, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScreenWobble
+  amplitude: 0.012
+  frequency: 9
+  speed: 1
+  chroma: 0.008
+  userScale: 1
+  previewWeight: 0
 --- !u!1 &7225339741911405781
 GameObject:
   m_ObjectHideFlags: 0

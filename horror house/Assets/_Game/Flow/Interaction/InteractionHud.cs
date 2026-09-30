@@ -39,6 +39,22 @@ public sealed class InteractionHud : MonoBehaviour
 
     [SerializeField] private float promptFontSize = 28f;
 
+    /// <summary>
+    /// 문이 아닌 대상(경비실 CCTV 모니터 등)이 띄우는 안내. <b>문 안내가 있으면 문이 먼저</b>다.
+    /// 띄운 쪽이 다 쓰면 빈 문자열로 돌려놓는다. 판정과 무관하다.
+    /// </summary>
+    public static string ExternalPrompt { get; set; } = string.Empty;
+
+    /// <summary><see cref="ExternalPrompt"/>를 누르면 실제로 무슨 일이 일어나는가. 조준선을 밝힌다.</summary>
+    public static bool ExternalHot { get; set; }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetExternalPrompt()
+    {
+        ExternalPrompt = string.Empty;   // 도메인 리로드를 꺼도 지난 플레이의 안내가 남지 않게.
+        ExternalHot = false;
+    }
+
     private float _reticleCool = 0.25f;
     private bool _resolved;
 
@@ -66,6 +82,12 @@ public sealed class InteractionHud : MonoBehaviour
         PlayerInteractor player = PlayerInteractor.Active;
         string line = player != null ? player.Prompt : string.Empty;
         bool hot = player != null && player.HasAction;
+
+        if (line.Length == 0 && !string.IsNullOrEmpty(ExternalPrompt))
+        {
+            line = ExternalPrompt;
+            hot = ExternalHot;
+        }
 
         if (prompt != null)
         {

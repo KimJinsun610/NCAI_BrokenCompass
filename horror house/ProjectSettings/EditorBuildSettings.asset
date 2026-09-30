@@ -7,7 +7,7 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 1
     path: Assets/0. Main/01 Scene/MainScene.unity
-    guid: c3e3a75ab08bc6b4ab6d367f7a82efb7
+    guid: 2adcc53eb1633bf4592e52cf051b63d6
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
@@ -16,19 +16,19 @@ EditorBuildSettings:
     guid: 8c708d2780d36cd45b9aa1323eb79b22
   - enabled: 1
     path: Assets/0. Main/01 Scene/LoadingScene.unity
-    guid: bb468d2d327fafe49af347f465e118c6
+    guid: 97ebfa8c5ee1b2941b4706f0cd9acaa2
   - enabled: 1
     path: Assets/3.2 Programmer_Kim/00 test/testScene.unity
     guid: bc11d31d506a86a42857dbb376a2c037
-  - enabled: 1
+  - enabled: 0
     path: Assets/3.2 Programmer_Kim/00 test/Art_DemoScene.unity
     guid: e2dcccffa3ab17145a3b1ad52d10d56e
   - enabled: 1
     path: Assets/0. Main/01 Scene/ResultScene.unity
-    guid: a02624d52a65d9b48aa228f8317b6e6c
+    guid: 999af56fd01892543ba9697fa6f87a54
   - enabled: 1
     path: Assets/0. Main/01 Scene/ContractScene.unity
-    guid: b97aad9d8a613d143960deb01f117778
+    guid: 189113d10541e9748b859add0039e3fd
   - enabled: 1
     path: Assets/0. Main/01 Scene/PlayScene.unity
     guid: a5de06311d109244e90721bcbecf3d63

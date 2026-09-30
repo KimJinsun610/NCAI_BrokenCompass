@@ -106,10 +106,10 @@ namespace NightDuty.Tests
             Assert.AreEqual(NightOutcome.Completed, got.Outcome);
             Assert.AreEqual(1, got.Violations);
             CollectionAssert.AreEqual(new[] { 41 }, got.ViolationMinutes);
-            // 2026-09-21 재설계: 3일차는 일차 하한 24가 먼저 깔리고 그 위에 위반 +12가 얹힌다.
-            Assert.AreEqual(DayFloor.Of(3) + 12, got.Layout);
-            Assert.AreEqual(DayFloor.Of(3), got.Auditory, "어기지 않은 축은 하한 그대로다");
-            Assert.AreEqual(DayFloor.Of(3), got.Illuminance, "어기지 않은 축은 하한 그대로다");
+            // 2026-09-30 새 기획서: 일차 하한은 연출 구간에만 걸리고 생존 수치는 올리지 않는다.
+            Assert.AreEqual(Deltas.RuleViolation, got.Layout);
+            Assert.AreEqual(0, got.Auditory, "어기지 않은 축은 0 그대로다");
+            Assert.AreEqual(0, got.Illuminance, "어기지 않은 축은 0 그대로다");
             Assert.AreEqual(1, got.Results.Count);
             Assert.AreEqual("0:41", DaySummary.FormatMinutes(got.ViolationMinutes[0]));
             Assert.IsNull(got.ImprintAxis);

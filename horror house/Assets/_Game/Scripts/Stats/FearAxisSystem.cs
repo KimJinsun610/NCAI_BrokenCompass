@@ -36,7 +36,9 @@ namespace NightDuty
     /// 4축 누적 값의 유일한 소유자. <see cref="IFearAxisReader"/>의 실제 공급원이다
     /// (<c>DebugAxisDriver</c>와 같은 포트에 꽂힌다).
     /// <list type="bullet">
-    /// <item>값은 0~100 누적. <b>감쇠·상시 증가·감소 없음.</b> 새 값 = min(100, 기존 + 델타).</item>
+    /// <item>값은 0~100 누적(<b>생존 수치</b>). 감쇠·상시 증가 없음. 새 값 = min(100, 기존 + 델타).
+    /// 감소는 <see cref="Lower"/>(정확한 보고·밤 재시작)로만 일어나고 신뢰는 줄지 않는다(2026-09-30 새 기획서).
+    /// 연출 구간은 이 값이 아니라 <see cref="BandResolver"/>가 정한다.</item>
     /// <item><b>청각·조도·배치</b> 중 하나가 100에 도달하면 <b>종료 잠금</b>. 최초 원인 1개를 기록하고 <see cref="EventBus.AxisCritical"/>을 <b>한 번만</b> 보낸다.</item>
     /// <item><b>신뢰는 100에서 멈출 뿐 잠그지 않는다</b>(2026-09-17 결정). 신뢰는 태블릿 문자와 근무수칙의 충돌을 늘리는 데에만 쓴다.</item>
     /// <item>잠금 이후의 델타는 모두 무시한다.</item>
@@ -86,7 +88,7 @@ namespace NightDuty
 
         /// <summary>
         /// 델타를 적용한다. 실제로 값이 바뀌었으면 true.
-        /// 잠금 상태, 0 이하 델타(축은 줄지 않는다), 이미 100인 축은 무시한다.
+        /// 잠금 상태, 0 이하 델타(빼기는 <see cref="Lower"/>로), 이미 100인 축은 무시한다.
         /// 신뢰가 100에 닿아도 잠그지 않는다(<see cref="IsTerminal"/>).
         /// </summary>
         /// <param name="axis">대상 축.</param>
@@ -111,7 +113,7 @@ namespace NightDuty
             {
                 if (delta < 0)
                 {
-                    Debug.LogWarning("[FearAxisSystem] 음수 델타는 허용되지 않습니다(감쇠 없음): " + sourceId + " " + delta);
+                    Debug.LogWarning("[FearAxisSystem] 음수 델타는 Apply로 받지 않습니다. Lower를 쓰십시오: " + sourceId + " " + delta);
                 }
 
                 return false;
@@ -143,6 +145,38 @@ namespace NightDuty
                 EventBus.RaiseAxisCritical(axis);
             }
 
+            return true;
+        }
+
+        /// <summary>
+        /// 생존 수치를 뺀다(정확한 보고·밤 재시작, 2026-09-30 새 기획서). 실제로 값이 바뀌었으면 true.
+        /// <list type="bullet">
+        /// <item><b>신뢰는 줄지 않는다</b> — 신뢰 축이면 아무것도 하지 않는다.</item>
+        /// <item>붙잡힘(잠금) 상태에서는 무시한다.</item>
+        /// <item>0 밑으로는 내려가지 않는다. <see cref="ValueChanged"/>를 보낸다 —
+        /// <see cref="BandResolver"/>는 도달값을 기억하므로 연출 구간은 내려가지 않는다.</item>
+        /// </list>
+        /// </summary>
+        /// <param name="axis">감각 축.</param>
+        /// <param name="amount">뺄 양(양수).</param>
+        /// <param name="sourceId">출처 ID(로그용).</param>
+        public bool Lower(FearAxis axis, int amount, string sourceId)
+        {
+            if (IsLocked || !IsTerminal(axis) || amount <= 0)
+            {
+                return false;
+            }
+
+            int i = (int)axis;
+            int before = _values[i];
+            int after = Math.Max(Bands.Min, before - amount);
+            if (after == before)
+            {
+                return false;
+            }
+
+            _values[i] = after;
+            RaiseValueChanged(axis, before, after);
             return true;
         }
 

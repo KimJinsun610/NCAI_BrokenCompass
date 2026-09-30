@@ -624,18 +624,18 @@ namespace NightDuty.Tests
         // 2026-09-21: 구간 검사를 되살렸다 — 두 칸 개방 식별만으로는 부족하고 배치 자격이 필요하다.
         // 2026-09-22 자격 재설계: 하한이 Band3(72) → Band2(48)라 경계가 47/48이다.
         [Test]
-        public void T6_배치47에서는_시작하지않고_48에서_시작한다()
+        public void T6_배치49에서는_시작하지않고_50에서_시작한다()
         {
-            Setup(FearAxis.Layout, 47);
+            Setup(FearAxis.Layout, 49);
             RuleBook below = Book("T6");
             below.Dispatch(T(SignalKind.ClueIdentified, BothOpen));
-            Assert.AreEqual(CardState.Waiting, below.Watchers[0].State, "배치 47은 Band1 — 자격 미달");
+            Assert.AreEqual(CardState.Waiting, below.Watchers[0].State, "배치 49는 Band1 — 자격 미달");
 
-            Setup(FearAxis.Layout, 1);   // 47 + 1 = 48 → Band2
+            Setup(FearAxis.Layout, 1);   // 49 + 1 = 50 → Band2
             RuleBook atBand2 = Book("T6");
             atBand2.Dispatch(T(SignalKind.ClueIdentified, BothOpen));
 
-            Assert.AreEqual(CardState.Active, atBand2.Watchers[0].State, "배치 48은 Band2 — 자격 충족");
+            Assert.AreEqual(CardState.Active, atBand2.Watchers[0].State, "배치 50은 Band2 — 자격 충족");
         }
 
         // 기획서: 재방문·문 개폐로 금지가 사라지지 않는다(준수 조건을 채운 뒤라도 진입하면 위반).

@@ -181,9 +181,10 @@ namespace NightDuty
             InspectedToday.Clear();
             VisitedToday.Clear();
 
-            // 일차 하한을 **덱보다 먼저** 적용한다. 카드의 발동 자격이 축 값을 보고 정해지므로
-            // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다(DayFloor 주석 참조).
-            DayFloor.Apply(_axes, Day);
+            // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
+            // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
+            // 생존 수치는 올리지 않는다(2026-09-30 새 기획서).
+            _bands.SetDayFloor(DayFloor.Of(Day));
 
             // 조우를 **덱보다 먼저** 정한다. DayDirector가 「그날 조우 공간의 카드 1장」을 보장하려면
             // 그 공간을 이미 알고 있어야 한다. 조우 배정은 축을 읽지 않으므로 하한 뒤·덱 앞이 안전하다.
@@ -199,7 +200,7 @@ namespace NightDuty
             TargetsInUse = ResolveTargets();
             _book = new RuleBook(deck, _axes, _bands, TargetsInUse);
             _book.Settled += OnSettled;
-            Paradox.BeginNight(_axes);   // 그날 상한을 근무 시작 시 신뢰로 고정한다(기획서 C절).
+            Paradox.BeginNight(_bands.Shown);   // 그날 상한을 근무 시작 시 신뢰로 고정한다(기획서 C절).
             _book.BeginNight();   // 밤 시작부터 감시하는 장기 카드(C6)를 시작한다.
 
             // 씬이 새로 열렸으므로 연출에 현재 구간을 from == to로 한 번 알린다.
@@ -380,7 +381,7 @@ namespace NightDuty
                 return;
             }
 
-            Paradox.Poll(_book, _axes, CurrentMinute());
+            Paradox.Poll(_book, _bands.Shown, CurrentMinute());
         }
 
         private static int CurrentMinute()
@@ -699,7 +700,7 @@ namespace NightDuty
                 _director.IsEncounterActive = IsEncounterActive;
             }
 
-            return _director.BuildDeck(day, _axes);
+            return _director.BuildDeck(day, _bands.Shown);
         }
 
         /// <summary>

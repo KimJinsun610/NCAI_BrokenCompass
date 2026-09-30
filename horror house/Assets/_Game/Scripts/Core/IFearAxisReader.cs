@@ -22,8 +22,8 @@ namespace NightDuty
 
         /// <summary>
         /// 축의 현재 구간을 돌려준다.
-        /// 구현체는 <see cref="Bands.Of"/>의 원시 판정이 아니라
-        /// 히스테리시스가 적용된 확정 구간을 돌려주는 것이 원칙이다.
+        /// <c>FearAxisSystem</c>은 생존 수치의 원시 구간을, <c>BandResolver.Shown</c>은 연출 구간
+        /// (내려가지 않음, 일차 하한 적용)을 돌려준다. 연출·자격 판정은 후자를 읽는다.
         /// </summary>
         /// <param name="axis">읽을 공포 축.</param>
         Band GetBand(FearAxis axis);

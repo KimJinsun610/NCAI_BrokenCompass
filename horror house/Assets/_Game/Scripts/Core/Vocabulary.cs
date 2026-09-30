@@ -68,26 +68,26 @@ namespace NightDuty
 
     /// <summary>
     /// 공포 축 값이 속하는 구간. 폭이 균일하지 않다는 점에 주의할 것.
-    /// Band0 = 0~23, Band1 = 24~47, Band2 = 48~71, Band3 = 72~89, Band4 = 90~99, 100 = 종료 잠금
-    /// (2026-09-21 밸런스 재설계로 경계를 24의 배수에 맞췄다. Band0~2는 각 24칸이고
-    /// Band3은 18칸, Band4는 10칸으로 뒤로 갈수록 좁아진다 — 고조 구간을 잘게 쪼개기 위한 의도적 설계다.)
+    /// Band0 = 0–24, Band1 = 25–49, Band2 = 50–74, Band3 = 75–89, Band4 = 90–99, 100 = 붙잡힘
+    /// (2026-09-30 새 기획서. Band3·Band4가 좁은 것은 붙잡히기 직전 구간을 짧게 두려는 의도다.)
+    /// 연출이 보는 구간은 <see cref="BandResolver"/>의 연출 구간이다(내려가지 않음, 일차 하한 적용).
     /// 실제 범위 표는 <see cref="Bands"/>에 한 곳으로 모아 두었다.
     /// </summary>
     public enum Band
     {
-        /// <summary>0~23. 평상. 이상 징후가 사실상 없다.</summary>
+        /// <summary>0–24. 평상. 이상 징후가 사실상 없다.</summary>
         Band0 = 0,
 
-        /// <summary>24~47. 미약한 위화감.</summary>
+        /// <summary>25–49. 미약한 위화감.</summary>
         Band1 = 1,
 
-        /// <summary>48~71. 명백한 이상. 조도 축에서는 "붉어 보이지만 붉음 판정은 아닌" 회색지대(3200K)다.</summary>
+        /// <summary>50–74. 명백한 이상. 조도 축에서는 "붉어 보이지만 붉음 판정은 아닌" 회색지대(3200K)다.</summary>
         Band2 = 2,
 
-        /// <summary>72~89. 고조.</summary>
+        /// <summary>75–89. 고조.</summary>
         Band3 = 3,
 
-        /// <summary>90~99. 엔딩 직전 경고 표현. 청각·조도·배치가 100에 도달하면 구간이 아니라 종료 잠금이다(<c>EventBus.AxisCritical</c>). 신뢰 100은 Band4로 취급한다.</summary>
+        /// <summary>90–99. 붙잡힘 직전 경고 표현. 청각·조도·배치가 100에 도달하면 구간이 아니라 종료 잠금이다(<c>EventBus.AxisCritical</c>). 신뢰 100은 Band4로 취급한다.</summary>
         Band4 = 4
     }
 }

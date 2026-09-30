@@ -53,12 +53,12 @@ namespace NightDuty.Tests
 
         // 상한은 신뢰의 구간 번호 그대로다. 경계는 24/48/72/90(2026-09-21 재설계).
         [TestCase(0, 0)]
-        [TestCase(23, 0)]
-        [TestCase(24, 1)]
-        [TestCase(47, 1)]
-        [TestCase(48, 2)]
-        [TestCase(71, 2)]
-        [TestCase(72, 3)]
+        [TestCase(24, 0)]
+        [TestCase(25, 1)]
+        [TestCase(49, 1)]
+        [TestCase(50, 2)]
+        [TestCase(74, 2)]
+        [TestCase(75, 3)]
         [TestCase(89, 3)]
         [TestCase(90, 4)]
         [TestCase(100, 4)]

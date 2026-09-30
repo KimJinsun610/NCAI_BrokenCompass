@@ -4,7 +4,8 @@ using NUnit.Framework;
 namespace NightDuty.Tests
 {
     /// <summary>
-    /// 일차 하한 곡선(2026-09-21 밸런스 재설계). 곡선 자체와, 「올리기만 하고 내리지 않는다」는 규약을 본다.
+    /// 일차 하한과 연출 구간(2026-09-30 새 기획서). 하한은 <b>연출 구간에만</b> 걸리고 생존 수치는 올리지 않는다.
+    /// 연출 구간 = max(도달 구간, 일차 하한)이고 내려가지 않는다.
     /// </summary>
     public sealed class DayFloorTests
     {
@@ -14,94 +15,121 @@ namespace NightDuty.Tests
             EventBus.ClearAll();
         }
 
-        /// <summary>곡선은 0/0/12/24/48/72다. 값을 바꾸려면 DayFloor.Floors 배열 한 곳만 고쳐야 한다.</summary>
-        [TestCase(0, 0)]
-        [TestCase(1, 0)]
-        [TestCase(2, 12)]
-        [TestCase(3, 24)]
-        [TestCase(4, 48)]
-        [TestCase(5, 72)]
-        public void 일차별_하한값은_0_0_12_24_48_72다(int day, int expected)
+        /// <summary>곡선은 Band0/Band0/Band1/Band1/Band2/Band3(0일차 포함). 값을 바꾸려면 DayFloor.Floors 배열 한 곳만 고친다.</summary>
+        [TestCase(0, Band.Band0)]
+        [TestCase(1, Band.Band0)]
+        [TestCase(2, Band.Band1)]
+        [TestCase(3, Band.Band1)]
+        [TestCase(4, Band.Band2)]
+        [TestCase(5, Band.Band3)]
+        [TestCase(7, Band.Band3)]
+        public void 일차별_연출하한은_0_0_1_1_2_3이다(int day, Band expected)
         {
             Assert.AreEqual(expected, DayFloor.Of(day));
         }
 
         [Test]
-        public void 일차1은_아무_축도_올리지_않는다()
+        public void 하한은_생존수치를_올리지_않는다()
         {
             FearAxisSystem axes = new FearAxisSystem();
+            BandResolver bands = new BandResolver(axes);
 
-            int raised = DayFloor.Apply(axes, 1);
+            bands.SetDayFloor(DayFloor.Of(5));
 
-            Assert.AreEqual(0, raised, "1일차 하한은 0이라 올릴 축이 없다");
             Assert.AreEqual(0, axes.GetValue(FearAxis.Layout));
             Assert.AreEqual(0, axes.GetValue(FearAxis.Auditory));
             Assert.AreEqual(0, axes.GetValue(FearAxis.Illuminance));
-            Assert.AreEqual(0, axes.GetValue(FearAxis.Trust));
-        }
-
-        [Test]
-        public void 일차3은_감각_3축을_전부_24로_올린다()
-        {
-            FearAxisSystem axes = new FearAxisSystem();
-
-            int raised = DayFloor.Apply(axes, 3);
-
-            Assert.AreEqual(3, raised, "감각 3축이 전부 올라간다");
-            Assert.AreEqual(DayFloor.Of(3), axes.GetValue(FearAxis.Layout));
-            Assert.AreEqual(DayFloor.Of(3), axes.GetValue(FearAxis.Auditory));
-            Assert.AreEqual(DayFloor.Of(3), axes.GetValue(FearAxis.Illuminance));
+            Assert.AreEqual(Band.Band0, axes.GetBand(FearAxis.Layout), "생존 수치의 원시 구간은 그대로다");
+            Assert.AreEqual(Band.Band3, bands.Shown.GetBand(FearAxis.Layout), "연출 구간은 하한까지 오른다");
+            Assert.AreEqual(Band.Band3, bands.GetShown(SpaceId.Corridor, FearAxis.Auditory));
         }
 
         [Test]
         public void 신뢰는_하한_대상이_아니다()
         {
             FearAxisSystem axes = new FearAxisSystem();
+            BandResolver bands = new BandResolver(axes);
 
-            DayFloor.Apply(axes, 3);
+            bands.SetDayFloor(DayFloor.Of(5));
 
-            // 신뢰는 준수로만 오른다. 하한이 공짜로 신뢰를 올리면 역설 문자 배급량이 저절로 늘어난다.
-            Assert.AreEqual(0, axes.GetValue(FearAxis.Trust));
+            // 신뢰는 준수로만 오른다. 하한이 공짜로 신뢰를 올리면 역설 배급량이 저절로 늘어난다.
+            Assert.AreEqual(Band.Band0, bands.Shown.GetBand(FearAxis.Trust));
         }
 
         [Test]
-        public void 이미_하한보다_높은_축은_내려가지_않는다()
+        public void 연출구간은_도달구간과_하한중_높은쪽이다()
         {
             FearAxisSystem axes = new FearAxisSystem();
-            axes.Apply(FearAxis.Layout, 50, "준비", SpaceId.None);
+            BandResolver bands = new BandResolver(axes);
+            axes.ValueChanged += bands.OnValueChanged;
 
-            int raised = DayFloor.Apply(axes, 3);
+            axes.Apply(FearAxis.Layout, Bands.LowerBound(Band.Band2), "준비", SpaceId.None);
+            bands.SetDayFloor(DayFloor.Of(2));
 
-            Assert.AreEqual(50, axes.GetValue(FearAxis.Layout), "하한 24는 50을 끌어내리지 않는다");
-            Assert.AreEqual(2, raised, "이미 높은 배치를 뺀 두 축만 올라간다");
-            Assert.AreEqual(DayFloor.Of(3), axes.GetValue(FearAxis.Auditory));
-            Assert.AreEqual(DayFloor.Of(3), axes.GetValue(FearAxis.Illuminance));
+            Assert.AreEqual(Band.Band2, bands.Shown.GetBand(FearAxis.Layout), "도달 Band2 > 하한 Band1");
+            Assert.AreEqual(Band.Band1, bands.Shown.GetBand(FearAxis.Auditory), "도달 Band0 < 하한 Band1");
         }
 
         [Test]
-        public void 같은_날_두번_적용해도_값이_같다()
+        public void 생존수치가_내려가도_연출구간은_내려가지_않는다()
         {
             FearAxisSystem axes = new FearAxisSystem();
+            BandResolver bands = new BandResolver(axes);
+            axes.ValueChanged += bands.OnValueChanged;
 
-            DayFloor.Apply(axes, 4);
-            int again = DayFloor.Apply(axes, 4);
+            int down = 0;
+            EventBus.BandChanged += (space, axis, from, to) =>
+            {
+                if (to < from)
+                {
+                    down++;
+                }
+            };
 
-            Assert.AreEqual(0, again, "두 번째 적용은 델타가 0이라 아무 축도 올리지 않는다");
-            Assert.AreEqual(DayFloor.Of(4), axes.GetValue(FearAxis.Layout));
-            Assert.AreEqual(DayFloor.Of(4), axes.GetValue(FearAxis.Auditory));
-            Assert.AreEqual(DayFloor.Of(4), axes.GetValue(FearAxis.Illuminance));
+            axes.Apply(FearAxis.Auditory, Bands.LowerBound(Band.Band1) + 2, "위반", SpaceId.None);
+            Assert.IsTrue(axes.Lower(FearAxis.Auditory, Deltas.CorrectReportRelief, "보고"));
+
+            Assert.AreEqual(Band.Band0, axes.GetBand(FearAxis.Auditory), "생존 수치는 Band0으로 내려갔다");
+            Assert.AreEqual(Band.Band1, bands.Shown.GetBand(FearAxis.Auditory), "연출 구간은 남는다");
+            Assert.AreEqual(Bands.LowerBound(Band.Band1) + 2, bands.Peak(FearAxis.Auditory));
+            Assert.AreEqual(0, down, "내려가는 BandChanged는 한 번도 나가지 않는다");
         }
 
         [Test]
-        public void 마지막_일차를_넘는_일차는_마지막_하한으로_클램프한다()
+        public void 하한이_낮아져도_연출구간은_내려가지_않는다()
         {
             FearAxisSystem axes = new FearAxisSystem();
+            BandResolver bands = new BandResolver(axes);
 
-            Assert.AreEqual(DayFloor.Of(DayFloor.LastDay), DayFloor.Of(DayFloor.LastDay + 2));
-            Assert.AreEqual(72, DayFloor.Of(7));
+            bands.SetDayFloor(Band.Band2);
+            bands.SetDayFloor(Band.Band0);
 
-            DayFloor.Apply(axes, 7);
-            Assert.AreEqual(72, axes.GetValue(FearAxis.Illuminance));
+            Assert.AreEqual(Band.Band2, bands.GetShown(SpaceId.Toilet, FearAxis.Illuminance));
+        }
+
+        [Test]
+        public void 신뢰는_Lower로_줄지_않는다()
+        {
+            FearAxisSystem axes = new FearAxisSystem();
+            axes.Apply(FearAxis.Trust, 30, "준수", SpaceId.None);
+
+            Assert.IsFalse(axes.Lower(FearAxis.Trust, 10, "시험"));
+            Assert.AreEqual(30, axes.GetValue(FearAxis.Trust));
+        }
+
+        [Test]
+        public void Lower는_0밑으로_내려가지_않고_잠금중엔_무시한다()
+        {
+            FearAxisSystem axes = new FearAxisSystem();
+            axes.Apply(FearAxis.Layout, 3, "위반", SpaceId.None);
+            Assert.IsTrue(axes.Lower(FearAxis.Layout, 10, "보고"));
+            Assert.AreEqual(0, axes.GetValue(FearAxis.Layout));
+            Assert.IsFalse(axes.Lower(FearAxis.Layout, 10, "보고"), "이미 0이면 바뀐 것이 없다");
+
+            axes.Apply(FearAxis.Auditory, 100, "포획", SpaceId.None);
+            Assert.IsTrue(axes.IsLocked);
+            Assert.IsFalse(axes.Lower(FearAxis.Auditory, 10, "보고"));
+            Assert.AreEqual(100, axes.GetValue(FearAxis.Auditory));
         }
     }
 

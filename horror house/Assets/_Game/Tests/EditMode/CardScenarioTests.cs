@@ -89,10 +89,10 @@ namespace NightDuty.Tests
         /// </summary>
         private static readonly Dictionary<string, AxisSetup> Prerequisites = new Dictionary<string, AxisSetup>
         {
-            { "C2", new AxisSetup(FearAxis.Layout, 24) },   // 배치 Band1~Band4
-            { "S5", new AxisSetup(FearAxis.Layout, 24) },   // 배치 Band1~Band4
-            { "T3", new AxisSetup(FearAxis.Layout, 48) },   // 배치 Band2~Band4
-            { "T6", new AxisSetup(FearAxis.Layout, 72) }    // 배치 Band3~Band4
+            { "C2", new AxisSetup(FearAxis.Layout, 25) },   // 배치 Band1~Band4
+            { "S5", new AxisSetup(FearAxis.Layout, 25) },   // 배치 Band1~Band4
+            { "T3", new AxisSetup(FearAxis.Layout, 50) },   // 배치 Band2~Band4
+            { "T6", new AxisSetup(FearAxis.Layout, 75) }    // 배치 Band3~Band4
         };
 
         /// <summary>카드 ID의 선행 축 값. 표에 없으면 값 0(선행 조건 없음)을 돌려준다.</summary>

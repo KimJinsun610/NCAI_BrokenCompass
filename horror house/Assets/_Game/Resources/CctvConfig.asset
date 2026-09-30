@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0466eabc75a5ed34fa257bf9660b2a18, type: 3}
+  m_Name: CctvConfig
+  m_EditorClassIdentifier: Assembly-CSharp::CctvConfigSO
+  channels:
+  - label: "\uBCF5\uB3C4"
+    position: {x: 14.2, y: 4.8, z: 42.9}
+    lookAt: {x: 38, y: 1.6, z: 41.2}
+    fieldOfView: 70
+    irIntensity: 2.5
+    irRange: 30
+    irSpotAngle: 100
+  - label: "\uAD50\uC2E4"
+    position: {x: 49.2, y: 4.9, z: 34.2}
+    lookAt: {x: 40, y: 1.4, z: 37.6}
+    fieldOfView: 70
+    irIntensity: 2.5
+    irRange: 30
+    irSpotAngle: 100
+  - label: "\uACFC\uD559\uC2E4"
+    position: {x: 44.7, y: 4.8, z: 43.1}
+    lookAt: {x: 53.5, y: 1.5, z: 41.8}
+    fieldOfView: 70
+    irIntensity: 2.5
+    irRange: 30
+    irSpotAngle: 100
+  - label: "\uD654\uC7A5\uC2E4"
+    position: {x: -0.8, y: 4.6, z: 35.3}
+    lookAt: {x: 5, y: 1.3, z: 33.2}
+    fieldOfView: 70
+    irIntensity: 1.2
+    irRange: 30
+    irSpotAngle: 100
+  - label: "\uB3C4\uC11C\uAD00"
+    position: {x: 3.6, y: 4.9, z: 55.3}
+    lookAt: {x: 12.5, y: 1.3, z: 44.5}
+    fieldOfView: 70
+    irIntensity: 2.5
+    irRange: 30
+    irSpotAngle: 100
+  monitorPath: Interior/janitor's room/Old CRT Monitor
+  screenLocalCenter: {x: 0, y: -0.472, z: 0.075}
+  screenSize: {x: 0.3, y: 0.225}
+  resolution: {x: 320, y: 240}
+  viewFps: 12
+  idleFps: 6
+  wakeRadius: 5
+  viewDistance: 0.32
+  viewBlendSeconds: 0.35
+  gain: 1.3
+  noise: 0.035
+  scanlines: 0.22
+  tint: {r: 0.8, g: 0.95, b: 0.84, a: 1}
+  switchStaticSeconds: 0.3

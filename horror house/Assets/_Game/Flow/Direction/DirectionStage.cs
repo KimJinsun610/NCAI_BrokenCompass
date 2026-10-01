@@ -199,8 +199,8 @@ public sealed class DirectionStage : MonoBehaviour
         }
         else if (script.StandIn.Length > 0)
         {
-            Vector3 at = script.Placement == CuePlacement.CeilingAhead ? CeilingAbove(point) : FloorBelow(point);
-            GameObject go = StandInFactory.Create(script.StandIn, at, player, script.AnchorId);
+            Vector3 at;
+            GameObject go = SpawnAt(script.StandIn, script.StageAnchor, script.Placement == CuePlacement.CeilingAhead, point, player, script.AnchorId, out at);
             DirectionCue cue = go.GetComponent<DirectionCue>();
             if (cue == null) cue = go.AddComponent<DirectionCue>();
             cue.Play(new CueContext { Intensity = e.Intensity, Anchor = at, EncounterId = e.SourceId });
@@ -208,8 +208,8 @@ public sealed class DirectionStage : MonoBehaviour
 
             if (script.ExtraStandIn.Length > 0)
             {
-                Vector3 ceiling = CeilingAbove(PointOr(Vector3.zero, 3f));
-                GameObject extra = StandInFactory.Create(script.ExtraStandIn, ceiling, player, script.ExtraAnchorId);
+                Vector3 ceiling;
+                GameObject extra = SpawnAt(script.ExtraStandIn, script.ExtraStageAnchor, true, PointOr(Vector3.zero, 3f), player, script.ExtraAnchorId, out ceiling);
                 if (extra.GetComponent<DirectionCue>() == null) extra.AddComponent<DirectionCue>().Play(new CueContext { Intensity = e.Intensity, Anchor = ceiling, EncounterId = e.SourceId });
                 st.Objects.Add(extra);
             }
@@ -226,6 +226,24 @@ public sealed class DirectionStage : MonoBehaviour
         }
 
         PlaySound(e.SourceId + ".confront", point);
+    }
+
+    /// <summary>
+    /// 대역을 세운다. 고정 자리(<see cref="StageAnchor"/>)가 씬에 있으면 그 자리·방향(+응시 상자), 없으면 디렉터가 준 점의 바닥(천장)에서 플레이어를 보게.
+    /// </summary>
+    private static GameObject SpawnAt(string standIn, string stageAnchor, bool ceiling, Vector3 point, Vector3 player, string anchorId, out Vector3 at)
+    {
+        StageAnchor fixedAt = StageAnchor.Find(stageAnchor);
+        if (fixedAt != null)
+        {
+            at = fixedAt.transform.position;
+            GameObject placed = StandInFactory.Create(standIn, at, fixedAt.transform.rotation, anchorId);
+            if (fixedAt.GazeProxy != null) StandInFactory.ApplyGazeProxy(placed, fixedAt.GazeProxy);
+            return placed;
+        }
+
+        at = ceiling ? CeilingAbove(point) : FloorBelow(point);
+        return StandInFactory.Create(standIn, at, player, anchorId);
     }
 
     private void SpawnCctvPerson(Staged st)
@@ -513,7 +531,16 @@ public sealed class DirectionStage : MonoBehaviour
 
     private static void PlaySound(string name, Vector3 at)
     {
+        float volume = 1f;
         AudioClip clip = Resources.Load<AudioClip>("Direction/" + name);
-        if (clip != null) AudioSource.PlayClipAtPoint(clip, at);
+        if (clip == null) clip = DirectionSoundTableSO.Find(name, out volume);   // 표(다른 폴더의 클립을 이름으로 묶음).
+        if (clip == null) return;
+        AudioSource.PlayClipAtPoint(clip, at, volume);
+        if (Verbose) Debug.Log("[Direction] 소리 " + name + " ← " + clip.name);
+
+        // 같은 순간 겹치는 둘째 소리(C4 = 칠판 긁기 + 교탁 의자). 공통(*) 대체는 쓰지 않는다.
+        float v2;
+        AudioClip layer = DirectionSoundTableSO.FindExact(name + "+", out v2);
+        if (layer != null) AudioSource.PlayClipAtPoint(layer, at, v2);
     }
 }

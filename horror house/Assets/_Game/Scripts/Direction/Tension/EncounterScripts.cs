@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NightDuty
@@ -78,6 +78,20 @@ namespace NightDuty
         /// <summary>대면 때 함께 보내는 두 번째 단서(끝 단서도 같이). 비면 없음.</summary>
         public string ExtraCue = string.Empty;
 
+        /// <summary>
+        /// 고정 자리 ID(씬의 <c>StageAnchor</c>). 등록돼 있으면 <see cref="Placement"/> 대신 그 자리·방향에 세운다
+        /// (2026-10-01 민 지정: 소년 = 1-3 교실 맨 뒤 줄 오른쪽에서 둘째 책상, 천장 다리 = 뒤 통로 너머 창고 천장, 창밖 남자 = 도서관 북쪽 창 밖). 비면 없음.
+        /// </summary>
+        public string StageAnchor = string.Empty;
+
+        /// <summary>두 번째 대역의 고정 자리 ID(소년 머리 박기의 천장 다리). 비면 플레이어 앞 천장.</summary>
+        public string ExtraStageAnchor = string.Empty;
+
+        /// <summary>
+        /// 방아쇠를 이 방(정확한 <see cref="SpaceId"/>)으로만 좁힌다. 고정 자리가 한 교실에 있으면 다른 교실에서 걸리면 안 된다. None이면 <see cref="Space"/>(정규화)만 본다.
+        /// </summary>
+        public SpaceId ExactSpace = SpaceId.None;
+
         /// <summary>메모(왜 이렇게 정했는지).</summary>
         public string Note = string.Empty;
 
@@ -86,6 +100,19 @@ namespace NightDuty
         {
             get { return Window < 0f; }
         }
+    }
+
+    /// <summary>씬의 고정 연출 자리 ID(<c>StageAnchor</c> 오브젝트의 ID와 같다).</summary>
+    public static class StageAnchors
+    {
+        /// <summary>앉은 소년 — 1-3 교실(Classroom02) 맨 뒤 줄, 학생 기준 오른쪽에서 둘째 책상 의자.</summary>
+        public const string BoySeat = "stage.boy.seat";
+
+        /// <summary>천장 다리 — 1-3 교실 뒤 통로 너머 창고 천장(사다리 바로 위).</summary>
+        public const string LegsCeiling = "stage.legs.ceiling";
+
+        /// <summary>창밖 남자 — 도서관 북쪽 창 밖.</summary>
+        public const string WindowMan = "stage.window.man";
     }
 
     /// <summary>조우 15개의 대본 표. 수치는 이 파일 한 곳.</summary>
@@ -115,6 +142,7 @@ namespace NightDuty
                     Id = ProgramCatalog.BoySeated, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Classroom, Dwell = 3f,
                     Cue = FinalCues.BoySeated, ReleaseCue = FinalCues.Bell, Window = 15f,
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy",
+                    StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3,
                     Note = "기획서: 교실 점검 항목을 처음 비출 때. 비춤 대신 교실 3초 체류로 시작한다(점검 대상이 교실 깊숙이 있어 거의 같은 순간)."
                 },
                 new EncounterScript
@@ -123,6 +151,7 @@ namespace NightDuty
                     Cue = FinalCues.BoySeated, ReleaseCue = FinalCues.Bell, Window = 18f,
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy",
                     ExtraStandIn = "mob.legs", ExtraAnchorId = FinalCues.LegsTarget, ExtraCue = FinalCues.Legs,
+                    StageAnchor = StageAnchors.BoySeat, ExtraStageAnchor = StageAnchors.LegsCeiling, ExactSpace = SpaceId.Classroom_1_3,
                     Note = "교차(청각 2 + 배치 2). 소년과 천장 다리가 함께 — C2(다리 3초 응시)를 어기면 머리 박기 소리가 복도까지."
                 },
                 new EncounterScript
@@ -157,7 +186,7 @@ namespace NightDuty
                 {
                     Id = ProgramCatalog.HallEndFigure, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.ScienceRoom, Dwell = 10f,
                     Cue = FinalCues.HallEnd, Window = 10f,
-                    Placement = CuePlacement.AheadOfPlayer, Distance = 7f, StandIn = "mob.meatman",
+                    Placement = CuePlacement.AheadOfPlayer, Distance = 7f, StandIn = "mob.dummy.stand",
                     Note = "기획서 방아쇠는 「과학실 퇴실」이지만 S5는 과학실 안에서 판정한다 — 과학실 10초 체류 뒤 문밖에 선다."
                 },
                 new EncounterScript
@@ -190,6 +219,7 @@ namespace NightDuty
                     Id = ProgramCatalog.CeilingLegs, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Classroom, Dwell = 2f,
                     Cue = FinalCues.Legs, Window = -1f,
                     Placement = CuePlacement.CeilingAhead, Distance = 3f, StandIn = "mob.legs", AnchorId = FinalCues.LegsTarget,
+                    StageAnchor = StageAnchors.LegsCeiling, ExactSpace = SpaceId.Classroom_1_3,
                     Note = "존재형. C2: 3초 응시하면 위반."
                 },
                 new EncounterScript
@@ -203,8 +233,9 @@ namespace NightDuty
                 {
                     Id = ProgramCatalog.SuitMan, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 6f,
                     Cue = FinalCues.WindowKnock, Window = 10f,
-                    Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.glitchman", AnchorId = FinalCues.ManTarget,
-                    Note = "창 두드림으로 시작. L5: 먼저 인사(비춤·2초 응시)하지 않는다. 창가 자리는 씬 기준점이 생기면 바꾼다."
+                    Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.windowman", AnchorId = FinalCues.ManTarget,
+                    StageAnchor = StageAnchors.WindowMan,
+                    Note = "창 두드림으로 시작. L5: 먼저 인사(비춤·2초 응시)하지 않는다. 도서관 북쪽 창(WallOutside_4m_WindowDouble) 밖 — 모델은 DUCK(민 지정)."
                 },
                 new EncounterScript
                 {

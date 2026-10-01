@@ -543,4 +543,53 @@ namespace NightDuty.Tests
             Assert.IsTrue(ProgramCatalog.Rule("H2").IsStandalone);
         }
     }
+
+    public class StageAnchorTests
+    {
+        [TearDown]
+        public void TearDown()
+        {
+            StagePoints.Clear();
+            NightRun.ProgramEnabled = false;
+        }
+
+        [Test]
+        public void 고정_자리가_있으면_대면_점이_그_자리다()
+        {
+            StagePoints.Set(StageAnchors.BoySeat, new Vector3(46.3f, 1.5f, 36.3f));
+            NightRun.StartNewRun();
+            NightRun.RegisteredTargets = null;
+            NightRun.ProgramEnabled = true;
+            NightRun.BeginNight(1, () => 70);
+
+            List<DirectionEvent> seen = new List<DirectionEvent>();
+            EventBus.DirectionEmitted += seen.Add;
+            try
+            {
+                NightRun.Send(JudgeSignal.Pose(new Vector3(40f, 1.5f, 36f), 90f));
+                Assert.IsTrue(NightRun.DebugForceEncounter(ProgramCatalog.BoySeated));
+                for (int i = 0; i < 30; i++) NightRun.Tick(0.1f);
+            }
+            finally
+            {
+                EventBus.DirectionEmitted -= seen.Add;
+            }
+
+            int at = seen.FindIndex(e => e.SourceId == ProgramCatalog.BoySeated && e.Phase == DirectionPhase.Confront);
+            Assert.GreaterOrEqual(at, 0, "대면이 나와야 한다");
+            DirectionEvent confront = seen[at];
+            Assert.AreEqual(new Vector3(46.3f, 1.5f, 36.3f), confront.Point, "플레이어 앞이 아니라 씬이 정한 책상 자리");
+        }
+
+        [Test]
+        public void 민_지정_자리와_방()
+        {
+            Assert.AreEqual(StageAnchors.BoySeat, EncounterScripts.Find(ProgramCatalog.BoySeated).StageAnchor);
+            Assert.AreEqual(SpaceId.Classroom_1_3, EncounterScripts.Find(ProgramCatalog.BoySeated).ExactSpace, "소년 책상이 1-3 교실에 있으니 1-1에서는 걸리지 않는다");
+            Assert.AreEqual(StageAnchors.LegsCeiling, EncounterScripts.Find(ProgramCatalog.CeilingLegs).StageAnchor);
+            Assert.AreEqual(StageAnchors.LegsCeiling, EncounterScripts.Find(ProgramCatalog.BoyBang).ExtraStageAnchor);
+            Assert.AreEqual(StageAnchors.WindowMan, EncounterScripts.Find(ProgramCatalog.SuitMan).StageAnchor);
+            Assert.AreEqual("mob.windowman", EncounterScripts.Find(ProgramCatalog.SuitMan).StandIn, "창밖 남자 = DUCK 프리팹");
+        }
+    }
 }

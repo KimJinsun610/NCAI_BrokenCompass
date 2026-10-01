@@ -95,8 +95,11 @@ public class ResultController : MonoBehaviour
         Bind();
         PrepareHidden();
 
-        // 수치는 마지막 날 근무를 마쳤을 때만 보여 준다
-        bool showSummary = result.Outcome == DayOutcome.Completed && result.Summary.Day >= GameSession.FinalDay;
+        // 수치는 마지막 날 근무를 마쳤을 때만 보여 준다.
+        // 수치 결산 화면이 없는 디자인(HUD_Result_Design)이면 근무 일지만 보여 주고 넘어간다 —
+        // 없는 화면으로 넘어가면 빈 화면에서 버튼 없이 멈춘다.
+        bool showSummary = summaryRoot != null
+            && result.Outcome == DayOutcome.Completed && result.Summary.Day >= GameSession.FinalDay;
 
         if (dutyLog != null)
         {
@@ -167,6 +170,14 @@ public class ResultController : MonoBehaviour
     {
         if (leaving) return;
         leaving = true;
+
+        // 마지막 날 근무를 마쳤으면 회차가 끝난 것이다. AdvanceDay는 FinalDay에서 멈추므로
+        // 그대로 Play로 보내면 마지막 날이 되풀이된다 — 메인으로 돌려보낸다.
+        if (result.Outcome == DayOutcome.Completed && result.Summary.Day >= GameSession.FinalDay)
+        {
+            SceneFlow.GoTo(GameScene.Main);
+            return;
+        }
 
         if (result.Outcome == DayOutcome.Died) GameSession.StartNewRun();
         else GameSession.AdvanceDay();

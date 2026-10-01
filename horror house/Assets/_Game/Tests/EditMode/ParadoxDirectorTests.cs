@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace NightDuty.Tests
 {
-    /// <summary>역설 발송: 신뢰 25부터, 구간별 하루 상한, 카드당 하루 한 번.</summary>
+    /// <summary>역설 발송: 신뢰 15부터, 신뢰 구간별 하루 상한, 카드당 하루 한 번.</summary>
     public sealed class ParadoxDirectorTests
     {
         private TestKit _kit;
@@ -51,16 +51,16 @@ namespace NightDuty.Tests
             NightRun.Send(JudgeSignal.Target(SignalKind.ClueIdentified, id.ToLowerInvariant() + ".clue"));
         }
 
-        // 상한은 신뢰의 구간 번호 그대로다. 경계는 24/48/72/90(2026-09-21 재설계).
+        // 상한은 신뢰 구간 번호 그대로다. 신뢰 전용 경계는 15/30/45/65(2026-09-30 최종 기획서).
         [TestCase(0, 0)]
-        [TestCase(24, 0)]
-        [TestCase(25, 1)]
-        [TestCase(49, 1)]
-        [TestCase(50, 2)]
-        [TestCase(74, 2)]
-        [TestCase(75, 3)]
-        [TestCase(89, 3)]
-        [TestCase(90, 4)]
+        [TestCase(14, 0)]
+        [TestCase(15, 1)]
+        [TestCase(29, 1)]
+        [TestCase(30, 2)]
+        [TestCase(44, 2)]
+        [TestCase(45, 3)]
+        [TestCase(64, 3)]
+        [TestCase(65, 4)]
         [TestCase(100, 4)]
         public void 하루상한은_신뢰구간을_따른다(int trust, int expected)
         {
@@ -68,10 +68,10 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 신뢰24미만이면_한건도_보내지_않는다()
+        public void 신뢰15미만이면_한건도_보내지_않는다()
         {
             NightRun.DeckOverride = day => new List<RuleSO> { Card("H4", SpaceId.Corridor, "P4") };
-            NightRun.DebugAddAxis(FearAxis.Trust, 23);
+            NightRun.DebugAddAxis(FearAxis.Trust, 14);
             NightRun.BeginNight(1, () => _clock);
 
             Start("H4");
@@ -87,7 +87,7 @@ namespace NightDuty.Tests
             EventBus.MessageSent += m => { got = m; count++; };
 
             NightRun.DeckOverride = day => new List<RuleSO> { Card("H4", SpaceId.Corridor, "P4") };
-            NightRun.DebugAddAxis(FearAxis.Trust, 30);
+            NightRun.DebugAddAxis(FearAxis.Trust, 20);
             NightRun.BeginNight(1, () => _clock);
 
             Start("H4");
@@ -110,7 +110,7 @@ namespace NightDuty.Tests
                 Card("H5", SpaceId.Corridor, "P5"),
                 Card("H6", SpaceId.Corridor, "P6"),
             };
-            NightRun.DebugAddAxis(FearAxis.Trust, 30);   // 구간 1 → 하루 1쌍
+            NightRun.DebugAddAxis(FearAxis.Trust, 20);   // 신뢰 구간 1 → 하루 1쌍
             NightRun.BeginNight(1, () => _clock);
 
             Start("H4");
@@ -120,7 +120,7 @@ namespace NightDuty.Tests
 
             // 기획서 C절: 하루 상한은 「근무 시작 시점의 신뢰」로 정해지고 그날은 고정된다.
             // 밤 도중에 준수 정산으로 신뢰가 구간을 넘어도 그날 상한은 늘어나지 않는다.
-            NightRun.DebugAddAxis(FearAxis.Trust, 25);   // 55가 되지만 오늘 상한은 그대로 1쌍
+            NightRun.DebugAddAxis(FearAxis.Trust, 30);   // 50이 되지만 오늘 상한은 그대로 1쌍
             Start("H5");
 
             Assert.AreEqual(1, NightRun.MessagesToday.Count, "밤 중간에 신뢰가 올라도 그날 상한은 밤 시작 값 그대로다");
@@ -130,7 +130,7 @@ namespace NightDuty.Tests
         public void Tab중에는_보내지_않는다()
         {
             NightRun.DeckOverride = day => new List<RuleSO> { Card("H4", SpaceId.Corridor, "P4") };
-            NightRun.DebugAddAxis(FearAxis.Trust, 30);
+            NightRun.DebugAddAxis(FearAxis.Trust, 20);
             NightRun.BeginNight(1, () => _clock);
 
             NightRun.Send(JudgeSignal.Tab(true));
@@ -146,7 +146,7 @@ namespace NightDuty.Tests
         public void 새밤에_하루기록이_비워진다()
         {
             NightRun.DeckOverride = day => new List<RuleSO> { Card("H4", SpaceId.Corridor, "P4") };
-            NightRun.DebugAddAxis(FearAxis.Trust, 30);
+            NightRun.DebugAddAxis(FearAxis.Trust, 20);
             NightRun.BeginNight(1, () => _clock);
             Start("H4");
             Assert.AreEqual(1, NightRun.MessagesToday.Count);

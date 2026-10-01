@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace NightDuty
 {
     /// <summary>
@@ -51,8 +53,14 @@ namespace NightDuty
         /// <summary>시각 단서를 안전 관찰 지점에서 식별했다(중앙 0.2초). TargetId = 단서 대상 ID.</summary>
         ClueIdentified = 31,
 
-        /// <summary>지정 오디오·연출 시퀀스가 끝났다. TargetId = 시퀀스 ID.</summary>
+        /// <summary>지정 오디오·연출 시퀀스가 끝났다. TargetId = 시퀀스 ID. 새 수칙에서는 <see cref="CueStarted"/>의 끝 신호로 쓴다.</summary>
         SequenceEnded = 32,
+
+        /// <summary>
+        /// 연출 단서(방아쇠)가 시작됐다(2026-10-01, 새 수칙). TargetId = 단서 ID(<c>cue.footsteps</c> 등, <c>@</c> 뒤에 대상 ID를 붙일 수 있다),
+        /// Point = 소리·형체의 위치(없으면 0). 끝은 같은 ID의 <see cref="SequenceEnded"/>.
+        /// </summary>
+        CueStarted = 33,
 
         /// <summary>
         /// 응시 샘플. TargetId = 카메라 중앙의 첫 가시 충돌체 대상 ID(없으면 빈 문자열), Value = 이 샘플이 대표하는 시간(초).
@@ -65,6 +73,21 @@ namespace NightDuty
 
         /// <summary>손전등 상태가 바뀌었다. Flag = 켜짐.</summary>
         FlashlightChanged = 42,
+
+        /// <summary>플레이어 자세 샘플(0.1초). Point = 발밑 위치, Value = 바라보는 수평 방향(도, 0 = +Z).</summary>
+        PlayerPose = 43,
+
+        /// <summary>달리기 상태가 바뀌었다. Flag = 달리는 중(G1).</summary>
+        Running = 44,
+
+        /// <summary>손전등 비춤 샘플(0.1초). TargetId = 원뿔 15°·8m 안에서 가려지지 않은 대상 ID(없으면 빈 문자열), Value = 샘플 시간(초).</summary>
+        BeamSample = 45,
+
+        /// <summary>CCTV 채널을 넘겼다. TargetId = 새 채널 ID(<c>cctv.ch0</c>…).</summary>
+        CctvChannel = 46,
+
+        /// <summary>CCTV 시청 샘플(0.1초, 모니터를 보는 동안만). TargetId = 보고 있는 채널 ID, Value = 샘플 시간(초).</summary>
+        CctvViewSample = 47,
 
         /// <summary>인체모형을 가림 없이 1초 관찰했다. TargetId = 장면 ID(H-A 등).</summary>
         ModelObserved = 50,
@@ -116,11 +139,20 @@ namespace NightDuty
         /// <summary>불리언 값(닫기 명령, 손전등 켜짐, Tab 열림).</summary>
         public readonly bool Flag;
 
-        /// <summary>실수 값(경과 초, 거리 m, 응시 샘플 시간).</summary>
+        /// <summary>실수 값(경과 초, 거리 m, 응시 샘플 시간, 수평 방향).</summary>
         public readonly float Value;
+
+        /// <summary>위치 값(플레이어 발밑, 단서 위치). 쓰지 않는 신호는 0.</summary>
+        public readonly Vector3 Point;
 
         /// <summary>모든 필드를 지정해 신호를 만든다.</summary>
         public JudgeSignal(SignalKind kind, SpaceId space, string targetId, ActionSource source, bool flag, float value)
+            : this(kind, space, targetId, source, flag, value, Vector3.zero)
+        {
+        }
+
+        /// <summary>위치까지 지정해 신호를 만든다.</summary>
+        public JudgeSignal(SignalKind kind, SpaceId space, string targetId, ActionSource source, bool flag, float value, Vector3 point)
         {
             Kind = kind;
             Space = space;
@@ -128,6 +160,7 @@ namespace NightDuty
             Source = source;
             Flag = flag;
             Value = value;
+            Point = point;
         }
 
         /// <summary>판정 시간 경과.</summary>
@@ -176,6 +209,48 @@ namespace NightDuty
         public static JudgeSignal Tab(bool isOpen)
         {
             return new JudgeSignal(SignalKind.TabChanged, SpaceId.None, string.Empty, ActionSource.Player, isOpen, 0f);
+        }
+
+        /// <summary>연출 단서 시작(연출·디렉터가 보낸다).</summary>
+        public static JudgeSignal Cue(string cueId, Vector3 source)
+        {
+            return new JudgeSignal(SignalKind.CueStarted, SpaceId.None, cueId, ActionSource.Direction, false, 0f, source);
+        }
+
+        /// <summary>연출 단서 끝.</summary>
+        public static JudgeSignal CueEnd(string cueId)
+        {
+            return new JudgeSignal(SignalKind.SequenceEnded, SpaceId.None, cueId, ActionSource.Direction, false, 0f);
+        }
+
+        /// <summary>플레이어 자세 샘플.</summary>
+        public static JudgeSignal Pose(Vector3 feet, float yawDegrees)
+        {
+            return new JudgeSignal(SignalKind.PlayerPose, SpaceId.None, string.Empty, ActionSource.Player, false, yawDegrees, feet);
+        }
+
+        /// <summary>달리기 상태 변경.</summary>
+        public static JudgeSignal Run(bool running)
+        {
+            return new JudgeSignal(SignalKind.Running, SpaceId.None, string.Empty, ActionSource.Player, running, 0f);
+        }
+
+        /// <summary>손전등 비춤 샘플.</summary>
+        public static JudgeSignal Beam(string litTargetId, float sampleSeconds)
+        {
+            return new JudgeSignal(SignalKind.BeamSample, SpaceId.None, litTargetId, ActionSource.Player, false, sampleSeconds);
+        }
+
+        /// <summary>CCTV 채널 변경.</summary>
+        public static JudgeSignal Channel(string channelId)
+        {
+            return new JudgeSignal(SignalKind.CctvChannel, SpaceId.None, channelId, ActionSource.Player, false, 0f);
+        }
+
+        /// <summary>CCTV 시청 샘플.</summary>
+        public static JudgeSignal CctvView(string channelId, float sampleSeconds)
+        {
+            return new JudgeSignal(SignalKind.CctvViewSample, SpaceId.None, channelId, ActionSource.Player, false, sampleSeconds);
         }
 
         /// <inheritdoc/>

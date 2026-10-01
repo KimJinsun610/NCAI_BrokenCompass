@@ -27,7 +27,7 @@ namespace NightDuty
     {
         /// <summary>
         /// 어떤 공간의 어떤 축이 구간을 넘었다. 인자: (공간, 축, 이전 구간, 새 구간).
-        /// 판정 쪽과 연출 쪽을 잇는 핵심 이벤트다.
+        /// 판정 쪽과 연출 쪽을 잇는 핵심 이벤트다. 재시작 복원 때는 구간이 <b>내려갈 수도</b> 있다.
         /// </summary>
         public static event Action<SpaceId, FearAxis, Band, Band> BandChanged;
 
@@ -43,7 +43,7 @@ namespace NightDuty
         public static event Action<int, ClauseZeroType> DayStarted;
 
         /// <summary>
-        /// 하루가 끝났다. 인자: 그날의 결산 정보.
+        /// 하루가 끝났다(정상 종료·결근). 인자: 그날의 결산 정보.
         /// </summary>
         public static event Action<DaySummary> DayEnded;
 
@@ -57,32 +57,49 @@ namespace NightDuty
         /// </summary>
         public static event Action<ParadoxMessage> MessageSent;
 
+        /// <summary>
+        /// 경고 도장이나 대기 중인 처벌이 바뀌었다. 인자: (도장 수 0~2, 대기 중인 처벌 수).
+        /// 태블릿 상단 바의 도장 세 칸이 구독한다. 세 번째 도장이 찍히는 순간은 대기 수가 늘어난 것으로 안다.
+        /// </summary>
+        public static event Action<int, int> WarningsChanged;
+
+        /// <summary>
+        /// 경고 누적 처벌이 나왔다. 인자: 처벌을 받은 감각 축(그 축의 몹이 그 축의 언어로 짧게 나타난다).
+        /// </summary>
+        public static event Action<FearAxis> Punished;
+
+        /// <summary>
+        /// 붙잡힌 밤을 다시 시작했다(또는 결근으로 넘겼다). 인자: 재시작 결과. 구동기가 씬·시계를 되돌린다.
+        /// </summary>
+        public static event Action<RestartResult> NightRestarted;
+
+        /// <summary>
+        /// 그날 점검 편성이 확정됐다(밤 시작, 재시작 때는 다시 보내지 않는다). 점검표 UI와 이상 연출이 구독한다.
+        /// 이상 연출은 <see cref="InspectionAssignment.IsAnomaly"/>·<see cref="InspectionAssignment.Intensity"/>로 대상을 바꿔 둔다.
+        /// </summary>
+        public static event Action<InspectionPlan> InspectionPlanned;
+
+        /// <summary>점검 보고가 판정됐다(받지 않은 보고는 보내지 않는다). 점검표 UI·근무일지가 구독한다. 수치는 화면에 내지 않는다.</summary>
+        public static event Action<InspectionReport> InspectionReported;
+
+        /// <summary>새 수칙 한 건이 정산됐다(위반·위협 성공·밤 종료 준수·기록). 위반 피드백·근무일지가 구독한다. 수치는 화면에 내지 않는다.</summary>
+        public static event Action<FinalRuleResult> FinalRuleSettled;
+
+        /// <summary>긴장 디렉터의 연출 알림(조우 단계·수칙 단서·가짜 놀람·메모). 대역·소등·소리·디버그 콘솔이 구독한다.</summary>
+        public static event Action<DirectionEvent> DirectionEmitted;
+
+        /// <summary>점검 수칙 「가까이」를 어겼다. 인자: (항목 ID, 그 항목의 축). 1초짜리 놀람 연출이 구독한다.</summary>
+        public static event Action<string, FearAxis> InspectionStartled;
+
         /// <summary><see cref="BandChanged"/>를 발생시킨다.</summary>
         public static void RaiseBandChanged(SpaceId space, FearAxis axis, Band from, Band to)
         {
             Action<SpaceId, FearAxis, Band, Band> handler = BandChanged;
-            if (handler == null)
+            if (handler == null) return;
+            foreach (Delegate d in handler.GetInvocationList())
             {
-                return;
-            }
-
-            Delegate[] targets = handler.GetInvocationList();
-            for (int i = 0; i < targets.Length; i++)
-            {
-                Action<SpaceId, FearAxis, Band, Band> one = targets[i] as Action<SpaceId, FearAxis, Band, Band>;
-                if (one == null)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    one(space, axis, from, to);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
+                try { ((Action<SpaceId, FearAxis, Band, Band>)d)(space, axis, from, to); }
+                catch (Exception e) { Debug.LogException(e); }
             }
         }
 
@@ -90,138 +107,103 @@ namespace NightDuty
         public static void RaiseBandProgress(SpaceId space, FearAxis axis, float progress01)
         {
             Action<SpaceId, FearAxis, float> handler = BandProgress;
-            if (handler == null)
+            if (handler == null) return;
+            foreach (Delegate d in handler.GetInvocationList())
             {
-                return;
-            }
-
-            Delegate[] targets = handler.GetInvocationList();
-            for (int i = 0; i < targets.Length; i++)
-            {
-                Action<SpaceId, FearAxis, float> one = targets[i] as Action<SpaceId, FearAxis, float>;
-                if (one == null)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    one(space, axis, progress01);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
+                try { ((Action<SpaceId, FearAxis, float>)d)(space, axis, progress01); }
+                catch (Exception e) { Debug.LogException(e); }
             }
         }
 
         /// <summary><see cref="DayStarted"/>를 발생시킨다.</summary>
         public static void RaiseDayStarted(int day, ClauseZeroType clauseZero)
         {
-            Action<int, ClauseZeroType> handler = DayStarted;
-            if (handler == null)
-            {
-                return;
-            }
-
-            Delegate[] targets = handler.GetInvocationList();
-            for (int i = 0; i < targets.Length; i++)
-            {
-                Action<int, ClauseZeroType> one = targets[i] as Action<int, ClauseZeroType>;
-                if (one == null)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    one(day, clauseZero);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
-            }
+            Invoke(DayStarted, day, clauseZero);
         }
 
         /// <summary><see cref="DayEnded"/>를 발생시킨다.</summary>
         public static void RaiseDayEnded(DaySummary summary)
         {
-            Action<DaySummary> handler = DayEnded;
-            if (handler == null)
-            {
-                return;
-            }
-
-            Delegate[] targets = handler.GetInvocationList();
-            for (int i = 0; i < targets.Length; i++)
-            {
-                Action<DaySummary> one = targets[i] as Action<DaySummary>;
-                if (one == null)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    one(summary);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
-            }
+            Invoke(DayEnded, summary);
         }
 
         /// <summary><see cref="MessageSent"/>를 발생시킨다.</summary>
         public static void RaiseMessageSent(ParadoxMessage message)
         {
-            Action<ParadoxMessage> handler = MessageSent;
-            if (handler == null)
-            {
-                return;
-            }
-
-            Delegate[] targets = handler.GetInvocationList();
-            for (int i = 0; i < targets.Length; i++)
-            {
-                try
-                {
-                    ((Action<ParadoxMessage>)targets[i])(message);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
-            }
+            Invoke(MessageSent, message);
         }
 
         /// <summary><see cref="AxisCritical"/>을 발생시킨다.</summary>
         public static void RaiseAxisCritical(FearAxis axis)
         {
-            Action<FearAxis> handler = AxisCritical;
-            if (handler == null)
+            Invoke(AxisCritical, axis);
+        }
+
+        /// <summary><see cref="WarningsChanged"/>를 발생시킨다.</summary>
+        public static void RaiseWarningsChanged(int stamps, int pending)
+        {
+            Invoke(WarningsChanged, stamps, pending);
+        }
+
+        /// <summary><see cref="Punished"/>를 발생시킨다.</summary>
+        public static void RaisePunished(FearAxis axis)
+        {
+            Invoke(Punished, axis);
+        }
+
+        /// <summary><see cref="NightRestarted"/>를 발생시킨다.</summary>
+        public static void RaiseNightRestarted(RestartResult result)
+        {
+            Invoke(NightRestarted, result);
+        }
+
+        /// <summary><see cref="InspectionPlanned"/>을 발생시킨다.</summary>
+        public static void RaiseInspectionPlanned(InspectionPlan plan)
+        {
+            Invoke(InspectionPlanned, plan);
+        }
+
+        /// <summary><see cref="InspectionReported"/>를 발생시킨다.</summary>
+        public static void RaiseInspectionReported(InspectionReport report)
+        {
+            Invoke(InspectionReported, report);
+        }
+
+        /// <summary><see cref="FinalRuleSettled"/>를 발생시킨다.</summary>
+        public static void RaiseFinalRuleSettled(FinalRuleResult result)
+        {
+            Invoke(FinalRuleSettled, result);
+        }
+
+        /// <summary><see cref="DirectionEmitted"/>를 발생시킨다.</summary>
+        public static void RaiseDirectionEmitted(DirectionEvent e)
+        {
+            Invoke(DirectionEmitted, e);
+        }
+
+        /// <summary><see cref="InspectionStartled"/>를 발생시킨다.</summary>
+        public static void RaiseInspectionStartled(string itemId, FearAxis axis)
+        {
+            Invoke(InspectionStartled, itemId, axis);
+        }
+
+        private static void Invoke<T>(Action<T> handler, T arg)
+        {
+            if (handler == null) return;
+            foreach (Delegate d in handler.GetInvocationList())
             {
-                return;
+                try { ((Action<T>)d)(arg); }
+                catch (Exception e) { Debug.LogException(e); }
             }
+        }
 
-            Delegate[] targets = handler.GetInvocationList();
-            for (int i = 0; i < targets.Length; i++)
+        private static void Invoke<T1, T2>(Action<T1, T2> handler, T1 a, T2 b)
+        {
+            if (handler == null) return;
+            foreach (Delegate d in handler.GetInvocationList())
             {
-                Action<FearAxis> one = targets[i] as Action<FearAxis>;
-                if (one == null)
-                {
-                    continue;
-                }
-
-                try
-                {
-                    one(axis);
-                }
-                catch (Exception e)
-                {
-                    Debug.LogException(e);
-                }
+                try { ((Action<T1, T2>)d)(a, b); }
+                catch (Exception e) { Debug.LogException(e); }
             }
         }
 
@@ -238,6 +220,14 @@ namespace NightDuty
             DayEnded = null;
             AxisCritical = null;
             MessageSent = null;
+            WarningsChanged = null;
+            Punished = null;
+            NightRestarted = null;
+            InspectionPlanned = null;
+            InspectionReported = null;
+            FinalRuleSettled = null;
+            DirectionEmitted = null;
+            InspectionStartled = null;
         }
 
         /// <summary>

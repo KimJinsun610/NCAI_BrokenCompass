@@ -100,6 +100,22 @@ public sealed class FlashlightRelay : MonoBehaviour
         // 발신기는 항상 켜져 있는 플레이어 루트에 두고, 켜고 끌 대상만 가리킨다.
         FlashlightRelay relay = cam.transform.root.gameObject.AddComponent<FlashlightRelay>();
         relay.flashlightRoot = lamp.gameObject;
+
+        TurnOffPropFlashlights(scene, cam.transform.root);
+    }
+
+    /// <summary>
+    /// 씬에 <b>켜진 채 저장된 소품 손전등</b>(Interior/Toilet02/Flashlight_ON 등)을 런타임에 끈다 — 옛 하네스에서 옮겨 왔다(2026-10-01).
+    /// 플레이어 것은 이 발신기가 따로 다루므로 건드리지 않는다. 씬 파일의 직렬화 값은 그대로다.
+    /// </summary>
+    private static void TurnOffPropFlashlights(Scene scene, Transform player)
+    {
+        foreach (Transform t in FindObjectsByType<Transform>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
+        {
+            if (t.gameObject.scene != scene || t.IsChildOf(player)) continue;
+            if (t.name.IndexOf("Flashlight_ON", System.StringComparison.OrdinalIgnoreCase) < 0) continue;
+            t.gameObject.SetActive(false);
+        }
     }
 
     /// <summary>카메라 아래에서 이름에 Flashlight가 들어가고 Light를 가진 첫 가지.</summary>

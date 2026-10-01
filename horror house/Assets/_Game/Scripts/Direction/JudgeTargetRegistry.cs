@@ -66,6 +66,26 @@ namespace NightDuty
             return false;
         }
 
+        /// <summary>
+        /// 살아 있는 대상 컴포넌트를 모두 모은다(중복 없음). 응시 원뿔(10°)이 후보를 훑을 때 쓴다.
+        /// </summary>
+        public static void CollectOwners(List<JudgeTarget> into)
+        {
+            if (into == null) return;
+            into.Clear();
+            foreach (KeyValuePair<string, List<JudgeTarget>> kv in Owners)
+            {
+                List<JudgeTarget> list = kv.Value;
+                for (int i = 0; i < list.Count; i++)
+                {
+                    if (list[i] != null && !into.Contains(list[i]))
+                    {
+                        into.Add(list[i]);
+                    }
+                }
+            }
+        }
+
         /// <summary>ID 하나를 올린다. <paramref name="owner"/>는 null이어도 된다(테스트).</summary>
         public static void Register(string id, JudgeTarget owner)
         {

@@ -522,15 +522,18 @@ namespace NightDuty.Tests
                     + "하한으로 공짜로 주면 경고로서의 뜻이 사라집니다.");
         }
 
-        /// <summary>신뢰 게이트와 구간 경계가 따로 놀아 신뢰 한 칸이 비는 것을 막는다.</summary>
+        /// <summary>
+        /// 신뢰 게이트와 신뢰 구간 경계가 따로 놀아 신뢰 한 칸이 비는 것을 막는다.
+        /// 2026-09-30 최종 기획서부터 신뢰는 전용 경계(15/30/45/65)를 쓴다 — 감각 축의 25와 비교하지 않는다.
+        /// </summary>
         [Test]
-        public void 역설_최소신뢰가_Band1_하한과_같다()
+        public void 역설_최소신뢰가_신뢰구간1_하한과_같다()
         {
             Assert.AreEqual(
-                Bands.LowerBound(Band.Band1),
+                Bands.TrustLowerBound(Band.Band1),
                 ParadoxDirector.MinTrust,
-                "ParadoxDirector.MinTrust(" + ParadoxDirector.MinTrust + ")와 Band1 하한("
-                    + Bands.LowerBound(Band.Band1) + ")이 다릅니다. 그 사이 신뢰 값은 Band1인데도 역설이 한 쌍도 안 나옵니다.");
+                "ParadoxDirector.MinTrust(" + ParadoxDirector.MinTrust + ")와 신뢰 구간 1 하한("
+                    + Bands.TrustLowerBound(Band.Band1) + ")이 다릅니다. 그 사이 신뢰 값은 구간 1인데도 역설이 한 쌍도 안 나옵니다.");
         }
     }
 
@@ -698,6 +701,20 @@ namespace NightDuty.Tests
                     "현재 구간 경계가 문서에 적혀 있지 않습니다 " + missing.Count + "건:\n- " + string.Join("\n- ", missing)
                     + "\n경계 숫자는 Bands.cs의 LowerBounds 배열이 정본입니다. 문서를 그 값으로 고치십시오.");
             }
+        }
+
+        /// <summary>신뢰 전용 경계를 코드에서 바꾸고 문서를 안 고치는 것을 막는다(2026-10-01).</summary>
+        [Test]
+        public void 신뢰_전용경계가_본문에_적혀있다()
+        {
+            RequireFile();
+
+            string want = Bands.TrustLowerBound(Band.Band1) + "/" + Bands.TrustLowerBound(Band.Band2) + "/"
+                + Bands.TrustLowerBound(Band.Band3) + "/" + Bands.TrustLowerBound(Band.Band4);
+            Assert.Greater(
+                FindInBody(want),
+                0,
+                "CLAUDE.md 본문에 신뢰 전용 경계 「" + want + "」가 없습니다(Bands.cs의 TrustLowerBounds). 문서를 그 값으로 고치십시오.");
         }
 
         /// <summary>일차 하한 곡선을 코드에서 바꾸고 문서를 안 고치는 것을 막는다.</summary>

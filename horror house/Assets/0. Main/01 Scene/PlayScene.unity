@@ -5593,7 +5593,10 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: f09f08c861225ae4c843e9376f774814, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4624604167254788, guid: 6ac1b8a64e12b514eb6f89c5f7717d58, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1585283420}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6ac1b8a64e12b514eb6f89c5f7717d58, type: 3}
 --- !u!4 &39955066 stripped
@@ -15132,7 +15135,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4748106595964360, guid: 42bb570d2e6020b42b4be2fbfe27a6c2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1114673329}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 42bb570d2e6020b42b4be2fbfe27a6c2, type: 3}
 --- !u!4 &124317151 stripped
@@ -34685,6 +34691,74 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 445ac12189584c14d9dc68ff77b06023, type: 3}
+--- !u!1 &305054354
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 305054355}
+  - component: {fileID: 305054357}
+  - component: {fileID: 305054356}
+  m_Layer: 0
+  m_Name: Inspect L-1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &305054355
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 305054354}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0.7071068, z: -0, w: -0.7071068}
+  m_LocalPosition: {x: 0, y: 0.48139238, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 522946161}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &305054356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 305054354}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.L-1
+--- !u!65 &305054357
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 305054354}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.50625837, y: 1.0048565, z: 0.4615289}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &305091572
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38735,6 +38809,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4486767508517552, guid: 0160c7b505a7fe14daf6f68471522e00, type: 3}
   m_PrefabInstance: {fileID: 341580935}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &342242647
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 342242648}
+  - component: {fileID: 342242650}
+  - component: {fileID: 342242649}
+  m_Layer: 0
+  m_Name: Inspect C-2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &342242648
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342242647}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0.8224028, z: -0, w: -0.5689058}
+  m_LocalPosition: {x: 0.00000090990164, y: 0.2817781, z: 0.028242795}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1224958782}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &342242649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342242647}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.C-2
+--- !u!65 &342242650
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 342242647}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.47794747, y: 0.6035564, z: 0.34856614}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &342710517
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -39861,7 +40003,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4032148015579762, guid: 6666bd8be64632949860a4cb0d3eff95, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1293734143}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6666bd8be64632949860a4cb0d3eff95, type: 3}
 --- !u!4 &350302758 stripped
@@ -44665,6 +44810,7 @@ Transform:
   - {fileID: 355981592}
   - {fileID: 2085096807}
   - {fileID: 1021874877}
+  - {fileID: 1592211621}
   m_Father: {fileID: 1735634648}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &400591016
@@ -46117,7 +46263,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4688103113100766, guid: bdba6bfe2745a1c47954a431ccbb4d82, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1527309120}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: bdba6bfe2745a1c47954a431ccbb4d82, type: 3}
 --- !u!4 &412209970 stripped
@@ -58158,6 +58307,74 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fdb4f16cb66e83145923fa99e3195424, type: 3}
+--- !u!1 &504901289
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 504901290}
+  - component: {fileID: 504901292}
+  - component: {fileID: 504901291}
+  m_Layer: 0
+  m_Name: Inspect S-2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &504901290
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 504901289}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -0.000146674, y: -0.00015645227, z: 0.00004033533}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 215819906}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &504901291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 504901289}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.S-2
+--- !u!65 &504901292
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 504901289}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.67883694, y: 1.1047369, z: 0.5333255}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &504972867
 GameObject:
   m_ObjectHideFlags: 0
@@ -60906,7 +61123,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4382794238100112, guid: d2516a21766828c45905c8106b790985, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 305054355}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d2516a21766828c45905c8106b790985, type: 3}
 --- !u!4 &522946161 stripped
@@ -68601,7 +68821,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4912358996615366, guid: 7f5f6a62c6e35ce4899193b75743e94b, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 342242648}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7f5f6a62c6e35ce4899193b75743e94b, type: 3}
 --- !u!1001 &593396481
@@ -78083,7 +78306,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4326781958945738, guid: 04cbd0faeee6f7d448bc1586b692cbed, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1881757342}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 04cbd0faeee6f7d448bc1586b692cbed, type: 3}
 --- !u!4 &664819946 stripped
@@ -79579,7 +79805,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4719915759018214, guid: fb3138a3bd91edc448a55af61bf88b17, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 763901837}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fb3138a3bd91edc448a55af61bf88b17, type: 3}
 --- !u!4 &679815094 stripped
@@ -89494,6 +89723,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4074833292118348, guid: a34ba6fed275159469d8052e6cbfb243, type: 3}
   m_PrefabInstance: {fileID: 835899775}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &763901836
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 763901837}
+  - component: {fileID: 763901839}
+  - component: {fileID: 763901838}
+  m_Layer: 0
+  m_Name: Inspect T-3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &763901837
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763901836}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0.0000014603138}
+  m_LocalPosition: {x: 0.0000000064612777, y: 0, z: 0.007991791}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 679815094}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &763901838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763901836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.T-3
+--- !u!65 &763901839
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763901836}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.5900001, y: 0.84, z: 0.05600177}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &764161265
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -92051,7 +92348,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4845237707968606, guid: f55c9ca2f86f86940ab4c56b5e9184a7, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1430264131}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f55c9ca2f86f86940ab4c56b5e9184a7, type: 3}
 --- !u!4 &781934715 stripped
@@ -92593,12 +92893,20 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4954666259562092, guid: 49b7555ca9a65d547b93533560b6443d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2027400158}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 49b7555ca9a65d547b93533560b6443d, type: 3}
 --- !u!4 &788393257 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4016733494269124, guid: 49b7555ca9a65d547b93533560b6443d, type: 3}
+  m_PrefabInstance: {fileID: 788393256}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &788393258 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4954666259562092, guid: 49b7555ca9a65d547b93533560b6443d, type: 3}
   m_PrefabInstance: {fileID: 788393256}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &788478458
@@ -94922,7 +95230,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: da5126616188c4940bdf2c87d12ecfd9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 842165499}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: da5126616188c4940bdf2c87d12ecfd9, type: 3}
 --- !u!1001 &802262952
@@ -99181,6 +99492,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4345843693259832, guid: 028edd344d08da2458441d0e2ae887c6, type: 3}
   m_PrefabInstance: {fileID: 841378805}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &842165498
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 842165499}
+  - component: {fileID: 842165501}
+  - component: {fileID: 842165500}
+  m_Layer: 0
+  m_Name: Inspect K-1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &842165499
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 842165498}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.1283375, y: -0.6953629, z: -0.69536287, w: -0.1283375}
+  m_LocalPosition: {x: 0.0000011345398, y: -0.0036176678, z: 0.0053793527}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2011931045}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &842165500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 842165498}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.K-1
+--- !u!65 &842165501
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 842165498}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.3800398, y: 0.93390256, z: 1.3749989}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &842184566
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -124574,6 +124953,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4497961244795310, guid: 884f9a951e171034e8df82511c733547, type: 3}
   m_PrefabInstance: {fileID: 1070235640}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1071029253
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1071029254}
+  - component: {fileID: 1071029256}
+  - component: {fileID: 1071029255}
+  m_Layer: 0
+  m_Name: Inspect C-1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1071029254
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071029253}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.051128387, y: 0.6580936, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 323715169}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1071029255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071029253}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.C-1
+--- !u!65 &1071029256
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1071029253}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.4331362, y: 1.3561872, z: 0.32735333}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1071721226 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 400000, guid: a4a20e8e61b38114fbc4288eb7aa0287, type: 3}
@@ -130409,6 +130856,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4615871916726040, guid: f9c9615d69f94f6488c66d230383eb49, type: 3}
   m_PrefabInstance: {fileID: 1114660476}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1114673328
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1114673329}
+  - component: {fileID: 1114673331}
+  - component: {fileID: 1114673330}
+  m_Layer: 0
+  m_Name: Inspect T-1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1114673329
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114673328}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -1, z: -0, w: -0.0000014603138}
+  m_LocalPosition: {x: -0.00000006414007, y: 0.45497262, z: 0.34849167}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 124317151}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1114673330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114673328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.T-1
+--- !u!65 &1114673331
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1114673328}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.4671274, y: 0.9499452, z: 0.737979}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1114927098
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -137941,7 +138456,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8182c85d81321ef4399d71550def89c2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1875802960}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 8182c85d81321ef4399d71550def89c2, type: 3}
 --- !u!1 &1167681066
@@ -151590,6 +152108,74 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d93fef3db32e88a4e8e9db7b66a55aaa, type: 3}
+--- !u!1 &1293734142
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1293734143}
+  - component: {fileID: 1293734145}
+  - component: {fileID: 1293734144}
+  m_Layer: 0
+  m_Name: Inspect L-2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1293734143
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1293734142}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -0.7071068, z: -0, w: -0.7071068}
+  m_LocalPosition: {x: 0.0000000037252887, y: -0.77581, z: 0.039245356}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 350302758}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1293734144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1293734142}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.L-2
+--- !u!65 &1293734145
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1293734142}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.11849266, y: 1.6512316, z: 1.3399997}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1293751839 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: b65d99b180b420443ab4f789033cfd25, type: 3}
@@ -157735,7 +158321,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4486767508517552, guid: 0160c7b505a7fe14daf6f68471522e00, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1463885471}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0160c7b505a7fe14daf6f68471522e00, type: 3}
 --- !u!4 &1346291424 stripped
@@ -158774,7 +159363,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 3ddcd705de74db74a990257337010913, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 504901290}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3ddcd705de74db74a990257337010913, type: 3}
 --- !u!1001 &1357434092
@@ -159744,6 +160336,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4253745286055636, guid: de4400ae4343dcd48ac7630571696ed1, type: 3}
   m_PrefabInstance: {fileID: 921852864}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1368706432
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1368706433}
+  - component: {fileID: 1368706435}
+  - component: {fileID: 1368706434}
+  m_Layer: 0
+  m_Name: Inspect L-3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1368706433
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1368706432}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.85657275, z: -0, w: 0.5160264}
+  m_LocalPosition: {x: 0, y: 0.13245487, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1512012915}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1368706434
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1368706432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.L-3
+--- !u!65 &1368706435
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1368706432}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.56302226, y: 0.30490997, z: 0.60697806}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &1370093309 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4851016309412140, guid: c3f06d71c69387e4eb6975fac44c5a8d, type: 3}
@@ -172050,6 +172710,74 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 1950486199}
   m_SourcePrefab: {fileID: 100100000, guid: d07da48aeda43684d872d696a578ee6f, type: 3}
+--- !u!1 &1430264130
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1430264131}
+  - component: {fileID: 1430264133}
+  - component: {fileID: 1430264132}
+  m_Layer: 0
+  m_Name: Inspect H-2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1430264131
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1430264130}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.00409317, y: 0.04805827, z: 0.15425873}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 781934715}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1430264132
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1430264130}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.H-2
+--- !u!65 &1430264133
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1430264130}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.46085283, y: 1.0397365, z: 0.34855878}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1430290130
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -175004,6 +175732,52 @@ ReflectionProbe:
   m_UseOcclusionCulling: 1
   m_Importance: 1
   m_CustomBakedTexture: {fileID: 0}
+--- !u!1 &1463885470
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1463885471}
+  - component: {fileID: 1463885472}
+  m_Layer: 0
+  m_Name: Rule rule.L4.box
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1463885471
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1463885470}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.946278, z: -0, w: -0.32335442}
+  m_LocalPosition: {x: 0, y: 0.17499995, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1346291424}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1463885472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1463885470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - rule.L4.box
 --- !u!1 &1463924386
 GameObject:
   m_ObjectHideFlags: 0
@@ -181165,7 +181939,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4945163969253500, guid: b4ae4b6f61a00d340a79d537bbfd0a83, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1368706433}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b4ae4b6f61a00d340a79d537bbfd0a83, type: 3}
 --- !u!4 &1512012915 stripped
@@ -182871,6 +183648,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4057650358174056, guid: 5f59ede7b917393418f53ab2f74c1fd0, type: 3}
   m_PrefabInstance: {fileID: 1526439179}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1527309119
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1527309120}
+  - component: {fileID: 1527309122}
+  - component: {fileID: 1527309121}
+  m_Layer: 0
+  m_Name: Inspect H-3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1527309120
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1527309119}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: -1, z: -0, w: -0.00000004371139}
+  m_LocalPosition: {x: -0.0000000051874594, y: 0, z: 0.059337616}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 412209970}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1527309121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1527309119}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.H-3
+--- !u!65 &1527309122
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1527309119}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.42574897, y: 0.36811864, z: 0.15867573}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1527404510
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -183185,6 +184030,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 83b0c6eb2d458e04183ba65f8cfa7e74, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1900287833}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 83b0c6eb2d458e04183ba65f8cfa7e74, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1885354699}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 83b0c6eb2d458e04183ba65f8cfa7e74, type: 3}
 --- !u!1001 &1528776520
@@ -186145,7 +186993,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4524603947819714, guid: 0d237ec63f71deb438097e97018f4927, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1071029254}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0d237ec63f71deb438097e97018f4927, type: 3}
 --- !u!4 &1556826764 stripped
@@ -189083,6 +189934,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4235483220408152, guid: 4c383ef964103054e9fb2ccccc096459, type: 3}
   m_PrefabInstance: {fileID: 1584789462}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1585283419
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1585283420}
+  - component: {fileID: 1585283422}
+  - component: {fileID: 1585283421}
+  m_Layer: 0
+  m_Name: Inspect H-4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1585283420
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1585283419}
+  serializedVersion: 2
+  m_LocalRotation: {x: 9.553428e-16, y: -1, z: 0.000000021855698, w: -0.00000004371139}
+  m_LocalPosition: {x: 0, y: 0.85, z: -0.000000037154688}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 39955066}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1585283421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1585283419}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.H-4
+--- !u!65 &1585283422
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1585283419}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.38999847, y: 1.7399998, z: 0.47536376}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1585290970
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -189664,6 +190583,52 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4056040311925622, guid: f020f4cd18bc6ba49a64af7da2859b88, type: 3}
   m_PrefabInstance: {fileID: 2044247449}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1592211620
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1592211621}
+  - component: {fileID: 1592211622}
+  m_Layer: 0
+  m_Name: Rule rule.S1.center
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1592211621
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592211620}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -2.4088097, y: 0, z: 0.84518814}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 400356535}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1592211622
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1592211620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - rule.S1.center
 --- !u!1001 &1592706432
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -192854,14 +193819,22 @@ MonoBehaviour:
     InspectionBox:
       m_Center: {x: 0, y: 0, z: 0}
       m_Extent: {x: 0, y: 0, z: 0}
-  - Space: 0
+  - Space: 7
     Box:
       m_Center: {x: 34.1, y: 3.4, z: 46.15}
       m_Extent: {x: 3.4, y: 2, z: 1.65}
-    OutOfScope: 1
+    OutOfScope: 0
     InspectionBox:
       m_Center: {x: 0, y: 0, z: 0}
       m_Extent: {x: 0, y: 0, z: 0}
+  - Space: 6
+    Box:
+      m_Center: {x: 8.2, y: 3.4, z: 48}
+      m_Extent: {x: 6.2, y: 2, z: 8}
+    OutOfScope: 0
+    InspectionBox:
+      m_Center: {x: 8.2, y: 3.4, z: 48}
+      m_Extent: {x: 4, y: 2, z: 5}
   - Space: 1
     Box:
       m_Center: {x: 28, y: 3.4, z: 44}
@@ -192895,6 +193868,11 @@ MonoBehaviour:
     Box:
       m_Center: {x: 48, y: 3.4, z: 46.8}
       m_Extent: {x: 1.5, y: 2, z: 1.1}
+    IsPassage: 0
+  - Id: science.tape
+    Box:
+      m_Center: {x: 46.03, y: 3.4, z: 41.04}
+      m_Extent: {x: 1, y: 2, z: 1}
     IsPassage: 0
   building:
     m_Center: {x: 20, y: 3.4, z: 42}
@@ -199315,6 +200293,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4893981556131028, guid: e94b0e853051c084785c26c02edaca29, type: 3}
   m_PrefabInstance: {fileID: 1816474817}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1667828855
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1667828856}
+  - component: {fileID: 1667828858}
+  - component: {fileID: 1667828857}
+  m_Layer: 0
+  m_Name: Inspect C-3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1667828856
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667828855}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.000000021583121, y: -0.15745631, z: 0.0000000034413232, w: 0.987526}
+  m_LocalPosition: {x: 1.1394668e-15, y: 0.2332592, z: -0.00000001019611}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 426913007}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1667828857
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667828855}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.C-3
+--- !u!65 &1667828858
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667828855}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.6123099, y: 0.5066422, z: 0.7308652}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1667887173
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -210097,6 +211143,52 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4141458745559544, guid: 06c7fb4ca3ade5540875356c83baaa12, type: 3}
   m_PrefabInstance: {fileID: 1750475896}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1751499095
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1751499096}
+  - component: {fileID: 1751499097}
+  m_Layer: 0
+  m_Name: Rule rule.L1.shelf
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1751499096
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1751499095}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.20774445, y: 0.6761302, z: -0.20818597, w: -0.675536}
+  m_LocalPosition: {x: 0.0000018731225, y: 1.1097405, z: -0.00000017881393}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1763603313}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1751499097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1751499095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - rule.L1.shelf
 --- !u!4 &1751680964 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4238535172255732, guid: 1c7afd7c18a0a91469769c63c1a1b851, type: 3}
@@ -211100,7 +212192,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4670104311603500, guid: 00ff9522e048f8f4aa7017d27b3cc96d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1751499096}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 00ff9522e048f8f4aa7017d27b3cc96d, type: 3}
 --- !u!4 &1763603313 stripped
@@ -220702,7 +221797,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 4106276318611400, guid: 909a60327faee304d923794cac18b844, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1667828856}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 909a60327faee304d923794cac18b844, type: 3}
 --- !u!4 &1846133218 stripped
@@ -224356,6 +225454,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4165489046392658, guid: 7f3e9e3c2371c644499ad86790730e8e, type: 3}
   m_PrefabInstance: {fileID: 1875706012}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1875802959
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1875802960}
+  - component: {fileID: 1875802962}
+  - component: {fileID: 1875802961}
+  m_Layer: 0
+  m_Name: Inspect S-3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1875802960
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1875802959}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: -0.0002847944, z: 0.0065100035}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2037351774}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1875802961
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1875802959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.S-3
+--- !u!65 &1875802962
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1875802959}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.012213458, y: 0.01353346, z: 0.008183031}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1876401873
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -224661,6 +225827,74 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4505348549304060, guid: 3673481f5b218b14ab0f0ceaa970342c, type: 3}
   m_PrefabInstance: {fileID: 1879654503}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1881757341
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1881757342}
+  - component: {fileID: 1881757344}
+  - component: {fileID: 1881757343}
+  m_Layer: 0
+  m_Name: Inspect H-1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1881757342
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1881757341}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -1, z: -0, w: 0.00000058114523}
+  m_LocalPosition: {x: 0.012777443, y: -0.2080152, z: 0.098936066}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 664819946}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1881757343
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1881757341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.H-1
+--- !u!65 &1881757344
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1881757341}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.26110435, y: 0.6561608, z: 0.23791835}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1881819293
 GameObject:
   m_ObjectHideFlags: 0
@@ -225042,6 +226276,74 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3018558811d4f8f498c22f93138f60ad, type: 3}
+--- !u!1 &1885354698
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1885354699}
+  - component: {fileID: 1885354701}
+  - component: {fileID: 1885354700}
+  m_Layer: 0
+  m_Name: Inspect S-1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1885354699
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1885354698}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.49973747, y: 0.49973747, z: 0.5002624, w: 0.5002624}
+  m_LocalPosition: {x: -0.0000025111224, y: 0.0019749694, z: 0.0002991321}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 610292818}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1885354700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1885354698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.S-1
+--- !u!65 &1885354701
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1885354698}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.33916116, y: 1.0392363, z: 0.5145028}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1885856931
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -235325,6 +236627,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 83b0c6eb2d458e04183ba65f8cfa7e74, type: 3}
       insertIndex: -1
       addedObject: {fileID: 62744609}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 83b0c6eb2d458e04183ba65f8cfa7e74, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1969253431}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 83b0c6eb2d458e04183ba65f8cfa7e74, type: 3}
 --- !u!4 &1959521807 stripped
@@ -236508,6 +237813,52 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4000010986626260, guid: 50eec0cc79c12ad43bcdf88c7d2ceefa, type: 3}
   m_PrefabInstance: {fileID: 1968476747}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1969253430
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1969253431}
+  - component: {fileID: 1969253432}
+  m_Layer: 0
+  m_Name: Rule rule.S3.model
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1969253431
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1969253430}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.3577211, y: 0.41653696, z: -0.61719954, w: 0.5635578}
+  m_LocalPosition: {x: -0.0000039067513, y: 0.0019764304, z: 0.00029924102}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1959521807}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1969253432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1969253430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - rule.S3.model
 --- !u!1001 &1969433566
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -243005,6 +244356,74 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 447bb410317471444834b0ac59f77a65, type: 3}
+--- !u!1 &2027400157
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2027400158}
+  - component: {fileID: 2027400160}
+  - component: {fileID: 2027400159}
+  m_Layer: 0
+  m_Name: Inspect T-2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2027400158
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2027400157}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.7621611, z: -0, w: 0.64738744}
+  m_LocalPosition: {x: -0.46778512, y: 1.1500002, z: 0.02723509}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 788393258}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2027400159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2027400157}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
+  _ids:
+  - inspect.T-2
+--- !u!65 &2027400160
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2027400157}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.2854313, y: 1.7400005, z: 0.9905347}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &2027462703
 PrefabInstance:
   m_ObjectHideFlags: 0

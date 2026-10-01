@@ -60,7 +60,7 @@ public sealed class AnomalyCueDirector : MonoBehaviour
     private const int AxisCount = 4;
 
     /// <summary>공간 열거자의 최대값 + 1.</summary>
-    private const int SpaceSlots = 6;
+    private const int SpaceSlots = 9;   // SpaceId 최댓값(Classroom = 8) + 1. 경비실(7)이 공간이 되면서 늘렸다(2026-10-01).
 
     // 공간 × 축의 현재 표시 구간. BandChanged로만 채운다.
     private readonly Band[,] _shownBand = new Band[SpaceSlots, AxisCount];
@@ -783,7 +783,8 @@ public sealed class AnomalyCueDirector : MonoBehaviour
 
     private static bool CanSend()
     {
-        return NightRun.IsNightActive && !NightRun.IsCaptured && !PlayerSensors.TabOpen;
+        // 새 편성(긴장 디렉터)이 켜져 있으면 옛 24장의 단서는 보내지 않는다(2026-10-01) — 판정할 옛 카드가 없다.
+        return NightRun.IsNightActive && !NightRun.IsCaptured && !PlayerSensors.TabOpen && !NightRun.ProgramEnabled;
     }
 
     /// <summary>

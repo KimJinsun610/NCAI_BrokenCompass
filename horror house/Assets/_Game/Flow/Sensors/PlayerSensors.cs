@@ -15,8 +15,11 @@ using UnityEngine.SceneManagement;
 /// <para><b>실행 순서.</b> <c>[DefaultExecutionOrder(50)]</c>으로 기본 순서(0)의 <c>NightRunDriver</c>(Tick)와
 /// <c>SpaceZones</c>(공간·구역·점검) 뒤에 돈다. 같은 프레임 안에서 §4.4.1의 「<c>Tick</c> 먼저」가 지켜진다.</para>
 ///
+/// <para><b>태블릿(2026-09-30 최종 기획서).</b> 태블릿을 든 동안에도 시간과 판정이 흐르고(<see cref="NightRun.JudgeWhileTabOpen"/>),
+/// 응시 기준점만 태블릿 위 가운데(화면 높이 78%)로 옮긴다. 옛 규칙(판정 정지)을 켜 두면 <see cref="TabOpen"/>이 참인 동안 발신을 멈춘다.</para>
+///
 /// <para><b>보내지 않는 것.</b> <c>Tick</c>·<c>NightBegan</c>·<c>NightEndAccepted</c>는 코어가 만든다.
-/// <c>TabChanged</c>는 태블릿 UI가 보낸다(아직 없음, Q6) — 이 허브는 Tab 상태를 <b>읽기만</b> 한다.</para>
+/// <c>TabChanged</c>는 <c>TabletBridge</c>가 보낸다 — 이 허브는 태블릿 상태를 <b>읽기만</b> 한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(50)]
@@ -41,7 +44,7 @@ public sealed class PlayerSensors : MonoBehaviour
     [SerializeField] private ProximityProbe proximity = new ProximityProbe();
 
     [Header("태블릿(Tab)")]
-    [Tooltip("이 오브젝트가 켜져 있으면 Tab이 열린 것으로 본다. 태블릿 UI 루트를 넣는다. 비워도 된다.")]
+    [Tooltip("이 오브젝트가 켜져 있으면 태블릿이 올라온 것으로 본다. 태블릿 UI 루트를 넣는다. 비워도 된다.")]
     [SerializeField] private GameObject tabRootToWatch;
 
     private float _acc;
@@ -58,7 +61,7 @@ public sealed class PlayerSensors : MonoBehaviour
     /// <summary>
     /// 한 샘플이 끝날 때마다 발생한다. 인자는 이 샘플이 대표하는 시간(초, 기본 0.1).
     /// <para>
-    /// <b>이 허브 밖의 발신기(<c>AnomalyCueDirector</c> 등)가 자체 <c>Update</c>로 0.1초를 세지 않게 하려고 둔다.</b>
+    /// <b>이 허브 밖의 발신기(<c>AnomalyCueDirector</c>·<c>InspectionSensor</c> 등)가 자체 <c>Update</c>로 0.1초를 세지 않게 하려고 둔다.</b>
     /// 발신기마다 따로 재면 같은 순간의 신호 순서가 Unity의 Update 순서에 맡겨지고,
     /// 그러면 CLAUDE.md §4.4.1의 고정 순서(Tick → PassageCompleted → ZoneExited → InspectionCompleted → SpaceExited)를
     /// 보장할 수 없다.
@@ -83,13 +86,26 @@ public sealed class PlayerSensors : MonoBehaviour
         get { return proximity; }
     }
 
+    /// <summary>플레이어 발밑 기준점. 없으면 null.</summary>
+    public Transform PlayerRoot
+    {
+        get { return playerRoot; }
+    }
+
+    /// <summary>태블릿이 올라와 있는지(판정 규칙과 무관한 실제 상태). 응시 기준점과 보고 포커스가 읽는다.</summary>
+    public static bool TabletRaised
+    {
+        get { return s_tabOpen; }
+    }
+
     /// <summary>
-    /// 태블릿이 열려 있는지. <b>열려 있는 동안에는 <c>TabChanged</c> 외에 아무 신호도 보내지 않는다.</b>
-    /// 코어가 버리기는 하지만, 버려진 신호만큼 발신기 내부 상태(응시 연속 시간·문 상태)가 코어와 어긋나기 때문이다.
+    /// <b>신호를 멈춰야 하는</b> 태블릿 상태인지 — 옛 규칙(Tab 중 판정 정지)일 때만 참이다.
+    /// 최종 기획서 규칙(<see cref="NightRun.JudgeWhileTabOpen"/>)에서는 태블릿을 들어도 false라 발신기들이 그대로 돈다.
+    /// 문·손전등·공간 발신기와 조작기가 이 값으로 멈춘다(이름은 하위 호환으로 남겼다).
     /// </summary>
     public static bool TabOpen
     {
-        get { return s_tabOpen; }
+        get { return s_tabOpen && !NightRun.JudgeWhileTabOpen; }
     }
 
     /// <summary>
@@ -101,11 +117,6 @@ public sealed class PlayerSensors : MonoBehaviour
         s_tabOpen = open;
     }
 
-    /// <summary>
-    /// <b>씬에 직접 놓지 않아도 된다.</b> 근무 씬이 열릴 때 허브가 없으면 플레이어 루트에 하나 붙인다.
-    /// <para>2026-09-24에 PlayScene에 이 허브가 저장돼 있지 않아 <b>응시·근접 판정이 통째로 죽어</b> 있던 것을
-    /// 막는 안전장치다. 씬에 직접 놓아 두면(인스펙터로 값을 맞추려면) 자동 생성은 건너뛴다.</para>
-    /// </summary>
     // ────────────────────────────────────────────────────────────────────────
     // 자동 설치 (2026-09-24) — NightRunDriver·TabletBridge와 같은 방식
     // ────────────────────────────────────────────────────────────────────────
@@ -113,6 +124,7 @@ public sealed class PlayerSensors : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void Install()
     {
+        s_tabOpen = false;
         SceneManager.sceneLoaded -= OnSceneLoaded;
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
@@ -127,6 +139,12 @@ public sealed class PlayerSensors : MonoBehaviour
     {
         EnsureFor(scene);
     }
+
+    /// <summary>
+    /// <b>씬에 직접 놓지 않아도 된다.</b> 근무 씬이 열릴 때 허브가 없으면 플레이어 루트에 하나 붙인다.
+    /// <para>2026-09-24에 PlayScene에 이 허브가 저장돼 있지 않아 <b>응시·근접 판정이 통째로 죽어</b> 있던 것을
+    /// 막는 안전장치다. 씬에 직접 놓아 두면(인스펙터로 값을 맞추려면) 자동 생성은 건너뛴다.</para>
+    /// </summary>
     private static void EnsureFor(Scene scene)
     {
         if (!FlowAutoInstall.IsDutyScene(scene)) return;
@@ -176,7 +194,7 @@ public sealed class PlayerSensors : MonoBehaviour
 
         // 밤이 아니거나 포획됐으면 발신하지 않는다. 누산기도 비워 둔다
         // (다시 열렸을 때 밀린 시간이 한꺼번에 쏟아지면 안 된다).
-        if (!NightRun.IsNightActive || NightRun.IsCaptured || s_tabOpen)
+        if (!NightRun.IsNightActive || NightRun.IsCaptured || TabOpen)
         {
             _acc = 0f;
             return;
@@ -217,12 +235,12 @@ public sealed class PlayerSensors : MonoBehaviour
     /// <summary>
     /// 한 샘플. <b>순서를 바꾸지 말 것.</b>
     /// ① 응시를 먼저 재고 보낸다 — 같은 프레임의 <c>DoorRelay</c>가 <see cref="GazeProbe.CurrentId"/>로
-    /// 「자동 개방을 보았다」를 판단하기 때문이다.
+    /// 「자동 개방을 보았다」를 판단하기 때문이다. 태블릿을 들었으면 기준점이 화면 높이 78%로 올라간다.
     /// ② 근접을 보낸다.
     /// </summary>
     private void Sample(Camera cam, Transform root, float step)
     {
-        gaze.Probe(cam, root);
+        gaze.Probe(cam, root, SensingRules.GazeViewportY(s_tabOpen));
         gaze.Send(step);
 
         proximity.Sample(root, step);

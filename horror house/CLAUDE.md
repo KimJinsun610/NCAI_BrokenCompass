@@ -1,7 +1,69 @@
-﻿# CLAUDE.md
+# CLAUDE.md
 
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
+
+> **개정: 2026-10-01(20차). 1일차는 몹 없이, 조우에 묶인 수칙은 그 조우와 함께만, 옛 하네스 삭제(민 지시). EditMode 545/545 통과, PlayScene에서 1일차 덱 [H2·C4·S3·G1·G2]·슬롯 0, H2 단서 → `corridor.door.auto` 자동 개방 → 본 것으로 판정 → 플레이어가 닫으면 위반 +12 확인, 에러 0.**
+> ⓐ **1일차 = 조우 없음(기획서와 다름 — 민 결정).** 「몹은 2일차부터 — 긴장에 기승전결」. `NightProgram.BuildDay1`은 슬롯 없이 고정 덱 **H2 · C4 · S1|S3 · G1 · G2**(복도는 H2 고정, 교실은 C4 고정 — 둘 다 혼자 서는 수칙). 기획서의 1일차 「소년 착석(C3)」은 쓰지 않는다.
+> ⓑ **조우에 묶인 수칙**: `ProgramCatalog`에서 H1 → `PeopleTree`(인체나무), C2 → `CeilingLegs`(천장 다리)로 `boundEncounter`를 달았다. 묶인 수칙은 그 조우 없이는 덱에 들어가지 않는다 — 「인체나무가 없는데 복도의 미분류 물체를 피하라」는 수칙이 뜨던 문제. **강제 수칙**(2일차 첫 역설 C2 등)이 묶인 수칙이면 그 조우를 함께 편성(`PlaceEncounter(d, bound, true)`), 못 놓으면 보고에 적는다. 소년 머리박기(`BoyBang`)는 대본에 `ExtraStandIn/ExtraAnchorId/ExtraCue`로 **천장 다리를 함께 세운다**(C2가 둘째 수칙).
+> ⓒ **H2 단서 대본**: `RuleTriggers`에 H2(복도 8~20초 머무름, `cue.door.autoopen`). 9개가 됐다.
+> ⓓ **H2 연출** `DirectionStage.OpenDoorAhead`: 레벨에서 자동 개방용으로 지정한 `corridor.door.auto`를 먼저 고른다(앞쪽에 보일 때만 우선, 25m 안, 평소 잠겨 있으므로 이때만 `ForceUnlock`). 없으면 잠기지 않은 닫힌 문 3~18m 중 앞쪽·가까운 것. `BeginDirectionMove` 뒤 `Open` → `DoorRelay`가 「연출 개방을 응시 중」일 때만 `DoorAutoOpenObserved`. **보지 못한 개방은 판정하지 않는다**(트리거 없음 = 벌도 보상도 없음).
+> ⓔ **옛 하네스 3파일 삭제**(`NightDutyTestHarness`·`HarnessStandIns`·`DutyTabletPanel`) — 옮긴 곳은 §3.4 표. `AnomalyCueDirector.CanSend`는 새 편성에서 false.
+> ⓕ **테스트**: 1일차 고정덱·재시작 편성 테스트를 새 덱으로, 「소년 착석 → C3」는 `DebugAddFinalRule("C3")` + `DebugForceEncounter`로 바꿨다. `DayOneAndBindingTests` 3개 추가.
+> **되살리지 마십시오:** 「1일차 소년 착석」 · 「1일차에 몹·조우 슬롯」 · 「H1·C2를 혼자 서는 수칙으로」(조우 없이 덱에 듦) · 「강제 수칙은 조우 없이 덱에만 넣는다」 · 「하네스」(`NightDutyTestHarness`·`HarnessStandIns`·`DutyTabletPanel`, 1초 응시 흉내) · 「H2 연출은 잠긴 문을 건너뛴다」(지정 문은 연다).
+
+> **개정: 2026-10-01(19차). 7단계 — 긴장 디렉터·놀람 예산·연출 실행기(대역·소등·런타임 구역)와 디버그 콘솔(F3). 씬 작업(민 승인): 1층 도서관 공간 상자 추가. EditMode 542/542 통과(플레이 뒤에도), PlayScene에서 콘솔로 소년 착석(C3)·과학실 소등(S4)·노란 얼굴(L3) 확인, 에러 0.**
+> ⓐ **`TensionDirector`**(`Scripts/Direction/Tension/`, 코어): 그날 편성의 슬롯 A 01:00–01:52 · B 02:16–03:08 · C 03:08–03:30(위험 단계면 끔)마다 조우를 「방아쇠 → 전조(강도 3↑만 1~8초, 헛예고 30% / 청각 구간 3↑ 40%) → 대면 → 대응 창 → 끝 단서 → 결과」로 돌린다. 대면 때 대본의 단서(`FinalCues`)를 큐에 넣고, `NightRun`이 꺼내 `Send`로 판정 책에 넣는다(`FlushDirection`, 재진입 방지). 03:30 뒤 새 조우 없음. 슬롯 끝 10분 전부터는 「그 공간에 있기만 하면」으로 방아쇠를 완화, 끝까지 없으면 `Missed`.
+> ⓑ **대본 표** `EncounterScripts`(조우 15개: 방아쇠·머무름·창·끝 단서·자리·대역 ID·기준점·소등·구역)와 `RuleTriggers`(조우 없는 수칙 단서 8개: C1 분필(`cls11.door.outside` 구역) · C4 붉은 불 · S2 유리 · T1 물 내림 · T2 사용 중 칸 · T5 불 켜진 칸(화장실 나갈 때까지) · L2 책장 · K2 빈 방(보고 있지 않은 채널)). 수칙 단서는 밤에 한 번, 조우 중엔 쉼, 20초 간격.
+> ⓒ **`SurpriseBudget`**: 강도 3↑ 3/4/4회 · 4↑ 1/2/2회 · 5는 1–2일차 0, 3–4일차 교차만 1, 5일차 1. 강도 3↑ 사이 90초, 4↑ 뒤 120초, 조우 뒤 60~90초 휴지. **`DirectorMoods`**: 최고 감각 생존 수치 0–49 쉬움(창 ×0.8, 가짜 놀람 +1) · 50–74 기본 · 75–99 또는 재시작 k≥2 위험(전조 ×1.5, 창 ×1.3, 헛예고 절반, 슬롯 C 끔). 가짜 놀람 3종은 진짜 1에 3까지, 같은 것 밤 2회.
+> ⓓ **재시작**: 디렉터를 새로 만들지 않고 `ResetToRest(k, 시작 분)` — 시작 분(00:00·02:16) 뒤에 대면한 조우·울린 단서만 다시 기다린다. 이미 본 강도 4↑의 전조는 절반. 밤이 닫히면(`CloseNight`) 모두 끝 단서 없이 중단.
+> ⓔ **판단(기획서와 다른 점)**: ① 「복도 끝에 선 자」·「모형 급습」의 방아쇠는 기획서상 「과학실 퇴실」이지만 S5는 과학실 안에서 판정하므로 **과학실 10초 체류 뒤 앞쪽 7m(문밖)**에 세운다. ② 「소년 착석」은 「교실 점검 항목을 처음 비출 때」 대신 교실 3초 체류. ③ 「노란 얼굴」은 「도서관 점검 2개 뒤 출입구를 등질 때」 대신 도서관 8초 체류. 셋 다 대본 표의 `Note`에 적었다.
+> ⓕ **연출 실행기**(Flow): `DirectionStage`(자동 설치)가 `EventBus.DirectionEmitted`를 받아 대역(`StandInFactory` — `Resources/StandIns/<ID>` 프리팹이 있으면 그것, 없으면 어두운 캡슐·박스, 응시 판정이 필요한 천장 다리·창밖 남자만 단단한 콜라이더), 방 소등(`LightGroup` — 그 공간 상자 안의 실시간 라이트 + `LampFluo` 발광을 MaterialPropertyBlock으로), 런타임 신호 구역(`FinalRuleRelay.SetRuntimeZone` — `science.dark` = 소등한 과학실 전체, `classroom.phantomdoor` = 없던 문 앞), C4 붉은 조명, T5 칸 안 작은 등, 손전등 끊김(가짜 놀람)을 맞춘다. 소리는 `Resources/Direction/<ID>.<단계>` 클립이 있으면 재생(지금은 없음). `DirectionCue`는 대역·완성 몹 루트의 계약(Play/SetPhase/Abort/ResetToRest, `PhaseChanged`).
+> ⓖ **디버그 콘솔 F3**(`Flow/Debug/NightDutyDebugConsole.cs`, 에디터·개발 빌드만, 자동 설치): 개요(밤 시계 구간 점프 — `NightRunDriver.DebugJumpToNightMinute`, 판정 강제, 자동 연출 끔, 시계 정지, 축 ±, 손전등·달리기 신호, 공간 이동, 밤 종료·붙잡힘·재시작) · 수칙(덱 상태 ✓/✗/진행 중, [이동]·[단서]·[끝]·[조우], [덱에 추가]) · 조우(슬롯 상태·헛예고, 15개 [이동+실행]/[여기서], 다음 단계, 무대 정리) · 점검([이동]·[정상]·[이상]) · 로그. **[이동+실행]은 디렉터가 새 공간을 알 때까지(3프레임 이상) 기다렸다가 실행**한다 — 바로 실행하면 옛 자리로 판정한다(실측 버그).
+> ⓗ **씬**: `SpaceZones`에 1층 도서관 상자(중심 8.2, 3.4, 48 · 반경 6.2×8, 엠비언트 설정의 실측 상자) 추가 — 복도 상자보다 앞. 없을 때는 도서관이 복도로 잡혀 L1~L5가 영영 방아쇠를 받지 못했다. `SpaceZones.TryGetSpaceBox`(정확한 값 먼저, 그다음 교실 정규화)·`TryGetSignalZone` 추가.
+> ⓘ **함정 2개(§5)**: ① 열린 씬이 수정된 채로 EditMode 테스트를 돌리면 「씬 저장?」 대화상자에서 에디터 전체가 멈춘다(2026-09-30 밤·10-01 아침 두 번) — 테스트 전 `EditorSceneManager.SaveOpenScenes()`. ② 플레이 종료 뒤 도메인 리로드가 없으면 구동기가 켠 정적 스위치가 남아 옛 규칙 테스트 4건이 깨진다 — `NightRunDriver.OnDestroy`가 스위치를 기본값으로 되돌린다.
+> ⓙ **(같은 날 후속) 태블릿·옛 덮개 정리.** ① 태블릿(`TabletDocument`, 김진선님 코드 — 수정 안 함)은 `NightRun.TodayDeck`의 `PlayerText`를 읽는다. 새 편성이면 `TodayDeck`이 `NightRun.DisplayDeck`(판정 조건 없는 표시용 `RuleSO` — 그날 새 수칙 → `[점검] 공간 이름 — 문구`, 늦게 열리는 항목은 「(02:16부터)」, 보고하면 「· 보고함」, 첫 점검 줄 아래 Z/X 안내)을 돌려준다. 옛 `RuleBook`은 여전히 `DeckToday`를 판정하므로 표시 카드는 판정에 들어가지 않는다. 별도 「점검표」 탭은 9단계(태블릿 UI) 몫. ② 옛 임시 태블릿 `DutyTabletPanel`(우측 지침 + 하단 4축 막대) 자동 생성 끔. ③ 옛 하네스(`NightDutyTestHarness`)는 문 발신기·잠금 무시(F4/F5)만 남기고 옛 대상 채우기·콜라이더·**옛 조우 8장면 모형**·응시 대역을 기본 끔, 상태판 키 F3 → **F9**(F3은 새 콘솔). ④ `HarnessStandIns`의 옛 「방 체류 점검」 막대·알림과 `AnomalyCueDirector`(옛 24장 단서)는 새 편성에서 쉰다.
+> **되살리지 마십시오:** 「조우는 슬롯 시작에 바로 건다」(방아쇠·예산을 거침) · 「강도 1~2도 전조가 있다」 · 「헛예고도 단서를 보낸다」 · 「디버그 강제 실행은 예산을 쓴다」 · 「도서관은 SpaceZones에 없어도 된다」 · 「테스트는 씬이 더러워도 돌려도 된다」.
+
+> **개정: 2026-10-01(18차). 6단계 후반 — 새 수칙 31장의 판정을 넣고 옛 24장 덱·옛 조우 연출기를 쉬게 했습니다. 씬 작업(민 승인): 새 수칙 기준점 4개 · `science.tape` 신호 구역 · 경비실 공간 상자를 판정 범위 안으로. EditMode 516/516 통과, PlayScene 재생 확인(1일차 덱 [H1·C3·S1·G1·G2], 경비실 스폰 = `SecurityRoom`, 손전등으로 바닥 모형을 비추면 `rule.S3.model`).**
+> ⓐ **`FinalRuleBook`**(`Scripts/FinalRules/`)이 그날 편성 덱(`NightRun.Program.Deck`)을 판정합니다. `NightRun.ProgramEnabled`가 켜져 있으면 `LoadDeck`은 빈 덱을 돌려주고(옛 24장 판정 정지) `EnsureEncounter`도 건너뜁니다. `DeckOverride`를 주면 옛 덱도 함께 돕니다(시험용).
+> ⓑ **점수 규칙**: 일반 수칙은 **첫 위반에서 그 축 +12 한 번**(밤당). 방아쇠가 한 번 이상 왔고 위반이 없으면 밤 종료에 **신뢰 +2**. 위협 수칙(H3·H4·C3·S5·T3·L3·L5)은 **조우(에피소드)마다 실패 +20 / 성공 신뢰 +3**, +12·+2는 없습니다. G2·T4는 점검판이 델타를 주고 여기서는 기록(`Noted`)만 합니다. K4·G3은 판정 없음.
+> ⓒ **단서 계약**: 연출은 `JudgeSignal.Cue(id, 위치)`로 시작하고 같은 ID의 `JudgeSignal.CueEnd(id)`로 끝냅니다. 이름은 `FinalCues`가 정본입니다(`cue.footsteps` · `cue.voice` · `cue.chalk` · `cue.boy.seated`/`cue.bell` · `cue.redlight` · `cue.phantomdoor` · `cue.glass` · `cue.blackout.science` · `cue.hallend` · `cue.flush` · `cue.stall.occupied@<구역>` · `cue.blackout.toilet` · `cue.girl.stall` · `cue.stall.lit` · `cue.pages` · `cue.yellowface` · `cue.windowknock` · `cue.cctvperson` · `cue.emptyroom@cctv.ch<n>`). 판정기가 단서를 받을 때 플레이어가 그 공간에 없으면 해당 없음(C3·S5·T3·T1·L2).
+> ⓓ **새 신호 6종**(`SignalKind` 33·43~47): `CueStarted` · `PlayerPose`(0.1초, 발밑+수평 방향) · `Running`(바뀔 때) · `BeamSample`(0.1초, 손전등 원뿔 15°·8m 안 가려지지 않은 `rule.` 기준점, 빈 샘플도 보냄) · `CctvChannel` · `CctvViewSample`. `JudgeSignal`에 `Point` 필드가 생겼습니다(6인자 생성자는 그대로).
+> ⓔ **`FinalRuleRelay`**(`Flow/Sensors/`, 자동 설치)가 자세·달리기(수평 3.5 m/s)·비춤·CCTV 시청/채널을 보냅니다. 새 편성이 꺼져 있으면 아무것도 보내지 않습니다.
+> ⓕ **재시작**: 판정 책은 새로 만들지 않고 `ISnapshotable`로 방아쇠·위반 여부·결과 수를 되돌립니다(진행 중 에피소드는 버림). S2 「과학실 종료」는 방아쇠가 스냅샷 전에 났으면 유지됩니다.
+> ⓖ 결과: `NightRun.FinalRules` · `NightRun.FinalResults` · `EventBus.FinalRuleSettled`. S3 위반 → `E.ModelRush`, L3 실패 → `E.SuitMan`을 `NightRun.ReserveEncounter`로 예약합니다. T4 단서(`cue.girl.stall`) → `SetReverseReport("T-1", true)`.
+> ⓗ **씬(PlayScene)**: 메뉴 `NightDuty ▸ 새 수칙 기준점 배치`(`RuleAnchorPlacer`)로 `rule.S1.center`(48, 1.5, 42) · `rule.S3.model`(바닥 인체 모형 `Anatomical Human Torso (1)`) · `rule.L1.shelf`(`BookShelvingDouble (10)`, 기울어진 책장) · `rule.L4.box`(`CardboardBoxA (24)`). 콜라이더 없음(응시를 가로채지 않게). `SpaceZones` 신호 구역에 `science.tape`(모형 둘레 2×2m) 추가. **경비실 상자(zones[5])를 `SecurityRoom` · 판정 범위 안(`OutOfScope` false)으로** 바꿨습니다 — K2·K3이 경비실 공간을 읽습니다. 그에 맞춰 `AnomalyCueDirector.SpaceSlots` 6 → 9(경비실 7 진입에서 배열 초과 예외가 났습니다).
+> ⓘ 아직 없는 것: 단서를 내는 연출(7단계 긴장 디렉터) · 조우 소품의 기준점(`rule.H1.object` · `rule.C2.legs` · `rule.L3.face` · `rule.L5.man`) · 구역 `science.dark` · `classroom.phantomdoor` · 테이프 바닥 표시(아트). 그래서 지금 실제 플레이에서 방아쇠가 오는 수칙은 G1 · K3 · S1 · L1 · L4 · S3 · H2(연출이 문을 열 때) · K1/K2(단서 전까지는 무반응)뿐입니다.
+> ⓙ 같은 날 앞서 **점검 대상 17개를 씬에 놓았습니다**(메뉴 `NightDuty ▸ 점검 대상 배치`, `InspectionTargetPlacer`): 소품 아래 자식 `Inspect <ID>` + `JudgeTarget`(`inspect.<ID>`) + 소품을 감싸는 트리거 아닌 `BoxCollider`(+4cm). 경로표는 스크립트의 `Map`.
+> **되살리지 마십시오:** 「새 편성을 켜도 옛 24장 덱이 판정한다」 · 「경비실은 판정 범위 밖(`OutOfScope`)」 · 「`AnomalyCueDirector.SpaceSlots = 6`」 · 「일반 수칙은 위반할 때마다 +12」 · 「위협 수칙도 밤 종료 준수 +2를 받는다」.
+
+> **개정: 2026-10-01(17차). 6단계 앞부분 — 새 수칙·조우 카탈로그와 밤 편성기(배정 순서 1~7)를 넣었습니다. 판정은 아직 옛 24장이 합니다. EditMode 474/474 통과, PlayScene 재생 확인(1일차 편성 [H·C3·S·G1·G2] + 소년 착석).**
+> ⓐ `Scripts/Program/ProgramCatalog.cs`: **새 수칙 28장 + G1·G2·G3**(`RuleDef` — 공간·축·문구·위협·손전등·대기형·묶인 조우)과 **조우 15개**(`EncounterDef` — 주축·대응 수칙·강도·몹·발동 조건, 소년 머리 박기는 C2+C3, 천장 다리 몹 = 소년). **편성 데이터의 구현값 정본**입니다.
+> ⓑ `Scripts/Program/NightProgram.cs`: `ProgramDirector.Build(ProgramRequest)` — 1일차 고정(H1|H2·C3·S1|S3 + 소년 착석) → 강제 수칙(회피 불가 쌍, 2일차 C2) → 지난 밤 예약(`Reserve` — 모형 급습 3일차부터·정장 남자) → 슬롯 조우(점수 = 주축 구간×2·미관람 +3·교차 +2·직전 같은 축 −2, 직전 같은 몹 제외, 놀람 예산) → 경비실(5일차 K4, CCTV 사람이면 K1, 아니면 K2·K3) → 남은 칸(혼자 서는 수칙, 최고 축 ×2, 최저 축 최소 1장). 손전등 수칙 하루 3장·T4 회차 2번. 슬롯 C는 3일차부터 밤 시작 최고 감각 생존 수치 ≤49일 때, 재시작 k≥2면 `NightProgram.SlotActive`가 끕니다.
+> ⓒ `NightRun.ProgramEnabled`(NightRun.Program.cs, 구동기가 켬)·`Program`·`Programs`·`ReserveEncounter`. 점검 편성 뒤, 재시작 제외 밤 시작에 한 번 만듭니다. NightRun은 이제 `partial`입니다 — 확장은 `NightRun.*.cs`에 두고 본체의 `OnNightPlanned`·`ResetExtensions` 훅을 씁니다.
+> ⓓ **아직 안 한 것(6단계 뒷부분)**: 새 수칙마다 판정 조건(RuleSO) — 달리기·정지 0.2m·돌아보기 90°·채널 넘김·머무름 같은 새 신호가 필요합니다. 그다음 옛 24장·옛 조우 8장면·관련 테스트를 지우고 판정을 새 덱으로 바꿉니다. 조우의 시점·위치는 7단계 긴장 디렉터.
+> **되살리지 마십시오:** 「덱과 조우를 따로 뽑는다」(조우를 먼저 뽑고 대응 수칙을 고정) · 「경비실 수칙을 1일차부터」 · 「G3에 판정」 · 「역보고는 S3·T4」(T4 하나).
+
+> **개정: 2026-10-01(16차). 최종 기획서 제작 계획 4단계(점검·보고)·5단계(센서 공통 정의)와 3단계 잔여(스냅샷 레지스트리·경계 사례)를 넣었습니다. 씬·프리팹·에셋은 고치지 않았습니다. EditMode 459/459 통과, PlayScene 재생 확인(1일차 점검표 편성·센서 자동 설치, 오류 0).**
+> ⓐ **점검(`Scripts/Inspection/`)**: `InspectionCatalog`(17항목 — 복도4·교실3·과학실3·화장실3·도서관3·경비실1, 점검 항목의 구현값 정본) · `AnomalyAssigner`(5(2)·5(2)·6(3)·6(3)·7(3), 경비실 포함 4곳 이하·좌우 동 각 1 이상, 1일차 튜토리얼 고정 K-1 정상·H-4·S-2 이상, 처음 점검하는 공간엔 이상 없음, 연출 구간 1 이상 축만·가중치 = 구간, 마지막 공간은 호출 2에 열림, 환청 청각 2~3이면 1회·4면 1.5배) · `InspectionBoard`(보고 경제 −5(축·밤당 −10)/+8/+7/G2 +6/T4 역보고, 「가까이」 +6 항목당 1회, 04:00 미완료 경고 1 + 이상이면 +8).
+> ⓑ **`NightRun`**: `InspectionsEnabled`(기본 false, 구동기가 켬)·`InspectionPlanOverride`·`Inspections`·`ReportInspection(id, 이상?)`·`InspectionStartle`·`MarkHallucination`·`SetReverseReport`. 판정 정지·03:30 뒤 보고 델타는 95에서 멈춤. **옛 「미방문 벌점 +9」(`UnvisitedPenalty`)는 지웠습니다** — 미완료 경고가 넘겨받음.
+> ⓒ **스냅샷 레지스트리** `ISnapshotable`(NightSnapshot.cs): 점검판이 한도 사용량·가까이·환청·역보고 표시를 싣습니다. 이미 한 보고는 되돌리지 않습니다. 경고 장부는 `TotalTaken`으로 **이미 나온 처벌을 재시작 뒤 되풀이하지 않습니다**.
+> ⓓ **경계 사례**: `FearAxisSystem.BeginFrame/EndFrame` — 한 신호에 두 축이 100이면 초과량이 큰 축(동점 청각>조도>배치)으로 붙잡힘. `NightRun.Send/Tick`이 묶습니다. `FearAxisSystem.Raised`(축, 양, 출처) → `NightRun.LastCaptureSources`(재시작 카드의 「그 축을 올린 수칙·점검 항목」), `DisplaySource`.
+> ⓔ **센서(5단계)**: `SensingRules`(응시 10°·0.2초 틈·비춤 15°/8m·정지 0.2m·보고 2m/1초/0.5초·가까이 0.8m·태블릿 응시 기준점 78%) · `ReportReadiness`. `GazeProbe`는 **10° 원뿔**(판정 콜라이더가 있는 대상만, 가림 검사) → 없으면 옛 중앙 레이. `InspectionSensor`(Flow, 자동 설치): 2m·1초 응시로 보고 가능·포커스·틱 이벤트, 전용 키 Z=정상/X=이상 0.5초 길게, 0.8m·0.3초 들여다보면 가까이. 개발 빌드에 화면 안내 한 줄.
+> ⓕ **태블릿 중 판정**: `NightRun.JudgeWhileTabOpen`(NightRun.Tablet.cs, 기본 false, 구동기가 켬) — 켜면 Tab 신호를 판정에 넘기지 않아 판정이 계속되고 `NightRun.TabletOpen`에만 적습니다. `PlayerSensors.TabOpen`은 이제 「신호를 멈춰야 하는가」(옛 규칙일 때만 참), 실제 상태는 `PlayerSensors.TabletRaised`. **그래서 태블릿을 든 채 문·CCTV 조작도 됩니다.**
+> ⓖ `SpaceId`에 `Library=6`·`SecurityRoom=7`·`Classroom=8`(Classroom02) 추가, `SpaceIds.Canonical`(옛 1-1·1-3 → 교실)·`WingOf`. `EventBus.InspectionPlanned/InspectionReported/InspectionStartled`.
+> ⓗ **씬에 점검 대상이 아직 없습니다.** 항목마다 `JudgeTarget` ID `inspect.H-1` 형식의 대상을 놓아야 보고 센서가 켜집니다(씬 작업, LFS 잠금 확인 뒤).
+> **되살리지 마십시오:** `NightRun.UnvisitedPenalty`(+9)와 `ApplyUnvisitedPenalty`·`UnvisitedPenaltyTests` · 「Tab 중에는 모든 판정이 멈춘다」를 게임 기본으로 두는 것(옛 테스트용 기본값일 뿐) · 「응시 = 화면 중앙 레이의 첫 충돌체」만 쓰는 것 · 「재시작하면 대기 중이던 처벌이 스냅샷 수만큼 다시 나온다」 · 「한 프레임 두 축 100이면 먼저 계산된 축으로 붙잡힘」.
+
+> **개정: 2026-09-30(15차). 최종 기획서(Claude Docs `ebc9e369-d2e8-491c-ba8a-7b071e56a19e`)를 0순위 정본으로 바꾸고, 그 「제작 계획」 1~3단계 — 신뢰 전용 구간·밤 시계·붙잡힘 뒤 재시작·경고와 처벌 — 를 코어에 넣었습니다. 씬·프리팹·에셋은 고치지 않았습니다. EditMode 413개(새 테스트 `NightFlowTests.cs`).**
+> ⓐ **신뢰는 전용 경계 15/30/45/65**로 구간을 읽습니다(`Bands.OfTrust`·`Bands.OfAxis`·`Bands.TrustLowerBound`, 배열 `TrustLowerBounds`). 감각 축은 그대로 25/50/75/90. `FearAxisSystem.GetBand`·`BandResolver.Target`·`ParadoxDirector.DailyQuota` 모두 `OfAxis`/`OfTrust`를 거칩니다. `ParadoxDirector.MinTrust` = **15**.
+> ⓑ **밤 시계** `NightClock`(`Scripts/Direction/NightClock.cs`): 근무 시작부터의 게임 분 0~240, 실시간 15분(16배). 판정 00:16~03:30, 이완 01:52~02:16 제외 · 호출1 01:00 · 호출2/체크포인트 02:16 · 슬롯 C 03:08. `NightClockTracker`가 경계를 한 번씩 알립니다. `NightRun.JudgingWindowEnabled`(기본 false, 구동기가 켬)가 켜지면 판정 정지 중에는 상태 신호(공간·구역·손전등·Tab)만 넘기고 Tick은 건너뜁니다.
+> ⓒ **재시작**: `NightRun.RestartAfterCapture()` — 체크포인트(`SignCheckpoint`, 이완 구간·밤당 1회) 또는 밤 시작 스냅샷(`NightSnapshot`)으로 돌아가 감각 축 = max(min(스냅샷, 40), 스냅샷 − 10k), 신뢰·연출 도달값(`BandResolver.RestoreReached`)·경고는 스냅샷 그대로, **덱은 다시 뽑지 않음**. 5번 재시작한 밤에 또 붙잡히면 결근(`NightOutcome.Absent`, 감각 min(현재, 60)). k≥4면 `LeaveVoluntarily()`. 규칙 수치는 `RestartPolicy` 한 곳.
+> ⓓ **경고**: `WarningLedger` — `NightRun.AddWarning(n, source)`, 3개마다 처벌 1이 대기, 판정 구간의 다음 `SpaceEntered`에서 가장 높은 감각 축(동점 청각>조도>배치) +15. **처벌·04:00 정산·판정 정지 중 델타는 95(`Deltas.SoftCap`)에서 멈춥니다** — 그것들로는 붙잡히지 않습니다(`FearAxisSystem.SoftCap`). 새 이벤트 `EventBus.WarningsChanged`·`Punished`·`NightRestarted`.
+> ⓔ `NightRunDriver`가 판정 시간창을 켜고, GameTime의 절대 분을 **(현재 − 시작) × 240 / (종료 − 시작)**으로 환산해 넘깁니다. `NightRunDriver.MatchDesignPace`(기본 true)면 `SetTimeMultiplier`로 한 밤을 실시간 15분에 맞춥니다. **GameTime·태블릿 표시·재시작 때 씬 재로딩과 시계 되돌리기는 김진선님 코드라 손대지 않았습니다**(§12.2).
+> ⓕ 신뢰 델타는 준수 +2 · 위협 성공 +3 · 역보고 +3 · 역설 지킴 +3 · 변조 지킴 +3(`TrustParadoxKept`·`TrustVariantKept`).
+> **되살리지 마십시오:** `MinTrust = 25` · 신뢰에 감각 축 경계(25/50/75/90)를 쓰는 것 · `TrustParadoxIgnored`(+2)·`TrustVariantOriginalKept` · 「재시작하면 덱을 다시 뽑는다」 · 「처벌·정산으로 붙잡힐 수 있다」 · 「연출 구간은 어떤 경우에도 내려가지 않는다」(재시작·결근의 `RestoreReached`만 예외) · 기획서 `1c5c811a-…`를 0순위로 보는 것.
 
 > **개정: 2026-09-30(14차). 새 기획서(Claude Docs)를 정본으로 올리고, 그 기획서대로 코어 수치를 바꿨습니다 — 7단계 개편의 1단계(§2.2·§2.3·§2.3″). 씬·에셋은 고치지 않았습니다. EditMode 358/358 통과(옛 판정 테스트 6개를 지우고 새 것 2개를 더했습니다).**
 > ⓐ **구간 경계 25/50/75/90**(0–24 · 25–49 · 50–74 · 75–89 · 90–99). `Bands.LowerBounds` 한 곳.
@@ -127,7 +189,7 @@
 
 | 순위 | 문서 | 위치 | 역할 |
 |---|---|---|---|
-| **0** | **야간근무 기획서 — Claude Docs (2026-09-30~, 계속 고쳐 씀)** | Claude Docs 문서 `1c5c811a-eba9-42b0-88b6-18fb98009458` | **최상위 정본(2026-09-30 사용자 결정).** 아래 문서들과 부딪히면 이것이 이깁니다. 공간 6곳(복도·교실·과학실·화장실·도서관·경비실), 수칙 H1–4·C1–5·S1–5·T1–5·L1–5·K1–4와 태블릿 문구, 점검 16항목·점검 이상 4틀, 구간·생존 수치/연출 구간·델타·경고·재시작, 역설·변조. 아래 1~2순위 문서는 이 기획서가 다루지 않는 판정 절차에만 씁니다 |
+| **0** | **야간근무 최종 기획서 — Claude Docs (2026-09-30 확정본)** | Claude Docs 문서 `ebc9e369-d2e8-491c-ba8a-7b071e56a19e` (예전 초안 `1c5c811a-…`는 쓰지 않음). 팀 공유용 변경 요약은 「야간근무 기획 변경 공유」 `594ee326-e338-422c-a381-74a9492e3f3c` | **최상위 정본(2026-09-30 사용자 결정).** 제작 순서는 이 기획서의 「제작 계획」 12단계를 따릅니다. 아래 문서들과 부딪히면 이것이 이깁니다. 공간 6곳(복도·교실·과학실·화장실·도서관·경비실), 수칙 H1–4·C1–5·S1–5·T1–5·L1–5·K1–4와 태블릿 문구, 점검 16항목·점검 이상 4틀, 구간·생존 수치/연출 구간·델타·경고·재시작, 역설·변조. 아래 1~2순위 문서는 이 기획서가 다루지 않는 판정 절차에만 씁니다 |
 | **1** | **중간기획서 (2026-09-20, 40쪽)** | 기획팀 공유 PDF (읽은 추출본은 `../Docs/Claude outputs/`) | **기획 정본.** 스코프·근무 시간·신뢰↔역설 상한·역설 23쌍 총괄표(12절)·조우 8장면·이상현상 5구간표·조작 |
 | **1′** | **`야간근무_공간별_지침록 9.20V.html` (2026-09-20)** | `../Docs/Claude outputs/` | **카드 문구·이상현상 5구간표의 정본.** 24수칙 본문과 역설 23개 문구를 이 판으로 교체했고, 네 공간의 이상현상 표를 다시 썼습니다. 중간기획서와 **같은 날짜**라 우열이 아니라 **분담**입니다 — 스코프·근무 시간·신뢰↔역설 상한·조우 8장면·조작은 중간기획서가, **카드 본문·역설 문구·공간별 이상현상 구간 내용은 9.20V가** 정본입니다 |
 | 2 | `야간근무_공간별_지침록_개발명세반영본.html` (2026-09-12) | `../Docs/Claude outputs/` | **판정 절차의 상세 정본.** 카드별 「개발 판정 상세」, 공통 개발 명세 1~7절. **문구·이상현상은 9.20V가, 스코프·상한은 기획서가 이깁니다.** 이 판에만 있는 것은 판정 절차·검증 방법입니다 |
@@ -181,9 +243,9 @@
 | 이상을 정확히 보고 | 그 이상의 축 | **−5** (축마다 밤당 −10까지) |
 | 정상을 이상으로 보고 · 점검 미완료 | — | **경고 1** · 3회면 처벌 이벤트: 가장 높은 감각 축 **+15** |
 | 붙잡혀 그 밤 재시작 | 감각 3축 | **−10**씩 |
-| 준수 / 위협 성공 / 역보고 / 역설 무시 / 변조 원본 준수 | 신뢰 | **+2 / +3 / +3 / +2 / +3** (줄지 않음) |
+| 준수 / 위협 성공 / 역보고 / 역설 지킴 / 변조 지킴 | 신뢰 | **+2 / +3 / +3 / +3 / +3** (줄지 않음) |
 
-- 1단계(2026-09-30)에서는 **표와 `Lower`만** 들어갔습니다. 보고·경고·재시작 경로는 2~3단계에서 붙습니다. 옛 24장 카드는 에셋에 적힌 개별 델타를 그대로 씁니다.
+- 재시작(−10×k, 하한 min(스냅샷, 40))과 경고·처벌은 15차에 들어갔습니다(`RestartPolicy`·`WarningLedger`). **처벌·04:00 정산·판정 정지 중 델타는 95에서 멈춥니다.** 정확 보고·놓침은 점검 단계에서 붙습니다. 옛 24장 카드는 에셋에 적힌 개별 델타를 그대로 씁니다.
 - **청각·조도·배치 중 하나가 100이면 종료 잠금**입니다. **신뢰 100은 종료 잠금이 아닙니다**(값만 100에서 멈춤, `FearAxisSystem.IsTerminal`). 종료 원인 축, 카드/문자 ID, 현재 공간을 기록하고 **종료 요청을 한 번만** 보냅니다. 그 뒤의 미적용 델타와 신규 판정·문자·조우·정산은 모두 중단합니다.
 - 델타는 카드마다 고정값입니다. 프로파일링 가중치나 각인축은 없습니다.
 - **배치 최대는 +15입니다.** `H6`의 +25는 2026-09-20에 +15로 고쳤습니다(에셋·빌더 모두). 되살리지 마십시오 — H6는 배치 90~99에서만 열리는 카드라 +25면 어기는 즉시 게임오버였습니다.
@@ -196,6 +258,7 @@
 Band0 = 0–24 · Band1 = 25–49 · Band2 = 50–74 · Band3 = 75–89 · Band4 = 90–99 · 100 = 붙잡힘
 ```
 
+- **신뢰는 전용 경계 15/30/45/65를 씁니다**(Band0 0–14 · Band1 15–29 · Band2 30–44 · Band3 45–64 · Band4 65~). 축을 모르는 곳에서는 `Bands.OfAxis(axis, value)`, 신뢰만이면 `Bands.OfTrust`. 경계 숫자는 `Bands.TrustLowerBounds` 한 곳입니다.
 - **`value / 20` 같은 균등 분할 계산을 하지 마십시오.** 반드시 `Bands.Of(value)`를 씁니다.
 - **2026-09-30 새 기획서로 25/50/75/90입니다.** 24 배수 경계는 「위반 두 번이면 반드시 다음 구간」을 맞추려던 장치였는데, 이제 연출 구간은 일차 하한과 래칫이 밀어 올리므로 필요 없습니다.
 - **Band3(75–89)·Band4(90–99)가 좁은 것은 의도입니다.** 붙잡히기 직전 구간이 길면 긴장이 풀립니다.
@@ -362,11 +425,11 @@ Band0 = 0–24 · Band1 = 25–49 · Band2 = 50–74 · Band3 = 75–89 · Band4
 
 | 근무 시작 시 신뢰 | 그날 태블릿에 실리는 역설 |
 |---|---|
-| Band0 **0–24** | **없음** |
-| Band1 **25–49** | 최대 **1쌍** |
-| Band2 **50–74** | 최대 **2쌍** |
-| Band3 **75–89** | 최대 **3쌍** |
-| Band4 90~99 | 최대 **4쌍** |
+| Band0 **0–14** | **없음** |
+| Band1 **15–29** | 최대 **1쌍** |
+| Band2 **30–44** | 최대 **2쌍** |
+| Band3 **45–64** | 최대 **3쌍** |
+| Band4 65~ | 최대 **4쌍** |
 
 - 대상은 항상 **「그날 배정된 수칙 중에서 자격을 충족한 것」**입니다.
 - **구간은 밤 시작에 한 번 읽고 그날은 고정**합니다(`ParadoxDirector.BeginNight`이 `_quotaToday`에 스냅숏, 2026-09-20 구현 완료). 발송할 때마다 현재 신뢰를 다시 조회하면 안 됩니다 — 밤 도중 준수 정산으로 신뢰가 오를 때 그날 상한이 함께 늘어납니다.
@@ -444,61 +507,24 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 6. 에디터를 쓸 수 없을 때의 대안: `mono-mcs`와 UnityEngine 최소 스텁으로 `-langversion:7.2` 컴파일(`UNITY_EDITOR` / 심볼 없음 / `NIGHTDUTY_DEBUG` 세 구성). 스텁 누락 에러는 코드 문제가 아닙니다. 지금은 Unity MCP로 직접 컴파일·테스트하는 것이 기본입니다.
 7. 조도 축 연출은 에디트 모드에서도 **Game 뷰**로 확인합니다(§8-6).
 
-### 3.4 런타임 테스트 하네스 — 씬을 고치지 않고 걸어서 시험합니다 (2026-09-22)
+### 3.4 런타임 테스트 하네스 — 삭제했습니다 (2026-10-01, 20차)
 
-`Assets/3.1. Programmer_lee/02 Scripts/NightDutyTestHarness.cs`. **버릴 실험용 코드**이며 `NightRunDebugPanel`과 같은 성격입니다.
+`NightDutyTestHarness`·`HarnessStandIns`·`DutyTabletPanel`(옛 §3.6 임시 태블릿·4축 막대)은 **파일째 지웠습니다**(민 지시). 옛 24장·옛 조우 8장면을 위한 자리표시를 채우던 코드라 새 편성(6단계~)에서는 할 일이 없었고, F3 키를 새 콘솔과 다퉜습니다.
 
-**쓰는 법: `PlayScene`을 열고 ▶를 누르면 끝입니다.** 컴포넌트를 붙일 필요가 없습니다 — `RuntimeInitializeOnLoadMethod`로 자기가 생깁니다(씬에 `SpaceZones`가 있을 때만. 메뉴·결과창에서는 아무 일도 하지 않습니다). 화면 왼쪽 상태판은 **F3**으로 여닫습니다.
+아직 필요하던 일은 이렇게 옮겼습니다.
 
-하는 일(단계마다 독립적이고, 하나가 터져도 나머지는 계속 돕니다):
-
-| | 단계 | 무엇 |
-|---|---|---|
-| ① | 센서 부착 | `FPController`에 `PlayerSensors`·`FlashlightRelay`. 켜진 채 저장된 손전등을 런타임에 끕니다(§5.5-22) |
-| ② | 문 발신기 | 판정 대상인 문 8개에 `DoorRelay`. **경로가 아니라 `JudgeTarget` ID로 찾습니다** |
-| ③ | 빠진 판정 대상 | 카드가 요구하는데 씬에 없는 ID를 임시 표식으로 만들어 그 공간의 존 상자 안에 격자로 흩뜨립니다 |
-| ④ | 콜라이더 보충 | 표식은 있는데 레이가 맞힐 콜라이더가 없는 대상에 0.4m 상자(§5.5-21). **구역 ID는 건너뜁니다** — 통행 구역에 상자를 세우면 사람을 막습니다 |
-| ⑤ | 조우 대상 | 조우 표가 요구하는 27종 지점을 만들고 `NightRun.Encounter`에 시야·배치 통로를 꽂습니다 |
-| ⑥ | 게임 시계 | `GameTime`의 `endHour`·`timeMultiplier`를 **런타임 값으로만** 덮습니다(리플렉션) |
-| ⑦ | 없는 발신기 대신 | **1초 응시**로 `ModelObserved`·`DoorAutoOpenObserved`를 대신 보냅니다(아래) |
-
-**⑦이 메우는 구멍 둘.** 둘 다 **시험용 대역**이며, 진짜 발신기가 생기면 `fakeMissingSignals`를 끕니다.
-
-- **`ModelObserved`를 보내는 발신기가 프로젝트에 없습니다.** `GazeProbe` 주석의 「앞으로 만들 식별 0.2초·`ModelObserved` 발신기」가 그것입니다. 그래서 조우는 모형이 다가오기만 하고 **관찰이 영영 성립하지 않아** 매일 이월되며, S5·T3도 안 열립니다. → 모형이 **지금 서 있는 지점**을 1초 응시하면 그 장면의 `ModelObserved`를 보냅니다.
-- **`DoorAutoOpenObserved`는 문이 스스로 움직여야** 나가는데, 그 문(`corridor.door.auto`·`toilet.stall.outer`)에 Animation도 없고 열어 줄 연출도 없습니다. 그래서 H1·T1은 덱에 들어와도 미판정으로 끝납니다. → 그 문을 1초 응시하면 `BeginDirectionMove` + `ReportMoveStarted`로 연출 개방을 흉내 냅니다. `DoorRelay`가 **응시 중인지 스스로 확인**하고 신호를 보냅니다.
-
-**밤마다 한 번씩**입니다. 상태판(F3)에 지금 보고 있는 대상과 남은 초가 뜹니다 — 표식은 Renderer가 없어 눈에 안 보이므로 **조준이 맞았는지 알 길이 거기밖에 없습니다.**
-
-**지켜야 할 규칙 네 가지** — 어기면 씬 파일이 더러워지거나 잔재가 쌓입니다.
-
-1. **준비는 `Awake`에서.** `NightRunDriver.Start`가 밤을 여는 순간 판정이 대상 참조를 검사합니다. `AutoCreate`가 도는 `AfterSceneLoad`는 씬 오브젝트의 `Awake` 뒤·**첫 `Start` 앞**이라 이 순서가 보장됩니다. `[DefaultExecutionOrder(-1000)]`은 씬에 직접 붙여 둔 경우를 위한 보강입니다.
-2. **`HideFlags.DontSave`를 붙이지 마십시오**(§5.5-23).
-3. **기존 오브젝트의 직렬화 값을 바꾸지 않습니다.** 인스펙터에 보이는 private 필드는 리플렉션으로 런타임 값만 덮습니다.
-4. **상태판에 버튼을 두지 마십시오.** 읽기 전용입니다 — `NightRunDebugPanel`의 시나리오 버튼이 진행 중인 실제 밤을 날려 버린 사고가 이미 있었습니다.
-
-**확인 방법**(실측 2026-09-22): 콘솔에 `[하네스] 준비 완료 — 부착 11 · 문 8 · 만든 대상 42 · 콜라이더 4`가 뜨고 **`[RuleBook] 대상 참조 누락` 경고가 0건**이면 정상입니다. 남아 있는 경고 두 종은 하네스와 무관합니다 — `[DoorRelay] Animation이 없습니다`(문 애니메이션 미제작)와 `BoxCollider does not support negative scale`(벤더 레벨 에셋).
-
-**하네스가 대신해 주지 않는 것:** 씬에 진짜 대상을 놓는 일(§12.1-4)과 조우 대상 27종의 실제 위치입니다. 표식은 존 상자 안 격자에 기계적으로 흩어질 뿐이라 **「그 자리에 있어야 할 곳」이 아닙니다.** 판정 배선이 도는지 확인하는 용도이지, 씬 작업을 면제해 주지 않습니다.
-
-### 3.6 임시 태블릿과 공포 4축 막대 (2026-09-22)
-
-`Assets/3.1. Programmer_lee/02 Scripts/DutyTabletPanel.cs`. 하네스와 같은 **버릴 실험용 코드**이고, 플레이 중 자기가 생깁니다.
-
-**왜.** 하네스 상태판은 `C1`·`H4` 같은 **카드 번호만** 띄웠습니다. 만든 사람은 알아도 걸어 보는 사람은 무엇을 지켜야 하는지 알 수가 없습니다. 지침 문장은 `RuleSO.PlayerText`에 **24장 전부 한국어로 이미 들어 있습니다** — 읽는 쪽이 없었을 뿐입니다.
-
-| 키 | 무엇 |
+| 옛 하네스가 하던 일 | 지금 |
 |---|---|
-| **F1** | 근무 지침 태블릿 (기본 **켜짐**) |
-| **F2** | 판정 디버그 패널 (`NightRunDebugPanel`) |
-| **F3** | 하네스 상태판 (기본 **꺼짐**으로 바뀌었습니다) |
-| **F4** | 잠긴 문 무시 (열쇠 연출 대기) |
-| **F5** | 문 개폐 정책 무시 — 씬의 문을 전부 연다 |
+| 센서 부착(`PlayerSensors`·`FlashlightRelay`) | 각자 자동 설치(`FlashlightRelay.EnsureFor`) |
+| 켜진 채 저장된 손전등 끄기(§5.5-22) | `FlashlightRelay.EnsureFor`가 플레이어 밖의 `Flashlight_ON`을 끈다 |
+| 문 발신기 `DoorRelay` | `DoorRelay` 자동 설치 |
+| 에디터가 초점을 잃으면 멈춤(`Run In Background`) | 디버그 콘솔 `Awake`가 `Application.runInBackground = true` |
+| 잠긴 문 무시(F4)·문 정책 무시(F5) | 디버그 콘솔 `Awake`가 `PlayerInteractor.IgnoreLocks = true`(에디터·개발 빌드만) · 개요 탭 [잠긴 문 무시]·[모든 문 열기] 버튼 |
+| 상태판(F9)·표식 보이기(F6)·구역 상자(F7) | 디버그 콘솔 F3(§19차 ⓖ). 표식·구역 시각화는 아직 콘솔에 옮기지 않았습니다 |
+| 1초 응시로 `DoorAutoOpenObserved` 흉내 | 진짜 연출로 대체 — H2 단서가 문을 연다(20차 ⓓ) |
+| 옛 조우 모형·`ModelObserved` 흉내·게임 시계 덮어쓰기 | 폐기(옛 체계 전용) |
 
-태블릿에 뜨는 것: 오늘 덱 6장의 **지침 문장** · 카드마다 지금 상태(아직 / 지금 보는 중 / 지켰습니다 / 어겼습니다 / 판정 못 함) · 지키면·어기면 어느 축이 얼마나 · 어긴 까닭 · **오늘 받은 역설 문자**.
-
-공포 4축 막대는 화면 아래에 늘 떠 있습니다. **구간 경계(24·48·72·90)에 눈금**이 찍혀 있고 — 폭이 균일하지 않으므로 눈으로 보이는 편이 낫습니다 — 값이 움직이면 그 자리에 **올라간 양이 2초 동안** 뜹니다. 신뢰만 파란색입니다(올라서 좋은 축).
-
-**진짜 태블릿이 아닙니다.** 기획서의 태블릿 UI(습득·탭 전환·문자 도착 연출)는 따로 만들어야 합니다. 그리고 `RuleSO`에는 **조작 안내를 넣을 자리가 없습니다** — S1의 「화면 중앙에 1초간 두십시오」 같은 문장은 기획서가 수칙 본문과 **구분해** 표시하라고 했는데 필드가 하나뿐입니다. 정식 태블릿을 만들 때 필드를 나눠야 합니다.
+**확인할 때는 F3 디버그 콘솔을 쓰십시오.** 수칙 탭의 [이동]·[단서], 조우 탭의 [이동+실행]으로 실제로 걷지 않고 수칙·연출을 볼 수 있습니다.
 
 ---
 
@@ -508,9 +534,9 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 
 **원인은 셋이고 전부 다릅니다.**
 
-1. **에디터가 초점을 잃으면 플레이가 통째로 멈춥니다.** `Run In Background`가 꺼져 있어, 알트탭 한 번이나 원격 조작 중에는 `Time.frameCount`가 그대로 섭니다(실측: 3분 동안 frame=2). 게임이 얼어 있으니 아무 키도 듣지 않고 트리거도 안 걸립니다. → **하네스가 `Application.runInBackground = true`를 런타임에만 덮습니다**(§3.4 준비 단계). 프로젝트 설정은 그대로입니다.
+1. **에디터가 초점을 잃으면 플레이가 통째로 멈춥니다.** `Run In Background`가 꺼져 있어, 알트탭 한 번이나 원격 조작 중에는 `Time.frameCount`가 그대로 섭니다(실측: 3분 동안 frame=2). 게임이 얼어 있으니 아무 키도 듣지 않고 트리거도 안 걸립니다. → **디버그 콘솔(F3) `Awake`가 `Application.runInBackground = true`를 런타임에만 덮습니다**(20차, 옛 하네스에서 옮김). 프로젝트 설정은 그대로입니다.
 2. **벤더 `DoorScript`의 조건이 셋인데 안내가 하나도 없었습니다.** ⑴ **카메라**가 문 앞 트리거 상자 안(`inZone`), ⑵ **문짝이 아니라 손잡이**를 약 25° 안쪽으로 조준(`dotProd < -0.9f`), ⑶ `E`. 그런데 문 56개 전부 `doorTexts.enabled = false`라 「Press [E] to open」이 안 뜨고, `doorSounds` 클립도 전부 비어 있고, 조준선도 안 보였습니다(알파 0.25). **조건은 멀쩡한데 보이지 않는 조작**이라 사람이 문 앞에서 막혔습니다. → **§4.6의 상호작용이 이걸 대체합니다.**
-3. **기획에 없는 문이 잔뜩 열려 있었습니다.** 지금은 `Resources/DoorPolicy.asset`이 가립니다(§4.6) — 실측 수납가구 30 · 열리는 문 10 · 잠긴 문 16. 밖으로 나가는 길은 **정문 `Exterior/Doors/DoorMain` (27.6, 1.5, 49.0)**입니다. 시험 동안 잠금을 건너뛰려면 하네스 **F4**, 정책까지 무시하려면 **F5**입니다.
+3. **기획에 없는 문이 잔뜩 열려 있었습니다.** 지금은 `Resources/DoorPolicy.asset`이 가립니다(§4.6) — 실측 수납가구 30 · 열리는 문 10 · 잠긴 문 16. 밖으로 나가는 길은 **정문 `Exterior/Doors/DoorMain` (27.6, 1.5, 49.0)**입니다. 시험 동안 잠금은 디버그 콘솔이 기본으로 건너뛰고(개요 탭 [잠긴 문 무시]), 정책까지 무시하려면 개요 탭 [모든 문 열기]입니다(옛 F4·F5는 하네스와 함께 삭제).
 
 ---
 
@@ -603,7 +629,7 @@ NightRun.RequestEndNight ─▶ EndNight(진행 카드에 NightEndAccepted → �
 
 ```csharp
 namespace NightDuty {
-    enum SpaceId  { None=0, Corridor=1, Toilet=2, Classroom_1_1=3, Classroom_1_3=4, ScienceRoom=5 }
+    enum SpaceId  { None=0, Corridor=1, Toilet=2, Classroom_1_1=3, Classroom_1_3=4, ScienceRoom=5, Library=6, SecurityRoom=7, Classroom=8 }   // 교실 두 값은 SpaceIds.Canonical로 Classroom
     enum FearAxis { Auditory=0, Illuminance=1, Layout=2, Trust=3 }
     enum Band     { Band0=0, Band1=1, Band2=2, Band3=3, Band4=4 }
 
@@ -612,7 +638,9 @@ namespace NightDuty {
     interface IFearAxisReader { int GetValue(FearAxis); Band GetBand(FearAxis); }
 
     static class NightRun {   // 회차 창구
-        StartNewRun(); BeginNight(int day, Func<int> clockMinutes); Tick(float sec);
+        StartNewRun(); BeginNight(int day, Func<int> clockMinutes /* 근무 시작부터의 분 0~240 */); Tick(float sec);
+        JudgingWindowEnabled; IsJudgingNow; AddWarning(int, string); Warnings; HighestSensory();
+        SignCheckpoint(); RestartAfterCapture(); LeaveVoluntarily(); RestartsTonight; NightStartSnapshot; Checkpoint;
         Send(in JudgeSignal); RequestEndNight();   // 항상 수락. 호출처는 04:00 ShiftEnded 하나뿐
         BuildSummary(); Day; Axes; IsCaptured; Cause;
         // 디버그: DebugForceCapture · DebugAddAxis · DebugRebroadcast · RegisteredTargets · TargetsInUse · DeckOverride
@@ -639,7 +667,15 @@ namespace NightDuty {
 - **`DayFloor`**(정적, `Scripts/Stats/`): `Band Of(int day)` · `LastDay`. 곡선은 `Floors` 배열 한 곳(§2.3″).
 - **`BandResolver`**: `SetDayFloor(Band)` · `Target(axis)`(연출 구간) · `Peak(axis)` · `Shown`(IFearAxisReader: 값=생존 수치, 구간=연출 구간) · `GetShown(space, axis)` · `SetHold` · `BroadcastAll`.
 - **`FearAxisSystem.Lower(axis, amount, sourceId)`**: 생존 수치 빼기. 신뢰·잠금 중·0 이하 무시.
-- **`Deltas`**(정적, `Scripts/Core/`): 새 기획서 수치 표(§2.2).
+- **`Deltas`**(정적, `Scripts/Core/`): 새 기획서 수치 표(§2.2). `SoftCap` 95.
+- **`NightClock`**(정적)·**`NightClockTracker`**(`Scripts/Direction/NightClock.cs`): `PhaseAt` · `IsJudging` · `CanStartEncounter` · `CanSignCheckpoint` · `RealSecondsAt` · `MinuteAtRealSeconds`. 추적기 이벤트 `PhaseChanged`·`Call1`·`Call2`·`ResidualAlert`·`ShiftEnded`, `Reset(minute)`·`Advance(minute)`.
+- **`WarningLedger`**·**`NightSnapshot`**·**`RestartPolicy`**(`Scripts/Stats/`): 경고 장부, 밤 시작/체크포인트 스냅샷, 재시작 규칙 수치(`ReliefFloor` 40 · `AbsenceAfterRestarts` 5 · `AbsenceNextNightCap` 60 · `CalmFrom` 2 · `SwapRuleFrom` 3 · `VoluntaryLeaveFrom` 4). `RestartResult(Kind, K, StartMinute, CapturedAxis)`.
+- **`BandResolver.RestoreReached(int[])`**·`ReachedCopy()`: 연출 도달값을 내리는 **유일한** 길(재시작·결근만).
+- **점검**(`Scripts/Inspection/`): `InspectionCatalog.All/Find/FindByTarget/InSpace` · `InspectionPlan`(Assignments·Spaces·LateSpace·Call1ItemId·Hallucinations) · `AnomalyAssigner.Build(day, shown)` · `InspectionBoard`(Report·Startle·Settle·CanReport·IsOpen·ReliefUsed, `ISnapshotable`). `NightRun.ReportInspection/InspectionStartle/MarkHallucination/SetReverseReport/Inspections`.
+- **`SensingRules`**·**`ReportReadiness`**(`Scripts/Core/SensingRules.cs`): 판정 공통 정의 수치 한 곳. 센서가 숫자를 따로 들지 않습니다.
+- **`FearAxisSystem.BeginFrame/EndFrame`**(한 프레임 두 축 100) · `Raised` 이벤트 · `NightRun.LastCaptureSources`·`RaisedSources(axis)`·`DisplaySource`.
+- **새 수칙 판정**(`Scripts/FinalRules/`, 18차): `FinalRuleBook(deck, axes)` · `Dispatch(in JudgeSignal, bool judging)` · `EndNight()` · `NoteExternal(ruleId, violated, reason)` · `Judge(id)` · `Results` · `World`(공간·손전등·자세·달리기·판정 ms) · `Anchor`(기준점 위치 찾기, 테스트가 바꿈) · 이벤트 `Settled`·`ReverseReportArmed`·`EncounterRequested`, `ISnapshotable`. 판정기 = `FinalJudges.Create(RuleDef)`, 이름 = `FinalCues`. `NightRun.FinalRules`·`FinalResults`, `EventBus.FinalRuleSettled`. 발신기 `FinalRuleRelay`(Flow).
+- **긴장 디렉터**(`Scripts/Direction/Tension/`, 19차): `TensionDirector(program, day, restarts, rng)` · `Observe(in JudgeSignal)` · `Tick(minute, dt, highestSensory, auditoryShown, captured)` · `TryDequeue(out JudgeSignal)` · `ForceEncounter` · `FireRuleNow`/`EndRuleNow` · `SkipPhase` · `AbortAll` · `ResetToRest(k, startMinute)` · `Runs`/`RuleRuns`/`Budget`/`Mood`/`Busy`, 이벤트 `Emitted`. 표 `EncounterScripts`·`RuleTriggers`, `SurpriseBudget`, `DirectorMoods`, `DirectionEvent`. `NightRun.Tension`·`DirectorAutoRun`·`DebugForceEncounter`·`DebugFireRuleCue`·`DebugEndRuleCue`·`DebugSkipDirectionPhase`·`DebugAddFinalRule`·`DebugLowerAxis`, `EventBus.DirectionEmitted`. Flow: `DirectionStage`·`StandInFactory`·`LightGroup`·`DirectionCue`·`NightDutyDebugConsole`(F3).
 - **`DayDirector`**(`Scripts/Direction/`): `DayDirector(IReadOnlyList<RuleSO> pool, System.Random rng = null)` · `BuildDeck(int day, IFearAxisReader axes)` · `Reset()` · `LastReport`. 쿼터·한도·제약은 전부 `public const`로 노출돼 있습니다(`DeckSize` `QuotaLayout` `CapAuditory` `ConflictCardA` 등) — 테스트에서 매직넘버 대신 쓰십시오. §4.3′ 참조.
 - **`EncounterDirector`**(`Scripts/Direction/`): `BeginRun()` · `BeginNight(int day)` · `Observe(in JudgeSignal)` · `EndNight()` · `TodayScenes` · `CarriedOver` · `SpaceOf(string)` · `IsActive(string)`. 씬이 채우는 델리게이트 둘: **`IsVisible`**(장면 ID → 지금 시야 안인가) · **`PlaceModel`**(장면 ID, 대상 ID → 거기로 옮겨라). 장면 ID·상한은 `public const`(§4.3″).
 - **`EncounterTableSO`**(`Scripts/Data/`, `Resources/EncounterTable.asset`): 장면 8개의 공간·발견형·G 문자·**접근 3지점 대상 ID**·퇴실 게이트 지점. `Validate`가 설계를 데이터로 지킵니다.
@@ -758,7 +794,7 @@ DoorRelay.Update (실행 순서 60)  ← 같은 프레임의 뒤
 
 **HUD는 씬에 이미 있는 것을 씁니다.** `HUD_Play/Img_Reticle`의 알파를 평소 0.25 → 대상을 잡으면 0.95로 올립니다. 안내 줄(`Txt_Prompt`)만 없어서 없으면 런타임에 만들고, **글꼴은 같은 캔버스의 다른 글씨에서 빌립니다**(TMP 기본 글꼴에 한글이 없어 그냥 만들면 네모로 나옵니다). 민이 씬에 `Txt_Prompt`를 만들어 꽂으면 그쪽을 씁니다.
 
-**잠금 무시.** `PlayerInteractor.IgnoreLocks`는 기본 꺼짐이고, **하네스만 켭니다**(F4). 열쇠 연출이 생기면 하네스의 `ignoreDoorLocks`와 함께 지웁니다.
+**잠금 무시.** `PlayerInteractor.IgnoreLocks`는 기본 꺼짐이고, **디버그 콘솔(F3, 에디터·개발 빌드만)이 `Awake`에서 켭니다**(20차 — 하네스 삭제로 옮김). 개요 탭 [잠긴 문 무시]로 끌 수 있습니다. 열쇠 연출이 생기면 콘솔의 기본값을 끕니다.
 
 **확인**(실측 2026-09-22): 정문 앞 1.8m에서 문짝 가운데 조준 → 안내 「[E] 문 열기」, 조준선 0.95. `toilet.door`를 열면 콘솔에 `[DoorRelay] DoorCommandAccepted(None, 'toilet.door', Player, False, 0)`. 벤더 키를 거둔 문 56/56. EditMode 362/362.
 
@@ -826,6 +862,8 @@ Play 씬 로드 ─ GameTime이 있으면 NightRunDriver 자동 생성 (Assets/_
 ---
 
 ## 5. 구현 규칙과 함정
+
+- **테스트 전에 씬을 저장하십시오(19차).** 열린 씬이 수정된 채로 EditMode 테스트를 돌리면 「씬 저장?」 대화상자가 떠 에디터가 멈춥니다(원격 세션에서는 아무도 누르지 못함). `EditorSceneManager.SaveOpenScenes()` 뒤에 돌립니다. 플레이 직후에는 `NightRunDriver.OnDestroy`가 정적 규칙 스위치를 되돌렸는지(`NightRun.ProgramEnabled == false`) 확인합니다.
 
 ### 5.1 C#과 어셈블리
 
@@ -1055,21 +1093,9 @@ Baked 면광원 **35개가 평소 전부 꺼져 있습니다**(런타임 비용�
 
 실측 결과: **ContributeGI 미베이크 820개 → 8개**, **과학실 미베이크 56개 → 0개**, 라이트맵 5장 → 1장, 프로브 2,212개. 약 **30분**. 창 광원 35개는 자동으로 되돌아갔습니다.
 
-### ㉡ 없는 것들의 대역 — `HarnessStandIns.cs`
+### ㉡ 없는 것들의 대역 — `HarnessStandIns.cs` (2026-10-01 삭제)
 
-`Assets/3.1. Programmer_lee/02 Scripts/HarnessStandIns.cs`. 하네스와 같은 **버릴 코드**입니다.
-
-| 키 | 무엇 |
-|---|---|
-| **F6** | 판정 대상·조우 지점 표식 보이기 (기본 켜짐, 실측 **42개**) |
-| **F7** | 공간·구역 상자 테두리 |
-
-- **표식** — 하네스 표식은 콜라이더만 있고 Renderer가 없습니다. 그 자리에 작은 상자를 하나 더 세웁니다. 청록=판정 대상 · 주황=조우 접근 · 보라=퇴실 게이트 · 노랑=문 · 민트=등. **색은 일부러 어둡게** 잡습니다 — 블룸에 하얗게 날아가면 색으로 종류를 가르는 뜻이 사라집니다.
-- **인체모형** — 하네스의 흰 큐브(`__harness_model`, 0.5×1.7×0.5)에 머리·팔을 붙여 사람 모양으로. 늘 플레이어를 봅니다.
-- **태블릿** — 시작 자리 앞에 물건 하나. **1.2m 안으로 들어가면 줍습니다**(키를 쓰지 않습니다 — 문 상호작용이 이미 `E`를 갖고 있습니다). 습득 게이트 규칙은 미정이라 **줍는 순간만** 만듭니다.
-
-> **표식 본체에 Renderer를 붙이지 않은 이유.** 붙이면 그림자를 드리우고 프로브를 먹으며, 진짜 대상이 들어왔을 때 지우기 어려워집니다. 별도 오브젝트라 컴포넌트만 꺼도 사라집니다.
-> **`GazeProbe`는 트리거 콜라이더를 영원히 무시합니다**(`QueryTriggerInteraction.Ignore`). 대역에 트리거를 쓰면 안 됩니다.
+파일째 지웠습니다(§3.4). 새 편성의 대역은 `StandInFactory`(19차 ⓕ)가 세웁니다. 태블릿 줍기 대역도 함께 사라졌습니다 — 태블릿 습득은 9단계 몫입니다.
 
 ### ㉢ `AnomalyCueDirector.CueFired` 신설 — 소리를 눈으로
 
@@ -1081,7 +1107,7 @@ public static event Action<SignalKind, string, CueBindingTableSO.Binding> CueFir
 
 `Send(...)`에서 `NightRun.Send` 직후 발행하고, 구독자가 터져도 판정은 그대로 갑니다. 정적 이벤트이므로 `SubsystemRegistration`에서 비웁니다. **진짜 음원이 와도 이 이벤트는 그대로 둡니다** — 자막·접근성·개발용 표시가 같은 자리에 붙습니다.
 
-대역이 이걸 듣고 그 자리에 **파문**을 퍼뜨리고 화면 아래에 한 줄을 남깁니다. `EventBus`의 `BandChanged`·`AxisCritical`·`MessageSent`도 같은 줄에 뜹니다.
+옛 `HarnessStandIns`가 이걸 듣고 파문·자막을 띄웠으나 삭제했습니다(§3.4). `AnomalyCueDirector`는 새 편성에서 쉽니다(19차 ⓙ).
 
 ### ㉣ 조사하면서 확인한 사실 (다음 작업에 필요)
 
@@ -1163,18 +1189,20 @@ public static event Action<SignalKind, string, CueBindingTableSO.Binding> CueFir
 
 ### 12.1 다음 작업 (우선순위)
 
-**2026-09-30 새 기획서 개편 7단계(진행 중 — 이 목록이 아래 옛 목록보다 앞섭니다):** ① 코어 수치 **완료**(14차) → ② 붙잡힘 뒤 밤 재시작(감각 −10)·경고 3회 처벌 → ③ 점검·보고(16항목, 이상 4틀, 정확 보고 −5/놓침 +8) → ④ 공간·수칙 교체(`SpaceId`에 도서관·경비실 추가, 새 수칙 에셋, 옛 24장·테스트 삭제, 덱 = 공간 5 + 경비실 1(2일차~) + 공통 3, 가장 높은 감각 축 ×2·가장 낮은 축 최소 1) → ⑤ 역설·변조(사용자가 아직 손볼 예정) → ⑥ 연출 카탈로그·긴장 디렉터 → ⑦ 붙잡힘 3종·CCTV 판정(K1/K2/K-1). 교실 사다리 `LibraryLadder (1)`을 Classroom02에 놓는 씬 작업은 LFS 잠금 확인 뒤.
+**최종 기획서 「제작 계획」 12단계가 이 목록보다 앞섭니다.** 15차까지 1~3단계, 16차 4·5단계, 17·18차 6단계(카탈로그·편성기·새 수칙 판정), **19차 7단계 핵심(긴장 디렉터·놀람 예산·대본·연출 실행기·대역·소등·디버그 콘솔 F3)**, **20차 1일차 무조우·조우 묶인 수칙·H2 문 자동 개방·하네스 삭제** 완료. 7단계 남은 것: 공간별 로컬 Volume(색온도·채도), StandInGallery 씬·대역 검사기, 완성 몹 프리팹을 `Resources/StandIns/<ID>`에 연결, 전조음·소리 클립(`Resources/Direction/`), 창밖 남자의 창가 자리 기준점. 그다음 8단계(붙잡힘 3종·재시작 카드·CCTV 판정 셰이더). 옛 24장·옛 조우 8장면·관련 테스트 삭제는 민 결정 뒤. 재시작의 씬 재로딩·시계 되돌리기는 김진선님과 맞춘 뒤 붙입니다.
+
+(옛 7단계 목록 — 참고용) ① 코어 수치 **완료**(14차) → ② 붙잡힘 뒤 밤 재시작(감각 −10)·경고 3회 처벌 **완료**(15차) → ③ 점검·보고(16항목, 이상 4틀, 정확 보고 −5/놓침 +8) → ④ 공간·수칙 교체(`SpaceId`에 도서관·경비실 추가, 새 수칙 에셋, 옛 24장·테스트 삭제, 덱 = 공간 5 + 경비실 1(2일차~) + 공통 3, 가장 높은 감각 축 ×2·가장 낮은 축 최소 1) → ⑤ 역설·변조(사용자가 아직 손볼 예정) → ⑥ 연출 카탈로그·긴장 디렉터 → ⑦ 붙잡힘 3종·CCTV 판정(K1/K2/K-1). 교실 사다리 `LibraryLadder (1)`을 Classroom02에 놓는 씬 작업은 LFS 잠금 확인 뒤.
 
 > **수치는 다 맞췄습니다. 이제 남은 것은 그 수치를 화면에 내보내는 일입니다.**
 > 2026-09-21 재설계로 데드락과 「잘할수록 아무 일도 안 일어남」이 해소됐습니다(실측: 이상현상 12칸 → 48칸, 전부 위반 4일차 사망, 역설 누적 10쌍).
-> **2026-09-22부터는 걸어서 시험할 수 있습니다.** `PlayScene`에서 ▶를 누르면 런타임 하네스가 센서·문·대상·조우 대상·시계를 채웁니다(§3.4). 씬 파일은 바뀌지 않습니다.
-> 다만 하네스의 표식은 **존 상자 안 격자에 기계적으로 흩어진 자리표시**이고, 결산 UI와 태블릿 UI가 없어 `DutyMark` 3구분과 역설 10쌍은 여전히 **볼 방법이 없습니다.** 씬에 진짜 대상을 놓는 일(아래 4번)은 그대로 남아 있습니다.
+> **걸어서 시험할 때는 F3 디버그 콘솔을 씁니다**(19차 ⓖ). 옛 런타임 하네스는 20차에 삭제했습니다(§3.4).
+> 씬에 진짜 대상을 놓는 일(아래 4번)은 그대로 남아 있습니다.
 
 **2026-09-21 기준 순서** (아래 1~7번은 이 순서로 다시 읽으십시오)
 
 | | 무엇 | 담당 | 막고 있는 것 |
 |---|---|---|---|
-| A | **씬 대상 자리잡기 + 센서 부착** (아래 3·4번) | 민 | 판정의 **최종** 배선. 배선이 도는지 여부는 하네스로 이미 확인할 수 있습니다(§3.4) — 남은 것은 표식을 **있어야 할 자리**에 놓는 일입니다 |
+| A | **씬 대상 자리잡기 + 센서 부착** (아래 3·4번) | 민 | 판정의 **최종** 배선. 배선이 도는지 여부는 F3 디버그 콘솔로 확인합니다 — 남은 것은 표식을 **있어야 할 자리**에 놓는 일입니다 |
 | ~~B~~ | ~~**`EncounterDirector`**~~ | 시스템 | **2026-09-22 완료**(§4.3″) |
 | C | **결산 UI** | 미정 | `DutyMark` 3구분을 그릴 화면. 데이터는 이미 있습니다 |
 | D | **태블릿 UI** | 미정 | `EventBus.MessageSent` 구독자 0개 — 역설 10쌍이 화면에 안 뜹니다 |
@@ -1201,13 +1229,19 @@ A와 B는 **병렬 가능**합니다 — 씬 파일과 코드가 겹치지 않�
 
 ### 12.2 결정 대기 — 사용자 확인 필요
 
+**김진선님과 맞출 것(15차, 판정 코어는 준비됨):**
+
+- **GameTime 범위·표시**: 프리팹이 02:00~05:00 ×30입니다. 기획서는 00:00~04:00, 실시간 15분. 구동기가 비례 환산·배속 조정을 하므로 판정은 맞지만, 태블릿에 보이는 시각은 GameTime 표시 그대로입니다.
+- **재시작 연결**: `NightRun.RestartAfterCapture()`의 결과로 씬 재로딩(또는 플레이어·월드 초기화)과 게임 시계를 `StartMinute`(00:00 또는 02:16)로 되돌리는 API가 GameTime·사망 화면 쪽에 필요합니다. 지금 GameTime에는 분 단위 이동이 없습니다(`JumpToHour`만).
+- **근무일지 UI**: 중간 서명(`SignCheckpoint`)·조퇴(`LeaveVoluntarily`) 버튼, 경고 도장 표시(`EventBus.WarningsChanged`).
+
 **2026-09-20 기획서로 종결 — 다시 열지 마십시오:**
 
 | 종결 항목 | 답 |
 |---|---|
 | **Q1** 근무 일수 | **5일** (기획서 A절. 코드 `GameSession.FinalDay = 5`와 일치) |
 | **Q2** 근무 종료 방식 | **04:00 시계 자동 종료.** 종료 요청·경비실 복귀 없음, 점검·조우 완료와 무관 |
-| **Q10** 신뢰 구간별 역설 상한 | **구간 번호가 곧 상한**(0 / 1 / 2 / 3 / 4쌍). 2026-09-30 새 기획서로 경계가 **0–24 / 25–49 / 50–74 / 75–89 / 90–99**이고, `DailyQuota`가 `Bands.Of`를 거치므로 자동으로 따라옵니다 |
+| **Q10** 신뢰 구간별 역설 상한 | **구간 번호가 곧 상한**(0 / 1 / 2 / 3 / 4쌍). 신뢰 전용 경계 **0–14 / 15–29 / 30–44 / 45–64 / 65~**(15차), `DailyQuota`가 `Bands.OfTrust`를 거칩니다. 최종 기획서의 일차별 편성은 역설·변조 단계에서 바뀝니다 |
 | 역설 미도달·거절 벌점 | **폐기 확정.** 전 유형 「별도 벌점 없음」 |
 | **Q3** 결과창 역설 표시 | **무표시.** 따름일 때 **짝 수칙에 빨간 줄**만 — `DutyLogEntry`가 이미 하는 일 |
 

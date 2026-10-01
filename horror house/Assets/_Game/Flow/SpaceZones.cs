@@ -61,6 +61,42 @@ public sealed class SpaceZones : MonoBehaviour
     /// <summary>지금 판정된 공간.</summary>
     public SpaceId Current => _current;
 
+    /// <summary>그 공간의 방 상자(교실 두 값은 같은 교실로 본다). 없으면 false. 연출(소등한 방 전체 구역 등)이 쓴다.</summary>
+    public bool TryGetSpaceBox(SpaceId space, out Bounds box)
+    {
+        for (int i = 0; i < zones.Length; i++)
+        {
+            if (zones[i].OutOfScope || zones[i].Space != space) continue;   // 정확히 같은 값 먼저(교실 1-3을 달라면 1-3)
+            box = zones[i].Box;
+            return true;
+        }
+
+        SpaceId want = SpaceIds.Canonical(space);
+        for (int i = 0; i < zones.Length; i++)
+        {
+            if (zones[i].OutOfScope || SpaceIds.Canonical(zones[i].Space) != want) continue;
+            box = zones[i].Box;
+            return true;
+        }
+
+        box = default(Bounds);
+        return false;
+    }
+
+    /// <summary>그 ID의 신호 구역 상자. 없으면 false.</summary>
+    public bool TryGetSignalZone(string id, out Bounds box)
+    {
+        for (int i = 0; i < signalZones.Length; i++)
+        {
+            if (signalZones[i].Id != id) continue;
+            box = signalZones[i].Box;
+            return true;
+        }
+
+        box = default(Bounds);
+        return false;
+    }
+
     /// <summary>
     /// 신호 한 건을 코어와 큐 발신기에 함께 보낸다.
     /// <para>

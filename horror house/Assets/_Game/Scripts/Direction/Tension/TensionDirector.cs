@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = System.Random;
@@ -149,6 +149,7 @@ namespace NightDuty
         private int _restarts;
         private float _minute;
         private SpaceId _space = SpaceId.None;
+        private SpaceId _exact = SpaceId.None;   // 정규화 전 방(1-1/1-3 교실 구분). 고정 자리 조우의 방아쇠용.
         private float _spaceSince;
         private bool _hasPose;
         private Vector3 _feet;
@@ -222,6 +223,12 @@ namespace NightDuty
             get { return _space; }
         }
 
+        /// <summary>정규화 전 방(1-1/1-3 교실 구분).</summary>
+        public SpaceId ExactSpace
+        {
+            get { return _exact; }
+        }
+
         /// <summary>쓴 가짜 놀람 수.</summary>
         public int FakesUsed
         {
@@ -286,6 +293,7 @@ namespace NightDuty
             {
                 case SignalKind.SpaceEntered:
                     _space = SpaceIds.Canonical(s.Space);
+                    _exact = s.Space;
                     _spaceSince = Now;
                     _walk = 0f;
                     break;
@@ -294,6 +302,7 @@ namespace NightDuty
                     if (_space == left)
                     {
                         _space = SpaceId.None;
+                        _exact = SpaceId.None;
                         _spaceSince = Now;
                     }
 
@@ -370,9 +379,9 @@ namespace NightDuty
             switch (s.Trigger)
             {
                 case EncounterTrigger.EnterSpace:
-                    return _space == s.Space;
+                    return InScriptSpace(s);
                 case EncounterTrigger.DwellInSpace:
-                    return _space == s.Space && (lastCall || Now - _spaceSince >= s.Dwell);
+                    return InScriptSpace(s) && (lastCall || Now - _spaceSince >= s.Dwell);
                 case EncounterTrigger.CorridorWalk:
                     return _space == SpaceId.Corridor && (lastCall || _walk >= s.Dwell);
                 case EncounterTrigger.ViewingCctv:
@@ -537,8 +546,17 @@ namespace NightDuty
             return minute >= to;
         }
 
+        /// <summary>대본의 방에 있는가. <see cref="EncounterScript.ExactSpace"/>가 있으면 그 방(정규화 전)이어야 한다.</summary>
+        private bool InScriptSpace(EncounterScript s)
+        {
+            if (_space != s.Space) return false;
+            return s.ExactSpace == SpaceId.None || _exact == s.ExactSpace;
+        }
+
         private Vector3 PointFor(EncounterScript s)
         {
+            Vector3 fixedPoint;
+            if (s.StageAnchor.Length > 0 && StagePoints.TryGet(s.StageAnchor, out fixedPoint)) return fixedPoint;   // 씬이 정한 고정 자리.
             if (!_hasPose) return Vector3.zero;
             float rad = _yaw * Mathf.Deg2Rad;
             Vector3 fwd = new Vector3(Mathf.Sin(rad), 0f, Mathf.Cos(rad));
@@ -746,6 +764,7 @@ namespace NightDuty
             _lastRuleCue = float.NegativeInfinity;
             _nextFake = Now + Range(FakeGapMin * 0.5f, FakeGapMax * 0.5f);
             _space = SpaceId.None;
+            _exact = SpaceId.None;
             _zones.Clear();
             _walk = 0f;
             _hasPose = false;

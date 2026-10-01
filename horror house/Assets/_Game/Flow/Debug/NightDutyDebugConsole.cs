@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
 using NightDuty;
@@ -38,6 +38,7 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
     private int _tab;
     private Vector2 _scroll;
     private Rect _window = new Rect(20f, 20f, 600f, 700f);
+    private bool _dockRight = true;   // 기본은 화면 오른쪽에 붙는다. 끌어 옮기면 그 자리를 지킨다.
     private bool _clockHeld;
     private bool _running;
     private bool _cursorWasVisible;
@@ -251,8 +252,18 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         }
 
         _window.height = Mathf.Min(Screen.height - 40f, 760f);
+        if (_dockRight)
+        {
+            _window.x = Mathf.Max(0f, Screen.width - _window.width - 20f);
+            _window.y = 20f;
+        }
+
         GUI.depth = -100;
+        Vector2 before = _window.position;
         _window = GUILayout.Window(0x4E44, _window, DrawWindow, "야간근무 디버그 콘솔 (F3)", _windowStyle);
+        if ((_window.position - before).sqrMagnitude > 0.25f) _dockRight = false;   // 사용자가 끌었다.
+        _window.x = Mathf.Clamp(_window.x, 0f, Mathf.Max(0f, Screen.width - _window.width));
+        _window.y = Mathf.Clamp(_window.y, 0f, Mathf.Max(0f, Screen.height - 40f));
     }
 
     private void DrawWindow(int id)
@@ -548,7 +559,10 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         }
 
         // 옮긴 뒤 센서가 새 자리·공간을 한두 번 샘플할 때까지 기다린다(0.1초 샘플) — 바로 실행하면 옛 자리로 판정한다.
-        TeleportToSpace(s.Space);
+        SpaceId room = s.ExactSpace != SpaceId.None ? s.ExactSpace : s.Space;
+        StageAnchor fixedAt = StageAnchor.Find(s.StageAnchor);
+        if (fixedAt != null) TeleportToView(fixedAt, room);   // 고정 자리 몹은 그 자리가 보이는 곳으로.
+        else TeleportToSpace(room);
         _afterSettle = run;
         _settleAt = Time.unscaledTime + 0.35f;
         _settleFrame = Time.frameCount;
@@ -658,6 +672,34 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
 
         Teleport(spot, null);
         Log("이동 → " + SpaceName(space));
+    }
+
+    /// <summary>고정 연출 자리가 보이는 곳(자리 앞 <see cref="StageAnchor.DebugViewDistance"/>m)으로 옮기고 그쪽을 보게 한다.</summary>
+    private void TeleportToView(StageAnchor anchor, SpaceId space)
+    {
+        SpaceZones zones = FindAnyObjectByType<SpaceZones>();
+        Bounds box;
+        if (zones == null || !zones.TryGetSpaceBox(space, out box))
+        {
+            TeleportToSpace(space);
+            return;
+        }
+
+        Vector3 f = anchor.transform.forward;
+        f.y = 0f;
+        if (f.sqrMagnitude < 0.01f) f = Vector3.forward;
+        Vector3 want = anchor.transform.position + f.normalized * anchor.DebugViewDistance;
+        Vector3 spot;
+        if (!FreeSpot(want, box, 0f, out spot))
+        {
+            TeleportToSpace(space);
+            return;
+        }
+
+        Vector3 look = anchor.transform.position - spot;
+        look.y = 0f;
+        Teleport(spot, Mathf.Atan2(look.x, look.z) * Mathf.Rad2Deg);
+        Log("이동 → " + SpaceName(space) + " (" + anchor.AnchorId + " 앞)");
     }
 
     private void TeleportNear(Vector3 target, SpaceId space, float distance)

@@ -1,0 +1,96 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdddced65c6b48240aef8dd4d8747ccc, type: 3}
+  m_Name: DirectionSounds
+  m_EditorClassIdentifier: Assembly-CSharp::DirectionSoundTableSO
+  entries:
+  - key: '*.foreshadow'
+    clip: {fileID: 8300000, guid: 6930dbe98c9ec38439e7db2ae922549d, type: 3}
+    volume: 0.55
+  - key: E.BoySeated.confront
+    clip: {fileID: 8300000, guid: b555d68ef4558a845a9aa0fb4b667b4d, type: 3}
+    volume: 0.9
+  - key: E.BoyBang.confront
+    clip: {fileID: 8300000, guid: b555d68ef4558a845a9aa0fb4b667b4d, type: 3}
+    volume: 0.9
+  - key: E.BoyBang.headbang
+    clip: {fileID: 8300000, guid: b3c67c56d95a72549818859f1fc77640, type: 3}
+    volume: 1
+  - key: E.CeilingLegs.confront
+    clip: {fileID: 8300000, guid: 15756da005592f548b23ff13dfcb1ea0, type: 3}
+    volume: 0.8
+  - key: E.PhantomDoor.confront
+    clip: {fileID: 8300000, guid: 66b0459cf1881424797bcdb3460a0bb6, type: 3}
+    volume: 0.9
+  - key: E.Footsteps.confront
+    clip: {fileID: 8300000, guid: 80b333cd445c6ca45bfbbe68c4ca7e07, type: 3}
+    volume: 0.9
+  - key: E.CallingVoice.confront
+    clip: {fileID: 8300000, guid: 9a4ef4fb20280c04e9d0869ae0ee7f89, type: 3}
+    volume: 0.9
+  - key: E.PeopleTree.confront
+    clip: {fileID: 8300000, guid: caaee0d9a900e5947bd7d05c18b8ff81, type: 3}
+    volume: 0.6
+  - key: E.YellowFace.confront
+    clip: {fileID: 8300000, guid: d9849999f25642043aee933aa49c0fd1, type: 3}
+    volume: 0.8
+  - key: E.SuitMan.confront
+    clip: {fileID: 8300000, guid: 170787c27940b564ba98fb7ac5e2f4fa, type: 3}
+    volume: 1
+  - key: E.HallEndFigure.confront
+    clip: {fileID: 8300000, guid: e4fdd2b2f64d35648981dad4f56d136e, type: 3}
+    volume: 0.8
+  - key: E.ModelRush.confront
+    clip: {fileID: 8300000, guid: 80db971588e25614da6b6128d487887b, type: 3}
+    volume: 1
+  - key: E.ScienceBlackout.confront
+    clip: {fileID: 8300000, guid: 886272a5f78829a4cb16206777e48d39, type: 3}
+    volume: 1
+  - key: E.ToiletBlackout.confront
+    clip: {fileID: 8300000, guid: 886272a5f78829a4cb16206777e48d39, type: 3}
+    volume: 1
+  - key: E.ToiletGirl.confront
+    clip: {fileID: 8300000, guid: 22e04bcf96221a34c98bb88924fa0b6e, type: 3}
+    volume: 1
+  - key: E.CctvPerson.confront
+    clip: {fileID: 8300000, guid: 72676a95f35780743aa28a53bbc18d5f, type: 3}
+    volume: 0.6
+  - key: H2.cue
+    clip: {fileID: 8300000, guid: 53506d48aeba30346990e50092db5eba, type: 3}
+    volume: 0.9
+  - key: C1.cue
+    clip: {fileID: 8300000, guid: c5acaa50d4e5be249a1d42397fef4dc0, type: 3}
+    volume: 1
+  - key: C4.cue
+    clip: {fileID: 8300000, guid: 73aa6ef7bf879e44ab06bee4dea973ee, type: 3}
+    volume: 0.9
+  - key: C4.cue+
+    clip: {fileID: 8300000, guid: 879b6be6c869ad745970807556da4007, type: 3}
+    volume: 0.9
+  - key: S2.cue
+    clip: {fileID: 8300000, guid: 658a1c996996e024c90e255b85199cbc, type: 3}
+    volume: 1
+  - key: T1.cue
+    clip: {fileID: 8300000, guid: 0781074237e2c1f4aaae7def979562f4, type: 3}
+    volume: 1
+  - key: T2.cue
+    clip: {fileID: 8300000, guid: eb05f1efa42560d42a568eb8f2c7f0a0, type: 3}
+    volume: 0.9
+  - key: K2.cue
+    clip: {fileID: 8300000, guid: 72676a95f35780743aa28a53bbc18d5f, type: 3}
+    volume: 0.5
+  - key: fake.locker.rattle
+    clip: {fileID: 8300000, guid: 6cce70a825b5b394b887a6a5a77612be, type: 3}
+    volume: 0.7
+  - key: fake.locker.row
+    clip: {fileID: 8300000, guid: f4e285d1635788e4882c71c6f127ef53, type: 3}
+    volume: 0.7

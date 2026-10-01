@@ -1,4 +1,4 @@
-using NightDuty;
+﻿using NightDuty;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -8,8 +8,9 @@ using UnityEngine.Rendering;
 /// <list type="bullet">
 /// <item>사람형은 캡슐 + 어두운 무광(알베도 0.15) + 얼굴 쿼드. 키: 소년 1.35m · 모형 1.7m · 정장 남자 1.85m.</item>
 /// <item>피벗은 발바닥 중앙, 앞은 +Z(플레이어를 본다).</item>
-/// <item>응시 판정이 필요한 대역(천장 다리 C2 · 창밖 남자 L5)만 단단한 콜라이더를 갖는다. 나머지는 콜라이더를 빼서 길을 막지 않는다.</item>
-/// <item>판정 기준점(<c>rule.L3.face</c> 등)은 루트의 <see cref="JudgeTarget"/>다(머리 높이).</item>
+/// <item>응시 판정이 필요한 대역(천장 다리 C2 · 창밖 남자 L5)만 단단한 콜라이더를 갖는다 — <b>조준점(Aim) 자식에만</b>. 나머지는 콜라이더를 빼서 길을 막지 않는다.</item>
+/// <item>판정 기준점(<c>rule.L3.face</c> 등)은 <b>조준점 자식 <c>Aim</c></b>의 <see cref="JudgeTarget"/>다(프리팹에 있으면 그것, 없으면 머리 높이에 만든다).
+/// 루트(발바닥)에 두면 손전등 비춤의 가림 검사가 바닥에 걸려 L3·L5가 영영 비춤으로 잡히지 않았다(2026-10-01 수정).</item>
 /// </list>
 /// </summary>
 public static class StandInFactory
@@ -27,6 +28,15 @@ public static class StandInFactory
     /// </summary>
     public static GameObject Create(string id, Vector3 floorPoint, Vector3 lookAt, string anchorId)
     {
+        Vector3 dir = lookAt - floorPoint;
+        dir.y = 0f;
+        Quaternion rot = dir.sqrMagnitude > 0.01f ? Quaternion.LookRotation(dir.normalized, Vector3.up) : Quaternion.identity;
+        return Create(id, floorPoint, rot, anchorId);
+    }
+
+    /// <summary>정해 둔 자리·방향(<see cref="StageAnchor"/>)에 세운다.</summary>
+    public static GameObject Create(string id, Vector3 floorPoint, Quaternion rotation, string anchorId)
+    {
         GameObject prefab = Resources.Load<GameObject>(ResourceFolder + id);
         GameObject go;
         if (prefab != null)
@@ -40,24 +50,67 @@ public static class StandInFactory
             go.transform.position = floorPoint;
         }
 
-        Vector3 dir = lookAt - floorPoint;
-        dir.y = 0f;
-        if (dir.sqrMagnitude > 0.01f) go.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+        go.transform.rotation = rotation;
+
+        Transform aim = Aim(go);
+        if (NeedsGazeCollider(id) && aim.GetComponent<Collider>() == null)
+        {
+            Bounds b = RendererBounds(go);
+            aim.position = b.center;
+            BoxCollider box = aim.gameObject.AddComponent<BoxCollider>();
+            box.size = b.size;
+        }
 
         if (!string.IsNullOrEmpty(anchorId))
         {
-            JudgeTarget target = go.GetComponent<JudgeTarget>();
-            if (target == null) target = go.AddComponent<JudgeTarget>();
+            JudgeTarget target = aim.GetComponent<JudgeTarget>();
+            if (target == null) target = aim.gameObject.AddComponent<JudgeTarget>();
             target.SetIds(anchorId);
         }
 
         return go;
     }
 
+    /// <summary>
+    /// 응시·비춤 판정 상자를 그 자리로 옮긴다(창틀·블라인드에 가려 몸에 레이가 닿지 않는 몹). 대역의 다른 콜라이더는 끈다 —
+    /// 응시는 기준점 아래 첫 단단한 콜라이더의 중심을 보므로 상자가 하나여야 한다.
+    /// </summary>
+    public static void ApplyGazeProxy(GameObject go, Transform proxy)
+    {
+        if (go == null || proxy == null) return;
+        Transform aim = Aim(go);
+        foreach (Collider c in go.GetComponentsInChildren<Collider>(true))
+        {
+            if (c.transform != aim) c.enabled = false;
+        }
+
+        aim.SetPositionAndRotation(proxy.position, proxy.rotation);
+        BoxCollider box = aim.GetComponent<BoxCollider>();
+        if (box == null) box = aim.gameObject.AddComponent<BoxCollider>();
+        Vector3 s = proxy.lossyScale;
+        Vector3 parent = aim.parent != null ? aim.parent.lossyScale : Vector3.one;
+        box.center = Vector3.zero;
+        box.size = new Vector3(Mathf.Abs(s.x / Mathf.Max(0.0001f, parent.x)), Mathf.Abs(s.y / Mathf.Max(0.0001f, parent.y)), Mathf.Abs(s.z / Mathf.Max(0.0001f, parent.z)));
+        box.isTrigger = false;
+        box.enabled = true;
+    }
+
+    /// <summary>판정 조준점. 프리팹의 <c>Aim</c> 자식, 없으면 렌더러 위쪽(머리) 높이에 만든다.</summary>
+    public static Transform Aim(GameObject go)
+    {
+        Transform aim = go.transform.Find("Aim");
+        if (aim != null) return aim;
+        Bounds b = RendererBounds(go);
+        GameObject a = new GameObject("Aim");
+        a.transform.SetParent(go.transform, false);
+        a.transform.position = new Vector3(b.center.x, Mathf.Max(b.min.y, b.max.y - 0.15f), b.center.z);
+        return a.transform;
+    }
+
     /// <summary>대역에 단단한 응시 콜라이더가 필요한지(C2 천장 다리 · L5 창밖 남자).</summary>
     public static bool NeedsGazeCollider(string id)
     {
-        return id == "mob.legs" || id == "mob.glitchman";
+        return id == "mob.legs" || id == "mob.windowman" || id == "mob.glitchman";
     }
 
     private static GameObject Build(string id)
@@ -68,24 +121,19 @@ public static class StandInFactory
             case "mob.boy": Humanoid(root, 1.35f, 0.18f); break;
             case "mob.girl": Humanoid(root, 1.3f, 0.17f); break;
             case "mob.dummy": Humanoid(root, 1.7f, 0.22f); break;
+            case "mob.dummy.stand": Humanoid(root, 1.7f, 0.22f); break;
             case "mob.meatman": Humanoid(root, 1.8f, 0.26f); break;
             case "mob.glitchman": Humanoid(root, 1.85f, 0.22f); break;
             case "mob.duck": Duck(root); break;
+            case "mob.windowman": Duck(root); break;
+            case "mob.blackman": Humanoid(root, 1.8f, 0.22f); break;
             case "mob.tree": Tree(root); break;
             case "mob.legs": Legs(root); break;
             case "prop.phantomdoor": Door(root); break;
             default: Humanoid(root, 1.7f, 0.22f); break;
         }
 
-        if (NeedsGazeCollider(id))
-        {
-            Bounds b = RendererBounds(root);
-            BoxCollider box = root.AddComponent<BoxCollider>();
-            box.center = root.transform.InverseTransformPoint(b.center);
-            box.size = b.size;
-        }
-
-        return root;
+        return root;   // 응시 콜라이더는 Create가 조준점(Aim)에 붙인다.
     }
 
     private static void Humanoid(GameObject root, float height, float radius)

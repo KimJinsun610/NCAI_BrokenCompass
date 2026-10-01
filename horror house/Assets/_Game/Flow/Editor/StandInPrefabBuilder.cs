@@ -1,0 +1,768 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using UnityEditor;
+using UnityEditor.Animations;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+
+/// <summary>
+/// 몹 모델(<c>Assets/2. Art/04 Materials/m_creature/</c>)을 대역 프리팹(<c>Resources/StandIns/&lt;ID&gt;</c>)으로 만든다(2026-10-01).
+/// <see cref="StandInFactory"/>는 프리팹이 있으면 그것을 쓰므로, 이 메뉴 한 번이면 연출이 완성 몹으로 바뀐다.
+/// <list type="bullet">
+/// <item>규약: 피벗 = 발바닥 중앙(앉은 소년은 엉덩이 아래 바닥, 천장 다리는 천장에 붙는 허리), 앞 = +Z, 키는 대역 규약값.</item>
+/// <item>판정 조준점 = 자식 <c>Aim</c>(머리, 천장 다리는 다리 가운데). 응시 판정이 필요한 몹(천장 다리·창밖 남자)만 <c>Aim</c>에 단단한 상자.</item>
+/// <item>자세: 애니메이션 클립의 한 순간을 굳히거나(모형·고기 인간), 뼈 방향을 직접 맞춘다(앉은 소년·매달린 다리). 원본 모델·임포트 설정은 건드리지 않는다.</item>
+/// <item>반복 동작(창밖 남자의 떨림, 사람 나무의 흔들림)은 클립을 <c>Art/StandIns/</c>에 복사해 반복을 켠 컨트롤러로 돌린다.</item>
+/// </list>
+/// 소리 표(<c>Resources/DirectionSounds.asset</c>)도 같은 메뉴가 채운다 — 다른 폴더의 클립은 참조만 한다.
+/// </summary>
+public static class StandInPrefabBuilder
+{
+    private const string Creature = "Assets/2. Art/04 Materials/m_creature/";
+    private const string OutDir = "Assets/_Game/Resources/StandIns";
+    private const string AnimDir = "Assets/_Game/Art/StandIns";
+
+    /// <summary>human tree(= NCAI_BrokenCompass/Assets/크리쳐/human tree와 같은 파일). 김진선님 폴더의 것을 참조만 한다.</summary>
+    private const string HumanTree = "Assets/3.2 Programmer_Kim/99 Resources/05 Model/HumanTree/HumanTree_20k_Animated.fbx";
+    private const string SoundTablePath = "Assets/_Game/Resources/DirectionSounds.asset";
+
+    private enum Pivot
+    {
+        Feet,
+        Seated,
+        Hanging
+    }
+
+    private sealed class Spec
+    {
+        public string Id;
+        public string Model;
+        public float BindHeight;
+        public float Height;
+        public string PoseClipModel;
+        public float PoseTime;
+        public string LoopClipModel;
+        public Action<Transform> Pose;
+        public Pivot Pivot = Pivot.Feet;
+        public bool GazeBox;
+        public Vector3 HeadBox = new Vector3(0.45f, 0.45f, 0.4f);
+        public string Note = string.Empty;
+    }
+
+    /// <summary>좌석 위 골반 높이(m). 학생 의자 좌판 0.42 + 엉덩이 두께.</summary>
+    public const float SeatedPelvisHeight = 0.51f;
+
+    /// <summary>천장 다리: 골반 위 이만큼(m)이 천장 면 — 몸통·팔은 천장 속에 숨는다.</summary>
+    public const float HangAboveHips = 0.25f;
+
+    private static List<Spec> Specs()
+    {
+        // 2026-10-01 민 지정: 원본은 NCAI_BrokenCompass/Assets/크리쳐 → 프로젝트 m_creature/m_businessduck·m_skirtboy·m_redgirl·m_eggmantree로 복사.
+        // 인체모형·human tree는 프로젝트에 같은 파일이 이미 있다(m_humandummy). CCTV 사람만 크리쳐 폴더에 없어 blackman 유지(민 결정).
+        return new List<Spec>
+        {
+            new Spec { Id = "mob.boy", Model = "m_skirtboy/Skirt_Boy.fbx", BindHeight = 1.72f, Height = 1.35f, Pose = PoseSeated, Pivot = Pivot.Seated, Note = "앉은 소년 = skirtboy, 책상에 팔을 올린 자세" },
+            new Spec { Id = "mob.legs", Model = "m_skirtboy/Skirt_Boy.fbx", BindHeight = 1.72f, Height = 1.35f, Pose = PoseHanging, Pivot = Pivot.Hanging, GazeBox = true, Note = "천장 다리 = skirtboy, 팔은 천장 속·다리만 보임" },
+            new Spec { Id = "mob.windowman", Model = "m_businessduck/Business_Duck.fbx", BindHeight = 1.78f, Height = 1.85f, GazeBox = true, HeadBox = new Vector3(0.6f, 0.55f, 0.45f), Note = "창밖 남자 = business duck" },
+            new Spec { Id = "mob.duck", Model = "m_businessduck/Business_Duck.fbx", BindHeight = 1.78f, Height = 1.85f, Note = "노란 얼굴 = business duck" },
+            new Spec { Id = "mob.dummy.stand", Model = "m_humandummy/humman dummy_default_motion.fbx", BindHeight = 1.07f, Height = 1.7f, PoseClipModel = "m_humandummy/humman dummy_default_motion.fbx", PoseTime = 0f, Note = "복도 끝에 선 자 = 인체모형(팔을 내린 선 자세)" },
+            new Spec { Id = "mob.dummy", Model = "m_humandummy/humman dummy_wake_motion.fbx", BindHeight = 1.07f, Height = 1.7f, PoseClipModel = "m_humandummy/humman dummy_wake_motion.fbx", PoseTime = 6.6f, Note = "모형 급습 = 인체모형(일어선 직후 구부정한 자세)" },
+            new Spec { Id = "mob.girl", Model = "m_redgirl/Red_Girl.fbx", BindHeight = 1.65f, Height = 1.3f, Note = "화장실 소녀 = red girl" },
+            new Spec { Id = "mob.blackman", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, Note = "CCTV에만 보이는 사람(기존 유지)" },
+            new Spec { Id = "mob.tree", Model = HumanTree, BindHeight = 3.5f, Height = 3.4f, LoopClipModel = HumanTree, Note = "사람 나무 = human tree(민 지정), 바람 흔들림 반복" }
+        };
+    }
+
+    [MenuItem("야간근무/연출/몹 대역·소리 연결 (프리팹·소리 표 다시 만들기)")]
+    public static void BuildAllMenu()
+    {
+        string report = BuildAll();
+        Debug.Log(report);
+        EditorUtility.DisplayDialog("몹 대역·소리 연결", report, "확인");
+    }
+
+    /// <summary>프리팹·소리 표를 다시 만든다. 보고 문자열을 돌려준다(에디터 자동화용).</summary>
+    public static string BuildAll()
+    {
+        StringBuilder sb = new StringBuilder();
+        EnsureFolder(OutDir);
+        EnsureFolder(AnimDir);
+        foreach (Spec s in Specs())
+        {
+            try
+            {
+                sb.AppendLine(Build(s));
+            }
+            catch (Exception e)
+            {
+                sb.AppendLine("✗ " + s.Id + ": " + e.Message);
+                Debug.LogException(e);
+            }
+        }
+
+        try
+        {
+            sb.AppendLine(BuildPhantomDoor());
+        }
+        catch (Exception e)
+        {
+            sb.AppendLine("✗ prop.phantomdoor: " + e.Message);
+        }
+
+        sb.AppendLine(CleanStale());
+        sb.AppendLine(BuildSoundTable());
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        return sb.ToString();
+    }
+
+    // ── 몹 ─────────────────────────────────────────────────
+
+    private static string Build(Spec s)
+    {
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath(s.Model));
+        if (asset == null) return "✗ " + s.Id + ": 모델 없음 " + s.Model;
+
+        GameObject root = new GameObject(s.Id);
+        try
+        {
+            GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(asset);
+            model.name = "Model";
+            model.transform.SetParent(root.transform, false);
+            float scale = s.Height / s.BindHeight;
+            model.transform.localScale = Vector3.one * scale;
+
+            if (!string.IsNullOrEmpty(s.PoseClipModel))
+            {
+                AnimationClip pose = FirstClip(ModelPath(s.PoseClipModel));
+                if (pose != null) pose.SampleAnimation(model, s.PoseTime);
+            }
+
+            if (s.Pose != null) s.Pose(model.transform);
+
+            foreach (SkinnedMeshRenderer smr in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                smr.updateWhenOffscreen = true;   // 자세를 바꿨으니 가져온 경계 상자로 컬링하면 잘린다.
+            }
+
+            Transform pelvis = Bone(model.transform, "pelvis");
+            Bounds baked = BakedBounds(model);
+            Vector3 anchor;
+            switch (s.Pivot)
+            {
+                case Pivot.Seated:
+                    anchor = pelvis.position - Vector3.up * SeatedPelvisHeight;
+                    break;
+                case Pivot.Hanging:
+                    anchor = pelvis.position + Vector3.up * HangAboveHips;
+                    break;
+                default:
+                    Vector3 xz = pelvis != null ? pelvis.position : baked.center;
+                    anchor = new Vector3(xz.x, baked.min.y, xz.z);
+                    break;
+            }
+
+            model.transform.position -= anchor;   // 피벗을 루트 원점으로.
+            baked = BakedBounds(model);
+
+            GameObject aim = new GameObject("Aim");
+            aim.transform.SetParent(root.transform, false);
+            if (s.Pivot == Pivot.Hanging)
+            {
+                Bounds legs = BakedBounds(model, below: 0f);
+                aim.transform.position = legs.center;
+                BoxCollider box = aim.AddComponent<BoxCollider>();
+                box.size = legs.size + new Vector3(0.1f, 0f, 0.1f);
+            }
+            else
+            {
+                Transform head = Bone(model.transform, "head");
+                Vector3 h = head != null ? head.position : new Vector3(0f, baked.max.y - 0.15f, 0f);
+                if (head != null) h = new Vector3(h.x, Mathf.Min(baked.max.y - 0.05f, h.y + (baked.max.y - h.y) * 0.55f), h.z);
+                aim.transform.position = h;
+                if (s.GazeBox)
+                {
+                    BoxCollider box = aim.AddComponent<BoxCollider>();
+                    box.size = s.HeadBox;
+                }
+            }
+
+            string loopNote = string.Empty;
+            if (!string.IsNullOrEmpty(s.LoopClipModel))
+            {
+                AnimatorController ctrl = LoopController(s.Id, ModelPath(s.LoopClipModel));
+                if (ctrl != null)
+                {
+                    Animator a = model.GetComponent<Animator>();
+                    if (a == null) a = model.AddComponent<Animator>();
+                    a.runtimeAnimatorController = ctrl;
+                    a.applyRootMotion = false;
+                    a.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+                    loopNote = " · 반복 " + ctrl.name;
+                }
+            }
+            else
+            {
+                // 굳힌 자세를 애니메이터가 바인드 포즈로 되돌리지 않게 컨트롤러 없는 애니메이터는 끈다.
+                Animator a = model.GetComponent<Animator>();
+                if (a != null) a.enabled = false;
+            }
+
+            foreach (Collider c in model.GetComponentsInChildren<Collider>(true)) UnityEngine.Object.DestroyImmediate(c);
+
+            string path = OutDir + "/" + s.Id + ".prefab";
+            PrefabUtility.SaveAsPrefabAsset(root, path);
+            return "✓ " + s.Id + " ← " + s.Model + " (키 " + s.Height.ToString("F2") + "m, 조준 " + aim.transform.localPosition.ToString("F2") + loopNote + ") — " + s.Note;
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    /// <summary>앉은 자세(앞 = +Z, 왼쪽 = −X). 뼈를 「자식 쪽을 향하는 방향」으로 맞춘다 — 뼈 로컬 축을 몰라도 된다.</summary>
+    private static void PoseSeated(Transform model)
+    {
+        Point(model, "spine", "chest", new Vector3(0f, 1f, 0.12f));
+        Point(model, "neck", "head", new Vector3(0f, 1f, 0.45f));            // 고개를 숙임
+        Point(model, "thigh.L", "shin.L", new Vector3(-0.1f, -0.12f, 1f));
+        Point(model, "thigh.R", "shin.R", new Vector3(0.1f, -0.12f, 1f));
+        Point(model, "shin.L", "foot.L", new Vector3(0f, -1f, 0.08f));
+        Point(model, "shin.R", "foot.R", new Vector3(0f, -1f, 0.08f));
+        Point(model, "upper_arm.L", "forearm.L", new Vector3(-0.12f, -0.9f, 0.42f));
+        Point(model, "upper_arm.R", "forearm.R", new Vector3(0.12f, -0.9f, 0.42f));
+        Point(model, "forearm.L", "hand.L", new Vector3(0.25f, -0.15f, 1f));
+        Point(model, "forearm.R", "hand.R", new Vector3(-0.25f, -0.15f, 1f));
+    }
+
+    /// <summary>천장에 매달린 자세: 팔은 머리 위로(천장 속), 다리는 늘어뜨리고 발끝은 아래.</summary>
+    private static void PoseHanging(Transform model)
+    {
+        Point(model, "upper_arm.L", "forearm.L", new Vector3(-0.15f, 1f, 0f));
+        Point(model, "upper_arm.R", "forearm.R", new Vector3(0.15f, 1f, 0f));
+        Point(model, "forearm.L", "hand.L", new Vector3(-0.05f, 1f, 0f));
+        Point(model, "forearm.R", "hand.R", new Vector3(0.05f, 1f, 0f));
+        Point(model, "thigh.L", "shin.L", new Vector3(-0.03f, -1f, 0.02f));
+        Point(model, "thigh.R", "shin.R", new Vector3(0.05f, -1f, -0.03f));
+        Point(model, "shin.L", "foot.L", new Vector3(0f, -1f, 0f));
+        Point(model, "shin.R", "foot.R", new Vector3(0f, -1f, 0f));
+        Point(model, "foot.L", "toe.L", new Vector3(0f, -0.75f, 0.65f));
+        Point(model, "foot.R", "toe.R", new Vector3(0f, -0.75f, 0.65f));
+        Point(model, "neck", "head", new Vector3(0f, 1f, 0.3f));
+    }
+
+    /// <summary>옛 리그(pelvis·thigh.L)와 새 리그(Hips·LeftUpperLeg)의 뼈 이름을 함께 찾는다.</summary>
+    private static readonly Dictionary<string, string> Alias = new Dictionary<string, string>
+    {
+        { "pelvis", "Hips" }, { "spine", "Spine" }, { "chest", "Chest" }, { "neck", "Neck" }, { "head", "Head" },
+        { "thigh.L", "LeftUpperLeg" }, { "shin.L", "LeftLowerLeg" }, { "foot.L", "LeftFoot" }, { "toe.L", "LeftToes" },
+        { "thigh.R", "RightUpperLeg" }, { "shin.R", "RightLowerLeg" }, { "foot.R", "RightFoot" }, { "toe.R", "RightToes" },
+        { "upper_arm.L", "LeftUpperArm" }, { "forearm.L", "LeftLowerArm" }, { "hand.L", "LeftHand" },
+        { "upper_arm.R", "RightUpperArm" }, { "forearm.R", "RightLowerArm" }, { "hand.R", "RightHand" }
+    };
+
+    private static Transform Bone(Transform model, string name)
+    {
+        Transform t = FindDeep(model, name);
+        string other;
+        if (t == null && Alias.TryGetValue(name, out other)) t = FindDeep(model, other);
+        return t;
+    }
+
+    private static void Point(Transform model, string bone, string child, Vector3 worldDir)
+    {
+        Transform b = Bone(model, bone);
+        Transform c = Bone(model, child);
+        if (b == null || c == null) return;
+        Vector3 d = c.position - b.position;
+        if (d.sqrMagnitude < 1e-8f) return;
+        b.rotation = Quaternion.FromToRotation(d.normalized, worldDir.normalized) * b.rotation;
+    }
+
+    /// <summary>표에서 빠진 대역 프리팹·반복 클립을 지운다(예전 매칭이 남아 다른 몹이 나오지 않게).</summary>
+    private static string CleanStale()
+    {
+        HashSet<string> keep = new HashSet<string>(StringComparer.Ordinal) { "prop.phantomdoor" };
+        HashSet<string> loops = new HashSet<string>(StringComparer.Ordinal);
+        foreach (Spec s in Specs())
+        {
+            keep.Add(s.Id);
+            if (!string.IsNullOrEmpty(s.LoopClipModel)) loops.Add(s.Id);
+        }
+
+        List<string> removed = new List<string>();
+        foreach (string g in AssetDatabase.FindAssets("t:Prefab", new[] { OutDir }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(g);
+            string id = Path.GetFileNameWithoutExtension(path);
+            if (keep.Contains(id)) continue;
+            AssetDatabase.DeleteAsset(path);
+            removed.Add(id);
+        }
+
+        foreach (string g in AssetDatabase.FindAssets("", new[] { AnimDir }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(g);
+            string file = Path.GetFileName(path);
+            int cut = file.IndexOf(".loop", StringComparison.Ordinal);
+            if (cut < 0) cut = file.IndexOf(".controller", StringComparison.Ordinal);
+            if (cut < 0) continue;
+            string id = file.Substring(0, cut);
+            if (loops.Contains(id)) continue;
+            AssetDatabase.DeleteAsset(path);
+            removed.Add(file);
+        }
+
+        return removed.Count == 0 ? "– 지울 옛 대역 없음" : "✓ 옛 대역 정리: " + string.Join(", ", removed);
+    }
+
+    // ── 없던 문 ────────────────────────────────────────────
+
+    private static string BuildPhantomDoor()
+    {
+        const string vendor = "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/DoorNarrowSolid.prefab";
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(vendor);
+        if (asset == null) return "– prop.phantomdoor: 벤더 문 프리팹이 없어 대역 판자 그대로";
+
+        GameObject root = new GameObject("prop.phantomdoor");
+        try
+        {
+            GameObject door = (GameObject)PrefabUtility.InstantiatePrefab(asset);
+            PrefabUtility.UnpackPrefabInstance(door, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+            door.name = "Model";
+            door.transform.SetParent(root.transform, false);
+
+            // 그림만 남긴다 — 벤더 문 스크립트·애니메이션·콜라이더·소리가 남으면 문 발신기(DoorRelay)가 진짜 문으로 안다.
+            for (int pass = 0; pass < 3; pass++)
+            {
+                foreach (Component c in door.GetComponentsInChildren<Component>(true))
+                {
+                    if (c == null || c is Transform || c is Renderer || c is MeshFilter) continue;
+                    UnityEngine.Object.DestroyImmediate(c);
+                }
+            }
+
+            foreach (SkinnedMeshRenderer smr in door.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.updateWhenOffscreen = true;
+            Bounds b = BakedBounds(door);
+            door.transform.position -= new Vector3(b.center.x, b.min.y, b.center.z);
+            GameObject aim = new GameObject("Aim");
+            aim.transform.SetParent(root.transform, false);
+            aim.transform.localPosition = new Vector3(0f, 1.1f, 0f);
+            PrefabUtility.SaveAsPrefabAsset(root, OutDir + "/prop.phantomdoor.prefab");
+            return "✓ prop.phantomdoor ← DoorNarrowSolid(그림만)";
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    // ── 반복 클립 ───────────────────────────────────────────
+
+    private static AnimatorController LoopController(string id, string modelPath)
+    {
+        AnimationClip src = FirstClip(modelPath);
+        if (src == null) return null;
+
+        string clipPath = AnimDir + "/" + id + ".loop.anim";
+        AnimationClip copy = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
+        if (copy != null) AssetDatabase.DeleteAsset(clipPath);
+        copy = UnityEngine.Object.Instantiate(src);
+        copy.name = id + ".loop";
+        AnimationClipSettings st = AnimationUtility.GetAnimationClipSettings(copy);
+        st.loopTime = true;
+        AnimationUtility.SetAnimationClipSettings(copy, st);
+        AssetDatabase.CreateAsset(copy, clipPath);
+
+        string ctrlPath = AnimDir + "/" + id + ".controller";
+        if (AssetDatabase.LoadAssetAtPath<AnimatorController>(ctrlPath) != null) AssetDatabase.DeleteAsset(ctrlPath);
+        AnimatorController ctrl = AnimatorController.CreateAnimatorControllerAtPath(ctrlPath);
+        ctrl.AddParameter("Pose", AnimatorControllerParameterType.Int);          // DirectionCue 계약
+        ctrl.AddParameter("Intensity", AnimatorControllerParameterType.Float);
+        AnimatorState state = ctrl.layers[0].stateMachine.AddState("Loop");
+        state.motion = copy;
+        ctrl.layers[0].stateMachine.defaultState = state;
+        return ctrl;
+    }
+
+    /// <summary>m_creature 기준 상대 경로, 또는 <c>Assets/</c>로 시작하는 전체 경로.</summary>
+    private static string ModelPath(string model)
+    {
+        return model.StartsWith("Assets/", StringComparison.Ordinal) ? model : Creature + model;
+    }
+
+    private static AnimationClip FirstClip(string path)
+    {
+        foreach (UnityEngine.Object o in AssetDatabase.LoadAllAssetsAtPath(path))
+        {
+            AnimationClip c = o as AnimationClip;
+            if (c != null && !c.name.StartsWith("__preview", StringComparison.Ordinal)) return c;
+        }
+
+        return null;
+    }
+
+    // ── 소리 표 ─────────────────────────────────────────────
+
+    private static string BuildSoundTable()
+    {
+        DirectionSoundTableSO table = AssetDatabase.LoadAssetAtPath<DirectionSoundTableSO>(SoundTablePath);
+        if (table == null)
+        {
+            table = ScriptableObject.CreateInstance<DirectionSoundTableSO>();
+            AssetDatabase.CreateAsset(table, SoundTablePath);
+        }
+
+        const string amb = "Assets/_Game/Resources/Ambience/";
+        const string kim = "Assets/3.2 Programmer_Kim/99 Resources/04 Sound/";
+        const string au = "Assets/_Game/Audio/";   // 2026-10-01 민 제공(NCAI_BrokenCompass/Assets/사운드) — 각 폴더 README가 쓰임새
+        // 이름 뒤 "+"는 같은 순간 겹쳐 재생하는 둘째 소리(C4 = 칠판 긁기 + 교탁 의자, README class).
+        string[,] map =
+        {
+            { "*.foreshadow", amb + "Stingers/stinger_riser.ogg", "0.55" },
+            { "E.BoySeated.confront", au + "class/SFX_CLASS_DeskHit.wav", "0.9" },
+            { "E.BoyBang.confront", au + "class/SFX_CLASS_DeskHit.wav", "0.9" },
+            { "E.BoyBang.headbang", au + "class/SFX_CLASS_DeskThump.wav", "1" },
+            { "E.CeilingLegs.confront", au + "hall/SFX_HALL_CeilingDrop.wav", "0.8" },
+            { "E.PhantomDoor.confront", au + "hall/SFX_HALL_LatchOnly.wav", "0.9" },
+            { "E.Footsteps.confront", au + "hall/SFX_HALL_DoorClose_Hear90.wav", "0.9" },
+            { "E.CallingVoice.confront", amb + "Stingers/stinger_whisper.ogg", "0.9" },
+            { "E.PeopleTree.confront", amb + "OneShots/os_metal_groan_a.ogg", "0.6" },
+            { "E.YellowFace.confront", amb + "Stingers/stinger_breath.ogg", "0.8" },
+            { "E.SuitMan.confront", amb + "OneShots/os_knock_2a.ogg", "1" },
+            { "E.HallEndFigure.confront", kim + "SFX_MosterBreath.wav", "0.8" },
+            { "E.ModelRush.confront", au + "lab/SFX_LAB_HeavySet.wav", "1" },
+            { "E.ScienceBlackout.confront", amb + "OneShots/os_electric_pop.ogg", "1" },
+            { "E.ToiletBlackout.confront", amb + "OneShots/os_electric_pop.ogg", "1" },
+            { "E.ToiletGirl.confront", au + "toilet/SFX_TOILET_DoorClose.wav", "1" },
+            { "E.CctvPerson.confront", "Assets/_Game/Resources/Cctv/cctv_static.ogg", "0.6" },
+            { "H2.cue", au + "hall/SFX_HALL_DoorOpenSlow.wav", "0.9" },
+            { "C1.cue", au + "class/SFX_CLASS_ChalkStroke.wav", "1" },
+            { "C4.cue", au + "class/SFX_CLASS_BoardScratch.wav", "0.9" },
+            { "C4.cue+", au + "class/SFX_CLASS_TeacherChair.wav", "0.9" },
+            { "S2.cue", au + "lab/SFX_LAB_GlassBreak.wav", "1" },
+            { "T1.cue", au + "toilet/SFX_TOILET_Flush_Hear25.wav", "1" },
+            { "T2.cue", au + "toilet/SFX_TOILET_Fabric.wav", "0.9" },
+            { "K2.cue", "Assets/_Game/Resources/Cctv/cctv_static.ogg", "0.5" },
+            { "fake.locker.rattle", kim + "SFX_CabinetMoving.wav", "0.7" },
+            { "fake.locker.row", kim + "SFX_Drawer.wav", "0.7" }
+        };
+
+        table.Entries.Clear();
+        int ok = 0;
+        StringBuilder missing = new StringBuilder();
+        for (int i = 0; i < map.GetLength(0); i++)
+        {
+            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(map[i, 1]);
+            if (clip == null)
+            {
+                missing.Append(map[i, 0]).Append(' ');
+                continue;
+            }
+
+            table.Entries.Add(new DirectionSoundTableSO.Entry { key = map[i, 0], clip = clip, volume = float.Parse(map[i, 2], System.Globalization.CultureInfo.InvariantCulture) });
+            ok++;
+        }
+
+        EditorUtility.SetDirty(table);
+        return "✓ 소리 표 " + ok + "개" + (missing.Length > 0 ? " (클립 없음: " + missing + ")" : string.Empty);
+    }
+
+    // ── 씬 고정 자리 ────────────────────────────────────────
+
+    [MenuItem("야간근무/연출/고정 몹 자리 놓기 (소년·천장 다리·창밖 남자)")]
+    public static void PlaceStageAnchorsMenu()
+    {
+        string report = PlaceStageAnchors();
+        Debug.Log(report);
+    }
+
+    /// <summary>
+    /// 열린 근무 씬에 고정 자리 셋을 놓는다(있으면 옮긴다). 민 지정(2026-10-01):
+    /// 소년 = 1-3 교실(Classroom02) 맨 뒤 줄, 학생 기준 오른쪽에서 둘째 책상 · 천장 다리 = 뒤 통로 너머 창고 천장(사다리 위) ·
+    /// 창밖 남자 = 도서관 북쪽 <c>WallOutside_4m_WindowDouble</c> 밖.
+    /// </summary>
+    public static string PlaceStageAnchors()
+    {
+        StringBuilder sb = new StringBuilder();
+        GameObject parent = GameObject.Find("DirectionAnchors");
+        if (parent == null)
+        {
+            parent = new GameObject("DirectionAnchors");
+            Undo.RegisterCreatedObjectUndo(parent, "고정 몹 자리");
+        }
+
+        // ① 소년 — 책상: 앞(+Z)이 칠판 쪽(서쪽). 학생 기준 오른쪽 = 앞을 볼 때 오른쪽.
+        Transform room = GameObject.Find("Interior/Classroom02") != null ? GameObject.Find("Interior/Classroom02").transform : null;
+        if (room != null)
+        {
+            List<Transform> desks = new List<Transform>();
+            foreach (Transform t in room) if (t.name.StartsWith("StudentDeskB_Plastic_RED", StringComparison.Ordinal) && Mathf.Abs(t.position.y - 1.5f) < 0.05f) desks.Add(t);
+            if (desks.Count > 0)
+            {
+                Vector3 front = Flat(desks[0].forward);
+                Vector3 right = Quaternion.Euler(0f, 90f, 0f) * front;
+                float back = float.MinValue;
+                foreach (Transform d in desks) back = Mathf.Max(back, Vector3.Dot(d.position, -front));
+                List<Transform> backRow = desks.FindAll(d => Vector3.Dot(d.position, -front) > back - 0.5f);
+                backRow.Sort((a, b) => Vector3.Dot(b.position, right).CompareTo(Vector3.Dot(a.position, right)));
+                if (backRow.Count >= 2)
+                {
+                    Transform desk = backRow[1];
+                    Vector3 seat = desk.TransformPoint(new Vector3(0f, 0f, -0.12f));
+                    seat.y = desk.position.y;
+                    Anchor(parent.transform, NightDuty.StageAnchors.BoySeat, seat, Quaternion.LookRotation(Flat(desk.forward)), null, Vector3.zero, Vector3.zero, 3.5f);
+                    sb.AppendLine("✓ 소년 자리 — " + desk.name + " " + desk.position.ToString("F2") + " (맨 뒤 줄 " + backRow.Count + "개 중 오른쪽에서 둘째)");
+                }
+            }
+        }
+
+        // ② 천장 다리 — 창고 사다리 바로 위 천장. 앞은 교실 쪽(통로).
+        GameObject ladder = GameObject.Find("Interior/Classroom02/LibraryLadder (1)");
+        if (ladder != null)
+        {
+            Vector3 p = ladder.transform.position + Vector3.up * 1f;
+            RaycastHit hit;
+            float ceiling = Physics.Raycast(p, Vector3.up, out hit, 6f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore) ? hit.point.y : ladder.transform.position.y + 4f;
+            Vector3 at = new Vector3(ladder.transform.position.x, ceiling, ladder.transform.position.z);
+            Anchor(parent.transform, NightDuty.StageAnchors.LegsCeiling, at, Quaternion.LookRotation(Vector3.left), null, Vector3.zero, Vector3.zero, 1.8f);
+            sb.AppendLine("✓ 천장 다리 자리 — 사다리 위 천장 " + at.ToString("F2"));
+        }
+
+        // ③ 창밖 남자 — 도서관 북쪽 겹창의 오른쪽 창(가운데는 벽기둥). 블라인드 아래 틈(약 2.4~2.9m)에 얼굴.
+        Transform window = null;
+        foreach (Transform t in UnityEngine.Object.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+        {
+            if (t.name == "WallOutside_4m_WindowDouble" && Vector3.Distance(t.position, new Vector3(10f, 0f, 56f)) < 0.5f) window = t;
+        }
+
+        if (window != null)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(OutDir + "/mob.windowman.prefab");
+            float aimY = 1.5f;
+            if (prefab != null && prefab.transform.Find("Aim") != null) aimY = prefab.transform.Find("Aim").localPosition.y;
+            const float faceY = 2.78f;   // business duck 조준점(머리 위쪽)이 이 높이 — 얼굴이 블라인드 아래 틈 가운데
+            const float paneX = 8.25f;   // 오른쪽 창 가운데(실측: 왼쪽 창 6.4~7.4, 벽기둥 7.5~7.9, 오른쪽 창 7.9~9.0)
+            Vector3 at = new Vector3(paneX, faceY - aimY, 57.3f);
+            Anchor(parent.transform, NightDuty.StageAnchors.WindowMan, at, Quaternion.LookRotation(Vector3.back), "GazeProxy",
+                   new Vector3(paneX, faceY, 56.35f), new Vector3(0.9f, 0.5f, 0.06f), 4f);
+            sb.AppendLine("✓ 창밖 남자 자리 — " + window.name + " 밖 " + at.ToString("F2") + " (얼굴 높이 " + faceY + ", 응시 상자는 창 안쪽 면)");
+        }
+
+        EditorSceneManager.MarkSceneDirty(parent.scene);
+        return sb.ToString();
+    }
+
+    private static void Anchor(Transform parent, string id, Vector3 position, Quaternion rotation, string proxyName, Vector3 proxyPos, Vector3 proxySize, float viewDistance)
+    {
+        Transform t = parent.Find(id);
+        if (t == null)
+        {
+            GameObject go = new GameObject(id);
+            Undo.RegisterCreatedObjectUndo(go, "고정 몹 자리");
+            t = go.transform;
+            t.SetParent(parent, false);
+        }
+
+        t.SetPositionAndRotation(position, rotation);
+        StageAnchor a = t.GetComponent<StageAnchor>();
+        if (a == null) a = t.gameObject.AddComponent<StageAnchor>();
+
+        Transform proxy = null;
+        if (!string.IsNullOrEmpty(proxyName))
+        {
+            proxy = t.Find(proxyName);
+            if (proxy == null)
+            {
+                proxy = new GameObject(proxyName).transform;
+                proxy.SetParent(t, false);
+            }
+
+            proxy.SetPositionAndRotation(proxyPos, rotation);
+            proxy.localScale = proxySize;
+        }
+
+        a.Configure(id, proxy, viewDistance);
+        EditorUtility.SetDirty(a);
+    }
+
+    // ── 대역 사진(확인용) ───────────────────────────────────
+
+    /// <summary>모든 대역 프리팹을 한 장에 찍는다(위 줄 = 앞 비스듬히, 아래 줄 = 옆). 빨강 = 피벗, 하늘 = 조준점(Aim), 파랑 막대 = 앞(+Z).</summary>
+    [MenuItem("야간근무/연출/대역 사진 찍기 (Temp/standins.png)")]
+    public static void GalleryMenu()
+    {
+        string path = Path.GetFullPath(Path.Combine(Application.dataPath, "../Temp/standins.png"));
+        Debug.Log(RenderGallery(path));
+        EditorUtility.RevealInFinder(path);
+    }
+
+    /// <summary>대역 사진을 <paramref name="pngPath"/>에 쓴다. 보고 문자열을 돌려준다.</summary>
+    public static string RenderGallery(string pngPath)
+    {
+        List<string> ids = new List<string>();
+        foreach (string g in AssetDatabase.FindAssets("t:Prefab", new[] { OutDir })) ids.Add(Path.GetFileNameWithoutExtension(AssetDatabase.GUIDToAssetPath(g)));
+        ids.Sort(StringComparer.Ordinal);
+        if (ids.Count == 0) return "대역 프리팹이 없습니다.";
+
+        UnityEngine.SceneManagement.Scene scene = EditorSceneManager.NewPreviewScene();
+        RenderTexture rt = null;
+        StringBuilder sb = new StringBuilder();
+        try
+        {
+            Func<GameObject, GameObject> put = go =>
+            {
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(go, scene);
+                return go;
+            };
+
+            Camera cam = put(new GameObject("cam")).AddComponent<Camera>();
+            cam.scene = scene;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.backgroundColor = new Color(0.32f, 0.32f, 0.36f);
+            cam.fieldOfView = 35f;
+            Light light = put(new GameObject("light")).AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 1.4f;
+            light.transform.rotation = Quaternion.Euler(35f, 160f, 0f);
+
+            Shader unlit = Shader.Find("Universal Render Pipeline/Unlit");
+            Func<PrimitiveType, Color, GameObject> prim = (type, color) =>
+            {
+                GameObject g = put(GameObject.CreatePrimitive(type));
+                UnityEngine.Object.DestroyImmediate(g.GetComponent<Collider>());
+                Material m = new Material(unlit);
+                m.SetColor("_BaseColor", color);
+                g.GetComponent<Renderer>().sharedMaterial = m;
+                return g;
+            };
+
+            GameObject floor = prim(PrimitiveType.Cube, new Color(0.2f, 0.25f, 0.2f));
+            floor.transform.localScale = new Vector3(3f, 0.01f, 3f);
+            floor.transform.position = new Vector3(0f, -0.005f, 0f);
+            prim(PrimitiveType.Sphere, Color.red).transform.localScale = Vector3.one * 0.08f;
+            GameObject aimMark = prim(PrimitiveType.Sphere, Color.cyan);
+            aimMark.transform.localScale = Vector3.one * 0.1f;
+            GameObject fwd = prim(PrimitiveType.Cube, Color.blue);
+            fwd.transform.localScale = new Vector3(0.03f, 0.03f, 0.5f);
+            fwd.transform.position = new Vector3(0f, 0.01f, 0.25f);
+
+            const int tw = 220, th = 300;
+            Texture2D sheet = new Texture2D(tw * ids.Count, th * 2, TextureFormat.RGB24, false);
+            rt = new RenderTexture(tw, th, 24);
+            cam.targetTexture = rt;
+            Texture2D shot = new Texture2D(tw, th, TextureFormat.RGB24, false);
+            for (int i = 0; i < ids.Count; i++)
+            {
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(OutDir + "/" + ids[i] + ".prefab");
+                GameObject go = put((GameObject)UnityEngine.Object.Instantiate(prefab));
+                Transform aim = go.transform.Find("Aim");
+                aimMark.transform.position = aim != null ? aim.position : Vector3.zero;
+                Bounds b = BakedBounds(go);
+                sb.AppendLine(ids[i] + " 높이 " + b.min.y.ToString("F2") + "~" + b.max.y.ToString("F2") + " · 조준 " + (aim != null ? aim.localPosition.ToString("F2") : "없음"));
+                float size = Mathf.Max(1.2f, b.size.y);
+                for (int row = 0; row < 2; row++)
+                {
+                    Vector3 dir = row == 0 ? new Vector3(0.55f, 0.15f, 1f) : new Vector3(1f, 0.1f, 0f);
+                    cam.transform.position = b.center + dir.normalized * size * 2.4f;
+                    cam.transform.LookAt(b.center);
+                    cam.Render();
+                    RenderTexture.active = rt;
+                    shot.ReadPixels(new Rect(0, 0, tw, th), 0, 0);
+                    shot.Apply();
+                    RenderTexture.active = null;
+                    sheet.SetPixels(i * tw, (1 - row) * th, tw, th, shot.GetPixels());
+                }
+
+                UnityEngine.Object.DestroyImmediate(go);
+            }
+
+            sheet.Apply();
+            Directory.CreateDirectory(Path.GetDirectoryName(pngPath));
+            File.WriteAllBytes(pngPath, sheet.EncodeToPNG());
+            sb.Insert(0, "대역 사진 " + ids.Count + "개 → " + pngPath + "\n" + string.Join(" · ", ids) + "\n");
+        }
+        finally
+        {
+            foreach (Camera c in UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsSortMode.None)) if (c.targetTexture == rt) c.targetTexture = null;
+            EditorSceneManager.ClosePreviewScene(scene);
+            if (rt != null) UnityEngine.Object.DestroyImmediate(rt);
+        }
+
+        return sb.ToString();
+    }
+
+    // ── 도구 ───────────────────────────────────────────────
+
+    private static Vector3 Flat(Vector3 v)
+    {
+        v.y = 0f;
+        return v.sqrMagnitude > 1e-6f ? v.normalized : Vector3.forward;
+    }
+
+    private static Transform FindDeep(Transform root, string name)
+    {
+        if (root.name == name) return root;
+        foreach (Transform c in root)
+        {
+            Transform f = FindDeep(c, name);
+            if (f != null) return f;
+        }
+
+        return null;
+    }
+
+    /// <summary>지금 자세의 실제 정점 경계(월드). <paramref name="below"/>가 있으면 그 높이 아래 정점만.</summary>
+    private static Bounds BakedBounds(GameObject go, float? below = null)
+    {
+        bool any = false;
+        Bounds b = new Bounds();
+        foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true))
+        {
+            Mesh mesh = null;
+            Matrix4x4 m;
+            bool baked = false;
+            SkinnedMeshRenderer smr = r as SkinnedMeshRenderer;
+            if (smr != null)
+            {
+                mesh = new Mesh();
+                smr.BakeMesh(mesh, false);   // 실측(6000.3): false가 스케일이 들어간 로컬 정점을 준다 — 회전·위치만 곱한다.
+                baked = true;
+                m = Matrix4x4.TRS(smr.transform.position, smr.transform.rotation, Vector3.one);
+            }
+            else
+            {
+                MeshFilter mf = r.GetComponent<MeshFilter>();
+                if (mf == null || mf.sharedMesh == null) continue;
+                mesh = mf.sharedMesh;
+                m = r.transform.localToWorldMatrix;
+            }
+
+            foreach (Vector3 v in mesh.vertices)
+            {
+                Vector3 w = m.MultiplyPoint3x4(v);
+                if (below.HasValue && w.y > below.Value) continue;
+                if (!any)
+                {
+                    b = new Bounds(w, Vector3.zero);
+                    any = true;
+                }
+                else b.Encapsulate(w);
+            }
+
+            if (baked) UnityEngine.Object.DestroyImmediate(mesh);
+        }
+
+        return b;
+    }
+
+    private static void EnsureFolder(string path)
+    {
+        if (AssetDatabase.IsValidFolder(path)) return;
+        string parent = Path.GetDirectoryName(path).Replace('\\', '/');
+        EnsureFolder(parent);
+        AssetDatabase.CreateFolder(parent, Path.GetFileName(path));
+    }
+}

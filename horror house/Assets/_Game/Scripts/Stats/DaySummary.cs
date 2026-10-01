@@ -8,8 +8,14 @@ namespace NightDuty
         /// <summary>근무 종료 요청이 수락되어 정상적으로 끝났다.</summary>
         Completed = 0,
 
-        /// <summary>청각·조도·배치 중 하나가 100에 도달해 포획(게임오버)으로 끝났다. 신뢰 100은 포획이 아니다.</summary>
-        Captured = 1
+        /// <summary>청각·조도·배치 중 하나가 100에 도달해 붙잡혔다. 신뢰 100은 붙잡힘이 아니다. 보통은 그 밤을 다시 한다(<see cref="RestartPolicy"/>).</summary>
+        Captured = 1,
+
+        /// <summary>
+        /// 결근 — 6번째 시도에서도 붙잡혔거나 스스로 조퇴했다(2026-09-30 최종 기획서, 무한 루프 방지 장치 6).
+        /// 판정 없이 그 밤을 넘긴다. 남은 점검은 경고 없는 미완료, 신뢰 변화 없음, 다음 밤 감각 축은 min(현재, 60).
+        /// </summary>
+        Absent = 2
     }
 
     /// <summary>

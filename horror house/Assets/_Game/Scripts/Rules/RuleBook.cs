@@ -43,6 +43,12 @@ namespace NightDuty
         private readonly HashSet<RuleWatcher> _observedThisSignal = new HashSet<RuleWatcher>();
         private readonly FearAxisSystem _axes;
         private readonly BandResolver _bands;
+
+        /// <summary>카드 자격은 연출 구간으로 본다(2026-09-30). 해석기가 없으면(단위 테스트) 생존 수치의 원시 구간.</summary>
+        private IFearAxisReader EligibilityReader
+        {
+            get { return _bands != null ? _bands.Shown : (IFearAxisReader)_axes; }
+        }
         private bool _shortTermStartedThisVisit;
         private RuleWatcher _visitQuotaHolder;
         private bool _nightEnded;
@@ -189,7 +195,7 @@ namespace NightDuty
                     continue;
                 }
 
-                if (!w.Card.IsEligible(_axes))
+                if (!w.Card.IsEligible(EligibilityReader))
                 {
                     continue;
                 }
@@ -234,7 +240,7 @@ namespace NightDuty
             for (int i = 0; i < _watchers.Count; i++)
             {
                 RuleWatcher w = _watchers[i];
-                if (w.State != CardState.Waiting || w.Card.TriggerKind != SignalKind.NightBegan || !w.Card.IsEligible(_axes))
+                if (w.State != CardState.Waiting || w.Card.TriggerKind != SignalKind.NightBegan || !w.Card.IsEligible(EligibilityReader))
                 {
                     continue;
                 }

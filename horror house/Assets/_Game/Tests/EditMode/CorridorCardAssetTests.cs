@@ -254,21 +254,22 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void H5_조각1m5미만진입은_배치12_배치47에서는_미발동()
+        public void H5_조각1m5미만진입은_배치12_배치49에서는_미발동()
         {
             // 2026-09-21: 경계가 75 → 72로 내려가 직전 값이 71이었다.
             // 2026-09-22 자격 재설계: 자격이 Band3(72↑) → **Band2(48↑)**라 경계가 47/48이다.
             // H5는 5일차에만 나오던 카드였다(회차당 0.73회). 한 칸 내려 4일차부터 열린다.
-            _axes.Apply(FearAxis.Layout, 47, "setup", SpaceId.None);
+            // 2026-09-30: 경계가 50으로 옮겨 49/50이다.
+            _axes.Apply(FearAxis.Layout, 49, "setup", SpaceId.None);
             RuleBook book = Book("H5");
             book.Dispatch(T(SignalKind.ClueIdentified, "corridor.debris"));
             Assert.AreEqual(CardState.Waiting, book.Watchers[0].State);
 
-            _axes.Apply(FearAxis.Layout, 1, "setup", SpaceId.None);   // 47 + 1 = 48 → Band2
+            _axes.Apply(FearAxis.Layout, 1, "setup", SpaceId.None);   // 49 + 1 = 50 → Band2
             book.Dispatch(T(SignalKind.ClueIdentified, "corridor.debris"));
             book.Dispatch(JudgeSignal.Proximity("corridor.debris", 1.49f));
 
-            Assert.AreEqual(60, _axes.GetValue(FearAxis.Layout));   // 48 + 12
+            Assert.AreEqual(62, _axes.GetValue(FearAxis.Layout));   // 50 + 12
         }
 
         // H6 — 잔디 밖 통과: 신뢰 +8. 배치 90에서 진입: 100으로 제한하고 포획 종료 요청 1회.

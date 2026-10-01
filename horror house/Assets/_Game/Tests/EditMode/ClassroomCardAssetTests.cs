@@ -140,11 +140,12 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C1_청각72에서_단서는_새발동없음()
+        public void C1_청각75에서_단서는_새발동없음()
         {
             // 2026-09-22 자격 재설계: C1 상한이 Band1(47) → Band2(71)로 올라가 50은 이제 자격 안이다.
             // 「첫 수칙이 후반에 사라진다」는 그대로지만, 사라지는 지점이 4일차에서 5일차로 밀렸다.
-            Setup(FearAxis.Auditory, 72);
+            // 2026-09-30: 구간 경계 25/50/75 — Band2 상한은 74, 75부터 Band3.
+            Setup(FearAxis.Auditory, 75);
             RuleBook book = Book("C1");
             book.Dispatch(T(SignalKind.ClueDelivered, Chalk));
             Assert.AreEqual(CardState.Waiting, book.Watchers[0].State);
@@ -152,7 +153,7 @@ namespace NightDuty.Tests
             book.EndNight();
 
             Assert.AreEqual(CardState.Undetermined, book.Watchers[0].State);
-            Assert.AreEqual(72, _axes.GetValue(FearAxis.Auditory));
+            Assert.AreEqual(75, _axes.GetValue(FearAxis.Auditory));
             Assert.AreEqual(0, _axes.GetValue(FearAxis.Trust));
         }
 

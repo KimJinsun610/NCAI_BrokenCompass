@@ -3,26 +3,31 @@ using System.Collections.Generic;
 namespace NightDuty
 {
     /// <summary>
-    /// 태블릿으로 보낼 역설 문자를 고른다(2026-09-19 기획서 10-5·12절).
+    /// 태블릿으로 보낼 역설 문자를 고른다(2026-09-19 기획서 10-5·12절 — <b>옛 역설 구조</b>).
     /// <list type="bullet">
     /// <item>역설은 <b>짝 수칙 카드에 1:1로 붙어 있다</b>(<see cref="RuleSO.ParadoxText"/>). 그날 배정된 카드가 곧 그날의 후보다.</item>
     /// <item>짝 카드의 판정이 <b>진행 중</b>일 때만 보낸다 — 기획서의 발송 시점(단서 직후)이 곧 카드가 시작되는 시점이다.</item>
-    /// <item>신뢰 24 미만이면 한 건도 보내지 않는다. 구간이 오를수록 하루 상한이 1 → 4쌍으로 늘어난다.</item>
+    /// <item>신뢰 15 미만(신뢰 구간 0)이면 한 건도 보내지 않는다. 신뢰 구간이 오를수록 하루 상한이 1 → 4쌍으로 늘어난다.</item>
     /// <item>한 카드에 하루 한 번. 문자 쪽에는 벌점이 없다 — 따르면 짝 카드가 위반으로, 거절하면 준수로 정산된다.</item>
     /// </list>
     /// <para>
     /// 하루 상한은 <b>근무 시작 시점의 신뢰</b>로 정해지고 그날은 고정된다(2026-09-20 기획서 C절·10-5절).
     /// 밤 도중에 준수 정산으로 신뢰가 올라도 그날 상한은 늘어나지 않는다.
     /// </para>
+    /// <para>
+    /// <b>2026-09-30 최종 기획서의 모호 역설(75/25)·회피 불가·변조는 10단계에서 이 클래스를 갈아엎는다.</b>
+    /// 지금은 신뢰 구간만 신뢰 전용 경계(<see cref="Bands.OfTrust"/>)로 옮겼다.
+    /// </para>
     /// </summary>
     public sealed class ParadoxDirector
     {
         /// <summary>
-        /// 역설이 실리기 시작하는 신뢰 값. <b>Band1의 하한과 같은 값이어야 한다</b>(2026-09-21 재설계로 25 → 24).
-        /// <see cref="DailyQuota"/>가 <see cref="Bands.Of"/>로 구간을 읽으므로, 이 값이 경계와 어긋나면
-        /// 신뢰 24~에서 「구간은 1인데 상한은 0」이 되어 한 칸이 비어 버린다.
+        /// 역설이 실리기 시작하는 신뢰 값. <b>신뢰 구간 1의 하한과 같은 값이어야 한다</b>
+        /// (2026-09-30 최종 기획서: 신뢰 전용 경계 15/30/45/65로 25 → 15).
+        /// <see cref="DailyQuota"/>가 <see cref="Bands.OfTrust"/>로 구간을 읽으므로, 이 값이 경계와 어긋나면
+        /// 그 사이 신뢰에서 「구간은 1인데 상한은 0」이 되어 한 칸이 비어 버린다.
         /// </summary>
-        public const int MinTrust = 24;
+        public const int MinTrust = 15;
 
         private readonly HashSet<string> _sentToday = new HashSet<string>();
         private readonly List<ParadoxMessage> _today = new List<ParadoxMessage>();
@@ -68,16 +73,16 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 신뢰 구간이 허용하는 하루 최대 쌍 수. 24 미만(<see cref="MinTrust"/>) 0, 이후 1 → 4.
+        /// 신뢰 구간이 허용하는 하루 최대 쌍 수. 15 미만(<see cref="MinTrust"/>) 0, 이후 1 → 4.
         /// <para>
-        /// 기획서 C절의 경계(재설계 후 0~23 / 24~47 / 48~71 / 72~89 / 90~99)는 <see cref="Bands"/>의 구간과 같은 눈금이라
-        /// 구간 번호가 곧 상한이다. CLAUDE.md §2.3의 「균등 분할 계산 금지」를 지키려고 구간표를 그대로 쓴다.
+        /// 신뢰 전용 경계(0–14 / 15–29 / 30–44 / 45–64 / 65–100)의 구간 번호가 곧 상한이다.
+        /// CLAUDE.md §2.3의 「균등 분할 계산 금지」를 지키려고 구간표를 그대로 쓴다.
         /// </para>
         /// </summary>
         public static int DailyQuota(int trust)
         {
             if (trust < MinTrust) return 0;
-            return (int)Bands.Of(trust);
+            return (int)Bands.OfTrust(trust);
         }
 
         /// <summary>

@@ -280,19 +280,6 @@ namespace NightDuty.Tests
     /// </summary>
     public sealed class DeckFeasibilityInvariantTests
     {
-        /// <summary>축당 Band0에서 열려 있어야 하는 카드 수(CLAUDE.md §2.3′). 수를 세어서 확인하지, ID를 박아 두지 않는다.</summary>
-        /// <summary>
-        /// Band0에서 축을 올리는 카드가 있어야 할 최소 장수. <b>하루 쿼터</b>와 같다 —
-        /// 그날 그 축에 배정할 장수만큼은 열려 있어야 덱이 조용히 줄지 않는다.
-        /// <para>
-        /// 2026-09-21에는 이 수가 <b>정확히 3장</b>이어야 한다는 불변식이었다. 데드락을 막으려고 둔 것인데,
-        /// 실은 장수가 아니라 <b>위반 델타의 합</b>이 다음 게이트를 넘느냐가 조건이다. 그리고 「정확히 3장」은
-        /// 1·2일차 덱을 사실상 고정시켰다 — 2026-09-22 실측으로 2일차 6장 중 평균 4장이 1일차와 같았다.
-        /// 그래서 장수 상한을 풀고, 아래 두 가지를 대신 잠근다.
-        /// </para>
-        /// </summary>
-        private const int Band0OpenMinPerAxis = 2;
-
         private RuleSO _defaults;
 
         [SetUp]
@@ -343,6 +330,14 @@ namespace NightDuty.Tests
             return axes;
         }
 
+        /// <summary>준수만 한 플레이어의 그날 연출 구간(생존 수치 0, 일차 하한만 걸림).</summary>
+        private static IFearAxisReader ShownAtDay(int day)
+        {
+            BandResolver bands = new BandResolver(new FearAxisSystem());
+            bands.SetDayFloor(DayFloor.Of(day));
+            return bands.Shown;
+        }
+
         /// <summary>그 구간에서 열려 있으면서 축을 실제로 올리는 카드 ID 목록. 위반 델타 0(S1)은 축을 못 올리므로 뺀다.</summary>
         private static List<string> OpenRaisingCards(Dictionary<string, RuleSO> cards, FearAxis axis, FearAxisSystem axes)
         {
@@ -387,57 +382,6 @@ namespace NightDuty.Tests
         }
 
         /// <summary>
-        /// 회차 첫날 축 하나가 영영 0에 묶이는 데드락을 막는다.
-        /// <para>
-        /// <b>진짜 조건은 장수가 아니라 델타의 합</b>이다. 하루에 그 축으로 배정되는 장수(쿼터)만큼 뽑았을 때
-        /// 가장 불리한 조합 — 즉 <b>위반 델타가 가장 작은 쿼터 장</b> — 의 합이 다음 구간 하한(24)에 닿아야,
-        /// 「하루를 통째로 어겨도 구간이 안 올라가는 밤」이 없다.
-        /// </para>
-        /// </summary>
-        [Test]
-        public void Band0에서_하루_쿼터만큼_어기면_다음_구간에_닿는다()
-        {
-            Dictionary<string, RuleSO> cards = RequireAllCards();
-            FearAxisSystem axes = AxesAt(Band.Band0);
-            int gate = Bands.LowerBound(Band.Band1);
-
-            for (int a = 0; a < DesignDriftKit.SensoryAxes.Length; a++)
-            {
-                FearAxis axis = DesignDriftKit.SensoryAxes[a];
-                List<string> open = OpenRaisingCards(cards, axis, axes);
-                open.Sort(StringComparer.Ordinal);
-
-                int quota = QuotaOf(axis);
-                Assert.GreaterOrEqual(
-                    open.Count,
-                    Band0OpenMinPerAxis,
-                    axis + ": Band0에서 열리며 축을 올리는 카드가 " + open.Count + "장뿐입니다. 실제 목록 "
-                        + DesignDriftKit.JoinArray(open.ToArray()));
-
-                // 가장 불리한 조합 = 델타가 작은 쪽부터 쿼터 장.
-                List<int> deltas = new List<int>();
-                for (int i = 0; i < open.Count; i++)
-                {
-                    deltas.Add(cards[open[i]].FailureDelta);
-                }
-                deltas.Sort();
-
-                int worst = 0;
-                for (int i = 0; i < quota && i < deltas.Count; i++)
-                {
-                    worst += deltas[i];
-                }
-
-                Assert.GreaterOrEqual(
-                    worst,
-                    gate,
-                    axis + ": Band0에서 하루 쿼터 " + quota + "장을 전부 어겨도 " + worst + "밖에 안 올라 구간 하한 "
-                        + gate + "에 못 닿습니다. 그 축은 영영 Band0에 묶입니다. 열린 카드 "
-                        + DesignDriftKit.JoinArray(open.ToArray()));
-            }
-        }
-
-        /// <summary>
         /// 조우 장면에 묶인 카드가 <b>그 장면이 깔릴 수 있는 어느 날에도</b> 덱에 들어갈 수 있게 한다.
         /// <para>
         /// S5·T3는 트리거 ID가 곧 조우 장면 ID(<c>scene.sb</c>·<c>scene.ta</c>)다. 2026-09-22 이전에는
@@ -460,8 +404,7 @@ namespace NightDuty.Tests
 
                 for (int day = 1; day <= DayFloor.LastDay; day++)
                 {
-                    FearAxisSystem axes = new FearAxisSystem();
-                    DayFloor.Apply(axes, day);
+                    IFearAxisReader axes = ShownAtDay(day);
                     Assert.IsTrue(
                         card.IsEligible(axes),
                         ids[i] + "(" + card.EligibleAxis + " " + card.EligibleFrom + "~" + card.EligibleTo + ")가 "
@@ -474,8 +417,8 @@ namespace NightDuty.Tests
         /// <summary>
         /// 어느 카드도 <b>죽은 카드</b>가 되지 않게 한다.
         /// <para>
-        /// 준수만 하는 플레이어의 축은 일차 하한에 정확히 머문다. 그래서 자격 창이 그 다섯 값
-        /// (0 · 12 · 24 · 48 · 72) 중 어느 하나도 품지 못하면, 그 카드는 <b>잘하는 플레이어에게 영영 안 나온다</b>.
+        /// 준수만 하는 플레이어의 연출 구간은 일차 하한에 정확히 머문다. 그래서 자격 창이 그 구간들
+        /// (Band0 · Band1 · Band2 · Band3) 중 어느 하나도 품지 못하면, 그 카드는 <b>잘하는 플레이어에게 영영 안 나온다</b>.
         /// 2026-09-22 실측에서 H6이 정확히 그랬다 — 배치 Band4(90↑) 전용이라 회차당 0.00회였다.
         /// </para>
         /// </summary>
@@ -501,8 +444,7 @@ namespace NightDuty.Tests
                 bool reachable = false;
                 for (int day = 1; day <= DayFloor.LastDay; day++)
                 {
-                    FearAxisSystem axes = new FearAxisSystem();
-                    DayFloor.Apply(axes, day);
+                    IFearAxisReader axes = ShownAtDay(day);
                     if (card.IsEligible(axes))
                     {
                         reachable = true;
@@ -519,7 +461,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(
                 0,
                 dead.Count,
-                "일차 하한(0·12·24·48·72) 어디에서도 열리지 않는 카드가 있습니다 — 준수만 하는 플레이어는 영영 못 만납니다: "
+                "일차 하한(Band0·Band1·Band2·Band3) 어디에서도 열리지 않는 카드가 있습니다 — 준수만 하는 플레이어는 영영 못 만납니다: "
                     + DesignDriftKit.JoinArray(dead.ToArray()));
         }
 
@@ -558,84 +500,40 @@ namespace NightDuty.Tests
             }
         }
 
-        /// <summary>구간 경계를 옮겨 「같은 축을 두 번 어기면 다음 구간」이라는 재설계의 전제가 깨지는 것을 막는다.</summary>
+        /// <summary>일차 하한 곡선이 뒤집히거나 Band4까지 공짜로 올라가는 것을 막는다(2026-09-30: 연출 구간 하한).</summary>
         [Test]
-        public void 구간경계가_기본_위반델타의_배수라_두번_어기면_구간이_오른다()
+        public void 일차하한은_줄지않고_Band4에_닿지_않는다()
         {
-            int delta = _defaults.FailureDelta;
-            Assert.AreEqual(12, delta, "RuleSO의 기본 위반 델타가 바뀌었습니다. 구간 경계(24의 배수)도 함께 옮겨야 합니다.");
-
-            // 핵심 주장: Band0에서 두 번 어기면 반드시 Band1 이상.
-            Band afterTwo = Bands.Of(Bands.LowerBound(Band.Band0) + (delta * 2));
-            Assert.GreaterOrEqual(
-                (int)afterTwo,
-                (int)Band.Band1,
-                "Band0에서 " + delta + "를 두 번 맞으면 " + (delta * 2) + " — 구간이 " + afterTwo + "에 머뭅니다. Band1 하한은 "
-                    + Bands.LowerBound(Band.Band1) + "입니다.");
-
-            // 같은 성질이 마지막 구간 직전까지 이어진다.
-            for (int b = 0; b < Bands.Count - 1; b++)
-            {
-                Band band = (Band)b;
-                Band next = Bands.Of(Bands.LowerBound(band) + (delta * 2));
-                Assert.Greater(
-                    (int)next,
-                    b,
-                    band + " 하한 " + Bands.LowerBound(band) + "에서 두 번 어기면 " + (Bands.LowerBound(band) + (delta * 2))
-                        + " — 그래도 " + next + "에 머뭅니다.");
-            }
-
-            // Band1~Band3 하한은 위반 두 번(24)의 배수다. Band4의 90은 일부러 배수가 아니다 —
-            // 종료 직전 경고 구간을 좁히려고 Band3을 18칸으로 줄인 결과다(CLAUDE.md §2.3).
-            for (int b = 1; b <= 3; b++)
-            {
-                int lower = Bands.LowerBound((Band)b);
-                Assert.AreEqual(
-                    0,
-                    lower % (delta * 2),
-                    "Band" + b + " 하한 " + lower + "이 " + (delta * 2) + "의 배수가 아닙니다.");
-            }
-        }
-
-        /// <summary>일차 하한 곡선이 뒤집히거나 Band4까지 공짜로 올라가는 것을 막는다.</summary>
-        [Test]
-        public void 일차하한은_단조증가하고_Band4에_닿지_않는다()
-        {
-            for (int day = 1; day <= DayFloor.LastDay; day++)
+            Assert.AreEqual(Band.Band0, DayFloor.Of(1), "1일차는 하한 없이 시작한다");
+            for (int day = 2; day <= DayFloor.LastDay; day++)
             {
                 Assert.GreaterOrEqual(
-                    DayFloor.Of(day),
-                    DayFloor.Of(day - 1),
+                    (int)DayFloor.Of(day),
+                    (int)DayFloor.Of(day - 1),
                     day + "일차 하한 " + DayFloor.Of(day) + "이 " + (day - 1) + "일차 " + DayFloor.Of(day - 1) + "보다 낮습니다.");
             }
 
-            // 2일차부터는 전날보다 반드시 높다(1일차는 0으로 시작한다).
-            for (int day = 2; day <= DayFloor.LastDay; day++)
-            {
-                Assert.Greater(
-                    DayFloor.Of(day),
-                    DayFloor.Of(day - 1),
-                    day + "일차 하한이 전날과 같습니다(" + DayFloor.Of(day) + "). 날이 갈수록 나빠지지 않습니다.");
-            }
-
-            int last = DayFloor.Of(DayFloor.LastDay);
-            int band4 = Bands.LowerBound(Band.Band4);
+            Band last = DayFloor.Of(DayFloor.LastDay);
+            Assert.Greater((int)last, (int)DayFloor.Of(1), "마지막 날 하한이 첫날과 같습니다. 날이 갈수록 나빠지지 않습니다.");
             Assert.Less(
-                last,
-                band4,
-                "마지막 일차 하한 " + last + "이 Band4 하한 " + band4 + " 이상입니다. Band4는 「당신이 어겨서 여기까지 왔다」는 구간이라 "
+                (int)last,
+                (int)Band.Band4,
+                "마지막 일차 하한 " + last + "이 Band4입니다. Band4는 「당신이 어겨서 여기까지 왔다」는 구간이라 "
                     + "하한으로 공짜로 주면 경고로서의 뜻이 사라집니다.");
         }
 
-        /// <summary>신뢰 게이트와 구간 경계가 따로 놀아 신뢰 한 칸이 비는 것을 막는다.</summary>
+        /// <summary>
+        /// 신뢰 게이트와 신뢰 구간 경계가 따로 놀아 신뢰 한 칸이 비는 것을 막는다.
+        /// 2026-09-30 최종 기획서부터 신뢰는 전용 경계(15/30/45/65)를 쓴다 — 감각 축의 25와 비교하지 않는다.
+        /// </summary>
         [Test]
-        public void 역설_최소신뢰가_Band1_하한과_같다()
+        public void 역설_최소신뢰가_신뢰구간1_하한과_같다()
         {
             Assert.AreEqual(
-                Bands.LowerBound(Band.Band1),
+                Bands.TrustLowerBound(Band.Band1),
                 ParadoxDirector.MinTrust,
-                "ParadoxDirector.MinTrust(" + ParadoxDirector.MinTrust + ")와 Band1 하한("
-                    + Bands.LowerBound(Band.Band1) + ")이 다릅니다. 그 사이 신뢰 값은 Band1인데도 역설이 한 쌍도 안 나옵니다.");
+                "ParadoxDirector.MinTrust(" + ParadoxDirector.MinTrust + ")와 신뢰 구간 1 하한("
+                    + Bands.TrustLowerBound(Band.Band1) + ")이 다릅니다. 그 사이 신뢰 값은 구간 1인데도 역설이 한 쌍도 안 나옵니다.");
         }
     }
 
@@ -738,12 +636,15 @@ namespace NightDuty.Tests
 
             string[] banned =
             {
-                "25~49",
-                "50~74",
-                "Band3 = 75~89",
-                "0" + Dash + "24",
-                "25" + Dash + "49",
-                "50" + Dash + "74"
+                "0~23",
+                "24~47",
+                "48~71",
+                "72~89",
+                "0" + Dash + "23",
+                "24" + Dash + "47",
+                "48" + Dash + "71",
+                "72" + Dash + "89",
+                "0/0/12/24/48/72"
             };
 
             string code = CodeBounds();
@@ -800,6 +701,20 @@ namespace NightDuty.Tests
                     "현재 구간 경계가 문서에 적혀 있지 않습니다 " + missing.Count + "건:\n- " + string.Join("\n- ", missing)
                     + "\n경계 숫자는 Bands.cs의 LowerBounds 배열이 정본입니다. 문서를 그 값으로 고치십시오.");
             }
+        }
+
+        /// <summary>신뢰 전용 경계를 코드에서 바꾸고 문서를 안 고치는 것을 막는다(2026-10-01).</summary>
+        [Test]
+        public void 신뢰_전용경계가_본문에_적혀있다()
+        {
+            RequireFile();
+
+            string want = Bands.TrustLowerBound(Band.Band1) + "/" + Bands.TrustLowerBound(Band.Band2) + "/"
+                + Bands.TrustLowerBound(Band.Band3) + "/" + Bands.TrustLowerBound(Band.Band4);
+            Assert.Greater(
+                FindInBody(want),
+                0,
+                "CLAUDE.md 본문에 신뢰 전용 경계 「" + want + "」가 없습니다(Bands.cs의 TrustLowerBounds). 문서를 그 값으로 고치십시오.");
         }
 
         /// <summary>일차 하한 곡선을 코드에서 바꾸고 문서를 안 고치는 것을 막는다.</summary>

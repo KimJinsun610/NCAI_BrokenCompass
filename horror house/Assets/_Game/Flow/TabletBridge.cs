@@ -1,4 +1,4 @@
-using NightDuty;
+﻿using NightDuty;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,6 +12,7 @@ using UnityEngine.SceneManagement;
 /// 켜면 <see cref="GameTime.Hold"/>로 시계도 함께 멈춘다.</item>
 /// <item><b>역설 문자</b> — <see cref="EventBus.MessageSent"/>를 받아 태블릿 메시지함에 넣는다.
 /// 넣는 순간 <see cref="TabletAlarm"/>이 울린다(TabletMessageList.MessageReceived 경유).</item>
+/// <item><b>안전한 읽기</b>(10단계) — <see cref="EventBus.SafeReadConfirmed"/>를 받으면 태블릿이 짧게 떨고(약한 글리치) 「틱」 한 번, 태블릿 글을 다시 읽는다(점검표에 「확인 필요」/「이상 없음」).</item>
 /// <item><b>화면 글리치</b> — 역설 문자가 도착할 때만 잠깐 올린다.
 /// <b>신뢰 수치에 연결하지 않는다</b> — 2026-09-17에 폐기된 안이다.</item>
 /// </list>
@@ -37,6 +38,15 @@ public sealed class TabletBridge : MonoBehaviour
 
     /// <summary>글리치가 다시 내려가기까지의 시간(초).</summary>
     private const float GlitchHoldSeconds = 1.4f;
+
+    /// <summary>안전한 읽기 진동 — 글리치 세기.</summary>
+    private const float ConfirmGlitch = 0.22f;
+
+    /// <summary>안전한 읽기 진동 — 길이(초).</summary>
+    private const float ConfirmHoldSeconds = 0.35f;
+
+    private static AudioClip s_tick;
+    private AudioSource _tickSource;
 
     [Tooltip("비워 두면 씬에서 자동으로 찾는다.")]
     [SerializeField] private PlayerTablet tablet;
@@ -110,11 +120,13 @@ public sealed class TabletBridge : MonoBehaviour
     private void OnEnable()
     {
         EventBus.MessageSent += OnMessageSent;
+        EventBus.SafeReadConfirmed += OnSafeReadConfirmed;
     }
 
     private void OnDisable()
     {
         EventBus.MessageSent -= OnMessageSent;
+        EventBus.SafeReadConfirmed -= OnSafeReadConfirmed;
 
         // 씬을 떠날 때 Tab 상태가 열린 채로 남으면 다음 씬의 센서가 영원히 침묵한다.
         PlayerSensors.SetTabOpen(false);
@@ -201,6 +213,53 @@ public sealed class TabletBridge : MonoBehaviour
             _glitchUntil = Time.unscaledTime + GlitchHoldSeconds;
             _glitchOn = true;
         }
+    }
+
+    /// <summary>
+    /// 안전한 읽기 — 태블릿이 짧게 떨고 「틱」 한 번. 무엇이 드러났는지는 점검표에만 쓴다(소리·진동은 같다 — 이상 여부를 소리로 알려 주지 않는다).
+    /// </summary>
+    private void OnSafeReadConfirmed(SafeReadReveal reveal)
+    {
+        if (!Bind()) return;
+
+        foreach (TabletDocument doc in FindObjectsByType<TabletDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None)) doc.Reload();
+
+        if (glitch != null && !_glitchOn)
+        {
+            glitch.SetIntensity(ConfirmGlitch);
+            _glitchUntil = Time.unscaledTime + ConfirmHoldSeconds;
+            _glitchOn = true;
+        }
+
+        PlayTick();
+    }
+
+    /// <summary>짧은 「틱」. 소리 자산이 없어도 되도록 코드로 만든 클릭(2.4kHz, 40ms 감쇠)을 쓴다.</summary>
+    private void PlayTick()
+    {
+        if (s_tick == null)
+        {
+            const int rate = 44100;
+            int n = rate * 40 / 1000;
+            float[] data = new float[n];
+            for (int i = 0; i < n; i++)
+            {
+                float time = (float)i / rate;
+                data[i] = Mathf.Sin(2f * Mathf.PI * 2400f * time) * Mathf.Exp(-time * 120f) * 0.6f;
+            }
+
+            s_tick = AudioClip.Create("tablet.tick", n, 1, rate, false);
+            s_tick.SetData(data, 0);
+        }
+
+        if (_tickSource == null)
+        {
+            _tickSource = gameObject.AddComponent<AudioSource>();
+            _tickSource.playOnAwake = false;
+            _tickSource.spatialBlend = 0f;
+        }
+
+        _tickSource.PlayOneShot(s_tick);
     }
 
     private void StepGlitch()

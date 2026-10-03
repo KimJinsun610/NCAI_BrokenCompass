@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace NightDuty
 {
@@ -62,6 +62,8 @@ namespace NightDuty
         private static void ResetExtensions(bool clearSwitches)
         {
             ResetTabletState();
+            ResetFinale(clearSwitches);
+            ResetParadox(clearSwitches);
             _programDirector = new ProgramDirector();
             _program = NightProgram.Empty(0);
             DisposeFinalRules();

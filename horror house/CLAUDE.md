@@ -3,6 +3,23 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
+> **개정: 2026-10-04(31차). 10단계 역설·변조(민 요청: 「일단 10단계부터」). 씬은 고치지 않았다. EditMode 295/295(역설 19개 추가), PlayScene에서 1일차(신뢰 0 → 역설 없음) · F3 콘솔로 H2 문자 → 태블릿 「새 메시지 도착」 · 안전한 읽기 → 복도 점검 줄에 「· 확인 필요」 · 신뢰 70으로 2일차 다시 열기 → 「1. 열린 문은 열린 문이다.」(붕괴형 변조) · 3번 줄 검은 막대 실측, 에러 0, 플레이 뒤 `ProgramEnabled` false.**
+> ⓐ **편성(밤 시작에 확정, 재시작해도 같다)**: `Scripts/Paradox/` — `ParadoxCatalog`(기획서 「역설·변조 문구표」 그대로 — 문자·안전한 읽기 패턴·단서·대상·CCTV 공간·변조본. K2는 채널 번호를 편성 때 몰라 아직 겨누지 않음) · `ParadoxPlanner`(회차 하나, `NightRun.Paradoxes`) · `ParadoxPlan`. 밤 시작 신뢰 **연출 구간**으로: 0 없음 / 1–2 모호 역설 1 / 3 + 변조 1장(미세 — 끝 「.」 앞에 「?」) / 4 + 변조(붕괴형 변조본) + 다른 수칙 한 줄 검은 막대. 2일차에 회차 첫 역설이 아직 없으면 C2(눈으로만). 회차 첫 역설은 「눈으로만」만·반드시 보냄, 그 밖에는 대상 공간에 이상이 있으면 75% / 없으면 25%로 **밤 시작에 굴린다**. 구간 3+는 「CCTV로」를 보내지 않음. T4·K4·K2 제외, 변조는 **이전 밤에 원본을 본 수칙**만, 역설·변조·검은 줄은 서로 다른 수칙. `NightRun.ParadoxSeed`로 재현.
+> ⓑ **진행**: `ParadoxRun`(순수 상태기계, `NightRun.Paradox`) — 발송 = 수칙에 단서가 있으면 그 단서 시작, 없으면 수칙 공간에 들어갈 때(판정 구간·아직 안 어김). 보내면 `EventBus.MessageSent`(→ `TabletBridge`) · 판정기 방아쇠 표시(`FinalRuleBook.MarkTriggered`) · 밤 종료 준수 보상 +3(`SetKeepReward(TrustParadoxKept)`). 안전한 읽기 = 눈으로만(대상 응시 1초, 대상 없으면 그 공간 1초) · 멈춰서(단서 끝 `SequenceEnded` 또는 위협 대응 성공) · CCTV로(그 공간 채널 `cctv.ch0~4` 2초). 마치면 그 **공간** 점검 줄에 「· 확인 필요」/「· 이상 없음」, `EventBus.SafeReadConfirmed` → 태블릿 약한 글리치 0.35초 + 코드로 만든 「틱」 + `TabletDocument.Reload`(소리·진동은 이상 여부와 무관). 따라서 어기면 보통 위반 델타 그대로, 근무일지 `Instructed`(「지시를 따름」). `DutyLogEntry.Note`에 「확인함 → …」(결과창 표시는 김진선님 몫). 변조된 수칙을 원본대로 지키면 +3(`TrustVariantKept`). **판정은 언제나 원본** — 바뀌는 것은 태블릿 표시 카드 글뿐(`ParadoxPlan.DisplayTextOf`).
+> ⓒ **재시작**: 역설 상태는 스냅샷에 넣지 않는다 — 받은 문자는 태블릿에 남고 드러난 것은 플레이어가 안다. 판정 책 스냅샷이 방아쇠를 되돌리면 `ParadoxAfterRestore`가 다시 표시. 보상 바꿈(`_keepRewards`)도 스냅샷 밖.
+> ⓓ **F3 콘솔 「개요」**: 역설·변조 줄(편성 보고·진행) + [문자 보내기: 덱의 문자 있는 수칙] [안전한 읽기 완료] — `NightRun.DebugSendParadox(id)`·`DebugSafeRead()`.
+> ⓔ **남은 것**: 회피 불가 역설(진짜 S5×H3·S2×과학실 점검·L2×도서관 점검·T1×화장실 점검·T2×T-1 / 가짜 K1×K-1·K2×K-1·C2×C-3·H4×T1, 「금일 재입실은 불가합니다」·재입실 금지·근무일지 「불가피」) · K2 역설(그날 빈 방 채널) · 위반 얼룩 · 검은 막대는 지금 글꼴의 █(어두운 화면에서 밝은 막대로 보인다).
+> **되살리지 마십시오:** 「변조본으로 판정」(판정은 원본) · 「역설 발송 확률을 발송 순간에 굴림」(밤 시작에 굴린다 — 재시작해도 같아야 한다) · 「역설 진행을 밤 스냅샷에 넣음」(받은 문자가 태블릿에 남는데 다시 보내게 된다) · 「안전한 읽기 피드백 소리를 이상 여부마다 다르게」(점검표에만 쓴다) · 「처음 보는 수칙을 변조」(이전 밤에 본 것만).
+
+> **개정: 2026-10-04(30차). 11단계 피날레 흐름(K4·G3·창 두드림·결말 2종). 씬 작업(민 승인): `SpaceZones` 경비실 상자를 실제 벽에 맞춤(x 30.25~37.75, z 44.25~48.0 — 전에는 벽 안쪽 0.25~0.5m가 복도로 잡혀 문 앞에 서기만 해도 경비실을 나간 것이 됐다). EditMode 276/276(피날레 12개 추가), PlayScene에서 5일차 → 피날레 → 강제 복귀(복도 → 경비실) · K4 공지 · 창밖 남자 나타남 → 두드림 · 문(응시 0.5초 열림 / 1.6m 안 닫힘) · K4 위반(복도로) → 배치 붙잡힘 장면 → 시도 2 · 들어왔다(문자 지움·G3 「당신」) · CRT 웃는 얼굴 · 보지 않음 → 근무 종료 → 결과창 / 봤다 → 꺼진 CRT에 내 자리 뒤 무언가(플레이어 화면에는 없음) → 근무 교대 → 결과창 실측, 에러 0.**
+> ⓐ **코어**: `FinaleWatch`(Scripts/Direction) — K4 = 피날레 중 경비실 `SpaceExited`(또는 다른 공간 `SpaceEntered`) → `Violation`(축 없음, 시도마다 한 번) · 봤다 = `rule.K4.window` 비춤 또는 응시 2초(L5와 같은 `SampleStreak`, 틈 0.2초) · CCTV 채널 ID 모음(`CctvChannel`·`CctvViewSample`). `NightRun.Ending.cs`: `BeginFinale()`(5일차·밤 열림·붙잡히지 않음·한 번) · `RestartFinale()` · `EndFinale()`(K4를 지킴으로 기록 → `RequestEndNight`) · `LastFinaleEnding`(ShiftOver/ShiftChange) · `FillFinaleBlank()`. `Send`가 `TrackSpace` 뒤에 `FinaleObserve`. 5일차 표시 카드에 판정 없는 G3을 공통 수칙 뒤에 넣는다(편성 덱·근무일지에는 없음). `ProgramCatalog.FinaleBlankRule`·`FinaleBlankFilled`(「…당신을 따르십시오.」).
+> ⓑ **연출**: `FinaleDirector`(Flow/Finale, 근무 씬 자동 설치). 구동기 `OnShiftEnded`가 5일차면 정산 대신 `Begin()`(진행 중이면 그냥 둠). 순서: 강제 복귀(경비실 밖이면 암전·순간이동·「근무 시간이 종료되었습니다.」) → `BeginFinale` → K4 문자 · 문 무장 → 「들어가게 해줘」 + 창밖 남자 Appear → Knock → CCTV 다섯 채널(최대 150초) → `DirectionStage.ClearAllExceptFinale` → 창밖 남자 Idle(두드림 멎음) · 태블릿 문자 전부 지움(`TabletMessageList.Clear`) · 「들어왔다」 · G3 채움 · `TabletDocument.Reload` → `CctvSystem.SetHum(false)` → 웃는 얼굴(창밖 남자 프리팹/대역을 지금 채널 카메라 앞 0.55m에 0.06초, `ForceRenderFor`) → 결말. 보지 않음: 리스너 정지 1.5초 → 「근무 종료. 수고하셨습니다.」 · 봤다: 창밖 남자 Vanish → 「내 자리 무언가」 Stand(빈 층에 두고 플레이어 카메라에서 그 층을 뺌 — **비친 모습에만** 보인다) + 반사 카메라(화면 중심에서 바깥쪽, 14° 위, 시야 82°) → `SetScreenOverride(RT, 밝기 0.4, 노이즈 0.15배)` → 플레이어가 CRT를 볼 때까지(최대 10초) + 2.5초 → 「근무 교대. 수고하셨습니다.」 → `EndFinale`. K4 위반: 진행을 끊고 `CaptureDirector.PlayFinaleCapture(가장 높은 감각축)`(장면만, 카드·재시작 없음, 출근 자리로) → 배역 거둠·험/화면 복구 → `RestartFinale` → 강제 복귀 없이 처음부터.
+> ⓒ′ **봤다 반응**: `FinaleWatch.SeenNow` → 창밖 남자 Seen 한 번 → 하던 비트(Knock/Idle, Appear 중이었으면 Knock)로 복귀.
+> ⓒ **경비실 문**(`DoorNarrow (3)` — 경비실 상자 ±1.5m 안의 문을 찾는다): 무장 때 잠금 풀고 닫음 → 조준선이 0.5초 머물면 열림, 1.6m 안에 들어오면 닫힘 → 해제 때 원래대로(잠금 복구).
+> ⓓ **CCTV 추가 API**(우리 코드): `ScreenCenter`·`ScreenNormal`·`ScreenSize`·`SetHum(bool)`·`SetScreenOverride(Texture, gain)`(덮어쓰는 동안 채널을 그리지 않고 라벨 숨김)·`ForceRenderFor(초)`. `CaptureDirector.PlayFinaleCapture`·`TeleportPlayerToStart`. `NightRunDriver.DebugRestartAsDay(day)`. F3 콘솔 「개요」 탭 피날레 줄: 단계·시도·봤다·채널 표시 + [5일차로 다시 열기] [피날레 시작] [CCTV 건너뛰기] [창을 봤다(비춤)].
+> ⓔ **남은 것**: 결과창에 결말 종류 표시(`NightRun.LastFinaleEnding` — 김진선님 결과창) · 소리 `finale.letmein`·`finale.smile`(이름만 정해 둠, 음원 대기) · 반사는 좌우 반전하지 않음 · 웃는 얼굴 전용 그림(지금은 창밖 남자 모습).
+> **되살리지 마십시오:** 「5일차 04:00에 바로 정산」(피날레가 정산한다) · 「K4 위반 = 축 상승·밤 재시작」(축 없음, 피날레만 처음부터) · 「경비실 상자 z 44.5부터」(벽 안쪽이 복도로 잡힘) · 「내 자리 무언가를 플레이어에게도 보이게」(비친 모습에만) · 「G3을 편성 덱에 넣기」(표시 카드만 — 덱 순서 불변식·근무일지가 깨진다).
+
 > **개정: 2026-10-03(29차). 축별 붙잡힘 장면도 프리팹으로 끼우게(민 요청: 「엔딩」은 축별 붙잡힘 장면까지 포함 — 피날레 몹처럼). 씬은 고치지 않았다. EditMode 264/264, PlayScene에서 임시 장면 프리팹(장면 Animator + 몹 Animator 2개, CameraMount 이동·시야각 60→30, 이벤트 CaptureSound·CaptureCue·CaptureDone)을 배치 칸에 넣어 미리 보기(카메라가 마운트를 따름·장면 층만 그림·CaptureDone 12.00초) → 실제 붙잡힘(CaptureDone 2.00초 → YOU DIED 카드 → 재시작 k=1) → 빈 청각 칸 기본 얼굴(0.30초, k=2), 리스너 정지 중 장면 소리 재생까지 실측 → 임시 자산 삭제, 에러 0.**
 > ⓐ **끼우는 곳 = 축마다 한 칸**: `Resources/CaptureCast.asset`(`CaptureCastSO`, Flow/Capture) — 청각·조도·배치의 **Prefab 칸**. 비우면 27차 기본 장면(어둠 속 대역 얼굴). 칸마다 정적 시간 · 돌아보기 · 손전등 끔 · 어둠 속 장면만(darkWorld) · 장면 시작 소리(`capture.auditory`/`illuminance`/`layout` — 음원이 오면 이 이름으로) · 최대 길이 · 반복 배속 · 기본 장면용 얼굴 ID·시간·끌려감 거리. 앞뒤 틀(소리 끊김·암전·카드·재시작·출근 자리)은 그대로.
 > ⓑ **장면 프리팹 규약**: 원점 = 플레이어 발밑(`DirectionStage.FloorBelow`), +Z = 플레이어 시선(돌아보기면 돌아본 뒤). 정적 동안 꺼진 채 세웠다가 암전이 걷히는 순간 켠다 → Animator들이 기본 상태부터 돈다(트리거 불필요). 자식 `CameraMount`가 있으면 그동안 메인 카메라가 `LateUpdate`에서 그 위치·회전을 따르고, 거기 붙은(꺼 둔) Camera의 시야각도 따른다. 끝 = `CaptureDone` 이벤트(있으면 그것만 기다림) → 없으면 모든 Animator가 반복 아닌 상태를 끝냄 → 최대 길이. 이벤트 `CaptureSound(이름)`·`CaptureFlashlight(0/1)`·`CaptureCue(문자열)`(`CaptureDirector.SceneCued`). 받이 `CaptureAnimEvents`는 런타임에 붙인다. 콜라이더 끔·Rigidbody 키네마틱·Animator `AlwaysAnimate`, 두 번째부터 Animator 속도 ×반복 배속, 세 번째부터 아무 키로 건너뜀.
@@ -563,7 +580,7 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 ### 3.3 검증
 
 1. 코드 수정 후 `Assets/Refresh` → 25~30초 뒤 `recompile_status` → `console_status`로 **컴파일 에러 0**을 확인합니다.
-2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 264/264 통과**(2026-10-03 27차 실측). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
+2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 295/295 통과**(2026-10-04 31차 실측). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
    - **`DesignDriftTests`가 드리프트 감시입니다.** 일차 하한이 줄지 않고 Band4에 닿지 않는지, 그리고 **이 파일 본문에 옛 구간 경계가 남아 있는지**를 검사합니다. 여기가 깨지면 값이 아니라 **두 곳이 서로 다른 말을 하고 있다**는 뜻입니다. 결과가 크면 파일로 저장되므로 요약만 grep합니다. (옛 24장 카드의 에셋↔빌더·축 쿼터·죽은 카드 검사와 `CardScenarioTests`는 2026-10-03에 카드와 함께 지웠습니다.)
 3. 플레이 모드 확인은 근무 씬 `Assets/0. Main/01 Scene/PlayScene.unity`에서 합니다. **F3 디버그 콘솔**(`NightDutyDebugConsole`)로 축·시계·조우·수칙 단서를 조작합니다. (옛 `_Test_AxisRig` 씬·판정 디버그 패널·`DebugAxisDriver`는 2026-10-03 폐기.)
 4. 플레이 중에는 `set_component_properties`가 안 됩니다 → `eval`. `FindAnyObjectByType`는 DontSave 오브젝트를 찾지 못합니다.
@@ -643,17 +660,18 @@ Assets/_Game/
 │   ├── Rules/         JudgeSignal (신호 어휘만)
 │   ├── FinalRules/    FinalRuleBook · FinalJudges (새 수칙 판정)
 │   ├── Program/       NightProgram · ProgramCatalog (밤 편성 · 수칙/조우 카탈로그)
+│   ├── Paradox/       ParadoxCatalog · ParadoxPlanner(+ParadoxPlan) · ParadoxRun (10단계 역설·변조)
 │   ├── Inspection/    InspectionBoard · InspectionCatalog · InspectionPlan
-│   ├── Direction/     NightRun(.Final/.Program/.Direction/.Tablet) · JudgeTarget · JudgeTargetRegistry · NightClock · ParadoxMessage
+│   ├── Direction/     NightRun(.Final/.Program/.Direction/.Tablet/.Ending/.Paradox) · FinaleWatch · JudgeTarget · JudgeTargetRegistry · NightClock · ParadoxMessage
 │   │   └── Tension/   TensionDirector · EncounterScripts · SurpriseBudget · StagePoints · DirectionEvent
 │   ├── Stats/         FearAxisSystem · BandResolver · DayFloor · DaySummary · DutyLogEntry · NightSnapshot · RestartPolicy · WarningLedger
 │   └── Editor/        NightDuty.Editor.asmdef — InspectionTargetPlacer · RuleAnchorPlacer
-├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 264개(2026-10-03 27차)
+├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 295개(2026-10-04 31차)
 ├── Resources/         NightDeckTable(빈 폴백) · CaptureCardLook(재시작 카드의 YOU DIED) · CaptureCast(붙잡힘 연출표) · FinaleCast(피날레 배역표) · DoorPolicy · CctvConfig · AmbienceConfig · DirectionSounds · DirectionScreenFx · IlluminanceTone · StandIns/
 └── Flow/              asmdef 없음 → Assembly-CSharp. 씬과 코어를 잇는 구동기 (§4.4)
     │                  NightRunDriver · NightDutyResultMapper · SpaceZones(공간·구역 신호) · TabletBridge · FlowAutoInstall · SpaceLights(빈 껍데기)
     ├── Sensors/       PlayerSensors · GazeProbe · FlashlightRelay · DoorRelay · FinalRuleRelay · InspectionSensor (근무 씬에 자동 설치)
-    ├── Finale/        FinaleCastSO(배역표 — 팀원 몹 프리팹 칸) · FinaleMob(비트 재생) · FinaleAnimEvents (11단계 피날레 몹)
+    ├── Finale/        FinaleDirector(5일차 피날레 흐름) · FinaleCastSO(배역표 — 팀원 몹 프리팹 칸) · FinaleMob(비트 재생) · FinaleAnimEvents
     ├── Capture/       CaptureDirector(+.Scene) (붙잡힘 틀·재시작 카드, 근무 씬에 자동 설치) · CaptureCastSO(연출표 — 축별 장면 프리팹 칸) · CaptureAnimEvents · CaptureCardLook (카드의 YOU DIED 모습)
     ├── Direction/ · Presentation/ · Interaction/ · Cctv/ · Ambience/ · Debug/(F3 콘솔)
     └── Editor/        JudgeGizmos · JudgeSceneReport · SpaceZonesEditor · StandInPrefabBuilder · DoorPolicyBuilder · GuardRoomPhoneBuilder · …
@@ -678,7 +696,7 @@ NightRun.RequestEndNight ─▶ 새 수칙 밤 종료 정산 · 점검 정산 �
 
 - 새 파일의 자리는 「고르는 것인가(Direction·Program) / 판단하는 것인가(FinalRules·Inspection) / 숫자를 올리는 것인가(Stats) / 그리는 것인가(Flow)」로 정합니다.
 - 2026-10-03(26차): 옛 판정 책(RuleBook·RuleWatcher·조건 9종·JudgeWorld)·옛 조우/역설 연출기·옛 단서 큐(AnomalyCueDirector·표 2개)·근접 발신기(ProximityProbe)·옛 점검 상자/통행 구역 신호를 지웠습니다. 되살리지 마십시오.
-- 역설 문자 발송기는 아직 없습니다(10단계). 문자 형식은 `ParadoxMessage`, 통로는 `EventBus.MessageSent` → `TabletBridge`.
+- 역설 문자는 `NightRun.Paradox`(31차, 10단계)가 보낸다. 문자 형식은 `ParadoxMessage`, 통로는 `EventBus.MessageSent` → `TabletBridge`. 안전한 읽기는 `EventBus.SafeReadConfirmed`.
 - **`RequestEndNight` 수락 조건은 만들지 않습니다.** 04:00 무조건 종료가 확정됐습니다(§2.5-9).
 
 ### 4.3 핵심 API
@@ -1221,7 +1239,7 @@ public static event Action<SignalKind, string, CueBindingTableSO.Binding> CueFir
 
 ### 12.1 다음 작업 (우선순위)
 
-**최종 기획서 「제작 계획」 12단계가 이 목록보다 앞섭니다.** 15차까지 1~3단계, 16차 4·5단계, 17·18차 6단계(카탈로그·편성기·새 수칙 판정), **19차 7단계 핵심(긴장 디렉터·놀람 예산·대본·연출 실행기·대역·소등·디버그 콘솔 F3)**, **20차 1일차 무조우·조우 묶인 수칙·H2 문 자동 개방·하네스 삭제**, **21차 몹 고정 자리·모델 연결·소리 표**, **22차 김진선님 연출 에셋(사람 나무 프리팹·화면 톤·가짜 놀람 캐비닛·벌레 떼)** 완료. **23차 경비실 전화로 근무 일찍 끝내기·상호작용 외곽선.** **24차 조도축 맵 변화(공간별 톤 Volume·기획서 표 소등·옛 SpaceLights 은퇴)로 7단계 마무리** — 7단계에 남은 것은 음원이 필요한 빠진 소리뿐. **25차 옛 24장 카드 폐기로 6단계 완료.** **26차 새 편성에서 안 쓰는 옛 시스템 폐기(옛 판정 책·조건·옛 조우/역설 연출기·옛 단서 큐·옛 조도 리그·시험 리그·근접 발신기) + 결과창 근무일지·위반 시각·점검 칸을 새 수칙·점검표로.** **27차 8단계 붙잡힘 공용 틀·얼굴 컷·재시작 카드(`CaptureDirector`).** 2026-10-03 진행 점검(기획서 「구현 단계」 기준): 1·3·4·5·6 완료(6의 옛 24장 삭제는 25차) · 2 코어 완료 · 2′ 몸 연출(심박·호흡·에코) 미착수 · 7 완료(24차, 빠진 소리만 음원 대기) · 8 거의 완료(K1·K2 신호 연결·CCTV 화면 셰이더·붙잡힘 공용 틀·얼굴 컷·재시작 카드(27차) — 축별 소리·씬 재로딩 남음) · 9 일부(02:16 중간 서명 코어·근무일지 결과창, 태블릿 5탭·포커스 보고 UI·위반 진동 남음) · 10 일부(역설 편성 코어, 안전한 읽기·변조본·검은 줄 남음) · 11 일부(피날레 몹 배역 슬롯·비트·검사(28차) — K4 흐름·G3·창 두드림 순서·결말 2종·CRT 반사 남음) · 12 밝기만. 7단계 남은 것: 공간별 로컬 Volume(색온도·채도), 소녀 모델·빠진 소리(종·분필·물 내림 등). 그다음 8단계(붙잡힘 3종·재시작 카드·CCTV 판정 셰이더). 옛 조우 8장면·옛 단서 큐는 26차에 폐기. 재시작의 씬 재로딩·시계 되돌리기는 김진선님과 맞춘 뒤 붙입니다.
+**최종 기획서 「제작 계획」 12단계가 이 목록보다 앞섭니다.** 15차까지 1~3단계, 16차 4·5단계, 17·18차 6단계(카탈로그·편성기·새 수칙 판정), **19차 7단계 핵심(긴장 디렉터·놀람 예산·대본·연출 실행기·대역·소등·디버그 콘솔 F3)**, **20차 1일차 무조우·조우 묶인 수칙·H2 문 자동 개방·하네스 삭제**, **21차 몹 고정 자리·모델 연결·소리 표**, **22차 김진선님 연출 에셋(사람 나무 프리팹·화면 톤·가짜 놀람 캐비닛·벌레 떼)** 완료. **23차 경비실 전화로 근무 일찍 끝내기·상호작용 외곽선.** **24차 조도축 맵 변화(공간별 톤 Volume·기획서 표 소등·옛 SpaceLights 은퇴)로 7단계 마무리** — 7단계에 남은 것은 음원이 필요한 빠진 소리뿐. **25차 옛 24장 카드 폐기로 6단계 완료.** **26차 새 편성에서 안 쓰는 옛 시스템 폐기(옛 판정 책·조건·옛 조우/역설 연출기·옛 단서 큐·옛 조도 리그·시험 리그·근접 발신기) + 결과창 근무일지·위반 시각·점검 칸을 새 수칙·점검표로.** **27차 8단계 붙잡힘 공용 틀·얼굴 컷·재시작 카드(`CaptureDirector`).** **31차 10단계 역설·변조.** 2026-10-03 진행 점검(기획서 「구현 단계」 기준): 1·3·4·5·6 완료(6의 옛 24장 삭제는 25차) · 2 코어 완료 · 2′ 몸 연출(심박·호흡·에코) 미착수 · 7 완료(24차, 빠진 소리만 음원 대기) · 8 거의 완료(K1·K2 신호 연결·CCTV 화면 셰이더·붙잡힘 공용 틀·얼굴 컷·재시작 카드(27차) — 축별 소리·씬 재로딩 남음) · 9 일부(02:16 중간 서명 코어·근무일지 결과창, 태블릿 5탭·포커스 보고 UI·위반 진동 남음) · 10 거의 완료(31차: 모호 역설·안전한 읽기 3패턴·변조본·검은 줄 — 회피 불가 역설·K2 역설·위반 얼룩 남음) · 11 거의 완료(28차 몹 슬롯, 30차 흐름: K4·G3·창 두드림·결말 2종·CRT 반사 — 결과창 결말 표시·소리 음원 남음) · 12 밝기만. 7단계 남은 것: 공간별 로컬 Volume(색온도·채도), 소녀 모델·빠진 소리(종·분필·물 내림 등). 그다음 8단계(붙잡힘 3종·재시작 카드·CCTV 판정 셰이더). 옛 조우 8장면·옛 단서 큐는 26차에 폐기. 재시작의 씬 재로딩·시계 되돌리기는 김진선님과 맞춘 뒤 붙입니다.
 
 (옛 7단계 목록 — 참고용) ① 코어 수치 **완료**(14차) → ② 붙잡힘 뒤 밤 재시작(감각 −10)·경고 3회 처벌 **완료**(15차) → ③ 점검·보고(16항목, 이상 4틀, 정확 보고 −5/놓침 +8) → ④ 공간·수칙 교체(`SpaceId`에 도서관·경비실 추가, 새 수칙 에셋, 옛 24장·테스트 삭제, 덱 = 공간 5 + 경비실 1(2일차~) + 공통 3, 가장 높은 감각 축 ×2·가장 낮은 축 최소 1) → ⑤ 역설·변조(사용자가 아직 손볼 예정) → ⑥ 연출 카탈로그·긴장 디렉터 → ⑦ 붙잡힘 3종·CCTV 판정(K1/K2/K-1). 교실 사다리 `LibraryLadder (1)`을 Classroom02에 놓는 씬 작업은 LFS 잠금 확인 뒤.
 

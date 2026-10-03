@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using NightDuty;
 using TMPro;
@@ -116,6 +116,71 @@ public sealed class CctvSystem : MonoBehaviour
     private bool _fpWasEnabled;
     private readonly List<TabletState> _tablets = new List<TabletState>();
     private readonly List<Renderer> _hiddenViewmodel = new List<Renderer>();
+
+    // ── 피날레 화면 제어(11단계) ─────────────────────────────────
+
+    private Texture _override;
+    private float _forceRenderUntil;
+
+    /// <summary>모니터 화면 중심(월드). 화면이 없으면 영벡터.</summary>
+    public Vector3 ScreenCenter
+    {
+        get { return _screen != null ? _screen.transform.position : Vector3.zero; }
+    }
+
+    /// <summary>화면이 방 쪽으로 향한 방향(월드). 화면이 없으면 영벡터.</summary>
+    public Vector3 ScreenNormal
+    {
+        get { return _monitor != null ? ScreenOutward() : Vector3.zero; }
+    }
+
+    /// <summary>모니터 화면 크기(m).</summary>
+    public Vector2 ScreenSize
+    {
+        get { return config != null ? config.ScreenSize : Vector2.zero; }
+    }
+
+    /// <summary>화면을 덮어쓰고 있는지.</summary>
+    public bool HasScreenOverride
+    {
+        get { return _override != null; }
+    }
+
+    /// <summary>CRT 험(웅웅거림)을 켜고 끈다. 피날레 「험이 멈춘다」.</summary>
+    public void SetHum(bool on)
+    {
+        if (_hum == null || _hum.clip == null) return;
+        if (on)
+        {
+            _hum.volume = config.HumVolume;
+            if (!_hum.isPlaying) _hum.Play();
+        }
+        else
+        {
+            _hum.Stop();
+        }
+    }
+
+    /// <summary>
+    /// 화면을 다른 텍스처로 덮어쓴다(검정 = 꺼진 CRT, 렌더 텍스처 = 비친 모습). null이면 채널 화면으로 돌아간다.
+    /// <paramref name="gain"/>은 화면 밝기 배수(꺼진 CRT에 비친 모습은 어둡게).
+    /// </summary>
+    public void SetScreenOverride(Texture texture, float gain = 1f)
+    {
+        _override = texture;
+        if (_mat == null) return;
+        Texture t = texture != null ? texture : (Texture)_rt;
+        _mat.mainTexture = t;
+        if (_mat.HasProperty("_BaseMap")) _mat.SetTexture("_BaseMap", t);
+        _mat.SetFloat("_Gain", config.Gain * (texture != null ? gain : 1f));
+        _mat.SetFloat("_Noise", config.Noise * (texture != null ? 0.15f : 1f));   // 꺼진 화면에 비친 모습은 지글거리지 않는다
+    }
+
+    /// <summary>그 시간 동안 플레이어가 화면을 보든 말든 지금 채널을 매 프레임 그린다(피날레 「한 프레임 웃는 얼굴」).</summary>
+    public void ForceRenderFor(float seconds)
+    {
+        _forceRenderUntil = Time.time + Mathf.Max(0f, seconds);
+    }
 
     /// <summary>지금 살아 있는 CCTV. 없으면 null.</summary>
     public static CctvSystem Active
@@ -619,14 +684,15 @@ public sealed class CctvSystem : MonoBehaviour
         _mat.SetFloat("_Signal", _signal);
         UpdateStaticAudio();
 
-        bool awake = _view != ViewState.None || PlayerCanSeeScreen();
-        _label.gameObject.SetActive(awake);
-        if (!awake)
+        bool forcing = Time.time < _forceRenderUntil;
+        bool awake = _view != ViewState.None || PlayerCanSeeScreen() || forcing;
+        _label.gameObject.SetActive(awake && _override == null);
+        if (!awake || _override != null)
         {
-            return;
+            return;   // 화면을 덮어썼으면(피날레: 꺼진 CRT·비친 모습) 채널을 그리지 않는다
         }
 
-        float fps = _view != ViewState.None ? config.ViewFps : config.IdleFps;
+        float fps = forcing ? 1000f : _view != ViewState.None ? config.ViewFps : config.IdleFps;
         _renderAcc += Time.deltaTime;
         if (_renderAcc >= 1f / Mathf.Max(1f, fps))
         {

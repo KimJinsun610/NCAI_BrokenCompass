@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -382,6 +382,7 @@ namespace NightDuty
             {
                 JudgeSignal tick = JudgeSignal.Tick(judgeSeconds);
                 FinalDispatch(tick, true);
+                ParadoxObserve(tick, true);
             }
             finally
             {
@@ -416,11 +417,13 @@ namespace NightDuty
             try
             {
                 TrackSpace(signal);
+                FinaleObserve(signal);
 
                 // 새 수칙은 모든 신호로 상태(공간·자세·손전등)를 갱신하고, 판정 구간에만 판정한다.
                 if (!IsCaptured)
                 {
                     FinalDispatch(signal, judging);
+                    ParadoxObserve(signal, judging);
                 }
 
                 DirectionObserve(signal);
@@ -640,6 +643,7 @@ namespace NightDuty
             _bands.RestoreReached(from.ReachedCopy());
             _ledger.RestoreFromSnapshot(from);
             from.RestoreParts(SnapshotParts());
+            ParadoxAfterRestore();
 
             BeginNightCore(Day, _clockMinutes, true);
             DirectionRestart(k, from.StartMinute);
@@ -799,7 +803,7 @@ namespace NightDuty
         /// <summary>
         /// 근무일지 줄 — 그날 편성 덱 순서(공간 수칙 → 경비실 → 공통)대로 새 수칙 한 줄씩(최종 기획서 「근무일지 정산 화면」).
         /// 한 번이라도 어겼으면 「어김」, 방아쇠가 왔고 어기지 않았으면 「준수」, 방아쇠가 오지 않았으면 표시 없음.
-        /// 미방문 공간에 빨간 줄을 긋던 옛 규칙은 2026-10-03에 없앴다(최종 기획서에 없음). 「지시를 따름」·「불가피」는 역설 단계(10단계)가 채운다.
+        /// 미방문 공간에 빨간 줄을 긋던 옛 규칙은 2026-10-03에 없앴다(최종 기획서에 없음). 「지시를 따름」은 그날 그 수칙을 겨눈 역설 문자를 받았는지(<see cref="ParadoxSentFor"/>), 안전한 읽기를 마쳤으면 「확인함 → …」 메모가 붙는다. 「불가피」는 회피 불가 역설이 들어오면 채운다.
         /// </summary>
         private static List<DutyLogEntry> BuildDutyLog()
         {
@@ -816,7 +820,9 @@ namespace NightDuty
                 FinalJudge judge = _finalBook != null ? _finalBook.Judge(def.Id) : null;
                 RuleVerdict verdict = judge == null || !judge.Triggered ? RuleVerdict.NotTriggered
                     : judge.Violated ? RuleVerdict.Violated : RuleVerdict.Complied;
-                log.Add(new DutyLogEntry(i + 1, def.Id, def.Space, def.Text, verdict, false));
+                bool instructed = ParadoxSentFor(def.Id);
+                string note = instructed && _paradox.SafeRead && _reveals.Count > 0 ? "확인함 → " + _reveals[_reveals.Count - 1].Label : string.Empty;
+                log.Add(new DutyLogEntry(i + 1, def.Id, def.Space, def.Text, verdict, instructed, note));
             }
 
             return log;
@@ -911,6 +917,7 @@ namespace NightDuty
 
         private static void CloseNight()
         {
+            if (_finale.Active) _finale.End();
             DirectionAbort("밤 닫힘");
             _nightOpen = false;
         }

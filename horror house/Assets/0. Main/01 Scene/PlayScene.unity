@@ -194595,8 +194595,8 @@ MonoBehaviour:
     OutOfScope: 1
   - Space: 7
     Box:
-      m_Center: {x: 34.1, y: 3.4, z: 46.15}
-      m_Extent: {x: 3.4, y: 2, z: 1.65}
+      m_Center: {x: 34, y: 3.4, z: 46.125}
+      m_Extent: {x: 3.75, y: 2, z: 1.875}
     OutOfScope: 0
   - Space: 6
     Box:

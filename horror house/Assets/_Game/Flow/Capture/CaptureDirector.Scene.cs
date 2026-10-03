@@ -53,6 +53,39 @@ public sealed partial class CaptureDirector
         _running = false;
     }
 
+    /// <summary>
+    /// 피날레 K4 위반(11단계): 그 축의 붙잡힘 장면만 틀고 출근 자리(경비실)로 돌려놓는다 — 재시작·카드 없음(축·재시작 횟수는 그대로).
+    /// 끝나면 화면이 다시 밝아져 있다. 이미 진행 중이면 곧바로 끝난다.
+    /// </summary>
+    public IEnumerator PlayFinaleCapture(FearAxis axis)
+    {
+        if (_running) yield break;
+        _running = true;
+        FPController player = FindAnyObjectByType<FPController>();
+        GameTime clock = FindAnyObjectByType<GameTime>();
+        if (clock != null) clock.Hold(this);
+        if (player != null) player.enabled = false;
+
+        EnsureUi();
+        HideOtherHud();
+        AudioListener.pause = true;
+        yield return PlayScene(axis, 1, player);
+        MovePlayerToStart(player);
+        AudioListener.pause = false;
+        yield return new WaitForSecondsRealtime(0.6f);
+        yield return FadeFromBlack();
+        RestoreOtherHud();
+        if (player != null) player.enabled = true;
+        if (clock != null) clock.Release(this);
+        _running = false;
+    }
+
+    /// <summary>플레이어를 출근 자리(첫 프레임 위치·방향 — 경비실)로 옮긴다. 피날레 강제 복귀가 쓴다.</summary>
+    public void TeleportPlayerToStart()
+    {
+        MovePlayerToStart(FindAnyObjectByType<FPController>());
+    }
+
     private void LateUpdate()
     {
         // 장면 프리팹의 CameraMount를 따른다(애니메이션 평가 뒤라 한 프레임 늦지 않는다).

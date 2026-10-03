@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NightDuty
@@ -162,6 +162,12 @@ namespace NightDuty
 
         /// <summary>5일차 경비실 고정 수칙(04:00 뒤에만 판정).</summary>
         public const string FinaleRule = "K4";
+
+        /// <summary>5일차 태블릿에만 보이는 공통 수칙(판정 없음). 피날레 「들어왔다」에서 빈칸이 채워진다.</summary>
+        public const string FinaleBlankRule = "G3";
+
+        /// <summary>빈칸이 채워진 G3 문구(최종 기획서: 빈칸은 「당신」).</summary>
+        public const string FinaleBlankFilled = "이 수칙서와 태블릿 공지가 다를 경우 당신을 따르십시오.";
 
         /// <summary>역보고 수칙(회차당 최대 2번).</summary>
         public const string ReverseReportRule = "T4";

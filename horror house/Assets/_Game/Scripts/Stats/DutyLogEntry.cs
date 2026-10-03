@@ -60,6 +60,11 @@
         /// <summary>그날 이 수칙을 겨눈 역설 문자를 받았는지. 받은 상태에서 어기면 표시가 「지시를 따름」이 된다.</summary>
         public readonly bool Instructed;
 
+        /// <summary>
+        /// 그 줄에 붙는 짧은 메모(10단계 — 역설 문자의 안전한 읽기를 마쳤으면 「확인함 → 이상 없음」). 없으면 빈 문자열. 수치는 싣지 않는다.
+        /// </summary>
+        public readonly string Note;
+
         /// <summary>빨간 줄 여부 — 어겼다.</summary>
         public bool Struck
         {
@@ -81,7 +86,7 @@
         }
 
         /// <summary>한 줄을 만든다.</summary>
-        public DutyLogEntry(int number, string ruleId, SpaceId space, string playerText, RuleVerdict verdict, bool instructed)
+        public DutyLogEntry(int number, string ruleId, SpaceId space, string playerText, RuleVerdict verdict, bool instructed, string note = "")
         {
             Number = number;
             RuleId = ruleId ?? string.Empty;
@@ -89,6 +94,7 @@
             PlayerText = playerText ?? string.Empty;
             Verdict = verdict;
             Instructed = instructed;
+            Note = note ?? string.Empty;
         }
     }
 }

@@ -1,4 +1,4 @@
-using NightDuty;
+﻿using NightDuty;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -207,6 +207,10 @@ public sealed class NightRunDriver : MonoBehaviour
     {
         if (s_owner != this || !NightRun.IsNightActive) return;   // 이미 포획·중단된 밤
 
+        // 5일차 04:00 — 정산하지 않고 피날레(11단계). 결말에서 FinaleDirector가 NightRun.EndFinale로 정산한다.
+        if (NightRun.Finale.Active) return;
+        if (NightRun.Day >= FinaleWatch.Day && FinaleDirector.Active != null && FinaleDirector.Active.Begin()) return;
+
         if (!NightRun.RequestEndNight() && !NightRun.IsCaptured)
         {
             Debug.LogWarning("[NightRunDriver] 근무 종료 요청이 거절됐습니다.", this);
@@ -222,6 +226,19 @@ public sealed class NightRunDriver : MonoBehaviour
         _rewindOffset = result.StartMinute - NightMinute;
         _tracker.Reset(result.StartMinute);
         Debug.Log("[NightRunDriver] 밤 재시작(k=" + result.K + ", " + result.Kind + "). 게임 시계 되돌리기는 GameTime 쪽 연결이 필요합니다.", this);
+    }
+
+    /// <summary>디버그: 지금 밤을 버리고 그 일차로 다시 연다(피날레 시험용 5일차). 회차 축·기록은 그대로다.</summary>
+    public void DebugRestartAsDay(int day)
+    {
+        if (s_owner != this) return;
+        if (NightRun.IsNightActive) NightRun.AbandonNight();
+        GameSession.SetDay(day);
+        _rewindOffset = 0f;
+        _tracker.Reset(NightMinute);
+        DoorRelay.RescanForNight(gameObject.scene);
+        NightRun.BeginNight(GameSession.CurrentDay, CurrentNightMinute);
+        Debug.Log("[NightRunDriver] 디버그: " + GameSession.CurrentDay + "일차로 다시 열었습니다.", this);
     }
 
     private int CurrentNightMinute()

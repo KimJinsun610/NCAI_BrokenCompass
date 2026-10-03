@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace NightDuty
@@ -34,12 +34,14 @@ namespace NightDuty
             _finalBook.ReverseReportArmed += OnReverseReportArmed;
             _finalBook.EncounterRequested += ReserveEncounter;
             BeginDirection();
+            PlanParadox();
             BuildDisplayDeck();
         }
 
         private static void DisposeFinalRules()
         {
             DisposeDirection();
+            DisposeParadox();
             ClearDisplayDeck();
             if (_finalBook == null) return;
             _finalBook.Settled -= OnFinalSettled;
@@ -68,6 +70,7 @@ namespace NightDuty
             }
 
             EventBus.RaiseFinalRuleSettled(result);
+            ParadoxSettled(result);
         }
 
         private static void OnReverseReportArmed(string itemId)
@@ -111,9 +114,18 @@ namespace NightDuty
             ClearDisplayDeck();
             if (!ProgramEnabled || _program == null) return;
 
+            // 변조·검은 줄(10단계)은 태블릿에 보이는 글만 바꾼다 — 판정은 원본(def.Text)으로 한다.
+            ParadoxPlan paradox = _paradox.Plan;
             foreach (RuleDef def in _program.Deck)
             {
-                _displayDeck.Add(DisplayCard(def.Id, def.Space, def.Text, string.Empty));
+                _displayDeck.Add(DisplayCard(def.Id, def.Space, paradox.DisplayTextOf(def.Id) ?? def.Text, string.Empty));
+            }
+
+            // 5일차: 판정 없는 G3(빈칸)을 공통 수칙 뒤에 보인다 — 피날레에서 「당신」으로 채운다(FillFinaleBlank).
+            if (Day >= FinaleWatch.Day)
+            {
+                RuleDef g3 = ProgramCatalog.Rule(ProgramCatalog.FinaleBlankRule);
+                if (g3 != null) _displayDeck.Add(DisplayCard(g3.Id, g3.Space, g3.Text, string.Empty));
             }
 
             InspectionPlan plan = Board.Plan;
@@ -150,6 +162,12 @@ namespace NightDuty
             string line = "[점검] " + SpaceLabel(a.Item.Space) + " " + a.Item.Name + " — " + a.Item.TabletLine;
             if (a.IsLate) line += " (02:16부터)";
             if (Board.StateOf(a.Id) != InspectionState.Pending) line += " · 보고함";
+            else
+            {
+                SafeReadReveal? reveal = RevealOf(a.Item.Space);   // 안전한 읽기(10단계) — 공간 단위로 드러난다.
+                if (reveal.HasValue) line += " · " + reveal.Value.Label;
+            }
+
             return line;
         }
 

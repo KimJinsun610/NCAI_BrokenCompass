@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace NightDuty
@@ -59,6 +59,11 @@ namespace NightDuty
         /// 태블릿으로 문자가 왔다. 태블릿 UI가 메시지 탭에 실으면 된다(발신자 표시 없음).
         /// </summary>
         public static event Action<ParadoxMessage> MessageSent;
+
+        /// <summary>
+        /// 역설 문자의 안전한 읽기를 마쳤다(10단계). 점검표에 그 공간의 이상 여부가 드러난다 — 태블릿이 짧게 떨고 「틱」 한 번, 태블릿을 다시 읽는다.
+        /// </summary>
+        public static event Action<SafeReadReveal> SafeReadConfirmed;
 
         /// <summary>
         /// 경고 도장이나 대기 중인 처벌이 바뀌었다. 인자: (도장 수 0~2, 대기 중인 처벌 수).
@@ -128,6 +133,12 @@ namespace NightDuty
         public static void RaiseMessageSent(ParadoxMessage message)
         {
             Invoke(MessageSent, message);
+        }
+
+        /// <summary><see cref="SafeReadConfirmed"/>를 발생시킨다.</summary>
+        public static void RaiseSafeReadConfirmed(SafeReadReveal reveal)
+        {
+            Invoke(SafeReadConfirmed, reveal);
         }
 
         /// <summary><see cref="AxisCritical"/>을 발생시킨다.</summary>
@@ -229,6 +240,7 @@ namespace NightDuty
             AxisCritical = null;
             Captured = null;
             MessageSent = null;
+            SafeReadConfirmed = null;
             WarningsChanged = null;
             Punished = null;
             NightRestarted = null;

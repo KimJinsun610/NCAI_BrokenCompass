@@ -406,6 +406,20 @@ public sealed class DirectionStage : MonoBehaviour
         return mob;
     }
 
+    /// <summary>피날레 배역만 남기고 무대를 거둔다(피날레 「모든 몹이 제자리에서 사라져 있다」). 조명·화면 효과도 되돌린다.</summary>
+    public void ClearAllExceptFinale()
+    {
+        List<string> ids = new List<string>(_staged.Keys);
+        for (int i = 0; i < ids.Count; i++)
+        {
+            if (ids[i].StartsWith("finale.", StringComparison.Ordinal)) continue;
+            Cleanup(ids[i], DirectionPhase.Aborted);
+        }
+
+        foreach (LightGroup g in _groups.Values) g.Restore();
+        if (_fx != null) _fx.ClearAll();
+    }
+
     /// <summary>서 있는 피날레 배역. 없으면 null.</summary>
     public FinaleMob FinaleOf(FinaleRole role)
     {

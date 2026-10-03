@@ -381,6 +381,42 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         if (GUILayout.Button("재시작")) Later(() => NightRun.RestartAfterCapture());
         GUILayout.EndHorizontal();
 
+        // 피날레(11단계) — 5일차 04:00에 구동기가 여는 것을 여기서 바로 연다.
+        FinaleDirector fd = FinaleDirector.Active;
+        FinaleWatch fw = NightRun.Finale;
+        GUILayout.Label("<b>피날레(5일차)</b>  " + (fd != null && fd.IsRunning ? fd.Phase + " · 시도 " + fw.Attempt + " · 봤다 " + (fw.Seen ? "예" : "아니오") + " · CCTV " + fw.ChannelsSeen + "채널" : "대기") + (NightRun.LastFinaleEnding != FinaleEnding.None ? " · 지난 결말 " + NightRun.LastFinaleEnding : string.Empty), _rich);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("5일차로 다시 열기")) Later(() =>
+        {
+            if (NightRunDriver.Current != null) NightRunDriver.Current.DebugRestartAsDay(FinaleWatch.Day);
+            Log("5일차로 다시 열었습니다(태블릿에 K4·G3)");
+        });
+        if (GUILayout.Button("피날레 시작")) Later(() => Log(fd != null && fd.Begin() ? "피날레 시작" : "피날레를 열 수 없음(5일차 밤이 아님·진행 중)"));
+        if (GUILayout.Button("CCTV 건너뛰기")) Later(() =>
+        {
+            if (fd != null) fd.DebugSkipCctv();
+        });
+        if (GUILayout.Button("창을 봤다(비춤)")) Later(() => NightRun.Send(JudgeSignal.Beam(FinaleWatch.WindowTarget, 0.1f)));
+        GUILayout.EndHorizontal();
+
+        // 역설·변조(10단계).
+        ParadoxRun pr = NightRun.Paradox;
+        string prState = pr.RuleId == null ? "없음" : pr.RuleId + " " + pr.Pattern + (pr.Plan.WillSend ? "" : " (보류)") + " · " + (pr.SafeRead ? "안전한 읽기 완료" : pr.Sent ? "보냄 " + Mathf.RoundToInt(pr.Progress * 100f) + "%" : "대기");
+        GUILayout.Label("<b>역설·변조(10단계)</b>  " + Escape(prState) + "  <color=#999>" + Escape(pr.Plan.Report) + "</color>", _rich);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("문자 보내기:", GUILayout.ExpandWidth(false));
+        IReadOnlyList<RuleDef> deck = NightRun.Program.Deck;
+        for (int i = 0; i < deck.Count; i++)
+        {
+            ParadoxEntry e = ParadoxCatalog.Find(deck[i].Id);
+            if (e == null || !e.HasMessage) continue;
+            string rid = deck[i].Id;
+            if (GUILayout.Button(rid, GUILayout.ExpandWidth(false))) Later(() => Log(NightRun.DebugSendParadox(rid) ? "역설 문자 " + rid : "보낼 수 없음(" + rid + ")"));
+        }
+
+        if (GUILayout.Button("안전한 읽기 완료", GUILayout.ExpandWidth(false))) Later(() => Log(NightRun.DebugSafeRead() ? "안전한 읽기 완료" : "보낸 문자가 없음"));
+        GUILayout.EndHorizontal();
+
         TensionDirector t = NightRun.Tension;
         if (t != null)
         {

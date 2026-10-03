@@ -9,7 +9,7 @@ using UnityEngine.SceneManagement;
 /// <list type="number">
 /// <item><b>룸톤</b> — 플레이어가 선 공간의 루프(복도·교실·과학실·화장실·도서관·경비실). 공간을 옮기면 천천히 바뀐다.</item>
 /// <item><b>불안 레이어</b> — 그 공간의 <b>청각축 표시 구간</b>을 따라 1~4번 루프가 쌓인다(구간 2면 1·2번).
-/// 구간은 <see cref="EventBus.BandChanged"/>로만 받는다 — <see cref="AnomalyCueDirector"/>와 같은 통로라 보류가 이미 반영돼 있다.</item>
+/// 구간은 <see cref="EventBus.BandChanged"/>로만 받는다.</item>
 /// <item><b>원샷</b> — 공간별 목록에서 무작위로, 플레이어 주변 6~14m 어딘가에서 3D로 난다. 구간이 오를수록 잦아진다.</item>
 /// </list>
 ///

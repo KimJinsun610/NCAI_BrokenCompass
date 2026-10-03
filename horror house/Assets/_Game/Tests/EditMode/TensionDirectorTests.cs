@@ -514,7 +514,6 @@ namespace NightDuty.Tests
         public void 소년_착석_단서가_C3_판정까지_간다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             _minute = 70;
             NightRun.BeginNight(1, () => _minute);
@@ -541,7 +540,6 @@ namespace NightDuty.Tests
         public void 디버그로_조우와_수칙_단서를_바로_울린다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             _minute = 30;
             NightRun.BeginNight(1, () => _minute);
@@ -601,7 +599,6 @@ namespace NightDuty.Tests
         {
             StagePoints.Set(StageAnchors.BoySeat, new Vector3(46.3f, 1.5f, 36.3f));
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             NightRun.BeginNight(1, () => 70);
 

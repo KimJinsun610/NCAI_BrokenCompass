@@ -5,11 +5,11 @@ namespace NightDuty
     /// <summary>
     /// 판정 입력 신호의 종류. 확정 기획서 공통 명세 2절·5절의 「기존 이벤트 연결」을 그대로 옮긴 어휘다.
     /// <para>
-    /// 신호는 클라이언트(플레이어·문·구역·응시 추적기)가 만들어 <see cref="RuleBook.Dispatch"/>로 보낸다.
+    /// 신호는 클라이언트(플레이어·문·구역·응시 추적기)가 만들어 <see cref="NightRun.Send"/>로 보낸다. 새 수칙 판정(<see cref="FinalRuleBook"/>)·긴장 디렉터가 읽는다.
     /// Core는 위치·물리·카메라를 모른다. 거리 계산과 레이캐스트는 클라이언트가 하고, 결과만 신호로 넘긴다.
     /// </para>
     /// <para>
-    /// <b>숫자를 바꾸지 말 것.</b> RuleSO 에셋에 직렬화된다. 새 종류는 빈 번호에 덧붙인다.
+    /// <b>숫자를 바꾸지 말 것.</b> 새 종류는 빈 번호에 덧붙인다. 2026-10-03 옛 24장 카드 전용 신호(문 닫힘 완료·통행 완료·옛 점검 완료·단서 전달/식별·근접 샘플·모형 관찰·밤 시작/종료)를 지웠다 — 그 번호(11·24·25·30·31·41·50·70·71)는 다시 쓰지 않는다.
     /// </para>
     /// </summary>
     public enum SignalKind
@@ -22,9 +22,6 @@ namespace NightDuty
 
         /// <summary>문 E 명령이 <b>수락</b>됐다(사거리 밖이라 무시된 입력은 보내지 않는다). TargetId = 문 ID, Flag = 닫기 명령이면 true, Source = 조작 출처.</summary>
         DoorCommandAccepted = 10,
-
-        /// <summary>문 닫힘 애니메이션이 <b>완료</b>됐다. TargetId = 문 ID, Source = 조작 출처. (T3만 이 신호를 요구한다.)</summary>
-        DoorCloseCompleted = 11,
 
         /// <summary>문이 연출로 자동 개방되는 동작을 플레이어가 실제로 관찰했다. TargetId = 문 ID.</summary>
         DoorAutoOpenObserved = 12,
@@ -41,18 +38,6 @@ namespace NightDuty
         /// <summary>지정 구역에서 나왔다. TargetId = 구역 ID.</summary>
         ZoneExited = 23,
 
-        /// <summary>통행 완료 지점을 지나 해당 통행 구역을 이탈했다. TargetId = 통행 구역 ID.</summary>
-        PassageCompleted = 24,
-
-        /// <summary>일반 점검이 완료됐다(점검 구역 1초 체류 후 공간 이탈). Space = 점검 ID.</summary>
-        InspectionCompleted = 25,
-
-        /// <summary>청각 단서가 청취 구역 안의 플레이어에게 정상 재생·전달됐다. TargetId = 단서 이벤트 ID.</summary>
-        ClueDelivered = 30,
-
-        /// <summary>시각 단서를 안전 관찰 지점에서 식별했다(중앙 0.2초). TargetId = 단서 대상 ID.</summary>
-        ClueIdentified = 31,
-
         /// <summary>지정 오디오·연출 시퀀스가 끝났다. TargetId = 시퀀스 ID. 새 수칙에서는 <see cref="CueStarted"/>의 끝 신호로 쓴다.</summary>
         SequenceEnded = 32,
 
@@ -67,9 +52,6 @@ namespace NightDuty
         /// 클라이언트는 프레임레이트와 무관한 고정 간격(0.1초)으로 보낸다.
         /// </summary>
         GazeSample = 40,
-
-        /// <summary>근접 샘플. TargetId = 바닥 기준점 ID, Value = 플레이어 발밑 기준점과의 <b>수평</b> 거리(m).</summary>
-        ProximitySample = 41,
 
         /// <summary>손전등 상태가 바뀌었다. Flag = 켜짐.</summary>
         FlashlightChanged = 42,
@@ -89,23 +71,8 @@ namespace NightDuty
         /// <summary>CCTV 시청 샘플(0.1초, 모니터를 보는 동안만). TargetId = 보고 있는 채널 ID, Value = 샘플 시간(초).</summary>
         CctvViewSample = 47,
 
-        /// <summary>인체모형을 가림 없이 1초 관찰했다. TargetId = 장면 ID(H-A 등).</summary>
-        ModelObserved = 50,
-
         /// <summary>태블릿(Tab) 상태가 바뀌었다. Flag = 열림.</summary>
-        TabChanged = 60,
-
-        /// <summary>
-        /// 근무 종료 요청이 수락됐다. 클라이언트는 보내지 않는다 — <see cref="RuleBook.EndNight"/>가 진행 중 카드에
-        /// 덱 순서로 한 번씩 전달한다(「밤 종료 때 의무가 남았으면 위반」 같은 조건용).
-        /// </summary>
-        NightEndAccepted = 70,
-
-        /// <summary>
-        /// 하룻밤 판정이 시작됐다(덱 전달 직후 한 번). <see cref="RuleBook.BeginNight"/>이 보낸다.
-        /// 「덱에 들어오면 밤 시작부터 감시」하는 <b>장기</b> 카드(C6)의 시작 신호다. 대상·공간 없음.
-        /// </summary>
-        NightBegan = 71
+        TabChanged = 60
     }
 
     /// <summary>조작 출처. 연출이 움직인 문을 플레이어 조작으로 세지 않기 위해 구분한다.</summary>
@@ -191,12 +158,6 @@ namespace NightDuty
         public static JudgeSignal Gaze(string firstVisibleTargetId, float sampleSeconds)
         {
             return new JudgeSignal(SignalKind.GazeSample, SpaceId.None, firstVisibleTargetId, ActionSource.Player, false, sampleSeconds);
-        }
-
-        /// <summary>근접 샘플.</summary>
-        public static JudgeSignal Proximity(string anchorId, float horizontalMeters)
-        {
-            return new JudgeSignal(SignalKind.ProximitySample, SpaceId.None, anchorId, ActionSource.Player, false, horizontalMeters);
         }
 
         /// <summary>손전등 상태 변경.</summary>

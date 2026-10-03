@@ -383,31 +383,69 @@ public sealed class DirectionStage : MonoBehaviour
         });
     }
 
-    // ── 피날레 미리 보기(11단계 전까지 디버그용) ─────────────────
+    // ── 피날레 몹(배역표 FinaleCast — 팀원 프리팹이 들어가는 자리) ─────────────────
 
-    private const string FinalePreviewId = "finale.window.preview";
+    private static string FinaleStageId(FinaleRole role)
+    {
+        return "finale." + role;
+    }
 
-    /// <summary>경비실 창밖의 검은 남자(피날레 K4 결말)를 세우거나 치운다. 피날레 흐름이 생기면 거기서 같은 자리·프리팹을 쓴다.</summary>
+    /// <summary>
+    /// 피날레 배역을 고정 자리에 세운다(이미 서 있으면 그것). 무대 목록에 올리므로 밤 재시작·하루 끝·무대 정리 때 함께 거둔다.
+    /// 피날레 흐름(11단계)과 디버그 콘솔이 같은 입구를 쓴다. 자리가 없으면 null.
+    /// </summary>
+    public FinaleMob StageFinale(FinaleRole role)
+    {
+        FinaleMob mob = FinaleOf(role);
+        if (mob != null) return mob;
+
+        mob = FinaleMob.Spawn(role);
+        if (mob == null) return null;
+        Staged st = Stage(FinaleStageId(role));
+        st.Objects.Add(mob.gameObject);
+        return mob;
+    }
+
+    /// <summary>서 있는 피날레 배역. 없으면 null.</summary>
+    public FinaleMob FinaleOf(FinaleRole role)
+    {
+        Staged st;
+        if (!_staged.TryGetValue(FinaleStageId(role), out st)) return null;
+        for (int i = 0; i < st.Objects.Count; i++)
+        {
+            if (st.Objects[i] == null) continue;
+            FinaleMob mob = st.Objects[i].GetComponent<FinaleMob>();
+            if (mob != null) return mob;
+        }
+
+        return null;
+    }
+
+    /// <summary>피날레 배역을 거둔다.</summary>
+    public void ClearFinale(FinaleRole role)
+    {
+        Cleanup(FinaleStageId(role), DirectionPhase.Aborted);
+    }
+
+    /// <summary>경비실 창밖 정장 남자를 세우거나 치운다(디버그 미리 보기). 세우면 「나타남」 → 「두드림」.</summary>
     public bool ToggleFinaleWindowMan()
     {
-        if (_staged.ContainsKey(FinalePreviewId))
+        if (FinaleOf(FinaleRole.WindowMan) != null)
         {
-            Cleanup(FinalePreviewId, DirectionPhase.Aborted);
+            ClearFinale(FinaleRole.WindowMan);
             return false;
         }
 
-        StageAnchor a = StageAnchor.Find(StageAnchors.FinaleWindow);
-        if (a == null)
-        {
-            Debug.LogWarning("[Direction] 씬에 피날레 창밖 자리(stage.finale.window)가 없습니다.");
-            return false;
-        }
-
-        Staged st = Stage(FinalePreviewId);
-        Vector3 at;
-        GameObject go = SpawnAt(st, "mob.finale", StageAnchors.FinaleWindow, false, a.transform.position, PlayerFeet(), "rule.K4.window", out at);
-        st.Objects.Add(go);
+        FinaleMob mob = StageFinale(FinaleRole.WindowMan);
+        if (mob == null) return false;
+        StartCoroutine(AppearThenKnock(mob));
         return true;
+    }
+
+    private static IEnumerator AppearThenKnock(FinaleMob mob)
+    {
+        yield return mob.PlayAndWait(FinaleBeat.Appear);
+        if (mob != null && mob.CurrentBeat == FinaleBeat.Appear) mob.Play(FinaleBeat.Knock);
     }
 
     private void SpawnCctvPerson(Staged st)
@@ -698,12 +736,13 @@ public sealed class DirectionStage : MonoBehaviour
         return floor + Vector3.up * 3f;
     }
 
-    private static void PlaySound(string name, Vector3 at)
+    /// <summary>이름으로 연출 소리를 그 자리에서 3D로 낸다(<c>Resources/Direction/이름</c> → 소리 표). 없으면 false.</summary>
+    internal static bool PlaySound(string name, Vector3 at)
     {
         float volume = 1f;
         AudioClip clip = Resources.Load<AudioClip>("Direction/" + name);
         if (clip == null) clip = DirectionSoundTableSO.Find(name, out volume);   // 표(다른 폴더의 클립을 이름으로 묶음).
-        if (clip == null) return;
+        if (clip == null) return false;
         AudioSource.PlayClipAtPoint(clip, at, volume);
         if (Verbose) Debug.Log("[Direction] 소리 " + name + " ← " + clip.name);
 
@@ -711,5 +750,6 @@ public sealed class DirectionStage : MonoBehaviour
         float v2;
         AudioClip layer = DirectionSoundTableSO.FindExact(name + "+", out v2);
         if (layer != null) AudioSource.PlayClipAtPoint(layer, at, v2);
+        return true;
     }
 }

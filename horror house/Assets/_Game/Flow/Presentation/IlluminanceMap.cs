@@ -17,7 +17,7 @@ using UnityEngine.SceneManagement;
 /// (<see cref="MaterialPropertyBlock"/> — 공유 머티리얼은 그대로). 조우 소등(<see cref="LightGroup"/>)이 다시 켜도 다음 프레임에 맞춘다.</item>
 /// <item><b>화장실 조명이 붉어짐</b>: 화장실 구간 2부터.</item>
 /// </list>
-/// 옛 <see cref="SpaceLights"/>(구간마다 등 8/6/4/2/0개 + 등 색온도)는 9.20V·최종 기획서와 달라 이 컴포넌트로 대신한다.
+/// 옛 SpaceLights(구간마다 등 8/6/4/2/0개 + 등 색온도)는 9.20V·최종 기획서와 달라 이 컴포넌트로 대신한다.
 /// 근무 씬이면 스스로 설치된다(씬 파일을 고치지 않는다).
 /// </summary>
 [DisallowMultipleComponent]

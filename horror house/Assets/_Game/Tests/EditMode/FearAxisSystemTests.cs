@@ -146,46 +146,6 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 보류중인공간은_구간변화를_미뤘다가_해제시반영한다()
-        {
-            FearAxisSystem axes = new FearAxisSystem();
-            BandResolver resolver = new BandResolver(axes);
-            axes.ValueChanged += resolver.OnValueChanged;
-
-            int corridorChanges = 0;
-            int toiletChanges = 0;
-            EventBus.BandChanged += (space, axis, from, to) =>
-            {
-                if (from == to)
-                {
-                    return;
-                }
-
-                if (space == SpaceId.Corridor)
-                {
-                    corridorChanges++;
-                }
-
-                if (space == SpaceId.Toilet)
-                {
-                    toiletChanges++;
-                }
-            };
-
-            resolver.SetHold(SpaceId.Corridor, true);
-            axes.Apply(FearAxis.Layout, 25, "H4", SpaceId.Corridor);
-
-            Assert.AreEqual(0, corridorChanges);
-            Assert.AreEqual(1, toiletChanges);
-            Assert.AreEqual(Band.Band0, resolver.GetShown(SpaceId.Corridor, FearAxis.Layout));
-
-            resolver.SetHold(SpaceId.Corridor, false);
-
-            Assert.AreEqual(1, corridorChanges);
-            Assert.AreEqual(Band.Band1, resolver.GetShown(SpaceId.Corridor, FearAxis.Layout));
-        }
-
-        [Test]
         public void 신뢰축은_월드에_방송하지않는다()
         {
             FearAxisSystem axes = new FearAxisSystem();

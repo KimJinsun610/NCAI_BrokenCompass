@@ -139,28 +139,36 @@ namespace NightDuty.Tests
     // 최종 기획서에서 점검 미완료 경고가 그 역할을 넘겨받았다 — InspectionTests의 04:00 정산 테스트가 대신한다.
 
     /// <summary>
-    /// 결산 3구분(2026-09-21 재설계). <see cref="DutyLogEntry"/>는 순수 구조체라 직접 만들어 표시만 본다.
+    /// 근무일지 줄 표시(최종 기획서 「근무일지 정산 화면」). <see cref="DutyLogEntry"/>는 순수 구조체라 직접 만들어 표시만 본다.
+    /// 2026-10-03: 「가지 않은 공간도 어김」(옛 24장 규칙)을 없앴다 — 그 테스트들도 함께 지웠다.
     /// </summary>
     public sealed class DutyLogMarkTests
     {
-        private static DutyLogEntry Entry(CardState state, bool visited, bool instructed)
+        private static DutyLogEntry Entry(RuleVerdict verdict, bool instructed)
         {
-            return new DutyLogEntry(1, "H1", SpaceId.Corridor, "테스트 본문", state, visited, instructed);
+            return new DutyLogEntry(1, "H1", SpaceId.Corridor, "테스트 본문", verdict, instructed);
         }
 
         [Test]
         public void 지킨_줄은_표시가_없다()
         {
-            DutyLogEntry entry = Entry(CardState.Complied, true, false);
+            DutyLogEntry entry = Entry(RuleVerdict.Complied, false);
 
             Assert.IsFalse(entry.Struck);
             Assert.AreEqual(DutyMark.None, entry.Mark);
         }
 
         [Test]
+        public void 방아쇠가_오지_않은_줄도_표시가_없다()
+        {
+            Assert.AreEqual(DutyMark.None, Entry(RuleVerdict.NotTriggered, false).Mark);
+            Assert.AreEqual(DutyMark.None, Entry(RuleVerdict.NotTriggered, true).Mark, "문자를 받았어도 어기지 않았으면 표시 없음");
+        }
+
+        [Test]
         public void 그냥_어긴_줄은_어김이다()
         {
-            DutyLogEntry entry = Entry(CardState.Violated, true, false);
+            DutyLogEntry entry = Entry(RuleVerdict.Violated, false);
 
             Assert.IsTrue(entry.Struck);
             Assert.AreEqual(DutyMark.Struck, entry.Mark);
@@ -169,7 +177,7 @@ namespace NightDuty.Tests
         [Test]
         public void 역설문자를_받고_어긴_줄은_지시를따름이다()
         {
-            DutyLogEntry entry = Entry(CardState.Violated, true, true);
+            DutyLogEntry entry = Entry(RuleVerdict.Violated, true);
 
             // 수치 손해는 「어김」과 똑같다. 다른 것은 종이가 부르는 이름뿐이다.
             Assert.IsTrue(entry.Struck);
@@ -177,62 +185,9 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 문자를_받았어도_그_공간에_안_갔으면_어김이다()
+        public void 문자를_받았어도_지켰으면_표시가_없다()
         {
-            // 가지 않았으면 지시를 따른 것이 아니다.
-            DutyLogEntry entry = Entry(CardState.Waiting, false, true);
-
-            Assert.IsTrue(entry.Struck);
-            Assert.AreEqual(DutyMark.Struck, entry.Mark);
-        }
-
-        [Test]
-        public void 미방문은_판정이_없어도_어김이다()
-        {
-            DutyLogEntry entry = Entry(CardState.Undetermined, false, false);
-
-            Assert.IsTrue(entry.Struck);
-            Assert.AreEqual(DutyMark.Struck, entry.Mark);
-        }
-
-        [Test]
-        public void Struck은_예전_뜻_그대로다()
-        {
-            // 하위호환: 역설 문자를 모르는 예전 생성자는 Instructed가 false로 들어간다.
-            DutyLogEntry complied = new DutyLogEntry(1, "H1", SpaceId.Corridor, "본문", CardState.Complied, true);
-            DutyLogEntry violated = new DutyLogEntry(2, "H2", SpaceId.Corridor, "본문", CardState.Violated, true);
-            DutyLogEntry unvisited = new DutyLogEntry(3, "H3", SpaceId.Corridor, "본문", CardState.Waiting, false);
-
-            Assert.IsFalse(complied.Struck);
-            Assert.IsTrue(violated.Struck, "위반");
-            Assert.IsTrue(unvisited.Struck, "가지 않은 공간");
-
-            Assert.AreEqual(DutyMark.None, complied.Mark);
-            Assert.AreEqual(DutyMark.Struck, violated.Mark);
-            Assert.AreEqual(DutyMark.Struck, unvisited.Mark);
-        }
-
-        [Test]
-        public void 미방문인데_위반까지_난_줄은_문자를_받았어도_어김이다()
-        {
-            // 「가지 않았으면 지시를 따른 것이 아니다」가 설계 의도다(DutyLogEntry.Mark 주석).
-            // 2026-09-21 이전에는 Mark가 Visited를 보지 않아 이 조합에서 Instructed가 나왔다 — 버그였다.
-            // 이 조합은 실제로 일어난다: C6는 밤 시작 트리거라 그 교실에 한 번도 안 가고도 위반이 나고,
-            // T1·S2 같은 장기 카드도 공간 밖에서 위반이 성립할 수 있다.
-            DutyLogEntry entry = Entry(CardState.Violated, false, true);
-
-            Assert.IsTrue(entry.Struck);
-            Assert.AreEqual(DutyMark.Struck, entry.Mark, "가지 않은 줄은 문자를 받았어도 「어김」이다");
-        }
-
-        [Test]
-        public void 방문했고_문자를_받고_어긴_줄만_지시를따름이다()
-        {
-            // 위 테스트의 짝. 셋 중 하나라도 빠지면 「지시를 따름」이 아니다.
-            Assert.AreEqual(DutyMark.Instructed, Entry(CardState.Violated, true, true).Mark, "방문 + 위반 + 문자");
-            Assert.AreEqual(DutyMark.Struck, Entry(CardState.Violated, true, false).Mark, "문자를 안 받았으면 그냥 어김");
-            Assert.AreEqual(DutyMark.Struck, Entry(CardState.Violated, false, true).Mark, "안 갔으면 그냥 어김");
-            Assert.AreEqual(DutyMark.None, Entry(CardState.Complied, true, true).Mark, "지켰으면 표시 없음");
+            Assert.AreEqual(DutyMark.None, Entry(RuleVerdict.Complied, true).Mark);
         }
     }
 }

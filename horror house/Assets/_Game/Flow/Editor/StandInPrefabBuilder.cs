@@ -699,7 +699,7 @@ public static class StandInPrefabBuilder
 
     // ── 씬 고정 자리 ────────────────────────────────────────
 
-    [MenuItem("야간근무/연출/고정 몹 자리 놓기 (소년·천장 다리·창밖 남자)")]
+    [MenuItem("야간근무/연출/고정 몹 자리 놓기 (소년·천장 다리·창밖 남자·피날레)")]
     public static void PlaceStageAnchorsMenu()
     {
         string report = PlaceStageAnchors();
@@ -814,6 +814,24 @@ public static class StandInPrefabBuilder
             Vector3 at = Floor(new Vector3(29.35f, 1.5f, 45.85f));
             Anchor(parent.transform, NightDuty.StageAnchors.FinaleWindow, at, Quaternion.LookRotation(Vector3.right), null, Vector3.zero, Vector3.zero, 3.5f);
             sb.AppendLine("✓ 경비실 창밖 검은 남자 자리 — " + at.ToString("F2") + " (창 안쪽을 봄)");
+        }
+
+        // ⑦ 내 자리 뒤에 선 무언가(피날레 「봤다」 결말) — 경비실 CRT 화면 앞 1.05m(CCTV 보는 자리 바로 뒤), CRT를 본다(꺼진 화면에 비친다).
+        {
+            CctvConfigSO cfg = CctvConfigSO.Load();
+            GameObject monitor = cfg != null ? GameObject.Find(cfg.MonitorPath) : null;
+            if (monitor != null)
+            {
+                Vector3 center = monitor.transform.TransformPoint(cfg.ScreenLocalCenter);
+                Vector3 outward = Flat(monitor.transform.TransformDirection(Vector3.down));   // CctvSystem.ScreenOutward와 같다
+                Vector3 at = Floor(center + outward * 1.05f);
+                Anchor(parent.transform, NightDuty.StageAnchors.FinaleSeat, at, Quaternion.LookRotation(-outward), null, Vector3.zero, Vector3.zero, 1.6f);
+                sb.AppendLine("✓ 내 자리 뒤 무언가 자리 — " + at.ToString("F2") + " (CRT를 봄)");
+            }
+            else
+            {
+                sb.AppendLine("✗ 경비실 CRT를 못 찾아 「내 자리 뒤 무언가」 자리를 놓지 못했습니다.");
+            }
         }
 
         EditorSceneManager.MarkSceneDirty(parent.scene);

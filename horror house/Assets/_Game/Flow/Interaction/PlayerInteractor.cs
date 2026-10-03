@@ -312,11 +312,6 @@ public sealed class PlayerInteractor : MonoBehaviour
             return false;   // 일시정지.
         }
 
-        if (PlayerSensors.TabOpen)
-        {
-            return false;   // 태블릿을 펼친 동안은 조작하지 않는다(DoorRelay도 같은 조건에서 신호를 멈춘다).
-        }
-
         return !NightRun.IsCaptured;
     }
 

@@ -14,6 +14,7 @@ namespace NightDuty.Tests
     /// <para>
     /// 2026-10-03: 옛 24장 카드(H·C·S·T 1~6) 에셋을 폐기하면서 「에셋 ↔ 카드 빌더」 드리프트 검사와
     /// 「하루 6장 축 쿼터」 불변식 검사 3건을 함께 지웠다. 검사할 대상이 더는 없다 — 되살리지 마십시오.
+    /// 같은 날 옛 역설 연출기(ParadoxDirector)를 폐기하며 「역설 최소 신뢰 = 신뢰 구간 1 하한」 검사도 지웠다(새 역설은 10단계).
     /// </para>
     /// </summary>
     public sealed class DesignInvariantTests
@@ -44,20 +45,6 @@ namespace NightDuty.Tests
                 (int)Band.Band4,
                 "마지막 일차 하한 " + last + "이 Band4입니다. Band4는 「당신이 어겨서 여기까지 왔다」는 구간이라 "
                     + "하한으로 공짜로 주면 경고로서의 뜻이 사라집니다.");
-        }
-
-        /// <summary>
-        /// 신뢰 게이트와 신뢰 구간 경계가 따로 놀아 신뢰 한 칸이 비는 것을 막는다.
-        /// 2026-09-30 최종 기획서부터 신뢰는 전용 경계(15/30/45/65)를 쓴다 — 감각 축의 25와 비교하지 않는다.
-        /// </summary>
-        [Test]
-        public void 역설_최소신뢰가_신뢰구간1_하한과_같다()
-        {
-            Assert.AreEqual(
-                Bands.TrustLowerBound(Band.Band1),
-                ParadoxDirector.MinTrust,
-                "ParadoxDirector.MinTrust(" + ParadoxDirector.MinTrust + ")와 신뢰 구간 1 하한("
-                    + Bands.TrustLowerBound(Band.Band1) + ")이 다릅니다. 그 사이 신뢰 값은 구간 1인데도 역설이 한 쌍도 안 나옵니다.");
         }
     }
 

@@ -79,6 +79,12 @@ namespace NightDuty
         /// <summary>판정 시간(ms) — 판정 구간의 Tick 누적. 수칙의 제한 시간은 이 시계로 잰다.</summary>
         public int NowMs { get; internal set; }
 
+        /// <summary>초를 밀리초 정수로 바꾼다. 판정 시간은 ms 정수로 잰다(부동소수 누적 오차를 피한다).</summary>
+        public static int ToMs(float seconds)
+        {
+            return Mathf.RoundToInt(seconds * 1000f);
+        }
+
         /// <summary>바라보는 수평 방향 단위 벡터.</summary>
         public Vector3 Forward
         {
@@ -283,7 +289,7 @@ namespace NightDuty
 
             if (s.Kind == SignalKind.Tick)
             {
-                World.NowMs += ConditionState.ToMs(s.Value);
+                World.NowMs += FinalWorld.ToMs(s.Value);
             }
 
             for (int i = 0; i < _judges.Count; i++)

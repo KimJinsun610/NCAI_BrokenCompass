@@ -768,7 +768,7 @@ public sealed class CctvSystem : MonoBehaviour
 
     private bool CanInteract()
     {
-        if (Time.timeScale <= 0f || PlayerSensors.TabOpen || NightRun.IsCaptured)
+        if (Time.timeScale <= 0f || NightRun.IsCaptured)
         {
             return false;
         }

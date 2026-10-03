@@ -568,7 +568,6 @@ namespace NightDuty.Tests
         [TearDown]
         public void TearDown()
         {
-            NightRun.DeckOverride = null;
             NightRun.ProgramEnabled = false;
             NightRun.InspectionsEnabled = false;
             NightRun.StartNewRun();
@@ -579,7 +578,6 @@ namespace NightDuty.Tests
         public void 편성이_켜지면_그날_덱으로_판정하고_옛덱은_쉰다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             NightRun.BeginNight(1, () => 30);
 
@@ -607,7 +605,6 @@ namespace NightDuty.Tests
         public void 재시작하면_새_판정책을_만들지_않고_스냅샷으로_되돌린다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             NightRun.BeginNight(1, () => 30);
             FinalRuleBook book = NightRun.FinalRules;
@@ -628,7 +625,6 @@ namespace NightDuty.Tests
         public void 편성이_꺼지면_새_판정책이_없다()
         {
             NightRun.StartNewRun();
-            NightRun.DeckOverride = day => new List<RuleSO>();
             NightRun.BeginNight(1, () => 30);
             Assert.IsNull(NightRun.FinalRules);
             Assert.AreEqual(0, NightRun.FinalResults.Count);

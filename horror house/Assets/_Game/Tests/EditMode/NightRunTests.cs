@@ -1,66 +1,32 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace NightDuty.Tests
 {
-    /// <summary>회차 창구: 축 이월, 결과 전송, 포획 경로, 위반 시각, 점검 수.</summary>
+    /// <summary>회차 창구: 축 이월, 결과 전송, 포획 경로, 위반 시각, 근무일지. 수칙 위반은 새 편성의 G1으로 만든다(<see cref="TestKit"/>).</summary>
     public sealed class NightRunTests
     {
-        private TestKit _kit;
-        private RuleSO _h1;
         private int _clock;
 
         [SetUp]
         public void SetUp()
         {
-            _kit = new TestKit();
-            _h1 = _kit.Card(c =>
-            {
-                c.CardId = "H1";
-                c.Space = SpaceId.Corridor;
-                c.TriggerKind = SignalKind.DoorAutoOpenObserved;
-                c.TargetIds = new[] { "corridor.door.auto", "corridor.door.13" };
-                c.Failure = new SignalCondition(SignalKind.DoorCommandAccepted, TargetMatchIds.Trigger, SpaceId.None, FlagFilter.True);
-                c.Success = new SignalCondition(SignalKind.PassageCompleted, "corridor.passage");
-            });
-
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
-            NightRun.DeckOverride = day => new List<RuleSO> { _h1 };
             _clock = 0;
         }
 
         [TearDown]
         public void TearDown()
         {
-            NightRun.DeckOverride = null;
+            NightRun.InspectionPlanOverride = null;
+            NightRun.ProgramEnabled = false;
             NightRun.StartNewRun();
-            _kit.Dispose();
-        }
-
-        private RuleSO CornerCard(string id, SpaceId space)
-        {
-            return _kit.Card(c =>
-            {
-                c.CardId = id;
-                c.Space = space;
-                c.TriggerKind = SignalKind.DoorAutoOpenObserved;
-                c.TargetIds = new[] { id.ToLowerInvariant() + ".door" };
-                c.Failure = new SignalCondition(SignalKind.DoorCommandAccepted, TargetMatchIds.Trigger, SpaceId.None, FlagFilter.True);
-                c.Success = new SignalCondition(SignalKind.PassageCompleted, id.ToLowerInvariant() + ".passage");
-            });
-        }
-
-        private static void Violate(string door)
-        {
-            NightRun.Send(JudgeSignal.Target(SignalKind.DoorAutoOpenObserved, door));
-            NightRun.Send(JudgeSignal.DoorCommand(door, true, ActionSource.Player));
+            EventBus.ClearAll();
         }
 
         [Test]
         public void 공간에_보이는_조도_구간은_축의_연출_구간을_따른다()
         {
-            NightRun.DeckOverride = day => new List<RuleSO>();
             NightRun.BeginNight(1, () => _clock);
             Assert.AreEqual(Band.Band0, NightRun.ShownBand(SpaceId.Toilet, FearAxis.Illuminance));
 
@@ -75,24 +41,24 @@ namespace NightDuty.Tests
         [Test]
         public void 축값은_다음날로_이월된다()
         {
-            NightRun.BeginNight(1, () => _clock);
-            Violate("corridor.door.auto");
+            TestKit.BeginProgramNight(1, () => _clock);
+            TestKit.ViolateRunning();
             Assert.IsTrue(NightRun.RequestEndNight());
 
             NightRun.BeginNight(2, () => _clock);
 
             Assert.AreEqual(2, NightRun.Day);
-            Assert.AreEqual(12, NightRun.Axes.GetValue(FearAxis.Layout));
+            Assert.AreEqual(Deltas.RuleViolation, NightRun.Axes.GetValue(FearAxis.Auditory));
         }
 
         [Test]
         public void 새회차는_축을_0으로_되돌린다()
         {
-            NightRun.BeginNight(1, () => _clock);
-            Violate("corridor.door.auto");
+            TestKit.BeginProgramNight(1, () => _clock);
+            TestKit.ViolateRunning();
             NightRun.StartNewRun();
 
-            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Layout));
+            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Auditory));
             Assert.AreEqual(0, NightRun.Day);
             Assert.IsFalse(NightRun.IsNightActive);
         }
@@ -108,40 +74,27 @@ namespace NightDuty.Tests
                 got = s;
             };
 
-            NightRun.BeginNight(3, () => _clock);
+            TestKit.BeginProgramNight(1, () => _clock);
             _clock = 41;
-            Violate("corridor.door.13");
+            TestKit.ViolateRunning();
             _clock = 55;
 
             Assert.IsTrue(NightRun.RequestEndNight());
             Assert.IsFalse(NightRun.RequestEndNight(), "이미 끝난 밤은 다시 끝나지 않는다");
 
             Assert.AreEqual(1, received);
-            Assert.AreEqual(3, got.Day);
+            Assert.AreEqual(1, got.Day);
             Assert.AreEqual(NightOutcome.Completed, got.Outcome);
             Assert.AreEqual(1, got.Violations);
             CollectionAssert.AreEqual(new[] { 41 }, got.ViolationMinutes);
-            // 2026-09-30 새 기획서: 일차 하한은 연출 구간에만 걸리고 생존 수치는 올리지 않는다.
-            Assert.AreEqual(Deltas.RuleViolation, got.Layout);
-            Assert.AreEqual(0, got.Auditory, "어기지 않은 축은 0 그대로다");
+            Assert.AreEqual(Deltas.RuleViolation, got.Auditory);
+            Assert.AreEqual(0, got.Layout, "어기지 않은 축은 0 그대로다");
             Assert.AreEqual(0, got.Illuminance, "어기지 않은 축은 0 그대로다");
-            Assert.AreEqual(1, got.Results.Count);
+            Assert.AreEqual("G1", got.Results[0].RuleId);
+            Assert.AreEqual(FinalOutcome.Violated, got.Results[0].Outcome);
             Assert.AreEqual("0:41", DaySummary.FormatMinutes(got.ViolationMinutes[0]));
             Assert.IsNull(got.ImprintAxis);
             Assert.AreEqual(0, got.ConflictsTotal);
-        }
-
-        [Test]
-        public void 자동으로_열린_그_문만_대상이다()
-        {
-            NightRun.BeginNight(1, () => _clock);
-            NightRun.Send(JudgeSignal.Target(SignalKind.DoorAutoOpenObserved, "corridor.door.auto"));
-            NightRun.Send(JudgeSignal.DoorCommand("corridor.door.13", true, ActionSource.Player));
-
-            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Layout), "다른 문을 닫은 것은 H1 위반이 아니다");
-
-            NightRun.Send(JudgeSignal.DoorCommand("corridor.door.auto", true, ActionSource.Player));
-            Assert.AreEqual(12, NightRun.Axes.GetValue(FearAxis.Layout));
         }
 
         [Test]
@@ -169,76 +122,76 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 점검완료는_공간별로_한번씩_센다()
+        public void 결과의_점검칸은_점검표_보고수와_항목수다()
         {
+            NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day,
+                new[]
+                {
+                    new InspectionAssignment(InspectionCatalog.Find("H-2"), false, Band.Band0, false),
+                    new InspectionAssignment(InspectionCatalog.Find("H-4"), false, Band.Band0, false)
+                },
+                SpaceId.None, string.Empty, null);
             NightRun.BeginNight(1, () => _clock);
-            NightRun.Send(JudgeSignal.OfSpace(SignalKind.InspectionCompleted, SpaceId.Corridor));
-            NightRun.Send(JudgeSignal.OfSpace(SignalKind.InspectionCompleted, SpaceId.Corridor));
-            NightRun.Send(JudgeSignal.OfSpace(SignalKind.InspectionCompleted, SpaceId.Toilet));
+            Assert.IsTrue(NightRun.ReportInspection("H-2", false).Accepted);
 
             DaySummary summary = NightRun.BuildSummary();
-            Assert.AreEqual(2, summary.PatrolDone);
-            Assert.AreEqual(5, summary.PatrolTotal);
+            Assert.AreEqual(1, summary.PatrolDone);
+            Assert.AreEqual(2, summary.PatrolTotal);
         }
 
         [Test]
-        public void 근무일지는_덱순서로_위반과_미방문공간에_빨간줄을_긋는다()
+        public void 근무일지는_편성덱_순서로_새수칙마다_한줄이고_어긴_수칙에만_빨간줄을_긋는다()
         {
-            RuleSO toilet = CornerCard("T1", SpaceId.Toilet);
-            RuleSO corridorSafe = CornerCard("H2", SpaceId.Corridor);
-            NightRun.DeckOverride = day => new List<RuleSO> { _h1, toilet, corridorSafe };
-
-            NightRun.BeginNight(1, () => _clock);
-            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
-            Violate("corridor.door.auto");
+            TestKit.BeginProgramNight(1, () => _clock);
+            IReadOnlyList<RuleDef> deck = NightRun.Program.Deck;
+            TestKit.ViolateRunning();
             Assert.IsTrue(NightRun.RequestEndNight());
 
             IReadOnlyList<DutyLogEntry> log = NightRun.LastSummary.DutyLog;
-            Assert.AreEqual(3, log.Count);
+            Assert.AreEqual(deck.Count, log.Count, "편성된 새 수칙마다 한 줄");
 
-            Assert.AreEqual(1, log[0].Number);
-            Assert.AreEqual("H1", log[0].CardId);
-            Assert.AreEqual(CardState.Violated, log[0].State);
-            Assert.IsTrue(log[0].Struck, "위반");
+            for (int i = 0; i < log.Count; i++)
+            {
+                Assert.AreEqual(i + 1, log[i].Number);
+                Assert.AreEqual(deck[i].Id, log[i].RuleId);
+                Assert.AreEqual(deck[i].Text, log[i].PlayerText);
+                if (log[i].RuleId == "G1")
+                {
+                    Assert.AreEqual(RuleVerdict.Violated, log[i].Verdict);
+                    Assert.IsTrue(log[i].Struck, "어긴 수칙");
+                }
+                else
+                {
+                    Assert.IsFalse(log[i].Struck, log[i].RuleId + ": 어기지 않은 수칙은 표시 없음(가지 않은 공간이어도)");
+                }
+            }
 
-            Assert.AreEqual(2, log[1].Number);
-            Assert.IsFalse(log[1].Visited);
-            Assert.IsTrue(log[1].Struck, "가지 않은 공간");
-
-            Assert.AreEqual(3, log[2].Number);
-            Assert.IsTrue(log[2].Visited);
-            Assert.IsFalse(log[2].Struck, "간 공간에서 조건이 걸리지 않은 카드는 표시 없음");
-            Assert.AreEqual(corridorSafe.PlayerText, log[2].PlayerText);
-
-            Assert.AreEqual(3, NightRun.TodayDeck.Count, "밤이 닫혀도 오늘 덱은 남는다");
+            Assert.Greater(NightRun.TodayDeck.Count, 0, "밤이 닫혀도 오늘 태블릿 수칙은 남는다");
         }
 
         [Test]
-        public void Tab중의_공간진입은_방문으로_세지않는다()
+        public void 태블릿을_든_채_들어간_공간도_현재공간이다()
         {
             NightRun.BeginNight(1, () => _clock);
             NightRun.Send(JudgeSignal.Tab(true));
             NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Toilet));
             NightRun.Send(JudgeSignal.Tab(false));
 
-            Assert.IsFalse(NightRun.WasVisitedToday(SpaceId.Toilet));
-
-            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Toilet));
-            Assert.IsTrue(NightRun.WasVisitedToday(SpaceId.Toilet));
+            Assert.AreEqual(SpaceId.Toilet, NightRun.CurrentSpace, "태블릿을 든 채 들어간 공간도 현재 공간이다");
         }
 
         [Test]
-        public void 새밤은_방문기록과_덱을_새로_쓴다()
+        public void 새밤은_현재공간과_덱을_새로_쓴다()
         {
-            NightRun.BeginNight(1, () => _clock);
+            TestKit.BeginProgramNight(1, () => _clock);
             NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Toilet));
             Assert.IsTrue(NightRun.RequestEndNight());
 
-            NightRun.DeckOverride = day => new List<RuleSO>();
+            NightRun.ProgramEnabled = false;
             NightRun.BeginNight(2, () => _clock);
 
-            Assert.IsFalse(NightRun.WasVisitedToday(SpaceId.Toilet));
-            Assert.AreEqual(0, NightRun.TodayDeck.Count);
+            Assert.AreEqual(SpaceId.None, NightRun.CurrentSpace, "새 밤은 공간 신호가 올 때까지 모른다");
+            Assert.AreEqual(0, NightRun.TodayDeck.Count, "편성이 꺼지면 태블릿 수칙도 비운다");
         }
 
         [Test]
@@ -247,18 +200,18 @@ namespace NightDuty.Tests
             DaySummary atCritical = default;
             EventBus.AxisCritical += a => atCritical = NightRun.BuildSummary();
 
-            NightRun.BeginNight(1, () => _clock);
+            TestKit.BeginProgramNight(1, () => _clock);
             NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
             NightRun.DebugForceCapture(FearAxis.Layout);
 
             Assert.IsFalse(NightRun.IsNightActive, "포획 즉시 그날 밤은 닫힌다");
             Assert.AreEqual(NightOutcome.Captured, atCritical.Outcome);
-            Assert.AreEqual(1, atCritical.DutyLog.Count);
+            Assert.AreEqual(NightRun.Program.Deck.Count, atCritical.DutyLog.Count);
             Assert.AreEqual(NightOutcome.Captured, NightRun.LastSummary.Outcome);
 
-            NightRun.Tick(1f);
-            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Toilet));
-            Assert.IsFalse(NightRun.WasVisitedToday(SpaceId.Toilet), "닫힌 밤의 신호는 무시한다");
+            TestKit.ViolateRunning();
+            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Auditory), "닫힌 밤의 신호와 시간은 무시한다");
+            Assert.AreEqual(SpaceId.None, NightRun.CurrentSpace);
         }
 
         [Test]
@@ -277,25 +230,9 @@ namespace NightDuty.Tests
         {
             int dayEnded = 0;
             EventBus.DayEnded += s => dayEnded++;
-            RuleSO nightEnd = _kit.Card(c =>
-            {
-                c.CardId = "H4";
-                c.Space = SpaceId.Corridor;
-                c.IsLongTerm = true;
-                c.TriggerKind = SignalKind.ClueIdentified;
-                c.TargetIds = new[] { "corridor.box" };
-                c.Failure = new ProximityCondition("");
-                c.Success = new SignalCondition(SignalKind.PassageCompleted, "corridor.passage");
-                c.SettleAt = SettleAt.AtNightEnd;
-                c.Radius = 1.5f;
-                c.FailureAxis = FearAxis.Layout;
-                c.FailureDelta = 12;
-            });
-            NightRun.DeckOverride = day => new List<RuleSO> { nightEnd };
 
-            NightRun.BeginNight(1, () => _clock);
-            NightRun.Send(JudgeSignal.Target(SignalKind.ClueIdentified, "corridor.box"));
-            NightRun.Send(JudgeSignal.Target(SignalKind.PassageCompleted, "corridor.passage"));
+            TestKit.BeginProgramNight(1, () => _clock);
+            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
             NightRun.AbandonNight();
 
             Assert.IsFalse(NightRun.IsNightActive);
@@ -309,9 +246,9 @@ namespace NightDuty.Tests
         public void 밤이_시작되기_전의_신호와_시간은_무시한다()
         {
             NightRun.Tick(1f);
-            Violate("corridor.door.auto");
+            TestKit.ViolateRunning();
 
-            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Layout));
+            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Auditory));
             Assert.IsFalse(NightRun.RequestEndNight());
         }
     }

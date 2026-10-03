@@ -122,6 +122,9 @@ namespace NightDuty
 
         /// <summary>경비실 창밖의 검은 남자(피날레 K4 결말, 11단계) — 로비 쪽에서 경비실 창 안을 본다.</summary>
         public const string FinaleWindow = "stage.finale.window";
+
+        /// <summary>내 자리 뒤에 선 무언가(피날레 「봤다」 결말, 11단계) — 경비실 CRT 앞 플레이어 자리 바로 뒤에서 CRT를 본다(꺼진 화면에 비친다).</summary>
+        public const string FinaleSeat = "stage.finale.seat";
     }
 
     /// <summary>조우 15개의 대본 표. 수치는 이 파일 한 곳.</summary>

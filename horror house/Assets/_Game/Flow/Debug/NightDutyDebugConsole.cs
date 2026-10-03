@@ -13,7 +13,7 @@ using UnityEngine.InputSystem;
 /// <list type="bullet">
 /// <item><b>개요</b>: 밤 시계 구간 점프(00:16 · 슬롯 A · 이완 · 슬롯 B · 슬롯 C · 03:30) · 판정 강제 · 자동 연출 켜고 끄기 · 시계 정지 · 축 ± · 밤 종료·붙잡힘·재시작 · 손전등·달리기 신호.</item>
 /// <item><b>수칙</b>: 오늘 덱의 상태(방아쇠·위반·진행 중)와 수칙마다 [이동] [단서] [끝] [조우], 31장 중 아무 수칙이나 [덱에 추가].</item>
-/// <item><b>조우</b>: 오늘 슬롯의 진행 상태, 조우 15개 각각 [이동+실행]·[여기서 실행], [다음 단계], [무대 정리], [경비실 창밖 검은 남자(피날레 미리 보기)].</item>
+/// <item><b>조우</b>: 오늘 슬롯의 진행 상태, 조우 15개 각각 [이동+실행]·[여기서 실행], [다음 단계], [무대 정리], 피날레 몹 두 배역(창밖 정장 남자 · 내 자리 무언가) [세우기/치우기]·비트 버튼(배역표 FinaleCast).</item>
 /// <item><b>점검</b>: 오늘 점검표, 항목마다 [이동](항목 앞 1.6m에서 바라봄) · [정상] · [이상] 보고.</item>
 /// <item><b>로그</b>: 연출 알림 · 수칙 정산 · 점검 보고 · 재시작.</item>
 /// </list>
@@ -519,19 +519,9 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         {
             if (DirectionStage.Active != null) DirectionStage.Active.ClearAll(DirectionPhase.Aborted);
         });
-        if (GUILayout.Button("경비실 창밖 검은 남자(피날레)")) Later(() =>
-        {
-            if (DirectionStage.Active == null) return;
-            bool shown = DirectionStage.Active.ToggleFinaleWindowMan();
-            if (shown)
-            {
-                StageAnchor a = StageAnchor.Find(StageAnchors.FinaleWindow);
-                if (a != null) TeleportToView(a, SpaceId.SecurityRoom);
-            }
-
-            Log(shown ? "피날레 미리 보기: 경비실 창밖 검은 남자" : "피날레 미리 보기 치움");
-        });
         GUILayout.EndHorizontal();
+
+        DrawFinaleMobs();
 
         GUILayout.BeginHorizontal();
         GUILayout.Label("가짜 놀람(여기서, 예산 안 씀):", _small, GUILayout.Width(170f));
@@ -696,6 +686,110 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
     }
 
     /// <summary>고정 연출 자리가 보이는 곳(자리 앞 <see cref="StageAnchor.DebugViewDistance"/>m)으로 옮기고 그쪽을 보게 한다.</summary>
+    // ── 피날레 몹(배역표 FinaleCast) ─────────────────────────
+
+    /// <summary>피날레 배역마다 [세우기/치우기]와 비트 버튼. 팀원 프리팹을 배역표에 넣고 여기서 바로 틀어 본다.</summary>
+    private void DrawFinaleMobs()
+    {
+        // 붙잡힘 장면(연출표 CaptureCast) — 재시작·카드 없이 장면만.
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("붙잡힘 장면 미리 보기(" + _captureRepeat + "회차):", _small, GUILayout.Width(220f));
+        foreach (FearAxis axis in new[] { FearAxis.Auditory, FearAxis.Illuminance, FearAxis.Layout })
+        {
+            FearAxis a = axis;
+            CaptureCastSO.Entry e = CaptureCastSO.Load().Get(a);
+            if (GUILayout.Button(CaptureCastSO.Label(a) + (e.prefab != null ? "" : "(기본)"))) Later(() =>
+            {
+                CaptureDirector cd = CaptureDirector.Active;
+                if (cd == null || !cd.Preview(a, _captureRepeat))
+                {
+                    Log("붙잡힘 장면 미리 보기 실패(연출기 없음 또는 진행 중)");
+                    return;
+                }
+
+                StartCoroutine(LogWhenDone(cd));
+            });
+        }
+
+        if (GUILayout.Button("회차 바꾸기")) _captureRepeat = _captureRepeat % 3 + 1;
+        GUILayout.EndHorizontal();
+
+        DirectionStage stage = DirectionStage.Active;
+        foreach (FinaleRole role in new[] { FinaleRole.WindowMan, FinaleRole.SeatFigure })
+        {
+            FinaleRole r = role;
+            FinaleMob mob = stage != null ? stage.FinaleOf(r) : null;
+            string state = mob == null ? "없음" : (mob.HasArt ? "아트" : "대역") + " · " + FinaleBeats.Label(mob.CurrentBeat) + (mob.IsBusy ? "…" : string.Empty);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("피날레 " + FinaleBeats.Label(r) + " (" + state + "):", _small, GUILayout.Width(220f));
+            if (GUILayout.Button(mob == null ? "세우기" : "치우기")) Later(() => ToggleFinale(r));
+            foreach (FinaleBeat beat in FinaleBeats.For(r))
+            {
+                FinaleBeat b = beat;
+                if (GUILayout.Button(FinaleBeats.Label(b))) Later(() => PlayFinale(r, b));
+            }
+
+            GUILayout.EndHorizontal();
+        }
+    }
+
+    private int _captureRepeat = 1;
+
+    private System.Collections.IEnumerator LogWhenDone(CaptureDirector cd)
+    {
+        yield return null;
+        while (cd != null && cd.IsPlaying) yield return null;
+        if (cd != null) Log("붙잡힘 장면: " + cd.LastScene);
+    }
+
+    private FinaleMob EnsureFinale(FinaleRole r, bool teleport)
+    {
+        DirectionStage stage = DirectionStage.Active;
+        if (stage == null) return null;
+        FinaleMob mob = stage.FinaleOf(r);
+        if (mob != null) return mob;
+
+        mob = stage.StageFinale(r);
+        if (mob == null)
+        {
+            Log("피날레 " + FinaleBeats.Label(r) + ": 씬에 자리가 없습니다");
+            return null;
+        }
+
+        mob.BeatFinished += (m, b) => Log("피날레 " + m.LastLog);
+        mob.Cued += (m, cue) => Log("피날레 " + FinaleBeats.Label(m.Role) + " 신호: " + cue);
+        if (teleport)
+        {
+            StageAnchor a = StageAnchor.Find(FinaleCastSO.Load().Get(r).anchorId);
+            if (a != null) TeleportToView(a, SpaceId.SecurityRoom);
+        }
+
+        Log("피날레 " + FinaleBeats.Label(r) + " 세움 — " + mob.LastLog);
+        return mob;
+    }
+
+    private void ToggleFinale(FinaleRole r)
+    {
+        DirectionStage stage = DirectionStage.Active;
+        if (stage == null) return;
+        if (stage.FinaleOf(r) != null)
+        {
+            stage.ClearFinale(r);
+            Log("피날레 " + FinaleBeats.Label(r) + " 치움");
+            return;
+        }
+
+        EnsureFinale(r, true);
+    }
+
+    private void PlayFinale(FinaleRole r, FinaleBeat b)
+    {
+        FinaleMob mob = EnsureFinale(r, false);
+        if (mob == null) return;
+        if (!mob.Supports(b)) Log("피날레 " + FinaleBeats.Label(r) + " · " + FinaleBeats.Label(b) + ": Animator에 없음 — 건너뜀");
+        mob.Play(b);
+    }
+
     private void TeleportToView(StageAnchor anchor, SpaceId space)
     {
         SpaceZones zones = FindAnyObjectByType<SpaceZones>();

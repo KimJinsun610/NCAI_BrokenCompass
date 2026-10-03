@@ -6,8 +6,7 @@ using UnityEngine.SceneManagement;
 /// 게임 흐름(GameSession·GameTime)과 판정 코어(<see cref="NightRun"/>)를 잇는 Play 씬 구동기.
 /// <list type="bullet">
 /// <item>Start: 최종 기획서 규칙 셋을 켠다 — 판정 시간창(<see cref="NightRun.JudgingWindowEnabled"/>),
-/// 점검표 편성(<see cref="NightRun.InspectionsEnabled"/>), 밤 편성(<see cref="NightRun.ProgramEnabled"/>),
-/// 태블릿을 든 동안에도 판정(<see cref="NightRun.JudgeWhileTabOpen"/>).
+/// 점검표 편성(<see cref="NightRun.InspectionsEnabled"/>), 밤 편성(<see cref="NightRun.ProgramEnabled"/>).
 /// 그리고 <see cref="NightRun.BeginNight"/>(현재 일차, <b>밤 시계 분</b>). 씬의 JudgeTarget이 모두 켜진 뒤라 대상 검사가 맞다.</item>
 /// <item>Update: 게임 시계가 흐를 때만 <see cref="NightRun.Tick"/>. 판정 시간은 <b>실제 초</b>다 — 시계 배속을 곱하지 않는다.
 /// DayIntro 연출 중(시계 정지)·일시정지(timeScale 0)·근무 종료 뒤에는 흐르지 않는다. 판정 정지 구간(출근·이완·03:30 뒤)은 코어가 거른다.</item>
@@ -163,10 +162,10 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.JudgingWindowEnabled = true;
         NightRun.InspectionsEnabled = true;
         NightRun.ProgramEnabled = true;
-        NightRun.JudgeWhileTabOpen = true;
 
         _rewindOffset = 0f;
         _tracker.Reset(NightMinute);
+        DoorRelay.RescanForNight(gameObject.scene);
         NightRun.BeginNight(GameSession.CurrentDay, CurrentNightMinute);
         _begun = true;
         s_owner = this;
@@ -201,7 +200,6 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.JudgingWindowEnabled = false;
         NightRun.InspectionsEnabled = false;
         NightRun.ProgramEnabled = false;
-        NightRun.JudgeWhileTabOpen = false;
         NightRun.DirectorAutoRun = true;
     }
 

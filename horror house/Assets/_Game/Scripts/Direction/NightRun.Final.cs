@@ -62,6 +62,11 @@ namespace NightDuty
 
         private static void OnFinalSettled(FinalRuleResult result)
         {
+            if (result.Outcome == FinalOutcome.Violated)
+            {
+                ViolationMinutesToday.Add(CurrentMinute());   // 결과창 위반 시각
+            }
+
             EventBus.RaiseFinalRuleSettled(result);
         }
 
@@ -79,20 +84,21 @@ namespace NightDuty
             {
                 case ReportOutcome.HallucinationRecorded:
                     _finalBook.NoteExternal("G2", true, report.ItemId + " 환청 기록");
+                    ViolationMinutesToday.Add(CurrentMinute());
                     break;
                 case ReportOutcome.ReverseKept:
                     _finalBook.NoteExternal(ProgramCatalog.ReverseReportRule, false, report.ItemId + " 역보고 준수");
                     break;
                 case ReportOutcome.ReverseViolated:
                     _finalBook.NoteExternal(ProgramCatalog.ReverseReportRule, true, report.ItemId + " 역보고 위반");
+                    ViolationMinutesToday.Add(CurrentMinute());
                     break;
             }
         }
         // ── 태블릿 표시용 카드 ──────────────────────────────────
         //
         // 태블릿(TabletDocument, 김진선님 코드)은 NightRun.TodayDeck의 RuleSO.PlayerText를 그대로 읽는다.
-        // 새 편성에서는 옛 24장 덱이 비므로, 그날 새 수칙 + 점검표를 「표시만 하는」 RuleSO로 만들어 TodayDeck으로 내보낸다.
-        // 판정 조건이 없는 카드라 옛 RuleBook(DeckToday를 판정)에는 들어가지 않는다. 태블릿 코드는 건드리지 않는다.
+        // 그날 새 수칙 + 점검표를 「표시만 하는」 RuleSO로 만들어 TodayDeck으로 내보낸다. 태블릿 코드는 건드리지 않는다.
 
         /// <summary>태블릿에 내보내는 표시용 카드(새 수칙 → 점검). 새 편성이 꺼져 있으면 비어 있다.</summary>
         public static IReadOnlyList<RuleSO> DisplayDeck

@@ -312,7 +312,6 @@ namespace NightDuty.Tests
         [TearDown]
         public void TearDown()
         {
-            NightRun.DeckOverride = null;
             NightRun.ProgramEnabled = false;
             NightRun.InspectionsEnabled = false;
             NightRun.StartNewRun();
@@ -323,8 +322,6 @@ namespace NightDuty.Tests
         public void 켜면_밤시작에_편성하고_재시작해도_그대로다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
-            NightRun.DeckOverride = day => new List<RuleSO>();
             NightRun.ProgramEnabled = true;
             NightRun.InspectionsEnabled = true;
 
@@ -348,7 +345,6 @@ namespace NightDuty.Tests
         public void 끄면_빈_편성이다()
         {
             NightRun.StartNewRun();
-            NightRun.DeckOverride = day => new List<RuleSO>();
             NightRun.BeginNight(1, () => 30);
             Assert.AreEqual(0, NightRun.Program.Deck.Count);
         }

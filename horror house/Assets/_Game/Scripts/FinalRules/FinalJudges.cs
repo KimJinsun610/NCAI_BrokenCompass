@@ -251,15 +251,10 @@ namespace NightDuty
 
         internal override void Observe(in JudgeSignal s, FinalWorld w)
         {
-            float d;
-            if (s.Kind == SignalKind.ProximitySample && s.TargetId == _anchor) d = s.Value;
-            else if (s.Kind == SignalKind.PlayerPose)
-            {
-                Vector3? a = Book.AnchorOf(_anchor);
-                if (!a.HasValue) return;
-                d = SensingRules.HorizontalDistance(s.Point, a.Value);
-            }
-            else return;
+            if (s.Kind != SignalKind.PlayerPose) return;
+            Vector3? a = Book.AnchorOf(_anchor);
+            if (!a.HasValue) return;
+            float d = SensingRules.HorizontalDistance(s.Point, a.Value);
 
             if (d < _radius * 3f) Trigger();
             if (d < _radius) Violate(_anchor + " 반경 " + _radius + "m 진입");
@@ -285,16 +280,11 @@ namespace NightDuty
 
         internal override void Observe(in JudgeSignal s, FinalWorld w)
         {
-            if (s.Kind == SignalKind.PlayerPose || (s.Kind == SignalKind.ProximitySample && s.TargetId == _anchor))
+            if (s.Kind == SignalKind.PlayerPose)
             {
-                float d;
-                if (s.Kind == SignalKind.ProximitySample) d = s.Value;
-                else
-                {
-                    Vector3? a = Book.AnchorOf(_anchor);
-                    if (!a.HasValue) return;
-                    d = SensingRules.HorizontalDistance(s.Point, a.Value);
-                }
+                Vector3? a = Book.AnchorOf(_anchor);
+                if (!a.HasValue) return;
+                float d = SensingRules.HorizontalDistance(s.Point, a.Value);
 
                 if (d < _radius * 2f) Trigger();
                 _inside = d < _radius;
@@ -403,7 +393,7 @@ namespace NightDuty
                 return;
             }
 
-            if (_endMs >= 0 && w.NowMs - _endMs >= ConditionState.ToMs(_after))
+            if (_endMs >= 0 && w.NowMs - _endMs >= FinalWorld.ToMs(_after))
             {
                 Pass("발소리 대피");
             }
@@ -522,7 +512,7 @@ namespace NightDuty
                 return;
             }
 
-            if (s.Kind == SignalKind.Tick && _endMs >= 0 && w.NowMs - _endMs > ConditionState.ToMs(_grace))
+            if (s.Kind == SignalKind.Tick && _endMs >= 0 && w.NowMs - _endMs > FinalWorld.ToMs(_grace))
             {
                 Active = false;
             }
@@ -984,7 +974,7 @@ namespace NightDuty
                 return;
             }
 
-            if (w.NowMs - _lastLitMs > ConditionState.ToMs(_gap)) FailAndReserve("빛이 떨어짐");
+            if (w.NowMs - _lastLitMs > FinalWorld.ToMs(_gap)) FailAndReserve("빛이 떨어짐");
         }
     }
 

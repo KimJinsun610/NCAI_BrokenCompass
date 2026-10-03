@@ -140,7 +140,7 @@ public sealed class ShiftEndPhone : MonoBehaviour
 
     private static bool CanInteract()
     {
-        if (Time.timeScale <= 0f || PlayerSensors.TabOpen || NightRun.IsCaptured) return false;
+        if (Time.timeScale <= 0f || PlayerSensors.TabletRaised || NightRun.IsCaptured) return false;   // 태블릿을 든 동안엔 전화를 받지 않는다
         CctvSystem cctv = CctvSystem.Active;
         if (cctv != null && cctv.IsViewing) return false;
 

@@ -1,4 +1,4 @@
-using NightDuty;
+﻿using NightDuty;
 using UnityEngine;
 
 /// <summary>
@@ -279,7 +279,7 @@ public sealed class PlayerInteractor : MonoBehaviour
     }
 
     /// <summary>이 문이 기획이 쓰는 문인가, 서랍인가, 아니면 그냥 배경인가.</summary>
-    private static DoorPolicySO.Kind Classify(DoorHandle door)
+    public static DoorPolicySO.Kind Classify(DoorHandle door)
     {
         DoorPolicySO policy = DoorPolicySO.Load();
         if (policy == null || door.Owner == null)
@@ -347,6 +347,7 @@ public sealed class PlayerInteractor : MonoBehaviour
 
         DoorHandle[] doors = DoorHandle.All();
         int count = 0;
+        int unlocked = 0;
         for (int i = 0; i < doors.Length; i++)
         {
             if (!doors[i].IsValid)
@@ -356,11 +357,19 @@ public sealed class PlayerInteractor : MonoBehaviour
 
             doors[i].SilenceVendorInput();
             count++;
+
+            // 동선의 문(정책 「열리는 문」)은 벤더 잠금을 푼다 — 2026-10-01 민: 「쓰는 문은 잠기면 안 된다」.
+            // 쓰지 않는 문은 정책(Sealed)이 막으므로 벤더 잠금과 무관하게 열리지 않는다. 런타임 값만 바꾼다(씬 파일 그대로).
+            if (doors[i].IsLocked && Classify(doors[i]) == DoorPolicySO.Kind.Openable)
+            {
+                doors[i].ForceUnlock();
+                unlocked++;
+            }
         }
 
         if (logActions)
         {
-            Debug.Log("[상호작용] 문 " + count + "개의 벤더 입력을 거뒀습니다(여기서 전부 다룹니다).", this);
+            Debug.Log("[상호작용] 문 " + count + "개의 벤더 입력을 거뒀습니다(여기서 전부 다룹니다). 동선의 잠긴 문 " + unlocked + "개를 풀었습니다.", this);
         }
     }
 }

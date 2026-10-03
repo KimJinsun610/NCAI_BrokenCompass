@@ -428,6 +428,39 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void 점검을_다_보고해야_전화로_근무를_끝낼_수_있다()
+        {
+            UsePlan(Row("H-2", false), Row("C-1", true));
+            NightRun.BeginNight(2, () => _clock);
+            Assert.IsFalse(NightRun.CanEndShiftEarly, "보고 0건");
+
+            NightRun.ReportInspection("H-2", false);
+            Assert.IsFalse(NightRun.CanEndShiftEarly, "1건 남음");
+
+            NightRun.ReportInspection("C-1", true);
+            Assert.IsTrue(NightRun.CanEndShiftEarly);
+
+            Assert.IsTrue(NightRun.RequestEndNight());
+            Assert.AreEqual(0, NightRun.Warnings.Count, "미완료가 없으니 경고도 없다");
+            Assert.IsFalse(NightRun.CanEndShiftEarly, "끝난 밤은 다시 끝내지 않는다");
+        }
+
+        [Test]
+        public void 점검표가_없거나_붙잡히면_전화로_끝낼_수_없다()
+        {
+            NightRun.BeginNight(1, () => _clock);
+            Assert.AreEqual(0, NightRun.Inspections.Total);
+            Assert.IsFalse(NightRun.CanEndShiftEarly, "빈 점검표는 「다 했다」가 아니다");
+
+            UsePlan(Row("H-2", false));
+            NightRun.StartNewRun();
+            NightRun.BeginNight(2, () => _clock);
+            NightRun.ReportInspection("H-2", false);
+            NightRun.DebugForceCapture(FearAxis.Auditory);
+            Assert.IsFalse(NightRun.CanEndShiftEarly);
+        }
+
+        [Test]
         public void 끄면_점검표가_비어있다()
         {
             NightRun.BeginNight(1, () => _clock);

@@ -132,7 +132,16 @@ namespace NightDuty
         public const float ForcedPresenceSeconds = 60f;
 
         /// <summary>가짜 놀람 목록.</summary>
-        public static readonly string[] FakeScares = { "fake.locker.rattle", "fake.locker.row", "fake.flashlight.flicker" };
+        public static readonly string[] FakeScares = { "fake.locker.rattle", "fake.locker.row", "fake.flashlight.flicker", FakeBugs };
+
+        /// <summary>벌레 떼(김진선님 BugSwarm, 2026-10-02 민 추가) — 천장에서 쏟아진다. <see cref="BugSpaces"/>에서만.</summary>
+        public const string FakeBugs = "fake.bugs";
+
+        /// <summary>벌레 떼가 떨어질 수 있는 방(정규화 전): 1-3 교실(뒤 창고 포함) · 화장실 · 도서관.</summary>
+        public static readonly SpaceId[] BugSpaces = { SpaceId.Classroom_1_3, SpaceId.Toilet, SpaceId.Library };
+
+        /// <summary>그 방에 이만큼(초) 머문 뒤에만 벌레 떼를 건다 — 들어서자마자 쏟아지지 않게.</summary>
+        public const float BugDwellSeconds = 6f;
 
         private readonly NightProgram _program;
         private readonly int _day;
@@ -677,6 +686,7 @@ namespace NightDuty
             List<string> open = new List<string>();
             foreach (string id in FakeScares)
             {
+                if (!FakeAllowedHere(id)) continue;
                 int n;
                 _fakeCount.TryGetValue(id, out n);
                 if (n < FakePerId) open.Add(id);
@@ -691,6 +701,24 @@ namespace NightDuty
             _fakeCount[pick] = used + 1;
             _fakesUsed++;
             Emit(DirectionEventKind.FakeScare, DirectionPhase.None, pick, string.Empty, _space, 0, _feet, 0f, string.Empty);
+        }
+
+        /// <summary>
+        /// 이 가짜 놀람을 지금 자리에서 걸 수 있는가. 벌레 떼만 조건이 있다: <see cref="BugSpaces"/>의 방에 <see cref="BugDwellSeconds"/>초 이상 있고,
+        /// 그 방에 조우(존재형 포함)가 서 있지 않을 것 — 천장 다리·소녀·노란 얼굴 옆에 벌레가 쏟아져 시선을 끌면 응시 판정이 억울해진다.
+        /// </summary>
+        private bool FakeAllowedHere(string id)
+        {
+            if (id != FakeBugs) return true;
+            if (Array.IndexOf(BugSpaces, _exact) < 0 || Now - _spaceSince < BugDwellSeconds) return false;
+            for (int i = 0; i < _runs.Count; i++)
+            {
+                EncounterRun r = _runs[i];
+                if (r.State == EncounterRunState.Waiting || r.State == EncounterRunState.Done || r.State == EncounterRunState.Missed) continue;
+                if (SpaceIds.Canonical(r.Script.Space) == _space) return false;
+            }
+
+            return true;
         }
 
         // ── 중단·재시작·디버그 ─────────────────────────────────
@@ -785,6 +813,15 @@ namespace NightDuty
             _runs.Add(run);
             Note(encounterId, "디버그 강제 실행");
             Begin(run, Band.Band0);
+            return true;
+        }
+
+        /// <summary>디버그: 그 가짜 놀람을 지금 건다(예산·간격·방 조건을 건너뜀, 쓴 횟수에도 넣지 않음). 목록에 없으면 false.</summary>
+        public bool ForceFake(string fakeId)
+        {
+            if (Array.IndexOf(FakeScares, fakeId) < 0) return false;
+            Note(fakeId, "디버그 강제 실행");
+            Emit(DirectionEventKind.FakeScare, DirectionPhase.None, fakeId, string.Empty, _space, 0, _feet, 0f, string.Empty);
             return true;
         }
 

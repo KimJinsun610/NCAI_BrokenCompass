@@ -111,8 +111,17 @@ namespace NightDuty
         /// <summary>천장 다리 — 1-3 교실 뒤 통로 너머 창고 천장(사다리 바로 위).</summary>
         public const string LegsCeiling = "stage.legs.ceiling";
 
-        /// <summary>창밖 남자 — 도서관 북쪽 창 밖.</summary>
+        /// <summary>창밖 남자(L5, 노란 남자 = business duck) — 도서관 북쪽 창 밖.</summary>
         public const string WindowMan = "stage.window.man";
+
+        /// <summary>문간의 노란 얼굴(L3, 노란 남자) — 도서관 정문(DoorWide (2)) 앞 복도, 도서관 안쪽을 본다. 대면 동안 문을 열어 둔다.</summary>
+        public const string YellowDoor = "stage.yellow.door";
+
+        /// <summary>화장실 소녀 — 바깥쪽 칸 앞에서 출발해 옆으로 걸어 칸 안으로 사라진다.</summary>
+        public const string GirlWalk = "stage.girl.walk";
+
+        /// <summary>경비실 창밖의 검은 남자(피날레 K4 결말, 11단계) — 로비 쪽에서 경비실 창 안을 본다.</summary>
+        public const string FinaleWindow = "stage.finale.window";
     }
 
     /// <summary>조우 15개의 대본 표. 수치는 이 파일 한 곳.</summary>
@@ -159,6 +168,7 @@ namespace NightDuty
                     Id = ProgramCatalog.ToiletGirl, Trigger = EncounterTrigger.EnterSpace, Space = SpaceId.Toilet,
                     Cue = FinalCues.GirlStall, Window = 4f,
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.girl",
+                    StageAnchor = StageAnchors.GirlWalk,
                     Note = "칸으로 들어가는 것을 보여 주고 역보고(T-1)를 건다."
                 },
                 new EncounterScript
@@ -180,6 +190,7 @@ namespace NightDuty
                     Id = ProgramCatalog.YellowFace, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 8f,
                     Cue = FinalCues.YellowFace, Window = 8f,
                     Placement = CuePlacement.AheadOfPlayer, Distance = 4f, StandIn = "mob.duck", AnchorId = FinalCues.FaceTarget,
+                    StageAnchor = StageAnchors.YellowDoor,
                     Note = "기획서: 도서관 점검 2개 뒤 출입구를 등질 때. 우선 도서관 8초 체류."
                 },
                 new EncounterScript
@@ -311,7 +322,8 @@ namespace NightDuty
             List<RuleTriggerScript> list = new List<RuleTriggerScript>
             {
                 new RuleTriggerScript { RuleId = "H2", Cue = "cue.door.autoopen", Space = SpaceId.Corridor, DwellMin = 8f, DwellMax = 20f },
-                new RuleTriggerScript { RuleId = "C1", Cue = FinalCues.Chalk, Space = SpaceId.Corridor, Zone = "cls11.door.outside", DwellMin = 0.5f, DwellMax = 1.5f, Duration = 5f },
+                new RuleTriggerScript { RuleId = "C1", Cue = FinalCues.Chalk, Space = SpaceId.Corridor, Zone = "cls13.door.outside",   // 2026-10-01 1-1 미사용 → 1-3 출입구 앞에서
+                 DwellMin = 0.5f, DwellMax = 1.5f, Duration = 5f },
                 new RuleTriggerScript { RuleId = "C4", Cue = FinalCues.RedLight, Space = SpaceId.Classroom, DwellMin = 5f, DwellMax = 12f, Duration = 15f },
                 new RuleTriggerScript { RuleId = "S2", Cue = FinalCues.Glass, Space = SpaceId.ScienceRoom, DwellMin = 5f, DwellMax = 12f },
                 new RuleTriggerScript { RuleId = "T1", Cue = FinalCues.Flush, Space = SpaceId.Toilet, DwellMin = 3f, DwellMax = 8f, Duration = 8f },

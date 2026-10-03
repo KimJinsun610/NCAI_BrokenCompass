@@ -24,6 +24,13 @@ public static class StandInPrefabBuilder
     private const string OutDir = "Assets/_Game/Resources/StandIns";
     private const string AnimDir = "Assets/_Game/Art/StandIns";
 
+    /// <summary>김진선님 인간나무 프리팹(크리처 가이드 §3). 감싸기만 한다.</summary>
+    private const string KimHumanTree = "Assets/3.2 Programmer_Kim/03 Prefebs/04 Horror/Creature/HorrorCreature_HumanTree_Moving.prefab";
+
+    private const string KimHorror = "Assets/3.2 Programmer_Kim/03 Prefebs/04 Horror/";
+    private const string KimVolumes = "Assets/3.2 Programmer_Kim/04 Materials/HorrorVolume/";
+    private const string ScreenFxPath = "Assets/_Game/Resources/DirectionScreenFx.asset";
+
     /// <summary>human tree(= NCAI_BrokenCompass/Assets/크리쳐/human tree와 같은 파일). 김진선님 폴더의 것을 참조만 한다.</summary>
     private const string HumanTree = "Assets/3.2 Programmer_Kim/99 Resources/05 Model/HumanTree/HumanTree_20k_Animated.fbx";
     private const string SoundTablePath = "Assets/_Game/Resources/DirectionSounds.asset";
@@ -44,6 +51,8 @@ public static class StandInPrefabBuilder
         public string PoseClipModel;
         public float PoseTime;
         public string LoopClipModel;
+        public string WrapPrefab;   // 다른 사람의 완성 프리팹을 그대로 감싼다(수정하지 않고 중첩)
+        public bool InPlace;   // 걷기 클립의 루트 이동을 빼서 제자리 걸음으로(이동은 DirectionWalker)
         public Action<Transform> Pose;
         public Pivot Pivot = Pivot.Feet;
         public bool GazeBox;
@@ -69,9 +78,10 @@ public static class StandInPrefabBuilder
             new Spec { Id = "mob.duck", Model = "m_businessduck/Business_Duck.fbx", BindHeight = 1.78f, Height = 1.85f, Note = "노란 얼굴 = business duck" },
             new Spec { Id = "mob.dummy.stand", Model = "m_humandummy/humman dummy_default_motion.fbx", BindHeight = 1.07f, Height = 1.7f, PoseClipModel = "m_humandummy/humman dummy_default_motion.fbx", PoseTime = 0f, Note = "복도 끝에 선 자 = 인체모형(팔을 내린 선 자세)" },
             new Spec { Id = "mob.dummy", Model = "m_humandummy/humman dummy_wake_motion.fbx", BindHeight = 1.07f, Height = 1.7f, PoseClipModel = "m_humandummy/humman dummy_wake_motion.fbx", PoseTime = 6.6f, Note = "모형 급습 = 인체모형(일어선 직후 구부정한 자세)" },
-            new Spec { Id = "mob.girl", Model = "m_redgirl/Red_Girl.fbx", BindHeight = 1.65f, Height = 1.3f, Note = "화장실 소녀 = red girl" },
+            new Spec { Id = "mob.girl", Model = "m_redgirl/redgirl_walking.fbx", BindHeight = 1.65f, Height = 1.3f, LoopClipModel = "m_redgirl/redgirl_walking.fbx", InPlace = true, Note = "화장실 소녀 = red girl, 제자리 걷기(이동은 DirectionWalker)" },
+            new Spec { Id = "mob.finale", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, GazeBox = true, HeadBox = new Vector3(0.4f, 0.45f, 0.35f), Note = "경비실 창밖의 검은 남자(피날레 K4 결말)" },
             new Spec { Id = "mob.blackman", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, Note = "CCTV에만 보이는 사람(기존 유지)" },
-            new Spec { Id = "mob.tree", Model = HumanTree, BindHeight = 3.5f, Height = 3.4f, LoopClipModel = HumanTree, Note = "사람 나무 = human tree(민 지정), 바람 흔들림 반복" }
+            new Spec { Id = "mob.tree", WrapPrefab = KimHumanTree, Note = "사람 나무 = 김진선님 HorrorCreature_HumanTree_Moving(흔들림 강화 + 바라보면 화면이 물듦)" }
         };
     }
 
@@ -113,6 +123,7 @@ public static class StandInPrefabBuilder
 
         sb.AppendLine(CleanStale());
         sb.AppendLine(BuildSoundTable());
+        sb.AppendLine(BuildScreenFx());
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         return sb.ToString();
@@ -122,6 +133,7 @@ public static class StandInPrefabBuilder
 
     private static string Build(Spec s)
     {
+        if (!string.IsNullOrEmpty(s.WrapPrefab)) return BuildWrapped(s);
         GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath(s.Model));
         if (asset == null) return "✗ " + s.Id + ": 모델 없음 " + s.Model;
 
@@ -192,7 +204,15 @@ public static class StandInPrefabBuilder
             string loopNote = string.Empty;
             if (!string.IsNullOrEmpty(s.LoopClipModel))
             {
-                AnimatorController ctrl = LoopController(s.Id, ModelPath(s.LoopClipModel));
+                float natural;
+                AnimatorController ctrl = LoopController(s.Id, ModelPath(s.LoopClipModel), s.InPlace, out natural);
+                if (s.InPlace && natural > 0.01f)
+                {
+                    DirectionWalker walker = root.AddComponent<DirectionWalker>();
+                    walker.SetNaturalSpeed(natural * scale);
+                    walker.enabled = false;   // 자리(StageAnchor)에 끝점이 있을 때만 걷는다
+                    loopNote += " · 제자리 걸음 " + (natural * scale).ToString("F2") + "m/s";
+                }
                 if (ctrl != null)
                 {
                     Animator a = model.GetComponent<Animator>();
@@ -200,7 +220,7 @@ public static class StandInPrefabBuilder
                     a.runtimeAnimatorController = ctrl;
                     a.applyRootMotion = false;
                     a.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
-                    loopNote = " · 반복 " + ctrl.name;
+                    loopNote = " · 반복 " + ctrl.name + loopNote;
                 }
             }
             else
@@ -318,6 +338,180 @@ public static class StandInPrefabBuilder
         return removed.Count == 0 ? "– 지울 옛 대역 없음" : "✓ 옛 대역 정리: " + string.Join(", ", removed);
     }
 
+    /// <summary>다른 사람의 완성 프리팹을 중첩해 감싼다 — 원본은 손대지 않는다. 피벗만 원점으로, 판정 조준점(Aim)만 더한다.</summary>
+    private static string BuildWrapped(Spec s)
+    {
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(s.WrapPrefab);
+        if (asset == null) return "✗ " + s.Id + ": 프리팹 없음 " + s.WrapPrefab;
+        GameObject root = new GameObject(s.Id);
+        try
+        {
+            GameObject inner = (GameObject)PrefabUtility.InstantiatePrefab(asset);
+            inner.transform.SetParent(root.transform, false);
+            inner.transform.localPosition = Vector3.zero;   // 원본 루트에 남은 씬 좌표(-32, 0, -21)를 지운다
+            inner.transform.localRotation = Quaternion.identity;
+            foreach (SkinnedMeshRenderer smr in inner.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.updateWhenOffscreen = true;
+            Bounds b = BakedBounds(inner);
+            GameObject aim = new GameObject("Aim");
+            aim.transform.SetParent(root.transform, false);
+            aim.transform.position = new Vector3(0f, Mathf.Max(0.5f, b.max.y - 0.15f), 0f);
+            PrefabUtility.SaveAsPrefabAsset(root, OutDir + "/" + s.Id + ".prefab");
+            return "✓ " + s.Id + " ← " + Path.GetFileNameWithoutExtension(s.WrapPrefab) + " (중첩, 높이 " + b.size.y.ToString("F2") + "m) — " + s.Note;
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    /// <summary>화면 효과 에셋 — 김진선님 공포 화면 톤 4종을 참조만 한다.</summary>
+    private static string BuildScreenFx()
+    {
+        DirectionScreenFxSO fx = AssetDatabase.LoadAssetAtPath<DirectionScreenFxSO>(ScreenFxPath);
+        if (fx == null)
+        {
+            fx = ScriptableObject.CreateInstance<DirectionScreenFxSO>();
+            AssetDatabase.CreateAsset(fx, ScreenFxPath);
+        }
+
+        fx.Suffocate = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(KimVolumes + "VP_Horror_Suffocate.asset");
+        fx.Blackout = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(KimVolumes + "VP_Horror_Blackout.asset");
+        fx.Wrongness = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(KimVolumes + "VP_Horror_Wrongness.asset");
+        fx.Creep = AssetDatabase.LoadAssetAtPath<UnityEngine.Rendering.VolumeProfile>(KimVolumes + "VP_Horror_Creep.asset");
+        EditorUtility.SetDirty(fx);
+        int n = (fx.Suffocate ? 1 : 0) + (fx.Blackout ? 1 : 0) + (fx.Wrongness ? 1 : 0) + (fx.Creep ? 1 : 0);
+        return "✓ 화면 효과 프로필 " + n + "/4";
+    }
+
+    // ── 가짜 놀람 자리(김진선님 캐비닛 연출) ──────────────────────
+
+    [MenuItem("야간근무/연출/가짜 놀람 캐비닛 놓기")]
+    public static void PlaceFakeSpotsMenu()
+    {
+        Debug.Log(PlaceFakeSpots());
+    }
+
+    /// <summary>
+    /// 김진선님 캐비닛 연출 둘을 맵의 같은 사물함 자리에 놓고 원래 사물함은 끈다(가이드 §3.4 — 삭제하지 않음).
+    /// 「덜컹이는 사물함」 = CabinetBang(반복해서 열렸다 쾅) · 「열려 있는 사물함」 = CabinetCreak(삐걱 열려 멈춤).
+    /// 자체 구역 트리거는 끄고 <see cref="DirectionFakeSpot"/>을 붙인다 — 가짜 놀람은 디렉터가 예산 안에서만 건다.
+    /// 점검 항목 H-4(복도 사물함, x 41.7)와 떨어진 자리만 쓴다.
+    /// </summary>
+    public static string PlaceFakeSpots()
+    {
+        StringBuilder sb = new StringBuilder();
+        GameObject parent = GameObject.Find("HorrorEvents");
+        if (parent == null)
+        {
+            parent = new GameObject("HorrorEvents");
+            Undo.RegisterCreatedObjectUndo(parent, "가짜 놀람 자리");
+        }
+
+        sb.AppendLine(PlaceCabinet(parent.transform, "HorrorEvent_CabinetCreak", "Interior/Corridors/LockerB_static (12)", "fake.locker.row", false));
+        sb.AppendLine(PlaceCabinet(parent.transform, "HorrorEvent_CabinetBang", "Interior/Corridors/LockerB_static (20)", "fake.locker.rattle", true));
+        for (int i = 0; i < BugSpots.Length; i++) sb.AppendLine(PlaceBugSwarm(parent.transform, BugSpotNames[i], BugSpots[i]));
+        EditorSceneManager.MarkSceneDirty(parent.scene);
+        return sb.ToString();
+    }
+
+    // 벌레 떼 자리(민 지정 방: 1-3 뒤 창고 · 화장실 · 도서관). 바닥 x·z — 높이는 바닥을 재서 맞춘다(프리팹의 무리는 루트 +3.6m = 천장 5.5 바로 아래).
+    private static readonly string[] BugSpotNames = { "BugSwarm_Storeroom", "BugSwarm_ToiletLamp", "BugSwarm_LibraryAisle", "BugSwarm_LibraryDoor", "BugSwarm_LibraryNorth" };
+    private static readonly Vector3[] BugSpots =
+    {
+        new Vector3(51.9f, 0f, 33.8f),   // 1-3 뒤 통로 너머 창고 — 천장 다리 자리(52.74, 33.16)에서 비켜 문간 쪽
+        new Vector3(0.8f, 0f, 34.5f),    // 화장실 — 세면대 앞 형광등 밑. 입구(서쪽 문 -2.1, 34)에서 보인다(실측). 소녀 동선(x 3.2)과 떨어짐
+        new Vector3(7.0f, 0f, 46.7f),    // 도서관 열람 탁자 서쪽 빈 바닥 — 깨진 천장(BrokenA (13)) 밑. 탁자 사이에 두면 벌레가 탁자 밑으로 숨었다(실측)
+        new Vector3(12f, 0f, 42.5f),     // 도서관 정문 안쪽 — 깨진 천장(BrokenA (2)) 밑
+        new Vector3(4.5f, 0f, 50f)       // 도서관 북서 서가 사이 — 깨진 천장(BrokenA (17)) 밑
+    };
+
+    /// <summary>
+    /// 김진선님 <c>HorrorEvent_BugSwarm</c>을 한 자리에 놓는다(이미 있으면 위치만 다시 맞춤). 프리팹은 고치지 않고 인스턴스에서만:
+    /// 자체 구역 트리거 끔 · 디버그 키(6) 끔 · 반복 재생 · <see cref="DirectionFakeSpot"/>(fake.bugs, 10m — 옆 방의 자리가 걸리지 않게).
+    /// </summary>
+    private static string PlaceBugSwarm(Transform parent, string name, Vector3 xz)
+    {
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(KimHorror + "HorrorEvent_BugSwarm.prefab");
+        if (asset == null) return "✗ HorrorEvent_BugSwarm 없음";
+        Transform inst = parent.Find(name);
+        if (inst == null)
+        {
+            GameObject go = (GameObject)PrefabUtility.InstantiatePrefab(asset, parent);
+            Undo.RegisterCreatedObjectUndo(go, "벌레 떼 자리");
+            go.name = name;
+            inst = go.transform;
+        }
+
+        float floor = 1.5f;
+        RaycastHit hit;
+        if (Physics.Raycast(new Vector3(xz.x, 5.3f, xz.z), Vector3.down, out hit, 6f, ~0, QueryTriggerInteraction.Ignore) && hit.point.y < 1.8f) floor = hit.point.y;
+        Undo.RecordObject(inst, "벌레 떼 자리");
+        inst.SetPositionAndRotation(new Vector3(xz.x, floor, xz.z), Quaternion.identity);
+        SilenceKimEvent(inst, true);
+        DirectionFakeSpot spot = inst.GetComponent<DirectionFakeSpot>();
+        if (spot == null) spot = Undo.AddComponent<DirectionFakeSpot>(inst.gameObject);
+        spot.Configure(NightDuty.TensionDirector.FakeBugs, 10f, true);
+        EditorUtility.SetDirty(spot);
+        return "✓ " + NightDuty.TensionDirector.FakeBugs + " ← " + name + " @" + inst.position.ToString("F2");
+    }
+
+    /// <summary>김진선님 연출 인스턴스의 자체 시동(구역 트리거·디버그 숫자 키)을 끄고 재생 방식을 정한다. 프리팹 자산은 그대로.</summary>
+    private static void SilenceKimEvent(Transform inst, bool replayable)
+    {
+        foreach (HorrorTriggerZone z in inst.GetComponentsInChildren<HorrorTriggerZone>(true))
+        {
+            Undo.RecordObject(z, "구역 트리거 끔");
+            z.enabled = false;
+            Collider c = z.GetComponent<Collider>();
+            if (c != null)
+            {
+                Undo.RecordObject(c, "구역 트리거 끔");
+                c.enabled = false;
+            }
+        }
+
+        HorrorEvent he = inst.GetComponent<HorrorEvent>();
+        if (he == null) return;
+        SerializedObject so = new SerializedObject(he);
+        so.FindProperty("playOnce").boolValue = !replayable;
+        SerializedProperty key = so.FindProperty("useDebugKey");
+        if (key != null) key.boolValue = false;   // 숫자 키로 아무 때나 터지지 않게 — 시험은 F3 콘솔로
+        so.ApplyModifiedProperties();
+    }
+
+    private static string PlaceCabinet(Transform parent, string prefabName, string originalPath, string fakeId, bool replayable)
+    {
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(KimHorror + prefabName + ".prefab");
+        if (asset == null) return "✗ " + prefabName + " 없음";
+        Transform inst = parent.Find(prefabName);
+        GameObject original = GameObject.Find(originalPath);
+        if (inst == null)
+        {
+            if (original == null) return "✗ 원래 사물함 없음: " + originalPath;
+            GameObject go = (GameObject)PrefabUtility.InstantiatePrefab(asset, parent);
+            Undo.RegisterCreatedObjectUndo(go, "가짜 놀람 자리");
+            inst = go.transform;
+        }
+
+        if (original != null)
+        {
+            inst.SetPositionAndRotation(original.transform.position, original.transform.rotation);
+            if (original.activeSelf)
+            {
+                Undo.RecordObject(original, "원래 사물함 끔");
+                original.SetActive(false);
+            }
+        }
+
+        SilenceKimEvent(inst, replayable);
+
+        DirectionFakeSpot spot = inst.GetComponent<DirectionFakeSpot>();
+        if (spot == null) spot = Undo.AddComponent<DirectionFakeSpot>(inst.gameObject);
+        spot.Configure(fakeId, 14f, replayable);
+        EditorUtility.SetDirty(spot);
+        return "✓ " + fakeId + " ← " + prefabName + " @" + inst.position.ToString("F2") + " (원래 " + originalPath + " 끔, 구역 트리거 끔)";
+    }
+
     // ── 없던 문 ────────────────────────────────────────────
 
     private static string BuildPhantomDoor()
@@ -361,8 +555,9 @@ public static class StandInPrefabBuilder
 
     // ── 반복 클립 ───────────────────────────────────────────
 
-    private static AnimatorController LoopController(string id, string modelPath)
+    private static AnimatorController LoopController(string id, string modelPath, bool inPlace, out float naturalSpeed)
     {
+        naturalSpeed = 0f;
         AnimationClip src = FirstClip(modelPath);
         if (src == null) return null;
 
@@ -374,6 +569,7 @@ public static class StandInPrefabBuilder
         AnimationClipSettings st = AnimationUtility.GetAnimationClipSettings(copy);
         st.loopTime = true;
         AnimationUtility.SetAnimationClipSettings(copy, st);
+        if (inPlace) naturalSpeed = RemoveRootDrift(copy);
         AssetDatabase.CreateAsset(copy, clipPath);
 
         string ctrlPath = AnimDir + "/" + id + ".controller";
@@ -391,6 +587,36 @@ public static class StandInPrefabBuilder
     private static string ModelPath(string model)
     {
         return model.StartsWith("Assets/", StringComparison.Ordinal) ? model : Creature + model;
+    }
+
+    /// <summary>
+    /// 맨 위 리그 뼈(경로에 '/'가 없는 것)의 위치 곡선에서 시작→끝 이동량을 선형으로 빼 제자리 걸음으로 만든다. 원래 걸음 속도(m/s, 모델 크기 1 기준)를 돌려준다.
+    /// </summary>
+    private static float RemoveRootDrift(AnimationClip clip)
+    {
+        float len = Mathf.Max(0.01f, clip.length);
+        Vector3 drift = Vector3.zero;
+        foreach (EditorCurveBinding b in AnimationUtility.GetCurveBindings(clip))
+        {
+            if (b.path.Contains("/") || !b.propertyName.StartsWith("m_LocalPosition.", StringComparison.Ordinal) || b.propertyName.EndsWith(".y", StringComparison.Ordinal)) continue;
+            AnimationCurve c = AnimationUtility.GetEditorCurve(clip, b);
+            if (c == null || c.length < 2) continue;
+            float d = c.keys[c.length - 1].value - c.keys[0].value;
+            if (Mathf.Abs(d) < 0.01f) continue;
+            Keyframe[] keys = c.keys;
+            for (int i = 0; i < keys.Length; i++)
+            {
+                keys[i].value -= d * (keys[i].time / len);
+                keys[i].inTangent -= d / len;
+                keys[i].outTangent -= d / len;
+            }
+
+            AnimationUtility.SetEditorCurve(clip, b, new AnimationCurve(keys));
+            if (b.propertyName.EndsWith(".x", StringComparison.Ordinal)) drift.x = d;
+            else drift.z = d;
+        }
+
+        return drift.magnitude / len;
     }
 
     private static AnimationClip FirstClip(string path)
@@ -447,7 +673,8 @@ public static class StandInPrefabBuilder
             { "T2.cue", au + "toilet/SFX_TOILET_Fabric.wav", "0.9" },
             { "K2.cue", "Assets/_Game/Resources/Cctv/cctv_static.ogg", "0.5" },
             { "fake.locker.rattle", kim + "SFX_CabinetMoving.wav", "0.7" },
-            { "fake.locker.row", kim + "SFX_Drawer.wav", "0.7" }
+            { "fake.locker.row", kim + "SFX_Drawer.wav", "0.7" },
+            { "fake.bugs", kim + "SFX_BugCrawl.wav", "0.6" }
         };
 
         table.Entries.Clear();
@@ -551,11 +778,56 @@ public static class StandInPrefabBuilder
             sb.AppendLine("✓ 창밖 남자 자리 — " + window.name + " 밖 " + at.ToString("F2") + " (얼굴 높이 " + faceY + ", 응시 상자는 창 안쪽 면)");
         }
 
+        // ④ 문간의 노란 얼굴(L3) — 도서관 정문 DoorWide (2) 앞 복도(민 스크린샷), 도서관 안쪽(서쪽)을 본다. 대면 동안 문을 열어 둔다.
+        GameObject libDoor = GameObject.Find("Corridors/DoorWide (2)") ?? GameObject.Find("DoorWide (2)");
+        if (libDoor != null)
+        {
+            Vector3 d = libDoor.transform.position;
+            Vector3 at = Floor(new Vector3(d.x + 0.95f, d.y, d.z + 0.2f));
+            Transform a = Anchor(parent.transform, NightDuty.StageAnchors.YellowDoor, at, Quaternion.LookRotation(Vector3.left), null, Vector3.zero, Vector3.zero, 4f);
+            a.GetComponent<StageAnchor>().ConfigureExtras(libDoor.transform, null, 0.45f);
+            sb.AppendLine("✓ 문간의 노란 얼굴 자리 — " + libDoor.name + " 앞 " + at.ToString("F2") + " (대면 동안 문 열림)");
+        }
+
+        // ⑤ 화장실 소녀 — 바깥쪽 칸(toilet.stall.outer) 앞에서 북쪽으로 걸어 칸 안으로. 입구(서쪽)에서 보면 옆으로 걷는다.
+        Bounds stall;
+        SpaceZones zones = UnityEngine.Object.FindAnyObjectByType<SpaceZones>();
+        if (zones != null && zones.TryGetSignalZone("toilet.stall.outer.inside", out stall))
+        {
+            Vector3 start = Floor(new Vector3(stall.center.x, 1.5f, 32.5f));
+            Vector3 end = Floor(new Vector3(stall.center.x, 1.5f, stall.min.z + 0.35f));
+            Transform a = Anchor(parent.transform, NightDuty.StageAnchors.GirlWalk, start, Quaternion.LookRotation(Vector3.left), null, Vector3.zero, Vector3.zero, 4f);
+            Transform walkEnd = a.Find("WalkTo");
+            if (walkEnd == null)
+            {
+                walkEnd = new GameObject("WalkTo").transform;
+                walkEnd.SetParent(a, false);
+            }
+
+            walkEnd.position = end;
+            a.GetComponent<StageAnchor>().ConfigureExtras(null, walkEnd, 0.45f);
+            sb.AppendLine("✓ 화장실 소녀 길 — " + start.ToString("F2") + " → " + end.ToString("F2") + " (바깥쪽 칸)");
+        }
+
+        // ⑥ 경비실 창밖의 검은 남자(피날레 K4 결말) — 로비에서 경비실 서쪽 창 안을 본다(민 스크린샷).
+        {
+            Vector3 at = Floor(new Vector3(29.35f, 1.5f, 45.85f));
+            Anchor(parent.transform, NightDuty.StageAnchors.FinaleWindow, at, Quaternion.LookRotation(Vector3.right), null, Vector3.zero, Vector3.zero, 3.5f);
+            sb.AppendLine("✓ 경비실 창밖 검은 남자 자리 — " + at.ToString("F2") + " (창 안쪽을 봄)");
+        }
+
         EditorSceneManager.MarkSceneDirty(parent.scene);
         return sb.ToString();
     }
 
-    private static void Anchor(Transform parent, string id, Vector3 position, Quaternion rotation, string proxyName, Vector3 proxyPos, Vector3 proxySize, float viewDistance)
+    private static Vector3 Floor(Vector3 p)
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(new Vector3(p.x, p.y + 1.5f, p.z), Vector3.down, out hit, 4f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return hit.point;
+        return p;
+    }
+
+    private static Transform Anchor(Transform parent, string id, Vector3 position, Quaternion rotation, string proxyName, Vector3 proxyPos, Vector3 proxySize, float viewDistance)
     {
         Transform t = parent.Find(id);
         if (t == null)
@@ -586,6 +858,7 @@ public static class StandInPrefabBuilder
 
         a.Configure(id, proxy, viewDistance);
         EditorUtility.SetDirty(a);
+        return t;
     }
 
     // ── 대역 사진(확인용) ───────────────────────────────────

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using UnityEngine;
 
@@ -208,6 +208,26 @@ public struct DoorHandle
         {
             s_fKsUnlock.SetValue(ks, true);
             s_fKeySystem.SetValue(_door, ks);   // 값 타입이어도 되돌려 넣는다.
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e, _door);
+        }
+    }
+
+    /// <summary>잠금을 되돌린다(<see cref="ForceUnlock"/>의 반대). 연출이 잠깐 열어 준 잠긴 문을 원래대로 돌릴 때 쓴다.</summary>
+    public void ForceLock()
+    {
+        object ks = KeySystem();
+        if (ks == null || s_fKsUnlock == null || s_fKsEnabled == null || !ReadBool(s_fKsEnabled, ks))
+        {
+            return;
+        }
+
+        try
+        {
+            s_fKsUnlock.SetValue(ks, false);
+            s_fKeySystem.SetValue(_door, ks);
         }
         catch (Exception e)
         {

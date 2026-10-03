@@ -112,6 +112,15 @@ namespace NightDuty
             return ok;
         }
 
+        /// <summary>디버그: 가짜 놀람을 지금 건다(예산을 쓰지 않음). 디렉터가 없거나 목록에 없으면 false.</summary>
+        public static bool DebugForceFake(string fakeId)
+        {
+            if (_tension == null) return false;
+            bool ok = _tension.ForceFake(fakeId);
+            FlushDirection();
+            return ok;
+        }
+
         /// <summary>디버그: 수칙 단서를 지금 울린다(분필·물 내림 등). 대본이 없으면 false.</summary>
         public static bool DebugFireRuleCue(string ruleId)
         {

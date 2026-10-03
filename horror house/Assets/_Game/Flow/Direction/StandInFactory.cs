@@ -110,7 +110,7 @@ public static class StandInFactory
     /// <summary>대역에 단단한 응시 콜라이더가 필요한지(C2 천장 다리 · L5 창밖 남자).</summary>
     public static bool NeedsGazeCollider(string id)
     {
-        return id == "mob.legs" || id == "mob.windowman" || id == "mob.glitchman";
+        return id == "mob.legs" || id == "mob.windowman" || id == "mob.finale" || id == "mob.glitchman";
     }
 
     private static GameObject Build(string id)
@@ -127,6 +127,7 @@ public static class StandInFactory
             case "mob.duck": Duck(root); break;
             case "mob.windowman": Duck(root); break;
             case "mob.blackman": Humanoid(root, 1.8f, 0.22f); break;
+            case "mob.finale": Humanoid(root, 1.8f, 0.22f); break;
             case "mob.tree": Tree(root); break;
             case "mob.legs": Legs(root); break;
             case "prop.phantomdoor": Door(root); break;

@@ -137,6 +137,16 @@ namespace NightDuty
         }
 
         /// <summary>
+        /// 경비실 전화로 근무를 일찍 끝낼 수 있는가(2026-10-03 민): 밤이 진행 중이고 붙잡히지 않았으며,
+        /// 오늘 점검표가 있고 <b>전부 보고했을 때</b>. 끝내는 길은 04:00과 같은 <see cref="RequestEndNight"/>다 —
+        /// 남은 카드 정산·조우 이월이 그대로 돈다(미완료 점검이 없으니 경고는 붙지 않는다).
+        /// </summary>
+        public static bool CanEndShiftEarly
+        {
+            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCount == 0; }
+        }
+
+        /// <summary>
         /// 마지막 재시작 직전 시도에서 붙잡힌 축을 올린 수칙·점검 항목 이름(처음 오른 순, 중복 없음). 재시작 카드가 읽는다.
         /// 무엇을 했는지·어떻게 했어야 하는지는 담지 않는다.
         /// </summary>

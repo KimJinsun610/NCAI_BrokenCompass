@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -22,35 +22,23 @@ public static class DoorPolicyBuilder
     /// </summary>
     private static readonly string[] OpenablePaths =
     {
-        // 정문 — 퇴실은 여기로 나간다. 뒷문 DoorBack (55.0, 1.5, 46.4)은 잠겨 있다.
-        "Exterior/Doors/DoorMain",
-
-        // 화장실 — 존은 x -2~6 · z 32~36이고, 실제로 그 자리에 있는 것은 Toilet02 그룹이다.
-        "Interior/Toilet02/DoorNarrowSolid (4)",          // toilet.door, 화장실 출입
-        "Interior/Toilet02/ToiletCabin_openable (2)",     // toilet.stall.outer — T1·T3
-        "Interior/Toilet02/ToiletCabin_openable (4)",     // toilet.stall.inner — T1·T3
-
-        // 복도
-        "Interior/Corridors/DoorNarrowSolid (8)",         // corridor.door.auto — H1 자동 개방
-        "Interior/Corridors/DoorNarrowSolid (3)",         // corridor.door.back — H2
-        "Interior/Corridors/DoorNarrow (3)",              // 복도 중간 (36.0, 43.9)
-
-        // 과학실 — 존은 x 42~54 · z 40~44. 북쪽 경계가 복도와 맞닿는다.
-        "Interior/Corridors/DoorNarrowSolid (9)",         // 과학실 출입 (52.0, 44.1)
-
-        // 교실 1-1 — 존은 x 38~50 · z 48~56. 남쪽 경계가 복도와 맞닿는다.
-        "Interior/Classroom01/DoorNarrow",                // 교실 1-1 출입 (48.0, 47.9)
-        "Interior/Toilet01/DoorNarrowSolid"               // 복도 동쪽 끝 (52.0, 47.9)
+        // 2026-10-01 민: 「쓰는 문만 열고 나머지는 잠근다」. 기준 = 근무 공간(복도·교실 1-3·과학실·화장실·도서관·경비실)의 출입문. 건물 정문(Exterior/Doors/DoorMain)은 열지 않는다(민, 2026-10-02). 교실 1-1은 쓰지 않는다(민, 2026-10-01) — 문을 잠근다.
+        // 문 양쪽 1m를 SpaceZones 상자로 재서 추렸다. 교실 1-3은 문 없는 출입구라 표에 없다.
+        "Interior/Corridors/DoorNarrow (3)",            // 경비실 출입 (36.0, 43.9)
+        "Interior/Corridors/DoorWide (2)",              // 도서관 출입 (13.1, 42.0) — 문간의 노란 얼굴(L3)
+        "Interior/Corridors/DoorNarrowSolid (9)",       // 과학실 출입 (52.0, 44.1) — science.door
+        "Interior/Corridors/DoorNarrowSolid (8)",       // 과학실 둘째 문 (44.0, 44.1) — corridor.door.auto, H2 자동 개방 우선
+        "Interior/Toilet02/DoorNarrowSolid (4)",        // 화장실 출입 — toilet.door
+        "Interior/Toilet02/ToiletCabin_openable (2)",   // 바깥쪽 칸 — toilet.stall.outer
+        "Interior/Toilet02/ToiletCabin_openable (4)"    // 안쪽 칸 — toilet.stall.inner(T2 사용 중 칸)
+        // 잠금(표에 없음): 뒷문 셋 · 2층 문 · 복도 남쪽·서쪽 문(DoorNarrow (1), DoorWide, DoorWide (1), DoorNarrowSolid (2)·(3)·(5)·(6)) ·
+        // 사물함실 · 안 쓰는 화장실(Toilet01) 출입문과 칸 · 교실 1-1 출입문(Classroom01/DoorNarrow) · 건물 정문(DoorMain). corridor.door.back(옛 H2 카드 문)도 쓰지 않는 문이라 잠근다.
     };
 
-    /// <summary>
-    /// 판정 ID로도 허용한다. 경로가 바뀌어도 ID는 남으므로 이쪽이 더 질기다.
-    /// <c>judgeTargetsAreOpenable</c>이 켜져 있으면 사실 없어도 되지만, 꺼도 이 문들은 열리게 둔다.
-    /// </summary>
+    /// <summary>판정 ID로도 허용한다(경로가 바뀌어도 ID는 남는다). 위 경로와 같은 문들이다.</summary>
     private static readonly string[] OpenableIds =
     {
-        "corridor.door.auto", "corridor.door.back", "corridor.door.11", "corridor.door.13",
-        "science.door", "toilet.door", "toilet.stall.outer", "toilet.stall.inner"
+        "corridor.door.auto", "science.door", "toilet.door", "toilet.stall.outer", "toilet.stall.inner"
     };
 
     [MenuItem("NightDuty/문 개폐 정책 에셋 생성")]
@@ -75,6 +63,8 @@ public static class DoorPolicyBuilder
         SerializedObject so = new SerializedObject(asset);
         WriteArray(so.FindProperty("openablePaths"), OpenablePaths);
         WriteArray(so.FindProperty("openableIds"), OpenableIds);
+        SerializedProperty jt = so.FindProperty("judgeTargetsAreOpenable");
+        if (jt != null) jt.boolValue = false;   // 판정 대상이라도 쓰지 않는 문(corridor.door.back)은 잠근다 — 표가 정본.
         so.ApplyModifiedPropertiesWithoutUndo();
 
         EditorUtility.SetDirty(asset);

@@ -94,3 +94,6 @@ MonoBehaviour:
   - key: fake.locker.row
     clip: {fileID: 8300000, guid: f4e285d1635788e4882c71c6f127ef53, type: 3}
     volume: 0.7
+  - key: fake.bugs
+    clip: {fileID: 8300000, guid: f60317ce752f1f44bb9a1e40e673dfae, type: 3}
+    volume: 0.6

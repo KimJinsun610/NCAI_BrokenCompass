@@ -233,6 +233,8 @@ public sealed class InspectionSensor : MonoBehaviour
 
     private void Update()
     {
+        RequestFocusOutline();
+
         if (_focus.Length == 0 || Time.timeScale <= 0f)
         {
             _hold = 0f;
@@ -259,6 +261,28 @@ public sealed class InspectionSensor : MonoBehaviour
         {
             _hold = 0f;
             Report(anomaly);
+        }
+    }
+
+    /// <summary>
+    /// 보고 가능한 포커스 항목의 소품에 외곽선(2026-10-03 민 요청). 점검 표식(<c>Inspect H-1</c> 등)은 소품의 자식인
+    /// 보이지 않는 상자라, 그 <b>부모</b>(소화기·현미경·CRT 모니터 …)에 그린다. 정상·이상 어느 쪽이든 같은 외곽선이다.
+    /// </summary>
+    private void RequestFocusOutline()
+    {
+        if (_focus.Length == 0 || _plan == null) return;
+
+        IReadOnlyList<InspectionAssignment> rows = _plan.Assignments;
+        for (int i = 0; i < rows.Count; i++)
+        {
+            if (rows[i].Id != _focus) continue;
+            JudgeTarget target;
+            if (JudgeTargetRegistry.TryGet(rows[i].Item.TargetId, out target) && target != null)
+            {
+                InteractionOutline.Request(target.transform.parent != null ? target.transform.parent : target.transform);
+            }
+
+            return;
         }
     }
 

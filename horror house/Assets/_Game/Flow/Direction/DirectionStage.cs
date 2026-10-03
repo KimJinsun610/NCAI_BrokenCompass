@@ -30,6 +30,7 @@ public sealed class DirectionStage : MonoBehaviour
     private readonly Dictionary<string, Staged> _staged = new Dictionary<string, Staged>(StringComparer.Ordinal);
     private readonly Dictionary<SpaceId, LightGroup> _groups = new Dictionary<SpaceId, LightGroup>();
     private SpaceZones _zones;
+    private DirectionScreenFx _fx;
     private static DirectionStage s_active;
 
     /// <summary>지금 살아 있는 실행기.</summary>
@@ -76,6 +77,21 @@ public sealed class DirectionStage : MonoBehaviour
         go.AddComponent<DirectionStage>();
     }
 
+    /// <summary>화면 효과(김진선님 공포 화면 톤·울렁임).</summary>
+    public DirectionScreenFx Fx
+    {
+        get
+        {
+            if (_fx == null)
+            {
+                _fx = GetComponent<DirectionScreenFx>();
+                if (_fx == null) _fx = gameObject.AddComponent<DirectionScreenFx>();
+            }
+
+            return _fx;
+        }
+    }
+
     private void OnEnable()
     {
         s_active = this;
@@ -111,6 +127,7 @@ public sealed class DirectionStage : MonoBehaviour
         List<string> ids = new List<string>(_staged.Keys);
         for (int i = 0; i < ids.Count; i++) Cleanup(ids[i], phase);
         foreach (LightGroup g in _groups.Values) g.Restore();
+        if (_fx != null) _fx.ClearAll();
     }
 
     // ── 알림 처리 ───────────────────────────────────────────
@@ -200,7 +217,7 @@ public sealed class DirectionStage : MonoBehaviour
         else if (script.StandIn.Length > 0)
         {
             Vector3 at;
-            GameObject go = SpawnAt(script.StandIn, script.StageAnchor, script.Placement == CuePlacement.CeilingAhead, point, player, script.AnchorId, out at);
+            GameObject go = SpawnAt(st, script.StandIn, script.StageAnchor, script.Placement == CuePlacement.CeilingAhead, point, player, script.AnchorId, out at);
             DirectionCue cue = go.GetComponent<DirectionCue>();
             if (cue == null) cue = go.AddComponent<DirectionCue>();
             cue.Play(new CueContext { Intensity = e.Intensity, Anchor = at, EncounterId = e.SourceId });
@@ -209,7 +226,7 @@ public sealed class DirectionStage : MonoBehaviour
             if (script.ExtraStandIn.Length > 0)
             {
                 Vector3 ceiling;
-                GameObject extra = SpawnAt(script.ExtraStandIn, script.ExtraStageAnchor, true, PointOr(Vector3.zero, 3f), player, script.ExtraAnchorId, out ceiling);
+                GameObject extra = SpawnAt(st, script.ExtraStandIn, script.ExtraStageAnchor, true, PointOr(Vector3.zero, 3f), player, script.ExtraAnchorId, out ceiling);
                 if (extra.GetComponent<DirectionCue>() == null) extra.AddComponent<DirectionCue>().Play(new CueContext { Intensity = e.Intensity, Anchor = ceiling, EncounterId = e.SourceId });
                 st.Objects.Add(extra);
             }
@@ -225,13 +242,98 @@ public sealed class DirectionStage : MonoBehaviour
             }
         }
 
+        ApplyScreenFx(e.SourceId, st);
         PlaySound(e.SourceId + ".confront", point);
+    }
+
+    /// <summary>
+    /// 조우 대면에 화면 톤을 붙인다(「화면 효과 가이드」 §5 추천 조합). 조우가 끝나면(결과·중단) 내린다.
+    /// 판정 결과(위반)에는 붙이지 않는다 — 위반 즉시 피드백 금기.
+    /// </summary>
+    private void ApplyScreenFx(string encounterId, Staged st)
+    {
+        DirectionScreenFx fx = Fx;
+        string key = "enc." + encounterId;
+        switch (encounterId)
+        {
+            case ProgramCatalog.ModelRush:
+            case ProgramCatalog.HallEndFigure:
+                // 인체모형이 나타남 — 숨막힘 1.5초에 0.8까지 → 조우 동안 유지 → 1.5초에 0.
+                fx.Push(key, DirectionScreenFx.Kind.Suffocate, 0.8f, 1.5f, -1f, 1.5f);
+                break;
+            case ProgramCatalog.ScienceBlackout:
+            case ProgramCatalog.ToiletBlackout:
+                // 불이 나가는 순간 — 순간 암전 0.1초 두 번.
+                fx.Flash(key, DirectionScreenFx.Kind.Blackout, 2, 1f);
+                break;
+            case ProgramCatalog.YellowFace:
+            case ProgramCatalog.SuitMan:
+                // 노란 남자(문간·창밖) — 이질감 0.6 + 울렁임 0.4.
+                fx.Push(key, DirectionScreenFx.Kind.Wrongness, 0.6f, 1f, -1f, 1.5f);
+                fx.Push(key, DirectionScreenFx.Kind.Wobble, 0.4f, 1f, -1f, 1.5f);
+                break;
+            default:
+                return;
+        }
+
+        st.Undo.Add(() => fx.Release(key));
+    }
+
+    /// <summary>가짜 놀람을 씬의 연출 자리(김진선님 캐비닛 연출)로 낸다. 근처에 쓸 자리가 없으면 false.</summary>
+    private bool PlayFakeSpot(string fakeId)
+    {
+        Transform player = PlayerRoot();
+        if (player == null) return false;
+        // 보이는 자리를 먼저, 그다음 가까운 자리(벌레 떼는 방마다 자리가 여럿 — 등 뒤에서 쏟아지면 소리만 남는다).
+        Camera cam = Camera.main;
+        DirectionFakeSpot best = null;
+        float bestD = float.MaxValue;
+        bool bestSeen = false;
+        foreach (DirectionFakeSpot spot in FindObjectsByType<DirectionFakeSpot>(FindObjectsSortMode.None))
+        {
+            if (spot.FakeId != fakeId) continue;
+            HorrorEvent he = spot.GetComponent<HorrorEvent>();
+            if (he == null || he.IsPlaying || (!spot.Replayable && he.HasPlayed)) continue;
+            Vector3 d = spot.transform.position - player.position;
+            d.y = 0f;
+            float dist = d.magnitude;
+            if (dist > spot.MaxDistance) continue;
+            bool seen = Seen(cam, spot.transform.position + Vector3.up * 2.2f, spot.transform);
+            if (bestSeen && !seen) continue;
+            if (seen == bestSeen && dist >= bestD) continue;
+            best = spot;
+            bestD = dist;
+            bestSeen = seen;
+        }
+
+        if (best == null) return false;
+        best.GetComponent<HorrorEvent>().Play();
+        if (Verbose) Debug.Log("[Direction] 가짜 놀람 " + fakeId + " ← " + best.name + " (" + bestD.ToString("F1") + "m" + (bestSeen ? ", 시야 안" : ", 시야 밖") + ")");
+        return true;
+    }
+
+    /// <summary>카메라 앞쪽(약 ±55°)이고 사이에 막는 것이 없는가(그 자리 자신의 충돌체는 무시).</summary>
+    private static bool Seen(Camera cam, Vector3 point, Transform self)
+    {
+        if (cam == null) return false;
+        Vector3 from = cam.transform.position;
+        Vector3 to = point - from;
+        if (Vector3.Dot(cam.transform.forward, to.normalized) < 0.57f) return false;
+        RaycastHit[] hits = Physics.RaycastAll(from, to.normalized, to.magnitude, ~0, QueryTriggerInteraction.Ignore);
+        foreach (RaycastHit h in hits)
+        {
+            if (h.collider.transform.IsChildOf(self)) continue;
+            if (h.collider.GetComponentInParent<CharacterController>() != null) continue;
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
     /// 대역을 세운다. 고정 자리(<see cref="StageAnchor"/>)가 씬에 있으면 그 자리·방향(+응시 상자), 없으면 디렉터가 준 점의 바닥(천장)에서 플레이어를 보게.
     /// </summary>
-    private static GameObject SpawnAt(string standIn, string stageAnchor, bool ceiling, Vector3 point, Vector3 player, string anchorId, out Vector3 at)
+    private static GameObject SpawnAt(Staged st, string standIn, string stageAnchor, bool ceiling, Vector3 point, Vector3 player, string anchorId, out Vector3 at)
     {
         StageAnchor fixedAt = StageAnchor.Find(stageAnchor);
         if (fixedAt != null)
@@ -239,11 +341,73 @@ public sealed class DirectionStage : MonoBehaviour
             at = fixedAt.transform.position;
             GameObject placed = StandInFactory.Create(standIn, at, fixedAt.transform.rotation, anchorId);
             if (fixedAt.GazeProxy != null) StandInFactory.ApplyGazeProxy(placed, fixedAt.GazeProxy);
+            if (fixedAt.RevealDoor != null) RevealDoor(st, fixedAt.RevealDoor);
+            if (fixedAt.WalkTo != null)
+            {
+                DirectionWalker walker = placed.GetComponent<DirectionWalker>();
+                if (walker == null) walker = placed.AddComponent<DirectionWalker>();
+                walker.Walk(at, fixedAt.WalkTo.position, fixedAt.WalkSpeed, true);
+            }
+
             return placed;
         }
 
         at = ceiling ? CeilingAbove(point) : FloorBelow(point);
         return StandInFactory.Create(standIn, at, player, anchorId);
+    }
+
+    /// <summary>
+    /// 대면 동안 그 문을 열어 둔다(문간의 노란 얼굴). 잠긴 문이면 그동안만 풀고, 끝나면 닫고 다시 잠근다.
+    /// 문 발신기(DoorRelay)가 없는 문만 쓴다 — 있으면 연출 개방이 H2 방아쇠로 잡힌다.
+    /// </summary>
+    private static void RevealDoor(Staged st, Transform door)
+    {
+        DoorHandle h = DoorHandle.Of(door);
+        if (!h.IsValid) return;
+        if (door.GetComponentInParent<DoorRelay>() != null || door.GetComponentInChildren<DoorRelay>() != null)
+        {
+            Debug.LogWarning("[Direction] 문 발신기가 달린 문은 연출로 열지 않습니다(H2 방아쇠가 됨): " + door.name, door);
+            return;
+        }
+
+        bool wasLocked = h.IsLocked;
+        bool wasOpen = h.IsOpen;
+        if (wasLocked) h.ForceUnlock();
+        if (!wasOpen) h.Open();
+        st.Undo.Add(() =>
+        {
+            DoorHandle back = DoorHandle.Of(door);
+            if (!back.IsValid) return;
+            if (!wasOpen) back.Close();
+            if (wasLocked) back.ForceLock();
+        });
+    }
+
+    // ── 피날레 미리 보기(11단계 전까지 디버그용) ─────────────────
+
+    private const string FinalePreviewId = "finale.window.preview";
+
+    /// <summary>경비실 창밖의 검은 남자(피날레 K4 결말)를 세우거나 치운다. 피날레 흐름이 생기면 거기서 같은 자리·프리팹을 쓴다.</summary>
+    public bool ToggleFinaleWindowMan()
+    {
+        if (_staged.ContainsKey(FinalePreviewId))
+        {
+            Cleanup(FinalePreviewId, DirectionPhase.Aborted);
+            return false;
+        }
+
+        StageAnchor a = StageAnchor.Find(StageAnchors.FinaleWindow);
+        if (a == null)
+        {
+            Debug.LogWarning("[Direction] 씬에 피날레 창밖 자리(stage.finale.window)가 없습니다.");
+            return false;
+        }
+
+        Staged st = Stage(FinalePreviewId);
+        Vector3 at;
+        GameObject go = SpawnAt(st, "mob.finale", StageAnchors.FinaleWindow, false, a.transform.position, PlayerFeet(), "rule.K4.window", out at);
+        st.Objects.Add(go);
+        return true;
     }
 
     private void SpawnCctvPerson(Staged st)
@@ -319,12 +483,11 @@ public sealed class DirectionStage : MonoBehaviour
         foreach (DoorRelay relay in FindObjectsByType<DoorRelay>(FindObjectsSortMode.None))
         {
             DoorHandle h = DoorHandle.Of(relay);
-            if (!h.IsValid || h.IsOpen) continue;
+            if (!h.IsValid || h.IsOpen || h.IsLocked) continue;
 
-            // corridor.door.auto는 레벨에서 「저절로 열리는 문」으로 지정해 둔 문이다(DoorPolicyBuilder).
-            // 평소엔 잠겨 있으므로 연출이 열 때만 런타임 잠금을 푼다. 다른 잠긴 문은 길막이므로 건드리지 않는다.
-            bool designated = relay.DoorId == AutoOpenDoorId;
-            if (h.IsLocked && !designated) continue;
+            // 쓰지 않는 문(정책 Sealed)은 연출로도 열지 않는다(2026-10-01 민). 동선의 문은 시작할 때 잠금이 풀려 있다.
+            if (PlayerInteractor.Classify(h) != DoorPolicySO.Kind.Openable) continue;
+            bool designated = relay.DoorId == AutoOpenDoorId;   // 과학실 둘째 문 — 레벨이 「저절로 열리는 문」으로 지정
             Vector3 to = relay.transform.position - root.position;
             to.y = 0f;
             float d = to.magnitude;
@@ -345,7 +508,6 @@ public sealed class DirectionStage : MonoBehaviour
         }
 
         DoorHandle chosen = DoorHandle.Of(best);
-        if (chosen.IsLocked) chosen.ForceUnlock();
         best.BeginDirectionMove(2f);
         chosen.Open();
         if (Verbose) Debug.Log("[Direction] H2: 문 자동 개방 — " + best.DoorId);
@@ -356,6 +518,13 @@ public sealed class DirectionStage : MonoBehaviour
         if (e.SourceId == "fake.flashlight.flicker")
         {
             StartCoroutine(FlickerFlashlight());
+            return;
+        }
+
+        if (PlayFakeSpot(e.SourceId))
+        {
+            // 캐비닛이 쾅 — 순간 암전 두 번(가이드 §5). 삐걱 열림은 화면을 건드리지 않는다.
+            if (e.SourceId == "fake.locker.rattle") Fx.Flash("fake." + Time.frameCount, DirectionScreenFx.Kind.Blackout, 2, 0.7f);
             return;
         }
 

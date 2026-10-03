@@ -13,7 +13,7 @@ using UnityEngine.InputSystem;
 /// <list type="bullet">
 /// <item><b>개요</b>: 밤 시계 구간 점프(00:16 · 슬롯 A · 이완 · 슬롯 B · 슬롯 C · 03:30) · 판정 강제 · 자동 연출 켜고 끄기 · 시계 정지 · 축 ± · 밤 종료·붙잡힘·재시작 · 손전등·달리기 신호.</item>
 /// <item><b>수칙</b>: 오늘 덱의 상태(방아쇠·위반·진행 중)와 수칙마다 [이동] [단서] [끝] [조우], 31장 중 아무 수칙이나 [덱에 추가].</item>
-/// <item><b>조우</b>: 오늘 슬롯의 진행 상태, 조우 15개 각각 [이동+실행]·[여기서 실행], [다음 단계], [무대 정리].</item>
+/// <item><b>조우</b>: 오늘 슬롯의 진행 상태, 조우 15개 각각 [이동+실행]·[여기서 실행], [다음 단계], [무대 정리], [경비실 창밖 검은 남자(피날레 미리 보기)].</item>
 /// <item><b>점검</b>: 오늘 점검표, 항목마다 [이동](항목 앞 1.6m에서 바라봄) · [정상] · [이상] 보고.</item>
 /// <item><b>로그</b>: 연출 알림 · 수칙 정산 · 점검 보고 · 재시작.</item>
 /// </list>
@@ -86,7 +86,7 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         // ① 에디터가 초점을 잃어도 플레이 루프가 멈추지 않게(알트탭 한 번에 게임이 얼던 문제). 런타임 값만 — 프로젝트 설정은 그대로.
         // ② 열쇠 연출이 아직 없어 잠긴 문 12개가 회차를 막는다 — 개발 빌드에서는 잠금을 무시한다(콘솔에서 끌 수 있음).
         Application.runInBackground = true;
-        PlayerInteractor.IgnoreLocks = true;
+        PlayerInteractor.IgnoreLocks = false;   // 동선의 문은 시작할 때 풀린다(PlayerInteractor). 쓰지 않는 문은 잠긴 채 — 실제 게임과 같게. 개요 탭 버튼으로 켤 수 있다.
     }
 
     private void OnEnable()
@@ -519,6 +519,27 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         {
             if (DirectionStage.Active != null) DirectionStage.Active.ClearAll(DirectionPhase.Aborted);
         });
+        if (GUILayout.Button("경비실 창밖 검은 남자(피날레)")) Later(() =>
+        {
+            if (DirectionStage.Active == null) return;
+            bool shown = DirectionStage.Active.ToggleFinaleWindowMan();
+            if (shown)
+            {
+                StageAnchor a = StageAnchor.Find(StageAnchors.FinaleWindow);
+                if (a != null) TeleportToView(a, SpaceId.SecurityRoom);
+            }
+
+            Log(shown ? "피날레 미리 보기: 경비실 창밖 검은 남자" : "피날레 미리 보기 치움");
+        });
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("가짜 놀람(여기서, 예산 안 씀):", _small, GUILayout.Width(170f));
+        foreach (string fake in TensionDirector.FakeScares)
+        {
+            string id = fake;
+            if (GUILayout.Button(FakeName(id))) Later(() => Log(NightRun.DebugForceFake(id) ? "가짜 놀람: " + FakeName(id) : "가짜 놀람 실패: " + id));
+        }
         GUILayout.EndHorizontal();
 
         GUILayout.Space(6f);
@@ -805,6 +826,18 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
     }
 
     // ── 도구 ───────────────────────────────────────────────
+
+    private static string FakeName(string id)
+    {
+        switch (id)
+        {
+            case "fake.locker.rattle": return "덜컹이는 사물함";
+            case "fake.locker.row": return "열려 있는 사물함";
+            case "fake.flashlight.flicker": return "손전등 깜빡임";
+            case TensionDirector.FakeBugs: return "벌레 떼";
+            default: return id;
+        }
+    }
 
     private static string SpaceName(SpaceId s)
     {

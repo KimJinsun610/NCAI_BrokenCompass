@@ -707,6 +707,7 @@ public sealed class CctvSystem : MonoBehaviour
         }
 
         ClaimPrompt(EnterPrompt, true);
+        InteractionOutline.Request(_monitor);   // 들여다볼 수 있을 때만 모니터 외곽선(2026-10-03).
 
 #if ENABLE_LEGACY_INPUT_MANAGER
         if (Input.GetKeyDown(interactKey))

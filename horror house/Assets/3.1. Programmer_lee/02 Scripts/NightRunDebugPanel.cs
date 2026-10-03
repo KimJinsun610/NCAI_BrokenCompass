@@ -10,7 +10,7 @@ using NightDuty;
 /// <remarks>
 /// 탭 세 개:
 /// - <b>카드 시험</b>(기본): 공간을 고르고 카드의 [지키기]/[어기기]를 누르면, 그 카드만 들어간 새 밤을 열고
-///   <see cref="CardScenarios"/>의 행동을 재생한 뒤 결과를 보여 줍니다. 처음 보는 사람용.
+///   옛 카드 시나리오를 재생했다 — 2026-10-03 옛 24장과 함께 폐기.
 /// - <b>직접 조작</b>: 아래 설명의 모든 버튼(신호를 하나씩 보내며 시험).
 /// - <b>도움말</b>
 /// </remarks>
@@ -62,30 +62,10 @@ public sealed class NightRunDebugPanel : MonoBehaviour
     [SerializeField] private int _day = 1;
 
     private bool _collapsed;
-    private int _tab;                          // 0 카드 시험 · 1 직접 조작 · 2 도움말
-    private int _group;                        // 0 복도 · 1 교실 · 2 과학실 · 3 화장실
-    private bool _slow = true;                 // 한 걸음씩 천천히 재생
-    private string _openHelp = string.Empty;   // 설명을 펼친 카드 ID
-    private readonly Dictionary<string, string> _cardResult = new Dictionary<string, string>();
-    private readonly Dictionary<string, CardState> _cardState = new Dictionary<string, CardState>();
-    private readonly Dictionary<string, RuleSO> _cardAssets = new Dictionary<string, RuleSO>();
+    private int _tab = 1;                          // 0 카드 시험(폐기) · 1 직접 조작 · 2 도움말
 
     // 재생 중인 시나리오
-    private CardScenario _run;
-    private bool _runComply;
-    private readonly List<ScenarioStep> _runSteps = new List<ScenarioStep>();
-    private int _runIndex;
-    private int _runTicksLeft = -1;
-    private float _runPause;
-    private RuleBook _runBook;
-    private readonly int[] _runBefore = new int[4];
-    private string _lastTitle = string.Empty;
-    private string _lastResult = string.Empty;
-    private CardState _lastState = CardState.Waiting;
-    private readonly List<string> _lastSteps = new List<string>();
 
-    private static readonly string[] GroupNames = { "복도", "교실", "과학실", "화장실" };
-    private static readonly char[] GroupPrefix = { 'H', 'C', 'S', 'T' };
     private bool _autoTime;
     private float _accum;
     private float _judgeSeconds;
@@ -194,9 +174,8 @@ public sealed class NightRunDebugPanel : MonoBehaviour
 
         RunPending();
         HookBook();
-        TickScenario();
 
-        if (_autoTime && _run == null && NightRun.IsNightActive)
+        if (_autoTime && NightRun.IsNightActive)
         {
             _accum += Time.deltaTime;
             int guard = 0;
@@ -443,7 +422,6 @@ public sealed class NightRunDebugPanel : MonoBehaviour
                 }
                 else if (_tab == 1)
                 {
-                    GUI.enabled = _run == null;   // 카드 시험 재생 중에는 직접 조작을 막는다
                     DrawNight();
                     DrawAxes();
                     DrawTimeAndPlace();
@@ -482,7 +460,7 @@ public sealed class NightRunDebugPanel : MonoBehaviour
     private void DrawTabs()
     {
         GUILayout.BeginHorizontal();
-        string[] names = { "① 카드 시험", "② 직접 조작", "③ 도움말" };
+        string[] names = { "① 카드 시험(폐기)", "② 직접 조작", "③ 도움말" };
         for (int i = 0; i < names.Length; i++)
         {
             int index = i;
@@ -494,312 +472,12 @@ public sealed class NightRunDebugPanel : MonoBehaviour
         GUILayout.EndHorizontal();
     }
 
-    // ─────────────────────────────── ① 카드 시험 ───────────────────────────────
+    // ─────────────────────────────── ① 카드 시험 (폐기) ───────────────────────────────
 
+    /// <summary>옛 24장 카드(H·C·S·T 1~6)와 그 시나리오(CardScenarios)는 2026-10-03에 폐기했다. 새 수칙·조우는 근무 씬의 F3 콘솔에서 시험한다.</summary>
     private void DrawScenarioTab()
     {
-        GUILayout.Label("공간을 고르고, 카드의 [지키기] 또는 [어기기]를 누르세요. 그 카드만 넣은 새 밤을 열고 행동을 자동으로 재생한 뒤 결과를 보여 줍니다.", _small);
-
-        GUILayout.BeginHorizontal();
-        for (int i = 0; i < GroupNames.Length; i++)
-        {
-            int index = i;
-            Color saved = GUI.backgroundColor;
-            if (_group == i) GUI.backgroundColor = new Color(0.6f, 0.85f, 1f);
-            if (GUILayout.Button(GroupNames[i] + " (" + GroupPrefix[i] + "1~6)", GUILayout.Height(24))) Later(() => _group = index);
-            GUI.backgroundColor = saved;
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginHorizontal();
-        _slow = GUILayout.Toggle(_slow, "천천히 보기 (조명·이상현상 변화를 보며 한 걸음씩)");
-        GUILayout.EndHorizontal();
-
-        DrawAxisBars();
-        DrawLastRun();
-
-        GUILayout.Space(6);
-        IReadOnlyList<CardScenario> all = CardScenarios.All;
-        for (int i = 0; i < all.Count; i++)
-        {
-            CardScenario sc = all[i];
-            if (sc.CardId[0] != GroupPrefix[_group]) continue;
-            DrawScenarioRow(sc);
-        }
-    }
-
-    private void DrawScenarioRow(CardScenario sc)
-    {
-        bool busy = _run != null;
-        GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.BeginHorizontal();
-        GUILayout.Label(sc.CardId + "  " + sc.Title, _bold, GUILayout.Width(210));
-        GUI.enabled = !busy;
-        Color saved = GUI.backgroundColor;
-        GUI.backgroundColor = new Color(0.55f, 0.95f, 0.55f);
-        if (GUILayout.Button("지키기 ▶", GUILayout.Width(80))) Later(() => StartScenario(sc, true));
-        GUI.backgroundColor = new Color(1f, 0.55f, 0.5f);
-        if (GUILayout.Button(sc.ViolateButton + " ▶", GUILayout.Width(80))) Later(() => StartScenario(sc, false));
-        GUI.backgroundColor = saved;
-        GUI.enabled = true;
-        bool open = _openHelp == sc.CardId;
-        if (GUILayout.Button(open ? "▲" : "?", GUILayout.Width(30))) Later(() => _openHelp = open ? string.Empty : sc.CardId);
-        GUILayout.EndHorizontal();
-
-        string result;
-        if (_cardResult.TryGetValue(sc.CardId, out result))
-        {
-            Color c = GUI.color;
-            GUI.color = StateColor(_cardState[sc.CardId]);
-            GUILayout.Label(result, _small);
-            GUI.color = c;
-        }
-
-        if (open)
-        {
-            RuleSO card = CardAsset(sc.CardId);
-            if (card != null) GUILayout.Label("지침: " + card.PlayerText, _small);
-            string need = sc.SetupValue > 0 ? "시작 조건: " + AxisNames[(int)sc.SetupAxis] + " 값 = " + sc.SetupValue + " (재생 전에 맞춤)\n" : string.Empty;
-            GUILayout.Label(need + "지키기 = " + sc.ComplyText + "\n" + sc.ViolateButton + " = " + sc.ViolateText, _small);
-        }
-
-        GUILayout.EndVertical();
-    }
-
-    private void DrawAxisBars()
-    {
-        IFearAxisReader axes = NightRun.Axes;
-        GUILayout.BeginHorizontal();
-        for (int i = 0; i < 4; i++)
-        {
-            int value = axes.GetValue((FearAxis)i);
-            GUILayout.BeginVertical(GUILayout.Width(105));
-            GUILayout.Label(AxisNames[i] + " " + value + " (구간 " + (int)axes.GetBand((FearAxis)i) + ")", _small);
-            Rect r = GUILayoutUtility.GetRect(100, 8);
-            GUI.DrawTexture(r, Texture2D.grayTexture);
-            Color saved = GUI.color;
-            GUI.color = i == 3 ? new Color(0.5f, 0.9f, 0.5f) : new Color(1f, 0.5f, 0.3f);
-            GUI.DrawTexture(new Rect(r.x, r.y, r.width * value / 100f, r.height), Texture2D.whiteTexture);
-            GUI.color = saved;
-            GUILayout.EndVertical();
-        }
-        GUILayout.EndHorizontal();
-        GUILayout.Label("청각·조도·배치가 100이 되면 포획, 신뢰는 지켰을 때만 오릅니다.", _small);
-    }
-
-    private void DrawLastRun()
-    {
-        if (_run == null && _lastTitle.Length == 0) return;
-
-        GUILayout.BeginVertical(GUI.skin.box);
-        if (_run != null)
-        {
-            GUILayout.Label("재생 중: " + _lastTitle, _bold);
-        }
-        else
-        {
-            GUILayout.Label("마지막 시험: " + _lastTitle, _bold);
-            Color c = GUI.color;
-            GUI.color = StateColor(_lastState);
-            GUILayout.Label(_lastResult, _bold);
-            GUI.color = c;
-        }
-
-        for (int i = 0; i < _lastSteps.Count; i++)
-        {
-            GUILayout.Label((i + 1) + ". " + _lastSteps[i], _small);
-        }
-
-        GUILayout.EndVertical();
-    }
-
-    private RuleSO CardAsset(string id)
-    {
-        RuleSO card;
-        if (_cardAssets.TryGetValue(id, out card)) return card;
-
-        NightDeckTableSO table = Resources.Load<NightDeckTableSO>(NightDeckTableSO.ResourcePath);
-        if (table != null)
-        {
-            for (int day = 1; day <= table.DayCount; day++)
-            {
-                foreach (RuleSO c in table.DeckFor(day))
-                {
-                    if (c != null && !_cardAssets.ContainsKey(c.CardId)) _cardAssets[c.CardId] = c;
-                }
-            }
-        }
-
-        _cardAssets.TryGetValue(id, out card);
-        return card;
-    }
-
-    private void StartScenario(CardScenario sc, bool comply)
-    {
-        if (_run != null) return;
-        RuleSO card = CardAsset(sc.CardId);
-        if (card == null)
-        {
-            Note(sc.CardId + " 카드 에셋을 편성표에서 찾지 못했습니다. NightDuty ▸ 모든 공간 카드 에셋 생성을 실행하세요.");
-            return;
-        }
-
-        // 새 회차 · 축 0 · 이 카드만 넣은 밤
-        SetCoreMode(true);
-        Unhook();
-        NightRun.StartNewRun();
-        _judgeSeconds = 0f;
-        if (sc.SetupValue > 0) NightRun.DebugAddAxis(sc.SetupAxis, sc.SetupValue);
-
-        NightRun.DeckOverride = d => new List<RuleSO> { card };
-        try
-        {
-            NightRun.BeginNight(_group + 1, () => Mathf.FloorToInt(_judgeSeconds / 60f));
-        }
-        finally
-        {
-            NightRun.DeckOverride = null;
-        }
-
-        NightRun.DebugRebroadcast();
-        HookBook();
-        _runBook = NightRun.CurrentBook;
-        for (int i = 0; i < 4; i++) _runBefore[i] = NightRun.Axes.GetValue((FearAxis)i);
-
-        _run = sc;
-        _runComply = comply;
-        _runSteps.Clear();
-        _runSteps.AddRange(comply ? sc.Comply : sc.Violate);
-        _runIndex = 0;
-        _runTicksLeft = -1;
-        _runPause = 0f;
-        _lastTitle = sc.CardId + " " + sc.Title + " — " + (comply ? "지키기" : sc.ViolateButton);
-        _lastSteps.Clear();
-        if (sc.SetupValue > 0) _lastSteps.Add("(준비) " + AxisNames[(int)sc.SetupAxis] + " 값 = " + sc.SetupValue + " (카드 시작 조건)");
-        Note("▶ " + _lastTitle);
-
-        if (!_slow)
-        {
-            while (_run != null) AdvanceScenario(float.MaxValue);
-        }
-    }
-
-    private void TickScenario()
-    {
-        if (_run == null || !_slow) return;
-        AdvanceScenario(Time.deltaTime);
-    }
-
-    /// <summary>시나리오를 진행한다. dt가 매우 크면 끝까지 한 번에 돈다.</summary>
-    private void AdvanceScenario(float dt)
-    {
-        bool instant = dt >= float.MaxValue;
-        if (_runPause > 0f && !instant)
-        {
-            _runPause -= dt;
-            return;
-        }
-
-        if (_runIndex >= _runSteps.Count)
-        {
-            FinishScenario();
-            return;
-        }
-
-        ScenarioStep step = _runSteps[_runIndex];
-        if (step.Kind == ScenarioStepKind.Wait)
-        {
-            if (_runTicksLeft < 0)
-            {
-                _runTicksLeft = Mathf.RoundToInt(step.Seconds / Step);   // 0.1초 단위 정수로 센다
-                _accum = 0f;
-                _lastSteps.Add(step.Label);
-            }
-
-            if (instant)
-            {
-                while (_runTicksLeft > 0)
-                {
-                    _runTicksLeft--;
-                    StepOnce(step.GazeTarget);
-                }
-            }
-            else
-            {
-                _accum += dt;
-                while (_accum >= Step && _runTicksLeft > 0)
-                {
-                    _accum -= Step;
-                    _runTicksLeft--;
-                    StepOnce(step.GazeTarget);
-                }
-            }
-
-            if (_runTicksLeft <= 0)
-            {
-                _runTicksLeft = -1;
-                _runIndex++;
-            }
-
-            return;
-        }
-
-        _lastSteps.Add(step.Label);
-        if (step.Kind == ScenarioStepKind.Signal)
-        {
-            if (NightRun.IsNightActive) NightRun.Send(step.Signal);
-        }
-        else
-        {
-            NightRun.RequestEndNight();
-        }
-
-        _runIndex++;
-        _runPause = 0.6f;
-    }
-
-    private void FinishScenario()
-    {
-        CardScenario sc = _run;
-        if (NightRun.IsNightActive && !NightRun.IsCaptured)
-        {
-            NightRun.RequestEndNight();   // 밤 종료 정산 카드도 결과가 나오게
-        }
-
-        RuleWatcher w = _runBook != null && _runBook.Watchers.Count > 0 ? _runBook.Watchers[0] : null;
-        CardState state = w != null ? w.State : CardState.Undetermined;
-
-        string delta = string.Empty;
-        for (int i = 0; i < 4; i++)
-        {
-            int d = NightRun.Axes.GetValue((FearAxis)i) - _runBefore[i];
-            if (d > 0) delta += (delta.Length > 0 ? ", " : "") + AxisNames[i] + " +" + d;
-        }
-
-        string verdict;
-        switch (state)
-        {
-            case CardState.Complied: verdict = "[지킴] 준수"; break;
-            case CardState.Violated: verdict = "[어김] 위반"; break;
-            case CardState.Undetermined: verdict = "[판정 없음] 미판정"; break;
-            case CardState.Locked: verdict = "[잠김]"; break;
-            default: verdict = StateName(state); break;
-        }
-
-        string text = verdict + (delta.Length > 0 ? " · " + delta : " · 축 변화 없음");
-        if (NightRun.IsCaptured) text += " · 100 도달 → 포획!";
-
-        bool expected = state == (_runComply ? CardState.Complied : sc.ViolateExpect);
-        if (!expected) text += "  (주의: 예상과 다름 — " + (_runComply ? "준수" : StateName(sc.ViolateExpect)) + " 기대)";
-
-        _lastResult = text;
-        _lastState = state;
-        _cardResult[sc.CardId] = (_runComply ? "지키기" : sc.ViolateButton) + " → " + text;
-        _cardState[sc.CardId] = state;
-        Note("= " + sc.CardId + " " + text);
-
-        _run = null;
-        _runBook = null;
+        GUILayout.Label("옛 24장 카드(H·C·S·T 1~6)는 2026-10-03에 폐기했습니다.\n새 수칙·조우 시험은 근무 씬의 F3 디버그 콘솔을 쓰세요. 「② 직접 조작」은 그대로 쓸 수 있습니다.", _small);
     }
 
     // ─────────────────────────────── ③ 도움말 ───────────────────────────────
@@ -844,7 +522,6 @@ public sealed class NightRunDebugPanel : MonoBehaviour
         if (GUILayout.Button("밤 시작")) Later(() => BeginNight());
         GUI.enabled = NightRun.IsNightActive;
         if (GUILayout.Button("밤 종료 요청")) Later(() => EndNight());
-        GUI.enabled = _run == null;
         GUILayout.EndHorizontal();
 
         RuleBook book = NightRun.CurrentBook;
@@ -977,7 +654,6 @@ public sealed class NightRunDebugPanel : MonoBehaviour
             GUI.color = saved;
             GUI.enabled = w.State == CardState.Waiting && c.TriggerKind != SignalKind.NightBegan;
             if (GUILayout.Button("시작 신호", GUILayout.Width(80))) Later(() => SendTrigger(c));
-            GUI.enabled = _run == null;
             GUILayout.EndHorizontal();
 
             string trigger = c.TriggerKind + " " + (SignalCondition.UsesTarget(c.TriggerKind) ? c.TriggerId : SpaceName(c.TriggerSpace));

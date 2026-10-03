@@ -33,8 +33,8 @@ namespace NightDuty
     /// 점검 편성 뒤에는 밤 편성(조우 슬롯 + 새 수칙 덱, <see cref="Program"/> — NightRun.Program.cs)이 온다.
     /// </para>
     /// <para>
-    /// 덱 배정은 <see cref="DayDirector"/>가 맡는다(<c>LoadDeck</c>에서 만들어 매일 6장을 고른다 — <b>옛 24장 구조, 6단계에서 교체</b>).
-    /// <see cref="NightDeckTableSO"/>는 일차별 덱이 아니라 <b>카드 풀의 공급원</b>이다 — <c>CollectPool</c>이 모든 일차를 합쳐 중복 없이 읽는다.
+    /// 옛 24장 카드(H·C·S·T 1~6)와 그 하루 6장 배정기(DayDirector)는 2026-10-03에 폐기했다. 판정은 새 수칙(<see cref="FinalRules"/>)이 하고,
+    /// 옛 판정 책(<see cref="RuleBook"/>)에는 <see cref="DeckOverride"/>로 넣은 카드(테스트·도구)만 들어간다.
     /// 역설 문자 발송은 <see cref="ParadoxDirector"/>가 맡는다.
     /// 대상 참조 검사: <see cref="RegisteredTargets"/>를 직접 넣었으면(null이 아니면) 그것을, 아니면 씬의 <see cref="JudgeTargetRegistry"/>를 쓴다.
     /// <see cref="RegisteredTargets"/>가 null이고 등록부에도 ID가 없으면 검사를 건너뛴다.
@@ -59,7 +59,6 @@ namespace NightDuty
         private static readonly InspectionBoard Board = new InspectionBoard();
         private static readonly List<string>[] RaisedThisAttempt = { new List<string>(), new List<string>(), new List<string>() };
         private static AnomalyAssigner _assigner;
-        private static DayDirector _director;
         private static EncounterDirector _encounter;
         private static DaySummary _lastSummary;
         private static NightSnapshot _nightStart;
@@ -67,7 +66,7 @@ namespace NightDuty
         private static List<string> _lastCaptureSources = new List<string>();
 
         /// <summary>
-        /// 테스트·에디터 도구가 덱을 직접 넣을 때 쓴다. null이면 <see cref="NightDeckTableSO"/>를 읽는다.
+        /// 테스트·에디터 도구가 옛 판정 책에 덱을 직접 넣을 때 쓴다. null이면 빈 덱이다(옛 24장 편성표는 2026-10-03 폐기).
         /// </summary>
         public static Func<int, IReadOnlyList<RuleSO>> DeckOverride { get; set; }
 
@@ -118,6 +117,16 @@ namespace NightDuty
                 EnsureRun();
                 return _bands.Shown;
             }
+        }
+
+        /// <summary>
+        /// 그 공간에 <b>지금 보이는</b> 축의 연출 구간(공간 보류 반영 — 단기 수칙이 걸린 공간은 풀릴 때까지 옛 구간).
+        /// 순찰 공간이 아니면(도서관·경비실) 축 전체의 연출 구간. 화면 표현(조도 톤·소등, <c>IlluminanceMap</c>)이 읽는다.
+        /// </summary>
+        public static Band ShownBand(SpaceId space, FearAxis axis)
+        {
+            EnsureRun();
+            return _bands.GetShown(space, axis);
         }
 
         /// <summary>경고 장부(도장·대기 처벌). 경고는 <see cref="AddWarning"/>으로 더한다.</summary>
@@ -284,7 +293,6 @@ namespace NightDuty
             DeckToday.Clear();
             _lastSummary = default;
             TargetsInUse = null;
-            _director = null;   // 첫 LoadDeck에서 카드 풀을 읽어 만든다.
             _encounter = null;  // 첫 BeginNight에서 조우 표를 읽어 만든다.
         }
 
@@ -330,8 +338,7 @@ namespace NightDuty
                 RestartsTonight = 0;
                 _checkpoint = null;
 
-                // 조우를 **덱보다 먼저** 정한다. DayDirector가 「그날 조우 공간의 카드 1장」을 보장하려면
-                // 그 공간을 이미 알고 있어야 한다. 조우 배정은 축을 읽지 않으므로 하한 뒤·덱 앞이 안전하다.
+                // 옛 조우 연출기(8장면)는 새 편성이 꺼져 있을 때만 — 조우 배정은 축을 읽지 않으므로 하한 뒤·덱 앞이 안전하다.
                 // 새 편성(ProgramEnabled)에서는 조우를 ProgramDirector가 정한다 — 옛 조우 연출기는 쓰지 않는다.
                 if (!ProgramEnabled)
                 {
@@ -803,34 +810,6 @@ namespace NightDuty
             _encounter.BeginRun();
         }
 
-        /// <summary>그날 조우 장면이 쓰는 공간. 조우가 없으면 빈 목록.</summary>
-        private static IReadOnlyList<SpaceId> EncounterSpacesToday()
-        {
-            List<SpaceId> spaces = new List<SpaceId>();
-            if (_encounter == null)
-            {
-                return spaces;
-            }
-
-            IReadOnlyList<string> scenes = _encounter.TodayScenes;
-            for (int i = 0; i < scenes.Count; i++)
-            {
-                SpaceId space = _encounter.SpaceOf(scenes[i]);
-                if (space != SpaceId.None && !spaces.Contains(space))
-                {
-                    spaces.Add(space);
-                }
-            }
-
-            return spaces;
-        }
-
-        /// <summary>그 조우 장면이 오늘 깔렸는지. 조우가 없으면 false.</summary>
-        private static bool IsEncounterActive(string sceneId)
-        {
-            return _encounter != null && _encounter.IsActive(sceneId);
-        }
-
         /// <summary>오늘 역설 문자를 한 통이라도 보냈는지. N1(재방문)이 같은 날 겹치지 않게 하려고 쓴다.</summary>
         private static bool ParadoxSentToday()
         {
@@ -1171,60 +1150,9 @@ namespace NightDuty
                 return DeckOverride(day) ?? new List<RuleSO>();
             }
 
-            // 새 편성이 켜져 있으면 옛 24장 덱은 판정하지 않는다 — 새 수칙 판정(FinalRuleBook)이 대신한다(2026-10-01, 6단계 후반).
-            if (ProgramEnabled)
-            {
-                return new List<RuleSO>();
-            }
-
-            NightDeckTableSO table = Resources.Load<NightDeckTableSO>(NightDeckTableSO.ResourcePath);
-            if (table == null)
-            {
-                Debug.LogWarning("[NightRun] Resources/" + NightDeckTableSO.ResourcePath + " 편성표가 없습니다. 카드 없이 밤을 시작합니다. " +
-                                 "NightDuty ▸ 복도 카드 에셋 생성 메뉴로 만들 수 있습니다.");
-                return new List<RuleSO>();
-            }
-
-            // 2026-09-21 재설계: 편성표는 이제 **카드 풀**로만 쓰고, 그날 6장은 DayDirector가 고른다.
-            if (_director == null)
-            {
-                _director = new DayDirector(CollectPool(table));
-                _director.EncounterSpacesToday = EncounterSpacesToday;
-                _director.IsEncounterActive = IsEncounterActive;
-            }
-
-            return _director.BuildDeck(day, _bands.Shown);
-        }
-
-        /// <summary>
-        /// 편성표의 모든 일차를 훑어 중복 없는 카드 풀을 만든다.
-        /// 편성표가 「일차별 덱」에서 「풀」로 뜻이 바뀌었지만, 기획팀이 쓰던 에셋을 그대로 살리려고
-        /// 표의 모든 칸을 합쳐서 읽는다. 표가 비어 있으면 빈 풀이 되고, 그날은 카드 없는 밤이 된다.
-        /// </summary>
-        private static List<RuleSO> CollectPool(NightDeckTableSO table)
-        {
-            List<RuleSO> pool = new List<RuleSO>();
-            HashSet<string> seen = new HashSet<string>();
-
-            for (int day = 1; day <= DayFloor.LastDay; day++)
-            {
-                IReadOnlyList<RuleSO> cards = table.DeckFor(day);
-                for (int i = 0; i < cards.Count; i++)
-                {
-                    RuleSO card = cards[i];
-                    if (card != null && seen.Add(card.CardId))
-                    {
-                        pool.Add(card);
-                    }
-                }
-            }
-
-            if (pool.Count == 0)
-            {
-                Debug.LogWarning("[NightRun] 편성표에 카드가 하나도 없습니다. 카드 없이 밤을 시작합니다.");
-            }
-
-            return pool;
+            // 옛 24장 카드와 그 편성표·하루 6장 배정기는 2026-10-03에 폐기했다 — 새 편성이든 아니든 옛 판정 책은 비어 있다.
+            // 판정은 새 수칙(FinalRuleBook)이 한다. 되살리지 마십시오.
+            return new List<RuleSO>();
         }
 
         private static void EnsureRun()
@@ -1267,7 +1195,6 @@ namespace NightDuty
             JudgingWindowEnabled = false;
             InspectionsEnabled = false;
             InspectionPlanOverride = null;
-            _director = null;
             _encounter = null;
         }
     }

@@ -3,6 +3,19 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
+> **개정: 2026-10-03(25차). 옛 24장 카드 폐기(민 지시: 「버그가 생길 수 있으니 안 쓰이는 24가지는 폐기」). 씬은 고치지 않았다. EditMode 353/353(옛 카드 테스트 199개 함께 삭제), PlayScene 재생 확인(1일차 태블릿 = 새 수칙 5 + 점검 5, 에러 0).**
+> ⓐ **지운 것**: 에셋 `ScriptableObjects/Rules/`(H·C·S·T 1~6 24개, 폴더째) · 코드 `DayDirector`(하루 6장 배정) · `CardScenarios` · 에디터 `CorridorCardBuilder`·`RoomCardBuilder`·`RuleCardValidator`·`ParadoxTextBuilder` · 테스트 `Classroom/Corridor/Science/ToiletCardAssetTests`·`CardScenarioTests`·`ParadoxDataTests`·`DayDirectorTests`(BalanceRedesignTests 안)·`AssetBuilderDriftTests`·축 쿼터/죽은 카드/조우 묶인 카드 불변식 3개 · 판정 디버그 패널(`NightRunDebugPanel`)의 「카드 시험」 탭 내용(탭 자리엔 폐기 안내만).
+> ⓑ `NightRun.LoadDeck`은 `DeckOverride`가 없으면 **항상 빈 덱** — 새 편성을 꺼도 옛 판정 책은 비어 있다. `CollectPool`·`_director`·조우 공간 델리게이트(`EncounterSpacesToday`·`IsEncounterActive`)를 지웠다.
+> ⓒ **남긴 것**: `RuleSO` 타입(태블릿 표시용 `DisplayDeck`·테스트가 씀) · `RuleBook` 엔진(`DeckOverride` 시험) · `NightDeckTableSO` 타입과 `Resources/NightDeckTable.asset`(**비움** — 김진선님 `TabletDocument`가 밤 시작 전 폴백으로 읽는다. 전에는 밤 시작 전 태블릿에 옛 카드 문구가 뜰 수 있었다) · `ParadoxDirector` · 옛 조우 연출기 `EncounterDirector`(8장면, 새 편성에서 쉼)·`AnomalyCueDirector` · 일차 하한·역설 최소 신뢰 검사(`DesignDriftTests.cs`의 `DesignInvariantTests`로 이름 바꿈)와 `ClaudeMdDriftTests`.
+> **되살리지 마십시오:** 「옛 24장 RuleSO 에셋·편성표 카드 풀」 · 「DayDirector 하루 6장 배정(축 쿼터 2·2·2)」 · 「CardScenarios 카드 시나리오」 · 「카드 빌더(Corridor/RoomCardBuilder)가 카드 구현값의 정본」 · 「NightDeckTable에 카드를 다시 채움」.
+
+> **개정: 2026-10-03(24차). 7단계 마무리 — 조도축 맵 변화(공간별 톤 Volume + 기획서 표대로 소등). 씬은 고치지 않았다(전부 런타임 생성). EditMode 552/552, PlayScene에서 조도 0 → 55(구간 2) → 95(구간 4)로 올려 복도 호박색·비네팅 → 좌측 복도 끝 2개 소등·화장실 붉은 조명 → 채도 감소·붉은 잔광·좌측 4개·과학실 앞 복도 소등까지 실측, 에러 0.**
+> ⓐ **`IlluminanceMap`**(Flow/Presentation, 근무 씬에 자동 설치): 코어 `NightRun.ShownBand(space, axis)`(새 — 공간 보류 반영, 순찰 공간이 아니면 축 전체 연출 구간)를 0.25초마다 읽어 그린다. 판정은 모른다.
+> ⓑ **톤**: 공간마다 런타임 Volume(1-3 교실·과학실·화장실·도서관·경비실·복도, 전역, **플레이어 카메라 볼륨 레이어 = 8**, 우선순위 5 — 실내 보정 `PostProcessing_interior` 1 위, 조우 화면 효과 20~23 아래). 플레이어 눈이 든 방 상자의 것만 무게 1(0.8초), 방 밖(좌측 복도 포함)은 복도. 값은 `Resources/IlluminanceTone.asset`(`IlluminanceToneSO`, 구간 0~4 다섯 줄 — 기획·아트 튜닝용): White Balance 색온도·틴트, 채도(실내 보정에 **더하기**), 컬러 필터(**곱하기**), 비네팅(**큰 쪽**) — 실내 보정을 덮어쓰지 않으므로 밝기 설정(`postExposure`)도 그대로. 구간이 바뀌면 4초에 걸쳐 옮겨 간다.
+> ⓒ **소등(기획서 조도 표)**: 「방 상자 밖의 LampFluo 실시간 등」= 복도 등. 그중 과학실 x 범위·과학실과 복도 북쪽 끝 사이가 **과학실 앞 복도**(`LampFluoBuiltinA_ON (11)`), 나머지 6개가 좌측 복도 순서(x 오름차순 (7)·(6)·(5)·(4)·(1)·(12)). 복도 구간 n이면 **좌측 끝부터 n개**(`IlluminanceMap.LeftOffFor`), 3구간부터 과학실 앞도. 화장실 상자 안 등 2개는 **2구간부터 붉게**(색·세기·발광). 발광은 MaterialPropertyBlock. 조우 소등(`LightGroup.TurnOn`)이 다시 켜도 다음 프레임에 맞춘다.
+> ⓓ **옛 `SpaceLights` 은퇴**: 씬 `JudgeLights` 아래 5개가 구간마다 등 8/6/4/2/0개 소등 + 등 색온도 6500→1200K를 **아직 하고 있었다**(3일차쯤부터 방이 통째로 어두워질 수 있었음). 이벤트 구독을 끊고 `OnBandChanged`를 막았다(`SpaceLights.Retired`, 클래스·씬 컴포넌트는 옛 단서 조건 참조 때문에 남김). 남은 조도 연출(손전등 깜빡·끊김, 4구간 시야 가장자리 형체)은 이 컴포넌트 밖이다.
+> **되살리지 마십시오:** 「SpaceLights가 구간마다 등 개수·색온도를 바꾼다」 · 「조도 색온도를 라이트 색으로」(Volume White Balance) · 「톤 Volume을 기본 레이어(0)에」(카메라 마스크 256) · 「톤이 실내 보정의 채도·비네팅을 덮어쓴다」(더하기·곱하기·큰 쪽) · 「복도 등 = 복도 상자 안의 등」(복도 상자가 과학실·도서관과 겹친다 — 방 상자 밖으로 고른다).
+
 > **개정: 2026-10-03(23차). 경비실 전화로 근무 일찍 끝내기 + 상호작용 외곽선(민 요청). 씬 작업(민 승인): 루트 `Interactables/ShiftEndPhone`(벤더 `Telephone01`, 경비실 북쪽 책상 `TeacherTable02_static` 위 31.35, 2.11, 47.55). EditMode 551/551, PlayScene에서 점검 남음 → 「남은 점검 n건」·흐린 외곽선 / 전부 보고 → 「[E] 근무 종료 보고」·외곽선 → 종료 → 결과창(경고 0), CCTV 모니터·점검 대상(소화기·사물함) 외곽선 실측, 에러 0.**
 > ⓐ **전화기 종료**: 코어 `NightRun.CanEndShiftEarly` = 밤 진행 중 · 붙잡히지 않음 · 점검표 1건 이상 · **전부 보고**(빈 점검표는 「다 했다」가 아님). Flow `ShiftEndPhone`(Interaction): 조준(1.8m, 굵기 0.06 — CCTV와 같음)·막는 조건(일시정지·태블릿·CCTV 보는 중·붙잡힘) 뒤, 못 끝내면 「점검을 모두 마쳐야 근무를 끝낼 수 있습니다 · 남은 점검 n건」(조준선 어둡게, 외곽선 흐리게), 끝낼 수 있으면 「[E] 근무 종료 보고」 → **3초 안에 [E] 한 번 더**(「한 번 더 — 근무를 종료합니다」, 다른 곳을 보면 취소) → `NightRun.RequestEndNight()` — **04:00 자동 종료와 같은 길**(남은 카드 정산·조우 이월·`DayEnded` → `PlayResultRouter` 결과창). 마지막 점검 공간은 02:16부터 열리므로 사실상 그 뒤에만 가능. 안내는 `InteractionHud.ExternalPrompt`(문 안내가 우선). 메뉴 「야간근무/경비실/전화기 놓기」(`Flow/Editor/GuardRoomPhoneBuilder`)가 전화기·조준 상자·컴포넌트·외곽선 머티리얼 둘을 만든다(여러 번 눌러도 같음).
 > ⓑ **상호작용 외곽선** `Flow/Interaction/InteractionOutline`: 그리고 싶은 쪽이 매 프레임 `InteractionOutline.Request(transform)` — 부르지 않으면 0.15초에 사라짐. **씬의 렌더러·머티리얼은 안 바꾼다** — `Graphics.RenderMesh`로 **플레이어 카메라(`Camera.main`)에만** 두 번 더 그린다: 마스크(`NightDuty/InteractionOutlineMask`, 스텐실 128 비트만, 큐 Transparent+49) → 뒤집은 껍질(`NightDuty/InteractionOutline`, 1080p 기준 2.2px, 스텐실 바깥만, +50). 그래서 다이얼·버튼 같은 안쪽 선 없이 실루엣만(마스크 없이 그렸더니 선화처럼 됨 — 실측). 머티리얼은 `Resources/InteractionOutline(.mat)`·`InteractionOutlineMask(.mat)`. LOD0만, 스킨 메시는 그 프레임 자세를 굽는다. 쓰는 곳 셋: **점검 대상**(`InspectionSensor` 포커스 = 2m·1초 응시로 보고 가능해진 항목 → 표식 `Inspect X-n`의 **부모 소품**에, 정상·이상 같은 선) · **CCTV 모니터**(들여다볼 수 있게 겨눴을 때, `CctvSystem.UpdateAim`) · **전화기**(겨누면 늘 — 끝낼 수 있으면 진하게 1, 점검이 남았으면 흐리게 0.35. 같은 날 민 요청 「전화기에도 외곽선」). `Request(target, strength)`로 진하기를 준다(같은 프레임 여러 번이면 가장 진한 것). 「점검 목록」 = 맵의 점검 대상으로 해석(경비실에 점검표 물건은 없음).
@@ -219,14 +232,14 @@
 | **1** | **중간기획서 (2026-09-20, 40쪽)** | 기획팀 공유 PDF (읽은 추출본은 `../Docs/Claude outputs/`) | **기획 정본.** 스코프·근무 시간·신뢰↔역설 상한·역설 23쌍 총괄표(12절)·조우 8장면·이상현상 5구간표·조작 |
 | **1′** | **`야간근무_공간별_지침록 9.20V.html` (2026-09-20)** | `../Docs/Claude outputs/` | **카드 문구·이상현상 5구간표의 정본.** 24수칙 본문과 역설 23개 문구를 이 판으로 교체했고, 네 공간의 이상현상 표를 다시 썼습니다. 중간기획서와 **같은 날짜**라 우열이 아니라 **분담**입니다 — 스코프·근무 시간·신뢰↔역설 상한·조우 8장면·조작은 중간기획서가, **카드 본문·역설 문구·공간별 이상현상 구간 내용은 9.20V가** 정본입니다 |
 | 2 | `야간근무_공간별_지침록_개발명세반영본.html` (2026-09-12) | `../Docs/Claude outputs/` | **판정 절차의 상세 정본.** 카드별 「개발 판정 상세」, 공통 개발 명세 1~7절. **문구·이상현상은 9.20V가, 스코프·상한은 기획서가 이깁니다.** 이 판에만 있는 것은 판정 절차·검증 방법입니다 |
-| 2′ | `Editor/CorridorCardBuilder.cs` · `Editor/RoomCardBuilder.cs` | `Assets/_Game/Scripts/Editor/` | **카드 구현값의 정본.** 기획 정본을 해석해 24장을 만드는 코드 |
+| ~~2′~~ | ~~`Editor/CorridorCardBuilder.cs` · `Editor/RoomCardBuilder.cs`~~ | — | **2026-10-03(25차) 폐기.** 옛 24장 카드 구현값의 정본이었다 |
 | 3 | **`HANDOFF_야간근무_인수인계.md`** | `../Docs/Claude outputs/` | **새 세션이 가장 먼저 읽는 단일 인수인계서.** 결정·함정·진행 상황·다음 작업·결정 대기 |
 | 3′ | `다음작업_결정_2026-09-20.md` | `../Docs/Claude outputs/` | 기획서 대조 결과와 이번 주 작업 순서. 이 파일 §12.1·§12.2의 근거 |
 | 4 | 이 파일 | `horror house/CLAUDE.md` | 작업 규약 요약 |
 | 5 | `형상관리_매뉴얼.md` | `../Docs/` | git/LFS 운영 규칙 |
 | — | `게임플로우_작업내역_설정가이드.md` (2026-09-14) | `../Docs/Claude outputs/` | 진선님 게임 흐름(Main→Loading→Play→Result) 설정법. Part 5에 판정 시스템 연결 시 바꿀 곳 |
 
-- **2026-09-30부터 0순위 새 기획서가 모든 충돌에서 이깁니다.** 옛 24장 카드(H·C·S·T 1~6)와 그 테스트는 4단계에서 새 수칙으로 교체합니다 — 그 전까지 아래 옛 정본 설명은 **옛 카드에만** 해당합니다.
+- **2026-09-30부터 0순위 새 기획서가 모든 충돌에서 이깁니다.** 옛 24장 카드(H·C·S·T 1~6)와 그 테스트는 **2026-10-03(25차)에 폐기**했습니다 — 아래 옛 정본 설명은 **옛 카드의 기록**입니다.
 - **정본이 셋이면 정본이 없습니다.** 2026-09-20 기준 정본은 **같은 날짜의 두 문서**이고, 겹치지 않게 분담합니다. **스코프·수치 구간·델타·유예/응시 시간·거리·신뢰↔역설 상한·조우 8장면·조작 = 중간기획서.** **카드 24장과 역설 23개의 문구·네 공간의 이상현상 5구간 내용 = 9.20V.** 9.20V 머리말이 「수치 구간·유예·응시 시간·거리·델타는 유지한다」고 못박았으므로, 9.20V에서 수치를 읽어 쓰지 마십시오. 9/12 판은 판정 절차를 채우는 용도로만 씁니다.
 - **수칙 전문·델타·판정 상세를 이 파일이나 코드 주석에 옮겨 적지 마십시오.** 사본이 어긋나면 어느 쪽이 맞는지 알 수 없게 됩니다. 카드를 구현·수정할 때는 정본의 해당 카드 7항목(발생 자격·시작 / 준수 / 위반 / 종료·반복 / 예외·충돌 / 씬 연결·설정값 / 검증 절차·기대 결과)을 직접 읽으십시오. 구현값 요약표는 인수인계서 §6에 있습니다. **역설 23쌍 총괄표(기획서 12절)와 공간별 이상현상 60칸(기획서 H절)도 같습니다** — 이 파일에는 「정본은 기획서 N절」이라고만 적습니다.
 - 인수인계서가 이전 문서(9/16 인수인계, 판정코어 연결약속, `NightDuty.Core_현황과_사용법`, 시스템/클라이언트 개발계획서, 4주 스케줄, 8주 절단 제안서, 절단 확정 v2, 구현난이도 판정서, 진행기록·카드분석)를 **모두 대체**했습니다. 해당 파일들은 `Docs/`에 더 이상 없습니다. 다시 찾지 마십시오.
@@ -244,8 +257,8 @@
 | 근무 시간 | 인게임 **00:00~04:00**. 시작 지점은 **경비실**. 04:00에 **점검·조우 완료와 무관하게 자동 종료**하며 종료 요청·경비실 복귀는 없습니다(기획서 B절, §2.5-9) |
 | 공간 | **4개**: 복도 · 교실(1-1/1-3) · 과학실 · 화장실 |
 | 점검 ID | **5개**: 복도 · 1-1 · 1-3 · 과학실 · 화장실 (`SpaceId`와 일치) |
-| 근무수칙 | **24장**, 공간당 6장: 복도 **H1~H6** · 교실 **C1~C6** · 과학실 **S1~S6** · 화장실 **T1~T6** |
-| 하루 배정 | **6장** (배치 2 · 청각 2 · 조도 2). 1일차만 S1 고정 + 배치 2 · 청각 2 · 조도 1. **`DayDirector`가 자동 편성**하며 최소 3공간을 포함합니다(§4.3′). Q11 종결 |
+| 근무수칙 | **(옛 기록 — 2026-10-03 폐기)** 24장, 공간당 6장: 복도 **H1~H6** · 교실 **C1~C6** · 과학실 **S1~S6** · 화장실 **T1~T6** |
+| 하루 배정 | **6장** (배치 2 · 청각 2 · 조도 2). 1일차만 S1 고정 + 배치 2 · 청각 2 · 조도 1. 옛 배정기는 2026-10-03 폐기(§4.3′) — **옛 기록**, 지금은 새 편성 |
 | 인체모형 장면 | **8개**: H-A · H-B · C-A · C-B · S-A · S-B · T-A · T-B |
 | 태블릿 문자 | **31개** = 발견유도 **G 7**(G-H1·G-H2·G-C1·G-C2·G-S1·G-T1·G-T2) + 재방문 **N1 1** + 역설 **P 23**(P1~P23) |
 | 역설 쌍 | **23쌍.** 짝은 **카드 ID 순서**입니다 — P1↔H1 · P2↔H2 · … · P6↔H6 · P7↔C1 · … · P12↔C6 · P13↔S2 · … · P17↔S6 · P18↔T1 · … · P23↔T6. **S1만 역설이 없습니다**(1일차 고정 카드라 신뢰 구간에 들어가지 못함) |
@@ -295,7 +308,7 @@ Band0 = 0–24 · Band1 = 25–49 · Band2 = 50–74 · Band3 = 75–89 · Band4
 
 ### 2.3′ 카드 발동 자격 — 데드락 조건은 장수가 아니라 델타의 합입니다
 
-> **2026-09-30: 이 절은 옛 24장 카드 기준 기록입니다.** 4단계에서 새 수칙으로 교체되면 지웁니다. 연출 구간이 일차 하한으로 밀려 올라가므로 아래 「데드락」 조건은 더 이상 성립 조건이 아닙니다(해당 감시 테스트는 지웠습니다).
+> **2026-09-30: 이 절은 옛 24장 카드 기준 기록입니다.** 옛 24장 카드는 2026-10-03(25차)에 폐기했습니다. 연출 구간이 일차 하한으로 밀려 올라가므로 아래 「데드락」 조건은 더 이상 성립 조건이 아닙니다(해당 감시 테스트는 지웠습니다).
 
 **배정 알고리즘이 성립하는 조건.** 하루 6장을 청각 2·조도 2·배치 2로 뽑으려면 어느 구간에서든 축당 최소 2장이 열려 있어야 하고, **그 2장을 다 어겼을 때 다음 구간 하한(24)에 닿아야** 합니다. 닿지 않으면 그 축은 영영 Band0에 묶입니다.
 
@@ -332,10 +345,8 @@ Band0 = 0–24 · Band1 = 25–49 · Band2 = 50–74 · Band3 = 75–89 · Band4
 | 회차당 등장 최저 | **0.00회**(H6) | **0.70회** |
 | 죽은 카드 | 1장 | **0장** |
 
-- **빌더는 이미 있는 에셋을 건드리지 않습니다.** 값을 바꿀 때는 `RoomCardBuilder.cs`/`CorridorCardBuilder.cs`와 `ScriptableObjects/Rules/*/*.asset`을 **둘 다** 고쳐야 합니다. 한쪽만 고치면 에셋을 지우고 메뉴를 다시 돌릴 때까지 드러나지 않습니다(`AssetBuilderDriftTests`가 잡습니다).
+- **2026-10-03(25차): 옛 24장 카드·카드 빌더·하루 배정기와 이 절의 감시 테스트(에셋↔빌더 드리프트·죽은 카드·조우 묶인 카드·축 쿼터)를 모두 지웠습니다.** 위 표는 기록입니다.
 - `IsEligible`은 **트리거 신호를 받는 순간 실시간 검사**입니다. 덱에서 걸러지는 것이 아니라 덱에 있어도 안 열립니다. 밤 중에 축이 오르면 그 밤 안에 열릴 수 있습니다.
-- **감시 테스트 셋**(`DesignDriftTests`): 「준수만 하는 플레이어도 24장을 모두 만날 수 있다」 · 「조우 장면에 묶인 카드는 일차 하한 어디서나 열린다」. 마지막 것이 깨지면 `EncounterDirector.EarliestDayOf`에 일차 제약을 되살려야 합니다.
-- **장면에 묶인 카드는 그 장면이 깔린 날에만 덱에 듭니다**(2026-09-22). S5·T3는 트리거 ID가 곧 조우 장면 ID라, 장면이 없는 날에 들어가면 **시작할 방법이 없어 미판정으로 끝납니다** — 하루 여섯 자리 중 하나를 헛되이 씁니다. 자격이 Band1·Band2였을 때는 「자격이 곧 그 장면이 깔리는 날」이 우연히 맞아떨어져 드러나지 않았습니다. `DayDirector.IsBlockedByEncounter`가 걸러고 `BalanceRedesignTests`가 잠급니다. 카드 ID를 적지 않고 **트리거가 `ModelObserved`이고 트리거 ID가 장면 ID인지**로 판정하므로, 장면에 묶이는 카드가 늘어도 따라옵니다.
 
 ### 2.3″ 일차 하한 — 「잘할수록 아무 일도 안 일어남」을 막는 장치
 
@@ -522,8 +533,8 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 ### 3.3 검증
 
 1. 코드 수정 후 `Assets/Refresh` → 25~30초 뒤 `recompile_status` → `console_status`로 **컴파일 에러 0**을 확인합니다.
-2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 362/362 통과**(2026-09-22 실측).
-   - **`DesignDriftTests`가 드리프트 감시입니다.** 에셋↔빌더 불일치, **준수만 하는 플레이어도 24장을 모두 만날 수 있는지**(죽은 카드), **조우 장면에 묶인 카드가 일차 하한 어디서나 열리는지**, 일차 하한이 줄지 않고 Band4에 닿지 않는지, `MinTrust`가 Band1 하한과 같은지, 그리고 **이 파일 본문에 옛 구간 경계가 남아 있는지**를 검사합니다. 여기가 깨지면 값이 아니라 **두 곳이 서로 다른 말을 하고 있다**는 뜻입니다. 결과가 크면 파일로 저장되므로 요약만 grep합니다. 정본 6절의 교차 검증 16종과 각 카드의 「검증 절차·기대 결과」가 테스트 케이스의 원천이며, `CardScenarioTests`(49개)가 실제 카드 에셋으로 지키기/어기기 결과를 확인합니다.
+2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 353/353 통과**(2026-10-03 실측). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
+   - **`DesignDriftTests`가 드리프트 감시입니다.** 일차 하한이 줄지 않고 Band4에 닿지 않는지, `MinTrust`가 Band1 하한과 같은지, 그리고 **이 파일 본문에 옛 구간 경계가 남아 있는지**를 검사합니다. 여기가 깨지면 값이 아니라 **두 곳이 서로 다른 말을 하고 있다**는 뜻입니다. 결과가 크면 파일로 저장되므로 요약만 grep합니다. (옛 24장 카드의 에셋↔빌더·축 쿼터·죽은 카드 검사와 `CardScenarioTests`는 2026-10-03에 카드와 함께 지웠습니다.)
 3. 플레이 모드 확인은 `Assets/3.1. Programmer_lee/01 Scene/_Test_AxisRig.unity`에서 합니다. 플레이하면 **판정 디버그 패널**(`NightRunDebugPanel`, F2 숨김)이 자동 생성됩니다.
    - ① 카드 시험: 공간 H/C/S/T → 카드별 [지키기 ▶]/[어기기 ▶]. 새 회차 + 그 카드만 넣은 밤을 만들어 결과를 보여 줍니다.
    - ② 직접 조작: 일차·밤 시작/종료, 축 +/포획, 시간, 응시, 공간, 손전등/Tab/점검, 임의 신호, 카드 목록, 로그.
@@ -605,16 +616,15 @@ Assets/_Game/
 │   ├── Rules/         JudgeSignal · RuleBook · RuleWatcher · JudgeWorld · CardState · RuleReferenceCheck
 │   │   └── Conditions/  ICondition · SignalCondition · GazeCondition · FlashlightCondition · ProximityCondition
 │   │                    CompositeConditions(AllOf/AnyOf/Elapsed) · OrderConditions(Before/DoorObligation) · TargetMatch(Ids)
-│   ├── Direction/     NightRun · DayDirector · EncounterDirector · JudgeTarget · JudgeTargetRegistry · CardScenarios · ParadoxDirector
+│   ├── Direction/     NightRun · EncounterDirector · JudgeTarget · JudgeTargetRegistry · ParadoxDirector
 │   ├── Stats/         FearAxisSystem · BandResolver · DayFloor · DaySummary · DutyLogEntry
 │   ├── Presentation/  ISpacePresenter · IDocumentView            (인터페이스만)
 │   └── Editor/        NightDuty.Editor.asmdef  references: [NightDuty.Core], Editor 전용
-│                      CorridorCardBuilder · RoomCardBuilder · SpaceAnomalyTableBuilder · BandTableAssetCreator
-│                      RuleCardValidator · SceneTargetValidator · SubclassSelectorDrawer · TestLightRigSetup · TestSceneBuilder
-│                      ParadoxTextBuilder(역설 문구 생성)
-├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 362개 (CardScenarioTests 49 · BalanceRedesignTests 33 · DesignDriftTests 11 · EncounterDirectorTests 20 포함)
-├── ScriptableObjects/  Rules/{Corridor,Classroom,Science,Toilet}/ 카드 24장 · SpaceAnomalyTable · BandTable
-├── Resources/NightDeckTable.asset    **카드 풀**(2026-09-21부터). 일차별 덱이 아님 — §4.3′
+│                      SpaceAnomalyTableBuilder · BandTableAssetCreator
+│                      SceneTargetValidator · SubclassSelectorDrawer · TestLightRigSetup · TestSceneBuilder
+├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 353개(2026-10-03 — 옛 24장 카드 테스트 199개 삭제 뒤)
+├── ScriptableObjects/  SpaceAnomalyTable · BandTable
+├── Resources/NightDeckTable.asset    **비어 있음**(2026-10-03 옛 24장 폐기). 김진선님 태블릿의 밤 시작 전 폴백 — §4.3′
 ├── Resources/EncounterTable.asset    조우 8장면(2026-09-22). 문구는 자리표시자 — 기획서 10-3절이 정본
 └── Flow/              asmdef 없음 → Assembly-CSharp. 씬과 코어를 잇는 구동기 (§4.4)
     │                  NightRunDriver · NightDutyResultMapper · SpaceZones(공간·구역·점검·통행 신호) · SpaceLights
@@ -702,33 +712,17 @@ namespace NightDuty {
 - **`FearAxisSystem.BeginFrame/EndFrame`**(한 프레임 두 축 100) · `Raised` 이벤트 · `NightRun.LastCaptureSources`·`RaisedSources(axis)`·`DisplaySource`.
 - **새 수칙 판정**(`Scripts/FinalRules/`, 18차): `FinalRuleBook(deck, axes)` · `Dispatch(in JudgeSignal, bool judging)` · `EndNight()` · `NoteExternal(ruleId, violated, reason)` · `Judge(id)` · `Results` · `World`(공간·손전등·자세·달리기·판정 ms) · `Anchor`(기준점 위치 찾기, 테스트가 바꿈) · 이벤트 `Settled`·`ReverseReportArmed`·`EncounterRequested`, `ISnapshotable`. 판정기 = `FinalJudges.Create(RuleDef)`, 이름 = `FinalCues`. `NightRun.FinalRules`·`FinalResults`, `EventBus.FinalRuleSettled`. 발신기 `FinalRuleRelay`(Flow).
 - **긴장 디렉터**(`Scripts/Direction/Tension/`, 19차): `TensionDirector(program, day, restarts, rng)` · `Observe(in JudgeSignal)` · `Tick(minute, dt, highestSensory, auditoryShown, captured)` · `TryDequeue(out JudgeSignal)` · `ForceEncounter` · `FireRuleNow`/`EndRuleNow` · `SkipPhase` · `AbortAll` · `ResetToRest(k, startMinute)` · `Runs`/`RuleRuns`/`Budget`/`Mood`/`Busy`, 이벤트 `Emitted`. 표 `EncounterScripts`·`RuleTriggers`, `SurpriseBudget`, `DirectorMoods`, `DirectionEvent`. `NightRun.Tension`·`DirectorAutoRun`·`DebugForceEncounter`·`DebugFireRuleCue`·`DebugEndRuleCue`·`DebugSkipDirectionPhase`·`DebugAddFinalRule`·`DebugLowerAxis`, `EventBus.DirectionEmitted`. Flow: `DirectionStage`·`StandInFactory`·`LightGroup`·`DirectionCue`·`NightDutyDebugConsole`(F3).
-- **`DayDirector`**(`Scripts/Direction/`): `DayDirector(IReadOnlyList<RuleSO> pool, System.Random rng = null)` · `BuildDeck(int day, IFearAxisReader axes)` · `Reset()` · `LastReport`. 쿼터·한도·제약은 전부 `public const`로 노출돼 있습니다(`DeckSize` `QuotaLayout` `CapAuditory` `ConflictCardA` 등) — 테스트에서 매직넘버 대신 쓰십시오. §4.3′ 참조.
+- ~~`DayDirector`~~ — **2026-10-03(25차) 폐기**(§4.3′).
 - **`EncounterDirector`**(`Scripts/Direction/`): `BeginRun()` · `BeginNight(int day)` · `Observe(in JudgeSignal)` · `EndNight()` · `TodayScenes` · `CarriedOver` · `SpaceOf(string)` · `IsActive(string)`. 씬이 채우는 델리게이트 둘: **`IsVisible`**(장면 ID → 지금 시야 안인가) · **`PlaceModel`**(장면 ID, 대상 ID → 거기로 옮겨라). 장면 ID·상한은 `public const`(§4.3″).
 - **`EncounterTableSO`**(`Scripts/Data/`, `Resources/EncounterTable.asset`): 장면 8개의 공간·발견형·G 문자·**접근 3지점 대상 ID**·퇴실 게이트 지점. `Validate`가 설계를 데이터로 지킵니다.
 - **`DutyMark`**(`Scripts/Stats/DutyLogEntry.cs`): `None` / `Struck` / `Instructed`. `DutyLogEntry.Mark`가 계산합니다. 6인자 생성자는 하위호환으로 남아 있습니다(§2.9).
 - **`ParadoxDirector.WasSentToday(cardId)`**: 그날 그 카드에 역설 문자를 보냈는지. 결산 3구분이 읽습니다.
 - `DebugAxisDriver`는 실제 `FearAxisSystem`과 **똑같이 `IFearAxisReader`를 구현**하는 가짜 공급원입니다. 클라이언트 작업이 판정 시스템을 기다리지 않게 해 줍니다. **계속 동작하게 유지하십시오.** 플레이어 빌드에는 포함되지 않아야 합니다(`#if UNITY_EDITOR || NIGHTDUTY_DEBUG`).
 
-### 4.3′ 하루 덱은 이제 사람이 적지 않습니다 (2026-09-21)
+### 4.3′ 옛 하루 덱 배정 — 폐기했습니다 (2026-10-03, 25차)
 
-**`NightDeckTableSO`의 뜻이 바뀌었습니다.** 이전에는 「1일 복도 · 2일 교실 …」처럼 **일차별 고정 덱**이었습니다. 지금은 `NightRun.CollectPool`이 **표의 모든 일차를 합쳐 중복 없는 카드 풀**로 읽고, 그날 6장은 `DayDirector`가 고릅니다.
-
-- **기획팀이 이 에셋을 일차별로 편집하고 있다면 알려야 합니다.** 어느 칸에 넣든 풀에 들어갈 뿐 그날 나온다는 보장이 없습니다.
-- 배정 규칙:
-
-  | | |
-  |---|---|
-  | 하루 | **6장** — 배치 2 · 청각 2 · 조도 2 |
-  | 1일차만 | **S1 고정** + 배치 2 · 청각 2 · 조도 1 |
-  | 추첨 | 가중 비복원. 새로 열린 카드 ×3.0 · 미등장 일수 ×(1+0.5n) · 직전 등장 ×0.3 |
-  | 회차 한도 | 배치 2회 · 청각 2회 · 조도 3회 |
-  | 하드 제약 | **T1·T3 동일일 금지**(「수동 개폐 금지」 ↔ 「닫고 나가라」 정면 충돌) · S1은 1일차만 · 최소 3공간 |
-
-- **쿼터를 채울 카드가 모자라면 다른 축에서 메우지 않습니다.** 경고를 남기고 덱을 줄입니다 — 억지로 채우면 하드 제약이 깨집니다.
-- 재시도는 최대 `MaxAttempts`회이며, 초과하면 **제약을 가장 적게 어긴 조합**으로 진행하고 경고를 남깁니다. 덱 없이 밤을 시작하면 그날 판정이 통째로 사라지므로 그쪽이 더 나쁩니다.
-- **조우 제약 2건은 2026-09-22에 채웠습니다.** ① 그날 조우 공간의 카드를 최소 1장 보장 — **쿼터를 깨지 않고**, 같은 축의 가장 낮은 가중치 카드와 맞바꿉니다. ② **S-B가 깔린 날은 S2를 덱에서 뺍니다**(S2 「재진입 금지」 ↔ S-B 「그 방으로 다시 부름」이 정면 충돌). 기획서는 「S2 활성 중 S-B 금지」라고 적었지만 **조우가 덱보다 먼저 정해지므로 방향을 뒤집어** 덱 쪽에서 막습니다.
-- 두 제약은 `EncounterSpacesToday` · `IsEncounterActive` **델리게이트로 주입**받습니다. `DayDirector`는 `EncounterDirector`를 직접 참조하지 않습니다.
-- 테스트로 덱을 직접 넣으려면 `NightRun.DeckOverride`를 쓰십시오. 그러면 `DayDirector`를 거치지 않습니다.
+옛 24장 카드 풀(`NightDeckTable`)에서 하루 6장을 축 쿼터로 뽑던 배정기(`DayDirector`)와 그 카드 풀은 **옛 24장 카드와 함께 지웠습니다.** 그날 수칙은 새 편성(`ProgramDirector` → `FinalRuleBook`)이 정합니다. `NightRun.LoadDeck`은 `DeckOverride`가 없으면 빈 덱을 돌려주고, `Resources/NightDeckTable.asset`은 비워 둡니다(김진선님 `TabletDocument`의 밤 시작 전 폴백이 읽으므로 타입·에셋은 남김).
+- 테스트로 옛 판정 엔진(`RuleBook`)에 덱을 직접 넣으려면 `NightRun.DeckOverride`를 쓰십시오.
 
 ### 4.3″ 조우 — 8장면을 회차 안에 전부 소진합니다 (2026-09-22)
 
@@ -1215,7 +1209,7 @@ public static event Action<SignalKind, string, CueBindingTableSO.Binding> CueFir
 
 ### 12.1 다음 작업 (우선순위)
 
-**최종 기획서 「제작 계획」 12단계가 이 목록보다 앞섭니다.** 15차까지 1~3단계, 16차 4·5단계, 17·18차 6단계(카탈로그·편성기·새 수칙 판정), **19차 7단계 핵심(긴장 디렉터·놀람 예산·대본·연출 실행기·대역·소등·디버그 콘솔 F3)**, **20차 1일차 무조우·조우 묶인 수칙·H2 문 자동 개방·하네스 삭제**, **21차 몹 고정 자리·모델 연결·소리 표**, **22차 김진선님 연출 에셋(사람 나무 프리팹·화면 톤·가짜 놀람 캐비닛·벌레 떼)** 완료. **23차 경비실 전화로 근무 일찍 끝내기·상호작용 외곽선.** 2026-10-03 진행 점검(기획서 「구현 단계」 기준): 1·3·4·5·6 완료(6은 옛 24장 삭제만 민 결정 대기) · 2 코어 완료 · 2′ 몸 연출(심박·호흡·에코) 미착수 · 7 대부분(로컬 Volume·빠진 소리 남음) · 8 일부(K1·K2 신호 연결·CCTV 화면 셰이더, 붙잡힘 공용 틀·얼굴 컷·재시작 카드 남음) · 9 일부(02:16 중간 서명 코어·근무일지 결과창, 태블릿 5탭·포커스 보고 UI·위반 진동 남음) · 10 일부(역설 편성 코어, 안전한 읽기·변조본·검은 줄 남음) · 11 미착수(피날레 미리 보기만) · 12 밝기만. 7단계 남은 것: 공간별 로컬 Volume(색온도·채도), 소녀 모델·빠진 소리(종·분필·물 내림 등). 그다음 8단계(붙잡힘 3종·재시작 카드·CCTV 판정 셰이더). 옛 24장·옛 조우 8장면·관련 테스트 삭제는 민 결정 뒤. 재시작의 씬 재로딩·시계 되돌리기는 김진선님과 맞춘 뒤 붙입니다.
+**최종 기획서 「제작 계획」 12단계가 이 목록보다 앞섭니다.** 15차까지 1~3단계, 16차 4·5단계, 17·18차 6단계(카탈로그·편성기·새 수칙 판정), **19차 7단계 핵심(긴장 디렉터·놀람 예산·대본·연출 실행기·대역·소등·디버그 콘솔 F3)**, **20차 1일차 무조우·조우 묶인 수칙·H2 문 자동 개방·하네스 삭제**, **21차 몹 고정 자리·모델 연결·소리 표**, **22차 김진선님 연출 에셋(사람 나무 프리팹·화면 톤·가짜 놀람 캐비닛·벌레 떼)** 완료. **23차 경비실 전화로 근무 일찍 끝내기·상호작용 외곽선.** **24차 조도축 맵 변화(공간별 톤 Volume·기획서 표 소등·옛 SpaceLights 은퇴)로 7단계 마무리** — 7단계에 남은 것은 음원이 필요한 빠진 소리뿐. **25차 옛 24장 카드 폐기로 6단계 완료.** 2026-10-03 진행 점검(기획서 「구현 단계」 기준): 1·3·4·5·6 완료(6의 옛 24장 삭제는 25차) · 2 코어 완료 · 2′ 몸 연출(심박·호흡·에코) 미착수 · 7 완료(24차, 빠진 소리만 음원 대기) · 8 일부(K1·K2 신호 연결·CCTV 화면 셰이더, 붙잡힘 공용 틀·얼굴 컷·재시작 카드 남음) · 9 일부(02:16 중간 서명 코어·근무일지 결과창, 태블릿 5탭·포커스 보고 UI·위반 진동 남음) · 10 일부(역설 편성 코어, 안전한 읽기·변조본·검은 줄 남음) · 11 미착수(피날레 미리 보기만) · 12 밝기만. 7단계 남은 것: 공간별 로컬 Volume(색온도·채도), 소녀 모델·빠진 소리(종·분필·물 내림 등). 그다음 8단계(붙잡힘 3종·재시작 카드·CCTV 판정 셰이더). 옛 조우 8장면(`EncounterDirector`)·`AnomalyCueDirector`는 새 편성에서 쉬고 있으며 삭제는 민 결정 뒤. 재시작의 씬 재로딩·시계 되돌리기는 김진선님과 맞춘 뒤 붙입니다.
 
 (옛 7단계 목록 — 참고용) ① 코어 수치 **완료**(14차) → ② 붙잡힘 뒤 밤 재시작(감각 −10)·경고 3회 처벌 **완료**(15차) → ③ 점검·보고(16항목, 이상 4틀, 정확 보고 −5/놓침 +8) → ④ 공간·수칙 교체(`SpaceId`에 도서관·경비실 추가, 새 수칙 에셋, 옛 24장·테스트 삭제, 덱 = 공간 5 + 경비실 1(2일차~) + 공통 3, 가장 높은 감각 축 ×2·가장 낮은 축 최소 1) → ⑤ 역설·변조(사용자가 아직 손볼 예정) → ⑥ 연출 카탈로그·긴장 디렉터 → ⑦ 붙잡힘 3종·CCTV 판정(K1/K2/K-1). 교실 사다리 `LibraryLadder (1)`을 Classroom02에 놓는 씬 작업은 LFS 잠금 확인 뒤.
 
@@ -1241,7 +1235,7 @@ A와 B는 **병렬 가능**합니다 — 씬 파일과 코드가 겹치지 않�
 3. **플레이어 센서 씬 부착**(코드는 2026-09-20에 만들었습니다 — `PlayerSensors`·`GazeProbe`·`ProximityProbe`·`FlashlightRelay`·`DoorRelay`가 `Flow/Sensors/`에 있고 씬 인스턴스는 0개입니다). 가장 싼 첫 걸음은 `Flashlight(isOn)` 하나 — **H3·S6가 그날로 완전히 돕니다.** `GazeRay`(카메라 중앙 첫 가시 충돌체 ID를 돌려주는 읽기 전용 서비스)는 `ClueIdentified` 0.2초 식별과 `ModelObserved`를 만들려면 **어차피 필요**합니다. 함정은 §5.5.
 4. **씬 대상 7종 자리잡기**(민, 2026-09-21 실측). 씬에 `JudgeTarget`이 이미 **17개** 있고 카드가 요구하는 24종 중 **7종이 빕니다**: `cls11.desk.turned`(C2) · `corridor.debris`(H5) · `corridor.tree`(H6) · `science.bench.glass`(S3) · `toilet.stall.light`(T5) · `science.model.sa.face`(S1) · `science.model.sb`(S5). 빈 GameObject + `JudgeTarget`으로 자리만 잡으면 **앞의 5종이 풀리고**, 남는 것은 모형 2종(S1·S5)뿐입니다. 식별·응시 대상에는 **작은 `BoxCollider` 필수**(§5.5-21). 끝나면 `save_scene` → 메뉴의 「씬 대상 검사」로 개수를 확인합니다.
 5. **게임 시계 04:00 반영 + 동선 스톱워치.** `PlayScene`·`PlaySystems.prefab`이 0:00~6:00 ×20으로 들어가 있습니다(§8-7). 바꾼 뒤 **한 번 걸어서 실제 소요 초를 재어 기획에 제출**합니다 — 추측으로 회의를 여는 것보다 낫습니다.
-6. ~~**`DayDirector`**~~ — **2026-09-21 완료**(§4.3′). 하루 6장, 축 쿼터 2·2·2, 하드 제약 3종. 남은 2건(그날 조우 공간 카드 강제 · S2 활성 중 S-B 금지)은 `EncounterDirector` 대기.
+6. ~~**`DayDirector`**~~ — **2026-09-21 완료**(§4.3′). 하루 6장, 축 쿼터 2·2·2, 하드 제약 3종. 남은 2건(그날 조우 공간 카드 강제 · S2 활성 중 S-B 금지)은 `EncounterDirector` 대기. **→ 2026-10-03(25차) 옛 24장과 함께 폐기.**
 7. ~~**`EncounterDirector`**~~ — **2026-09-22 완료**(§4.3″). 코드·표·테스트 19개. 남은 것은 **씬 대상 27종**과 **G/N1 문구**(기획서 10-3절), 그리고 아트의 선/앉은 모형 프리팹입니다. 이전 서술: G의 주인은 카드가 아니라 **조우 장면**이라(§2.7) `EncounterDirector`와 태블릿 UI가 둘 다 있어야 합니다. 문자 작업 중 의존이 가장 많으므로 **앞으로 당기지 마십시오.**
 
 - **엠비언트 후속(2026-09-30).** ① ~~소리 파일 넣기~~ (완료) ② 걸어 다니며 볼륨 튜닝(`AmbienceConfig`) ③ CCTV 수칙 교체안(K1′·K2′·K5, 별도 문서) 채택 여부 결정.
@@ -1251,7 +1245,7 @@ A와 B는 **병렬 가능**합니다 — 씬 파일과 코드가 겹치지 않�
 - **아직 하지 않는 것:** `SpaceAnomalyTable`을 읽는 실제 `ISpacePresenter`(**조명 개수 맞추기는 하지 않습니다** — 9.20V가 등 개수를 삭제했습니다, §2.4), 면제 API(`RuleBook.Waive` — C6 동선 봉쇄, S4 대상 소실), 역설 정책 SO의 본격 구현(§2.9).
 - (선택) 아키텍처 페이지 갱신.
 
-**이번 주 검증 기준:** 디버그 신호 없이 **실제로 걸어서** ① C1이 준수/위반으로 갈리고 ② 결과창 근무 일지에 빨간 줄이 그어지고 ③ EditMode 테스트 **362개가 그대로 통과**해야 합니다. 그 전까지 코어에 추가되는 모든 줄은 검증되지 않은 가정 위에 쌓입니다.
+**이번 주 검증 기준:** 디버그 신호 없이 **실제로 걸어서** ① C1이 준수/위반으로 갈리고 ② 결과창 근무 일지에 빨간 줄이 그어지고 ③ EditMode 테스트가 **전부 통과**(25차 기준 353개)해야 합니다. 그 전까지 코어에 추가되는 모든 줄은 검증되지 않은 가정 위에 쌓입니다.
 
 ### 12.2 결정 대기 — 사용자 확인 필요
 
@@ -1280,7 +1274,7 @@ A와 B는 **병렬 가능**합니다 — 씬 파일과 코드가 겹치지 않�
 | Q6 | Tab이 `timeScale = 0`인가 (§5.5-20의 공간 신호 유실이 여기 매달려 있습니다) | 진선 |
 | Q8 | GameFlow 코드를 `_Game`으로 옮길지 | 진선 |
 | Q9 | H3가 통행 구역 진입 시 방문 몫을 차지하는 것이 의도인가 | 기획 |
-| ~~Q11~~ | **2026-09-21 종결(민 승인).** 하루 **6장**을 축 쿼터 2·2·2로 섞어 배정하며 최소 3공간을 포함합니다(§4.3′). 「시간 내에 못 돌았을 때의 대가」도 종결 — **공간 미방문에만 감각축 +9**(§2.5-2′) |
+| ~~Q11~~ | **2026-09-21 종결(민 승인).** 하루 **6장**을 축 쿼터 2·2·2로 섞어 배정하며 최소 3공간을 포함합니다(§4.3′). 「시간 내에 못 돌았을 때의 대가」도 종결 — **공간 미방문에만 감각축 +9**(§2.5-2′). **2026-10-03(25차) 옛 24장과 함께 배정기(`DayDirector`)를 폐기** — 새 편성은 `ProgramDirector`가 정한다 |
 | ~~Q12~~ | **2026-09-22 종결.** 시나리오 기획서 v6 §5-1이 「신뢰는 100이어도 완주할 수 있다. 신뢰 수치에 따른 생존·사망·진엔딩 분기는 만들지 않는다」로, §5-3이 「'신뢰=준수율'로 오해하게 만드는 이전 추가 문구는 삭제한다」로 확정했습니다. 코드는 이미 맞습니다(`FearAxisSystem.IsTerminal`). **남은 것은 태블릿 글자 흔들림 한 문장**뿐이고, §2.8의 금지가 그대로 우선합니다 |
 | **Q13** | ~~바인딩 표 채우기~~ — **2026-09-22 해소.** 빌더에 표 본문이 이미 있었고 에셋만 없었습니다(38줄 생성). 남은 기획 확인은 **잠정값 셋**뿐입니다: C4 `SequenceSeconds`(음원 발주 대기) · S3 `glass.touch`의 발동 시점 · 「별도 방문」(`CueVisit.SeparateVisit`)의 정확한 뜻 | 기획 |
 | **Q14** | **역설의 회차 한도와 동시 후보 우선순위.** 기획서에 없습니다. 현행 코드는 **덱 순서**, 옛 문서는 P3→P2→P1→P4였습니다(§2.7) | 기획 |

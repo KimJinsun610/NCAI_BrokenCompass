@@ -104,7 +104,7 @@ namespace NightDuty
 
         /// <summary>
         /// 회차 배분을 다시 뽑아 보는 최대 횟수. 제약을 만족하는 배분이 넉넉히 많아 보통 한두 번에 걸린다.
-        /// <see cref="DayDirector"/>의 <c>MaxAttempts</c>와 같은 뜻의 상수다.
+        /// 옛 하루 6장 배정기(2026-10-03 폐기)의 <c>MaxAttempts</c>와 같은 뜻의 상수였다.
         /// </summary>
         private const int MaxPlanAttempts = 64;
 
@@ -183,7 +183,7 @@ namespace NightDuty
         private readonly EncounterTableSO _table;
         private readonly System.Random _rng;
 
-        // 회차 상태 — 표 인덱스와 1:1. 표가 생성 시점에 고정되므로 Dictionary 대신 배열을 쓴다(DayDirector와 같은 이유).
+        // 회차 상태 — 표 인덱스와 1:1. 표가 생성 시점에 고정되므로 Dictionary 대신 배열을 쓴다.
         private readonly EncounterState[] _state;
         private readonly int[] _placedStep;    // 실제로 놓은 접근 단계(0 = 아직 안 놓음).
         private readonly int[] _wantStep;      // 놓고 싶은 접근 단계. 시야에 걸리면 placed보다 앞서 있다.
@@ -327,7 +327,7 @@ namespace NightDuty
         /// 새 회차를 연다. 배분을 확정하고 장면 상태·문자 이력·이월을 전부 비운다.
         /// <para>
         /// <b>난수는 초기화하지 않는다</b> — 시드를 다시 심는 것은 호출자의 몫이다
-        /// (<see cref="DayDirector.Reset"/>과 같은 규칙).
+        /// (옛 하루 6장 배정기와 같은 규칙이었다).
         /// </para>
         /// </summary>
         public void BeginRun()
@@ -677,7 +677,7 @@ namespace NightDuty
 
         /// <summary>
         /// 그 장면의 공간. 표에 없으면 <see cref="SpaceId.None"/>.
-        /// <see cref="DayDirector"/>가 「그날 조우 공간」을 물을 때 쓴다(조우 공간 카드 1장 강제).
+        /// 옛 하루 6장 배정기(2026-10-03 폐기)가 「그날 조우 공간」을 물을 때 쓰던 것이다. 지금은 디버그 표시만 읽는다.
         /// </summary>
         public SpaceId SpaceOf(string sceneId)
         {

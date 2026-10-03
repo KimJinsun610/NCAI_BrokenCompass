@@ -5,16 +5,11 @@ using UnityEngine;
 namespace NightDuty
 {
     /// <summary>
-    /// 근무수칙 카드 24장의 <b>공급원</b>. 표의 칸은 일차별로 나뉘어 있지만 읽는 쪽은 그렇게 쓰지 않는다.
+    /// 옛 근무수칙 카드 편성표. <b>2026-10-03에 옛 24장 카드를 폐기하면서 비웠다</b> — 판정 코어는 더 읽지 않는다.
     /// <para>
-    /// <b>이 표는 「일차별 덱」이 아니다</b>(2026-09-21 재설계). <see cref="NightRun"/>의 <c>CollectPool</c>이
-    /// 1일차부터 <see cref="DayFloor.LastDay"/>까지의 모든 칸을 합쳐 <b>중복 없는 카드 풀 24장</b>으로 만들고,
-    /// 그날 실제로 나갈 6장은 <see cref="DayDirector"/>가 고른다.
-    /// 칸을 일차별로 남겨 둔 것은 기획팀이 쓰던 에셋을 그대로 살리기 위해서다 — 어느 칸에 넣든 풀에는 똑같이 들어간다.
-    /// 일차가 표보다 크면 마지막 항목을 쓴다.
-    /// </para>
-    /// <para>
-    /// <see cref="NightRun"/>이 <c>Resources/NightDeckTable</c>에서 찾는다. 이름과 위치를 바꾸지 말 것.
+    /// 타입을 남긴 이유: 김진선님의 <c>TabletDocument</c>가 밤이 시작되기 전 폴백으로 <c>Resources/NightDeckTable</c>을 읽는다.
+    /// 밤 중의 태블릿 수칙은 <see cref="NightRun.TodayDeck"/>(새 수칙 + 점검표)가 정본이다.
+    /// 표에 옛 카드를 다시 채우지 마십시오 — 되살리지 마십시오.
     /// </para>
     /// </summary>
     [CreateAssetMenu(menuName = "NightDuty/Night Deck Table", fileName = "NightDeckTable")]

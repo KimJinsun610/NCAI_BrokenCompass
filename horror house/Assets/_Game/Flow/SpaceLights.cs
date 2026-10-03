@@ -2,7 +2,11 @@ using NightDuty;
 using UnityEngine;
 
 /// <summary>
-/// 한 공간의 조도 연출을 맡는 등 그룹. 구간이 바뀌면 켜 둘 등 개수와 색온도를 바꾼다.
+/// <b>2026-10-03부터 아무것도 하지 않는다 — <see cref="IlluminanceMap"/>이 대신한다.</b>
+/// 이 컴포넌트는 구간마다 등을 8/6/4/2/0개로 끄고 등 색온도를 6500K→1200K로 내렸는데, 9.20V가 「켜진 등 개수」를 지웠고
+/// 최종 기획서는 색을 Volume White Balance로, 소등을 「좌측 복도 끝부터 구간 수만큼 · 3구간 과학실 앞 복도」로 정했다.
+/// 씬(JudgeLights 아래 5개)과 옛 단서 조건(<c>AnomalyCueDirector</c>, 새 편성에서는 꺼짐)이 아직 참조하므로 클래스는 남긴다.
+/// <para>옛 설명: 한 공간의 조도 연출을 맡는 등 그룹. 구간이 바뀌면 켜 둘 등 개수와 색온도를 바꾼다.</para>
 /// <list type="bullet">
 /// <item>켤 개수·색온도는 <see cref="BandTableSO"/>(전 공간 공통 표)가 정한다. 여기서 수치를 다시 쓰지 않는다.</item>
 /// <item><b>실시간 라이트만</b> 켜고 끌 수 있다. Mixed·Baked는 꺼도 화면이 어두워지지 않는다 — 에디터 메뉴로 변환한다.</item>
@@ -39,16 +43,15 @@ public sealed class SpaceLights : MonoBehaviour, ISpacePresenter
     /// </summary>
     public int LitCount => _lit;
 
+    /// <summary>옛 동작을 끈다(늘 true). 시험이 옛 동작을 확인해야 하면 false로 바꿔 쓴다.</summary>
+    public static bool Retired { get; set; } = true;
+
     private void OnEnable()
     {
         CacheIntensity();
         if (bandTable == null) bandTable = Resources.Load<BandTableSO>("BandTable");
-        EventBus.BandChanged += OnBandChangedEvent;
-    }
-
-    private void OnDisable()
-    {
-        EventBus.BandChanged -= OnBandChangedEvent;
+        _lit = lights.Length;   // 끄지 않으므로 늘 전부 켜져 있다.
+        // 구간 이벤트를 받지 않는다(2026-10-03) — 받으면 IlluminanceMap과 등을 두고 다툰다.
     }
 
     private void CacheIntensity()
@@ -62,16 +65,11 @@ public sealed class SpaceLights : MonoBehaviour, ISpacePresenter
         }
     }
 
-    private void OnBandChangedEvent(SpaceId s, FearAxis axis, Band from, Band to)
-    {
-        if (s != space || axis != FearAxis.Illuminance) return;
-        OnBandChanged(axis, from, to);
-    }
-
     /// <inheritdoc/>
     public void OnBandChanged(FearAxis axis, Band from, Band to)
     {
-        if (axis != FearAxis.Illuminance || bandTable == null) return;
+        // 2026-10-03: IlluminanceMap이 대신한다. 아래 옛 동작(등 개수·색온도)은 되살리지 마십시오.
+        if (Retired || axis != FearAxis.Illuminance || bandTable == null) return;
 
         CacheIntensity();
         int lit = bandTable.LitCountFor(space, to);

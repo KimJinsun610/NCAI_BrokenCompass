@@ -58,6 +58,21 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void 공간에_보이는_조도_구간은_축의_연출_구간을_따른다()
+        {
+            NightRun.DeckOverride = day => new List<RuleSO>();
+            NightRun.BeginNight(1, () => _clock);
+            Assert.AreEqual(Band.Band0, NightRun.ShownBand(SpaceId.Toilet, FearAxis.Illuminance));
+
+            NightRun.DebugAddAxis(FearAxis.Illuminance, 55);
+
+            Assert.AreEqual(NightRun.Shown.GetBand(FearAxis.Illuminance), NightRun.ShownBand(SpaceId.Toilet, FearAxis.Illuminance));
+            Assert.AreEqual(Band.Band2, NightRun.ShownBand(SpaceId.Corridor, FearAxis.Illuminance));
+            Assert.AreEqual(Band.Band2, NightRun.ShownBand(SpaceId.Library, FearAxis.Illuminance), "순찰 공간이 아니면 축 전체의 연출 구간");
+            Assert.AreEqual(Band.Band0, NightRun.ShownBand(SpaceId.Corridor, FearAxis.Auditory), "다른 축은 그대로");
+        }
+
+        [Test]
         public void 축값은_다음날로_이월된다()
         {
             NightRun.BeginNight(1, () => _clock);

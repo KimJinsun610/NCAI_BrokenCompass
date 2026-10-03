@@ -15,7 +15,7 @@ namespace NightDuty.Editor
     /// 기획서 원문이 들어오면 인스펙터에서 이 자리표시자만 갈아 끼우면 된다.
     /// </para>
     /// <para>
-    /// <b>이미 에셋이 있으면 건드리지 않는다</b>(<see cref="CorridorCardBuilder"/>·<see cref="SpaceAnomalyTableBuilder"/>와 같은 규칙).
+    /// <b>이미 에셋이 있으면 건드리지 않는다</b>(<see cref="SpaceAnomalyTableBuilder"/>와 같은 규칙).
     /// 기획팀이 인스펙터에서 고친 문구를 메뉴 한 번으로 날리지 않기 위해서다.
     /// 초기값으로 되돌리려면 에셋을 지우고 메뉴를 다시 실행한다.
     /// 확인 대화상자를 띄우지 않으므로 Unity CLI/MCP로도 실행할 수 있다.
@@ -273,7 +273,7 @@ namespace NightDuty.Editor
         }
 
         /// <summary>
-        /// 폴더가 없으면 위에서부터 만든다. <see cref="CorridorCardBuilder"/>와 같은 구현이다 —
+        /// 폴더가 없으면 위에서부터 만든다. 옛 카드 빌더(2026-10-03 폐기)와 같은 구현이었다 —
         /// <see cref="AssetDatabase.CreateAsset"/>는 폴더가 없으면 조용히 실패한다.
         /// </summary>
         private static void EnsureFolder(string path)

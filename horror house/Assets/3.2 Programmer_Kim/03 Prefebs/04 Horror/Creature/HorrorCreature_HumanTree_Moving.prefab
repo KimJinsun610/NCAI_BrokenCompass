@@ -230,7 +230,7 @@ MonoBehaviour:
   maxWaitSeconds: 8
   lockPlayer: 0
   useDebugKey: 0
-  debugKey: 56
+  debugKey: 0
 --- !u!114 &3371131206880771446
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -323,7 +323,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 0846f2187cd2b884bbd9ab5deda4277c, type: 3}
       propertyPath: m_Name
-      value: HorrorCreature_HumanTree_Moving 1
+      value: HorrorCreature_HumanTree_Moving
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 0846f2187cd2b884bbd9ab5deda4277c, type: 3}
       propertyPath: m_Controller

@@ -151672,30 +151672,6 @@ PrefabInstance:
       propertyPath: m_OcclusionCulling
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 3918401188593456985, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: m_Height
-      value: 1.7
-      objectReference: {fileID: 0}
-    - target: {fileID: 6823887900729384063, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.249
-      objectReference: {fileID: 0}
-    - target: {fileID: 6823887900729384063, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7930816
-      objectReference: {fileID: 0}
-    - target: {fileID: 6823887900729384063, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0.020767573
-      objectReference: {fileID: 0}
-    - target: {fileID: 6823887900729384063, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.6085527
-      objectReference: {fileID: 0}
-    - target: {fileID: 6823887900729384063, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0.015935514
-      objectReference: {fileID: 0}
     - target: {fileID: 7211598377816875816, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
       propertyPath: m_Name
       value: FPController

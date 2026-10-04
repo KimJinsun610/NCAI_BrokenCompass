@@ -42,6 +42,7 @@ public sealed class FlashlightRelay : MonoBehaviour
 
     private Light[] _lights;
     private bool _isOn;
+    private FPController _player;
     private int _sentForDay = -1;
 
     /// <summary>지금 켜져 있는지.</summary>
@@ -222,6 +223,14 @@ public sealed class FlashlightRelay : MonoBehaviour
 
     private bool ReadToggleInput()
     {
+        // 플레이어 조작이 꺼져 있으면(사망 컷신 · Day n 화면 · 개발자 모드 패널 등) 손전등도 받지 않는다.
+        // 그런 연출은 FPController를 끄는 것으로 「조작 불가」를 표시한다(2026-10-02 김진선).
+        if (_player == null) _player = GetComponentInParent<FPController>();
+        if (_player != null && !_player.enabled)
+        {
+            return false;
+        }
+
 #if ENABLE_LEGACY_INPUT_MANAGER
         if (Input.GetKeyDown(toggleKey))
         {

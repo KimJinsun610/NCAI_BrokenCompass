@@ -59,6 +59,12 @@ public class DeathCutscene : MonoBehaviour
     [Tooltip("blackout 값을 그리는 화면 전체 검은 이미지(빌더가 만든 오버레이 캔버스). 비우면 암전하지 않는다.")]
     [SerializeField] private UnityEngine.UI.Image blackoutImage;
 
+    [Header("렌즈 (조도 컷신 — 광각)")]
+    [Tooltip("플레이어 카메라 세로 시야각(°). 0이면 원래 값 그대로. Timeline이 움직인다 — 가까이 + 넓은 시야각 = 얼굴이 부담스럽게 다가오는 광각 왜곡.")]
+    [SerializeField, Min(0f)] private float fieldOfView;
+    [Tooltip("컷신 동안 카메라 근평면(m). 0이면 그대로. 얼굴을 코앞까지 당기면 기본 0.1에서 코가 잘린다.")]
+    [SerializeField, Min(0f)] private float nearClip;
+
     [Header("시선 보정 — 씬마다 플레이어 눈높이가 다르다")]
     [Tooltip("돌아본 끝에 봐야 하는 지점(소년의 Head 뼈). 비우면 보정하지 않는다.")]
     [SerializeField] private Transform aimPoint;
@@ -119,6 +125,10 @@ public class DeathCutscene : MonoBehaviour
     private Light[] lampLights = new Light[0];
     private float[] lampIntensity = new float[0];
     private bool[] lampEnabled = new bool[0];
+
+    // 렌즈 원래 값
+    private float camFov;
+    private float camNear;
 
     private static void HideCursor()
     {
@@ -281,6 +291,9 @@ public class DeathCutscene : MonoBehaviour
         playerRot = player.rotation;
         camLocalPos = playerCam.transform.localPosition;
         camLocalRot = playerCam.transform.localRotation;
+        camFov = playerCam.fieldOfView;
+        camNear = playerCam.nearClipPlane;
+        if (nearClip > 0f) playerCam.nearClipPlane = nearClip;
 
         PlaceAtPlayer(fp);
         pitchCorrection = ComputePitchCorrection();
@@ -392,6 +405,7 @@ public class DeathCutscene : MonoBehaviour
         UpdateMuffle();
         if (controlFlashlight) ApplyFlashlight();
         SetBlackout(blackout);
+        playerCam.fieldOfView = fieldOfView > 0f ? fieldOfView : camFov;
 
         // 디렉터가 다 그린 뒤(LateUpdate) 카메라를 목표에 붙인다.
         elapsed += Time.deltaTime;
@@ -434,6 +448,8 @@ public class DeathCutscene : MonoBehaviour
         {
             playerCam.transform.localPosition = camLocalPos;
             playerCam.transform.localRotation = camLocalRot;
+            playerCam.fieldOfView = camFov;
+            playerCam.nearClipPlane = camNear;
         }
         if (player != null) player.SetPositionAndRotation(playerPos, playerRot);
         if (playerController != null) playerController.enabled = true;

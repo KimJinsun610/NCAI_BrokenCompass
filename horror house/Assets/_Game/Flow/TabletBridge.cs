@@ -158,7 +158,7 @@ public sealed class TabletBridge : MonoBehaviour
     {
         if (!Bind()) return;
 
-        bool open = tablet.IsOpened;
+        bool open = TabletZoom.Reading(tablet);   // 늘 드는 태블릿이면 「확대 = 읽는 중」만 Tab이다
         if (open != _wasOpen)
         {
             _wasOpen = open;

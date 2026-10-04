@@ -374,7 +374,7 @@ public sealed class FinaleDirector : MonoBehaviour
 
         foreach (DoorHandle h in DoorHandle.All())
         {
-            if (!h.IsValid) continue;
+            if (!h.IsValid || PlayerInteractor.IsSealed(h)) continue;   // 쓰지 않는 문(판자로 막힌 문 등)은 열지 않는다(42차)
             Vector3 p = h.Owner.transform.position;
             if (!box.Contains(new Vector3(p.x, box.center.y, p.z))) continue;
             GuardDoor d = new GuardDoor { Handle = h, WasLocked = h.IsLocked, WasOpen = h.IsOpen };

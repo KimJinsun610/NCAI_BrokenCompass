@@ -122,6 +122,12 @@ namespace NightDuty
         /// <summary>가짜 놀람 간격 최대(초).</summary>
         public const float FakeGapMax = 150f;
 
+        /// <summary>판정이 열린(00:16) 뒤 첫 가짜 놀람까지 최소(초).</summary>
+        public const float FirstFakeMin = 4f;
+
+        /// <summary>판정이 열린 뒤 첫 가짜 놀람까지 최대(초).</summary>
+        public const float FirstFakeMax = 14f;
+
         /// <summary>같은 가짜 놀람의 밤당 상한.</summary>
         public const int FakePerId = 2;
 
@@ -198,7 +204,8 @@ namespace NightDuty
                 _rules.Add(new RuleTriggerRun { Script = script, NeedDwell = Range(script.DwellMin, script.DwellMax) });
             }
 
-            _nextFake = Range(FakeGapMin * 0.5f, FakeGapMax * 0.5f);
+            // 44차: 출근(00:00~00:16, 실시간 1분)은 조용히 두되, 판정이 열리면 곧 첫 가짜 놀람 — 전에는 첫 것이 30~75초 뒤로 잡혀 출근 뒤 한참 비었다.
+            _nextFake = NightClock.RealSecondsAt(NightClock.JudgingStart) + Range(FirstFakeMin, FirstFakeMax);
         }
 
         /// <summary>연출 알림(대역·소등·소리·로그).</summary>
@@ -508,7 +515,8 @@ namespace NightDuty
             }
 
             float scale = DirectorMoods.ForeshadowScale(Mood);
-            if (!r.Forced)
+            // 헛예고는 조우마다 한 번까지 — 한 번 속인 뒤에는 진짜가 온다(43차 시뮬: 같은 조우의 헛예고가 26초 사이로 두 번 연달아 나와 김이 샜다).
+            if (!r.Forced && r.FalseCount == 0)
             {
                 float pFalse = (auditoryShown >= Band.Band3 ? 0.4f : 0.3f) * DirectorMoods.FalseScale(Mood);
                 if (_rng.NextDouble() < pFalse)

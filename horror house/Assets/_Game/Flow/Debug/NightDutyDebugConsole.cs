@@ -702,7 +702,7 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
             return;
         }
 
-        TeleportNear(t.AnchorPosition, space, 1.6f);
+        TeleportNear(t.AnchorPosition, space, 1.2f);   // 보고 가능 거리(2m) 안 — 1.6m는 책상에 막히면 2m 밖에 섰다(42차)
     }
 
     private void TeleportToSpace(SpaceId space)

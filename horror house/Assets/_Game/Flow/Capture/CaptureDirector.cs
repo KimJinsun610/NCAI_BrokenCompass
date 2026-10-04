@@ -256,7 +256,7 @@ public sealed partial class CaptureDirector : MonoBehaviour
         _hidden.Clear();
     }
 
-    /// <summary>게임 시계 표시를 재시작 지점 쪽으로 돌린다(시 단위). 판정 시계(분)는 구동기가 NightRestarted로 맞춘다.</summary>
+    /// <summary>게임 시계 표시를 재시작 지점 쪽으로 돌린다(분 단위). 판정 시계(분)는 구동기가 NightRestarted로 맞춘다.</summary>
     private static void RewindClock(GameTime clock, bool fromCheckpoint)
     {
         if (clock == null) return;
@@ -264,6 +264,26 @@ public sealed partial class CaptureDirector : MonoBehaviour
         int nightMinute = fromCheckpoint ? NightClock.Call2 : 0;
         int gameMinute = clock.StartMinutes + (span > 0 ? Mathf.RoundToInt(nightMinute * span / (float)NightClock.ShiftEnd) : 0);
         clock.JumpToHour(gameMinute / 60);
+        SetClockMinute(clock, gameMinute);
+    }
+
+    private static System.Reflection.FieldInfo s_clockSeconds;
+    private static System.Reflection.MethodInfo s_clockRefresh;
+
+    /// <summary>
+    /// 시 단위 JumpToHour 뒤에 분까지 맞춘다 — 체크포인트(02:16) 재시작이 HUD에 02:00으로 나왔다(43차 시뮬).
+    /// GameTime(김진선님)에 분 단위 API가 없어 런타임 인스턴스의 시각 필드만 반사로 쓴다. 못 찾으면 시 단위 그대로.
+    /// </summary>
+    private static void SetClockMinute(GameTime clock, int gameMinute)
+    {
+        const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        if (s_clockSeconds == null) s_clockSeconds = typeof(GameTime).GetField("currentSeconds", flags);
+        if (s_clockRefresh == null) s_clockRefresh = typeof(GameTime).GetMethod("RefreshText", flags);
+        if (s_clockSeconds == null || s_clockRefresh == null || clock.IsEnded) return;
+
+        int minute = Mathf.Clamp(gameMinute, clock.StartMinutes, clock.EndMinutes);
+        s_clockSeconds.SetValue(clock, minute * 60f);
+        s_clockRefresh.Invoke(clock, new object[] { true });
     }
 
     private void MovePlayerToStart(FPController player)

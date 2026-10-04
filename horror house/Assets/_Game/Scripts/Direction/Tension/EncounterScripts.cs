@@ -191,7 +191,7 @@ namespace NightDuty
                 new EncounterScript
                 {
                     Id = ProgramCatalog.YellowFace, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 8f,
-                    Cue = FinalCues.YellowFace, Window = 8f,
+                    Cue = FinalCues.YellowFace, Window = 11f,   // 44차: 8초는 알아보고 비추면 끝나 공포가 쌓이지 않았다 — 마주 비추고 버티는 시간
                     Placement = CuePlacement.AheadOfPlayer, Distance = 4f, StandIn = "mob.duck", AnchorId = FinalCues.FaceTarget,
                     StageAnchor = StageAnchors.YellowDoor,
                     Note = "기획서: 도서관 점검 2개 뒤 출입구를 등질 때. 우선 도서관 8초 체류."

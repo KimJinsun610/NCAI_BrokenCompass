@@ -579,6 +579,306 @@ MonoBehaviour:
     volume: 0.4
     hits:
     - 0.225875
+  - key: body.heart.62
+    clip: {fileID: 8300000, guid: 5c026cdccba948a43bdcaaceca3a44c0, type: 3}
+    more: []
+    volume: 0.3
+    hits:
+    - 0.1041875
+  - key: body.heart.72
+    clip: {fileID: 8300000, guid: 234cb716594e34e4886968e23a111253, type: 3}
+    more: []
+    volume: 0.4
+    hits:
+    - 0.1041875
+  - key: body.heart.86
+    clip: {fileID: 8300000, guid: 2f4d5533294855447999ca251d74ce50, type: 3}
+    more: []
+    volume: 0.5
+    hits:
+    - 0.1041875
+  - key: body.heart.104
+    clip: {fileID: 8300000, guid: d6b5ef9570f88c44e976a664d65f1123, type: 3}
+    more: []
+    volume: 0.62
+    hits:
+    - 0.1041875
+  - key: body.ear
+    clip: {fileID: 8300000, guid: 2e6e59405c05680419ba159cd4ce5d0d, type: 3}
+    more: []
+    volume: 0.35
+    hits:
+    - 11.988854
+  - key: body.tinnitus
+    clip: {fileID: 8300000, guid: a81983e6745144d4f96656987ae94538, type: 3}
+    more: []
+    volume: 0.22
+    hits:
+    - 0.008041667
+  - key: body.heart.boundary
+    clip: {fileID: 8300000, guid: b54fc649f281d7943aa33da6b4f5c893, type: 3}
+    more: []
+    volume: 0.85
+    hits:
+    - 0.9341458
+  - key: body.breath
+    clip: {fileID: 8300000, guid: d139161adc2baa04aabc7f8f9286902d, type: 3}
+    more:
+    - {fileID: 8300000, guid: 19d52c2b45ecb1a44906c0905bf9ae3d, type: 3}
+    - {fileID: 8300000, guid: a6c2da87017bc2545a6bbb9dfb2e272b, type: 3}
+    volume: 0.6
+    hits:
+    - 0.876875
+    - 2.6247084
+    - 6.39725
+  - key: body.breath.stop
+    clip: {fileID: 8300000, guid: afd8f48483681694aa35f94a04128ac4, type: 3}
+    more: []
+    volume: 0.85
+    hits:
+    - 0.932625
+  - key: body.sigh
+    clip: {fileID: 8300000, guid: 3eb0ee1b6c824b54988fbcd9195b8a23, type: 3}
+    more: []
+    volume: 0.6
+    hits:
+    - 2.3241875
+  - key: map.hall.1
+    clip: {fileID: 8300000, guid: d457bc946db921e4fac83d8f6256e944, type: 3}
+    more: []
+    volume: 0.75
+    hits:
+    - 2.20075
+  - key: map.hall.1b
+    clip: {fileID: 8300000, guid: 528e118803b773d46b54a32301b7eb87, type: 3}
+    more:
+    - {fileID: 8300000, guid: a656bd00c00a88d4c914cdbca9943795, type: 3}
+    - {fileID: 8300000, guid: 25fe0934c7a10f14a801f06f09fdeaff, type: 3}
+    volume: 0.7
+    hits:
+    - 0.22989583
+    - 0.8111875
+    - 0.25072917
+  - key: map.hall.2
+    clip: {fileID: 8300000, guid: d457bc946db921e4fac83d8f6256e944, type: 3}
+    more: []
+    volume: 0.8
+    hits:
+    - 2.20075
+  - key: map.hall.3
+    clip: {fileID: 8300000, guid: 66b0459cf1881424797bcdb3460a0bb6, type: 3}
+    more: []
+    volume: 0.85
+    hits:
+    - 2.7426667
+  - key: map.hall.3+
+    clip: {fileID: 8300000, guid: d457bc946db921e4fac83d8f6256e944, type: 3}
+    more: []
+    volume: 0.8
+    hits:
+    - 2.20075
+  - key: map.hall.4
+    clip: {fileID: 8300000, guid: 8881ce14b05cd5448b41b273a98fc66b, type: 3}
+    more:
+    - {fileID: 8300000, guid: d3df9655855d9cf40a675beb554a4557, type: 3}
+    - {fileID: 8300000, guid: 0259bedc376aef54abec85fd5d596fef, type: 3}
+    volume: 0.85
+    hits:
+    - 7.732375
+    - 1.8518958
+    - 5.1656666
+  - key: map.class.1
+    clip: {fileID: 8300000, guid: cc5edf5b9befa6547812f13cb4827abf, type: 3}
+    more: []
+    volume: 0.75
+    hits:
+    - 1.3169792
+  - key: map.class.2
+    clip: {fileID: 8300000, guid: b555d68ef4558a845a9aa0fb4b667b4d, type: 3}
+    more: []
+    volume: 0.85
+    hits:
+    - 0.40222916
+  - key: map.class.3
+    clip: {fileID: 8300000, guid: 73aa6ef7bf879e44ab06bee4dea973ee, type: 3}
+    more: []
+    volume: 0.8
+    hits:
+    - 3.1591458
+  - key: map.class.3+
+    clip: {fileID: 8300000, guid: 879b6be6c869ad745970807556da4007, type: 3}
+    more: []
+    volume: 0.8
+    hits:
+    - 0.9509375
+  - key: map.class.4
+    clip: {fileID: 8300000, guid: 879b6be6c869ad745970807556da4007, type: 3}
+    more: []
+    volume: 0.85
+    hits:
+    - 0.9509375
+  - key: map.lab.1
+    clip: {fileID: 8300000, guid: c38577a3ec1b8ba49a659ceca79a2042, type: 3}
+    more: []
+    volume: 0.7
+    hits:
+    - 0.075
+  - key: map.lab.2
+    clip: {fileID: 8300000, guid: 20741c8f33b2ffd40abace39953d7327, type: 3}
+    more: []
+    volume: 0.75
+    hits:
+    - 4.7630625
+  - key: map.lab.3
+    clip: {fileID: 8300000, guid: c38577a3ec1b8ba49a659ceca79a2042, type: 3}
+    more: []
+    volume: 0.55
+    hits:
+    - 0.075
+  - key: map.lab.4
+    clip: {fileID: 8300000, guid: 80db971588e25614da6b6128d487887b, type: 3}
+    more: []
+    volume: 0.85
+    hits:
+    - 1.4709792
+  - key: map.toilet.2
+    clip: {fileID: 8300000, guid: 6ac5c4c536b9ea54381952d624364050, type: 3}
+    more: []
+    volume: 0.75
+    hits:
+    - 0.08622917
+  - key: map.layout.3
+    clip: {fileID: 8300000, guid: 15756da005592f548b23ff13dfcb1ea0, type: 3}
+    more: []
+    volume: 0.8
+    hits:
+    - 0.46141666
+  - key: map.layout.4
+    clip: {fileID: 8300000, guid: 28c3d4e6b5f7eaa479358a54a433c90a, type: 3}
+    more:
+    - {fileID: 8300000, guid: 811fefe9ed99b224b8e0e9cff644e9b4, type: 3}
+    - {fileID: 8300000, guid: cb46d1759a0428543ba827496ed6e391, type: 3}
+    volume: 0.22
+    hits:
+    - 4.9004583
+    - 3.2691667
+    - 0.6722917
+  - key: map.lamp.off
+    clip: {fileID: 8300000, guid: 9c01cf64a9f14f742a0623689aef0121, type: 3}
+    more:
+    - {fileID: 8300000, guid: 3de5bb4d3420fd54ca4d3be95ada8922, type: 3}
+    - {fileID: 8300000, guid: da7dda3123faeba4a92413407865076e, type: 3}
+    volume: 0.8
+    hits:
+    - 7.8201876
+    - 1.6603333
+    - 3.1719167
+  - key: cross.toilet.water
+    clip: {fileID: 8300000, guid: cf2eae1552b2cab4db605b80fcf26d16, type: 3}
+    more:
+    - {fileID: 8300000, guid: ecc2e1a4f865eb34fb7a4eeecfc7b875, type: 3}
+    - {fileID: 8300000, guid: 40781e45a8943784bb47b314817e09f8, type: 3}
+    volume: 0.7
+    hits:
+    - 0.3791875
+    - 0.12614584
+    - 0.1063125
+  - key: cross.guard.breath
+    clip: {fileID: 8300000, guid: 1cf5d51056fff8845a15e90c97c11bc4, type: 3}
+    more: []
+    volume: 0.75
+    hits:
+    - 1.2058125
+  - key: trust.guard.rattle
+    clip: {fileID: 8300000, guid: f8f7440c68ccaf14f856f0629b4fc44a, type: 3}
+    more:
+    - {fileID: 8300000, guid: 5c42220fd7964534188d11e0ba08f538, type: 3}
+    - {fileID: 8300000, guid: dc55d7bc5c3bb504f92574238a8bd9b4, type: 3}
+    volume: 0.8
+    hits:
+    - 2.5625625
+    - 0.2259375
+    - 6.608896
+  - key: react.C1
+    clip: {fileID: 8300000, guid: bf8d0239e59ab8645a8bf36af2683ed8, type: 3}
+    more:
+    - {fileID: 8300000, guid: fa75c962f4857ff40bb307951060c107, type: 3}
+    - {fileID: 8300000, guid: b73b44aa2a9828645a71a78e12dfcee2, type: 3}
+    volume: 0.9
+    hits:
+    - 2.99425
+    - 1.83225
+    - 1.4216459
+  - key: react.L1
+    clip: {fileID: 8300000, guid: d7e0c666c6d69fb4bba6616e9fe038ff, type: 3}
+    more:
+    - {fileID: 8300000, guid: 9b267463c81414e4f9908315c2b0e36a, type: 3}
+    - {fileID: 8300000, guid: 44a29b61afa3d9549a277e6532e81278, type: 3}
+    volume: 0.9
+    hits:
+    - 4.5132294
+    - 5.408625
+    - 3.8935
+  - key: react.L2
+    clip: {fileID: 8300000, guid: d22f265e465c8f94e9e79596a615424c, type: 3}
+    more:
+    - {fileID: 8300000, guid: 0bb6765555e9aa64cade5a4a8bdb6125, type: 3}
+    - {fileID: 8300000, guid: cdfef4a1166e62043a75017260e42e1f, type: 3}
+    volume: 0.9
+    hits:
+    - 0.115520835
+    - 0.12664583
+    - 0.42672917
+  - key: react.L5
+    clip: {fileID: 8300000, guid: 3400e21a852ff3846ba995c7de1d49f6, type: 3}
+    more:
+    - {fileID: 8300000, guid: 4aec6484dc049b54596c24ae3215f00c, type: 3}
+    - {fileID: 8300000, guid: a079523fa4edf214d85f1882202d57fa, type: 3}
+    volume: 0.9
+    hits:
+    - 1.501625
+    - 0.43820834
+    - 4.63725
+  - key: react.S2
+    clip: {fileID: 8300000, guid: 4f195c05bed95c347a4911f0773deb63, type: 3}
+    more:
+    - {fileID: 8300000, guid: ee729b9be3782c549b77c4043c576018, type: 3}
+    - {fileID: 8300000, guid: 43be7cda04603824e921f6364412e44d, type: 3}
+    volume: 0.85
+    hits:
+    - 0.088395834
+    - 0.5579583
+    - 1.8590208
+  - key: react.G1
+    clip: {fileID: 8300000, guid: 8881ce14b05cd5448b41b273a98fc66b, type: 3}
+    more:
+    - {fileID: 8300000, guid: d3df9655855d9cf40a675beb554a4557, type: 3}
+    - {fileID: 8300000, guid: 0259bedc376aef54abec85fd5d596fef, type: 3}
+    volume: 0.85
+    hits:
+    - 7.732375
+    - 1.8518958
+    - 5.1656666
+  - key: react.K2
+    clip: {fileID: 8300000, guid: 32975881684b49342a0807af171d60bc, type: 3}
+    more:
+    - {fileID: 8300000, guid: 70c198ce6f1141746950b0dead4f717e, type: 3}
+    - {fileID: 8300000, guid: 002a5d8b6cff5ed429cccf1ab1e5ce8e, type: 3}
+    volume: 0.8
+    hits:
+    - 4.0133333
+    - 0.013
+    - 0.40158334
+  - key: cctv.replay
+    clip: {fileID: 8300000, guid: 95a7001c2e452ff4a925a21cf08617f2, type: 3}
+    more:
+    - {fileID: 8300000, guid: 49136435e4a89f447bdaf88193d5cd37, type: 3}
+    - {fileID: 8300000, guid: 316beab6abc8e0f4c9b2407a56e6fdc2, type: 3}
+    volume: 0.8
+    hits:
+    - 3.4752293
+    - 1.3337916
+    - 2.3493333
   - key: punish.stamp
     clip: {fileID: 8300000, guid: dbd7106293c4fa048aca574a263b07e1, type: 3}
     more:

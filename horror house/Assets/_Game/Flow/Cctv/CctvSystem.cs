@@ -842,7 +842,7 @@ public sealed class CctvSystem : MonoBehaviour
         PlayerTablet[] tablets = FindObjectsByType<PlayerTablet>(FindObjectsSortMode.None);
         for (int i = 0; i < tablets.Length; i++)
         {
-            if (tablets[i].IsOpened)
+            if (TabletZoom.Reading(tablets[i]))
             {
                 return false;   // 태블릿을 펼친 채로는 모니터를 보지 않는다.
             }

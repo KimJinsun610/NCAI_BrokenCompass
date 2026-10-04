@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -62,6 +62,15 @@ public sealed class IlluminanceMap : MonoBehaviour
     }
 
     private static IlluminanceMap s_active;
+
+    /// <summary>조도 구간 때문에 등 하나가 막 꺼졌다(인자: 등 위치). 소리(형광등이 지직이다 꺼짐)용 — 판정과 무관.</summary>
+    public static event System.Action<Vector3> LampWentOff;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetLampEvent()
+    {
+        LampWentOff = null;
+    }
     private static readonly int EmissionId = Shader.PropertyToID("_EmissionColor");
 
     private readonly List<Tone> _tones = new List<Tone>();
@@ -481,6 +490,12 @@ public sealed class IlluminanceMap : MonoBehaviour
         {
             // 조우 소등이 끝나며 다시 켜도(LightGroup.TurnOn) 다음 프레임에 맞춘다.
             if (lamp.Light.enabled) lamp.Light.enabled = false;
+            if (!lamp.Off)
+            {
+                System.Action<Vector3> died = LampWentOff;
+                if (died != null) died(lamp.Light.transform.position);
+            }
+
             for (int i = 0; i < lamp.Glow.Length; i++)
             {
                 Renderer r = lamp.Glow[i];

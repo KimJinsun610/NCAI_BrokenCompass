@@ -128,6 +128,56 @@ public static class DirectionSoundTableBuilder
         // 긴장 — 강도 3 이상 조우의 대면에 작게 까는 떨리는 현(NightDutySfx)
         { "tension.confront", Au + "climax/CLX-29_1.wav", "0.4" },
 
+        // 몸 계기(BodyMeter) — 청각 심박·귀 먹먹함·이명, 조도 거친 호흡, 경계 신호, 회복 한숨
+        { "body.heart.62", Au + "body/SFX_BODY_Heartbeat_62.wav", "0.3" },
+        { "body.heart.72", Au + "body/SFX_BODY_Heartbeat_72.wav", "0.4" },
+        { "body.heart.86", Au + "body/SFX_BODY_Heartbeat_86.wav", "0.5" },
+        { "body.heart.104", Au + "body/SFX_BODY_Heartbeat_104.wav", "0.62" },
+        { "body.ear", Au + "body/SFX_BODY_EarPressure.wav", "0.35" },
+        { "body.tinnitus", Au + "body/SFX_BODY_Tinnitus.wav", "0.22" },
+        { "body.heart.boundary", Au + "body/SFX_BODY_HeartBoundary_2s.wav", "0.85" },
+        { "body.breath", Au + "body/SFX_BODY_RoughBreath_*", "0.6" },
+        { "body.breath.stop", Au + "body/SFX_BODY_BreathStop.wav", "0.85" },
+        { "body.sigh", Au + "body/SFX_BODY_LongSigh.wav", "0.6" },
+
+        // 맵 소리(WorldSounds) — 청각 구간별 하루 한 번(위 구간은 아래 구간에 더해짐), 배치 3·4, 조도 소등
+        { "map.hall.1", Au + "hall/SFX_HALL_DoorClose.wav", "0.75" },
+        { "map.hall.1b", Au + "hall/SFX_HALL_LockerRattle_*", "0.7" },
+        { "map.hall.2", Au + "hall/SFX_HALL_DoorClose.wav", "0.8" },
+        { "map.hall.3", Au + "hall/SFX_HALL_LatchOnly.wav", "0.85" },
+        { "map.hall.3+", Au + "hall/SFX_HALL_DoorClose.wav", "0.8" },
+        { "map.hall.4", Au + "hall/SFX_HALL_FollowSteps_*", "0.85" },
+        { "map.class.1", Au + "class/SFX_CLASS_EraserTap.wav", "0.75" },
+        { "map.class.2", Au + "class/SFX_CLASS_DeskHit.wav", "0.85" },
+        { "map.class.3", Au + "class/SFX_CLASS_BoardScratch.wav", "0.8" },
+        { "map.class.3+", Au + "class/SFX_CLASS_TeacherChair.wav", "0.8" },
+        { "map.class.4", Au + "class/SFX_CLASS_TeacherChair.wav", "0.85" },
+        { "map.lab.1", Au + "lab/SFX_LAB_GlassClink.wav", "0.7" },
+        { "map.lab.2", Au + "lab/SFX_LAB_Scrape.wav", "0.75" },
+        { "map.lab.3", Au + "lab/SFX_LAB_GlassClink.wav", "0.55" },
+        { "map.lab.4", Au + "lab/SFX_LAB_HeavySet.wav", "0.85" },
+        { "map.toilet.2", Au + "toilet/SFX_TOILET_SinkKnock.wav", "0.75" },
+        { "map.layout.3", Au + "hall/SFX_HALL_CeilingDrop.wav", "0.8" },
+        { "map.layout.4", Au + "common/SFX_COMMON_PropTremble_*", "0.22" },
+        { "map.lamp.off", Au + "hall/SFX_HALL_FluoTubeDie_*", "0.8" },
+
+        // 교차·신뢰(WorldSounds)
+        { "cross.toilet.water", Au + "toilet/SFX_TOILET_WaterMove_*", "0.7" },
+        { "cross.guard.breath", Au + "creature/VO_WORKER_HeldBreath.wav", "0.75" },
+        { "trust.guard.rattle", Au + "guard/SFX_GUARD_PropRattle_*", "0.8" },
+
+        // 위반 현장 반응(WorldSounds) — 어긴 축의 언어로 그 대상이 반응한다(위반 피드백 1단계)
+        { "react.C1", Au + "class/SFX_CLASS_ChalkSnap_*", "0.9" },
+        { "react.L1", Au + "library/SFX_LIBRARY_ShelfGroan_*", "0.9" },
+        { "react.L2", Au + "library/SFX_LIBRARY_BookShut_*", "0.9" },
+        { "react.L5", Au + "library/SFX_LIBRARY_GlassPalm_*", "0.9" },
+        { "react.S2", Au + "lab/SFX_LAB_GlassCrunch_*", "0.85" },
+        { "react.G1", Au + "hall/SFX_HALL_FollowSteps_*", "0.85" },
+        { "react.K2", Au + "cctv/SFX_CCTV_ChairCreakFeed_*", "0.8" },
+
+        // 놓친 이상 다음 날 CCTV 한 컷(CctvReplay)
+        { "cctv.replay", Au + "cctv/SFX_CCTV_ReplayFrame_*", "0.8" },
+
         // 경고·처벌(NightDutySfx)
         { "punish.stamp", Au + "capture/varco/PUN-01_*", "0.9" },
         { "punish.auditory", Au + "capture/PUN_03_WhisperSweep.wav", "0.9" },

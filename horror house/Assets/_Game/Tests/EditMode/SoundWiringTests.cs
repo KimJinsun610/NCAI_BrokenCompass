@@ -29,6 +29,13 @@ namespace NightDuty.Tests
             "capture.auditory", "capture.illuminance", "capture.layout", "capture.died", "capture.card", "capture.return", "capture.wake",
             "punish.stamp", "punish.auditory", "punish.illuminance", "punish.layout", "punish.hit", "punish.cut", "tension.confront",
             "tablet.buzz", "tablet.corrupt", "ui.ready", "ui.confirm", "inspect.near",
+            "body.heart.62", "body.heart.72", "body.heart.86", "body.heart.104", "body.ear", "body.tinnitus",
+            "body.heart.boundary", "body.breath", "body.breath.stop", "body.sigh",
+            "map.hall.1", "map.hall.1b", "map.hall.2", "map.hall.3", "map.hall.3+", "map.hall.4",
+            "map.class.1", "map.class.2", "map.class.3", "map.class.3+", "map.class.4",
+            "map.lab.1", "map.lab.2", "map.lab.3", "map.lab.4", "map.toilet.2", "map.layout.3", "map.layout.4", "map.lamp.off",
+            "cross.toilet.water", "cross.guard.breath", "trust.guard.rattle",
+            "react.C1", "react.L1", "react.L2", "react.L5", "react.S2", "react.G1", "react.K2",
         };
 
         private static readonly string[] Surfaces = { "CLASS", "HALL", "LIBRARY", "TOILET", "LAB", "GUARD" };

@@ -166,6 +166,7 @@ public sealed class DirectionStage : MonoBehaviour
         {
             case DirectionPhase.Foreshadow:
             case DirectionPhase.FalseForeshadow:
+                if (Impact() != null) Impact().Foreshadow(e.Phase == DirectionPhase.FalseForeshadow);
                 PlaySound(e.SourceId + ".foreshadow", PointOr(e.Point, 6f));
                 break;
             case DirectionPhase.Confront:
@@ -173,10 +174,12 @@ public sealed class DirectionStage : MonoBehaviour
                 break;
             case DirectionPhase.WindowClose:
                 SetCuePhase(e.SourceId, DirectionPhase.WindowClose);
+                if (Impact() != null) Impact().Release();
                 PlaySound(e.SourceId + ".release", PointOr(e.Point, 3f));
                 break;
             case DirectionPhase.Result:
             case DirectionPhase.Aborted:
+                if (Impact() != null) Impact().Release();
                 Cleanup(e.SourceId, e.Phase);
                 break;
         }
@@ -243,7 +246,19 @@ public sealed class DirectionStage : MonoBehaviour
         }
 
         ApplyScreenFx(e.SourceId, st);
-        PlaySound(e.SourceId + ".confront", point);
+        if (Impact() != null) Impact().Confront(e.SourceId);
+        // 대면 소리는 가깝고 크게(최소 거리 6m, 75%만 3D) — 4~8m 앞 몹의 소리가 PlayClipAtPoint(최소 1m)로 묻혔다(44차).
+        PlaySound(e.SourceId + ".confront", point, ConfrontMinDistance, ConfrontSpatial);
+    }
+
+    private const float ConfrontMinDistance = 6f;
+    private const float ConfrontSpatial = 0.75f;
+
+    private EncounterImpact Impact()
+    {
+        EncounterImpact impact = EncounterImpact.Active;
+        if (impact == null) impact = gameObject.AddComponent<EncounterImpact>();
+        return impact;
     }
 
     /// <summary>
@@ -342,6 +357,8 @@ public sealed class DirectionStage : MonoBehaviour
             GameObject placed = StandInFactory.Create(standIn, at, fixedAt.transform.rotation, anchorId);
             if (fixedAt.GazeProxy != null) StandInFactory.ApplyGazeProxy(placed, fixedAt.GazeProxy);
             if (fixedAt.RevealDoor != null) RevealDoor(st, fixedAt.RevealDoor);
+            // 고정 천장 앵커도 구멍을 낸다 — 멀쩡한 천장 타일을 다리가 뚫고 나오면 소품처럼 보인다(43차 시뮬).
+            if (standIn == "mob.legs") AddCeilingHole(placed, at);
             if (fixedAt.WalkTo != null)
             {
                 DirectionWalker walker = placed.GetComponent<DirectionWalker>();
@@ -352,8 +369,287 @@ public sealed class DirectionStage : MonoBehaviour
             return placed;
         }
 
+        // 디렉터가 준 점(플레이어 앞 n m)이 벽 너머면 보이지 않는다 — 시야가 트인 쪽·거리로 당긴다(43차 시뮬: 과학실에서 모형 급습이 남쪽 벽 너머 교실에 섰다).
+        point = InSight(point, player);
+        if (standIn == "prop.phantomdoor")
+        {
+            // 없던 문은 벽에 붙어 있어야 한다(43차: 교실 한가운데 문짝만 서 있었다).
+            Vector3 wallAt;
+            Quaternion facing;
+            if (OnWall(point, player, out wallAt, out facing))
+            {
+                at = wallAt;
+                return StandInFactory.Create(standIn, at, facing, anchorId);
+            }
+        }
+
+        // 사람 나무는 복도 한복판(길이 방향)에 한쪽 벽에 기대 선다(몹 연출 장면 「나무 조우」, 44차: 플레이어 앞 8m가 교실 출입구에 걸렸다).
+        // 폭 한가운데면 H1(1.2m 안 접근 금지) 때문에 좁은 복도가 통째로 막혀 되돌아갈 수밖에 없다 — 벽 쪽 0.65m에 두어 반대편으로 1.2m 넘게 비켜 지나갈 수 있게.
+        if (standIn == "mob.tree") point = TreeSpot(point, player);
         at = ceiling ? CeilingAbove(point) : FloorBelow(point);
-        return StandInFactory.Create(standIn, at, player, anchorId);
+        GameObject go = StandInFactory.Create(standIn, at, player, anchorId);
+        if (standIn == "mob.legs") AddCeilingHole(go, at);
+        if (standIn == "mob.tree") AddTrunk(go);
+        return go;
+    }
+
+    /// <summary>
+    /// 사람 나무 자리: 플레이어가 보는 쪽에 가까운 축(±x·±z) 가운데 5m 넘게 트인 쪽으로 4~9m, 그 단면이 복도(방 상자 밖·복도 상자 안)이고
+    /// 양옆 벽이 3.5m 안이면 넓은 쪽 벽에서 <see cref="TreeWallGap"/>m 떨어진 자리. 못 찾으면 디렉터의 점 그대로.
+    /// (44차: 플레이어 앞 8m 점이 교실 문을 지나 교실 안에 섰다.)
+    /// </summary>
+    private static Vector3 TreeSpot(Vector3 point, Vector3 feet)
+    {
+        Transform root = PlayerRoot();
+        Vector3 fwd = root != null ? root.forward : point - feet;
+        fwd.y = 0f;
+        if (fwd.sqrMagnitude < 0.0001f) fwd = Vector3.forward;
+        fwd.Normalize();
+        List<Vector3> axes = new List<Vector3> { Vector3.right, Vector3.left, Vector3.forward, Vector3.back };
+        axes.Sort((x, y) => Vector3.Dot(y, fwd).CompareTo(Vector3.Dot(x, fwd)));
+        for (int i = 0; i < axes.Count; i++)
+        {
+            float free = Clearance(feet, axes[i], 14f);
+            if (free < 5f) continue;
+            Vector3 c = feet + axes[i] * Mathf.Clamp(free - 1.5f, 4f, 9f);
+            Vector3 spot;
+            if (TryCorridorSpot(c, feet, TreeWallGap, out spot)) return new Vector3(spot.x, point.y, spot.z);
+        }
+
+        return point;
+    }
+
+    /// <summary>복도 상자 안이고 어느 방 상자에도 들지 않는지(발 높이 +1m로 본다).</summary>
+    private static bool InCorridor(Vector3 p, float feetY)
+    {
+        SpaceZones zones = FindAnyObjectByType<SpaceZones>();
+        if (zones == null) return true;
+        Vector3 q = new Vector3(p.x, feetY + 1f, p.z);
+        Bounds box;
+        if (zones.TryGetSpaceBox(SpaceId.Corridor, out box) && !box.Contains(q)) return false;
+        SpaceId[] rooms = { SpaceId.Classroom_1_1, SpaceId.Classroom_1_3, SpaceId.ScienceRoom, SpaceId.Toilet, SpaceId.Library, SpaceId.SecurityRoom };
+        for (int i = 0; i < rooms.Length; i++)
+        {
+            if (zones.TryGetSpaceBox(rooms[i], out box) && box.Contains(q)) return false;
+        }
+
+        return true;
+    }
+
+    private const float TreeWallGap = 0.65f;
+
+    /// <summary>
+    /// 그 점 근처(진행 방향으로 0·−1·+1·−2·+2·−3m)에서 양옆 벽이 모두 3.5m 안에 있는(출입구·갈림길이 아닌) 복도 단면을 찾아,
+    /// 한쪽 벽에서 <paramref name="wallGap"/>m 떨어진 자리(0이면 한가운데). 플레이어에게서 그 자리가 트여 보여야 한다.
+    /// </summary>
+    private static bool TryCorridorSpot(Vector3 point, Vector3 feet, float wallGap, out Vector3 spot)
+    {
+        spot = point;
+        Vector3 axis = point - feet;
+        axis.y = 0f;
+        float dist = axis.magnitude;
+        if (dist < 1f) return false;
+        axis /= dist;
+        Vector3 across = Vector3.Cross(Vector3.up, axis);
+        float[] shifts = { 0f, -1f, 1f, -2f, 2f, -3f };
+        for (int i = 0; i < shifts.Length; i++)
+        {
+            float d = dist + shifts[i];
+            if (d < 3f) continue;
+            Vector3 c = feet + axis * d;
+            float left = SideWall(c, across, 3.5f);
+            float right = SideWall(c, -across, 3.5f);
+            if (left < 0f || right < 0f) continue;
+            Vector3 mid = c + across * ((left - right) * 0.5f);
+            float half = (left + right) * 0.5f;
+            if (wallGap > 0f && half > wallGap) mid += across * ((half - wallGap) * (UnityEngine.Random.value < 0.5f ? 1f : -1f));
+            if (!InCorridor(mid, feet.y)) continue;
+            Vector3 to = mid - feet;
+            to.y = 0f;
+            float want = to.magnitude;
+            if (want < 2f || Clearance(feet, to / want, want) < want - 0.6f) continue;
+            spot = mid;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>그 점에서 옆으로 허리 높이 수직면까지 거리. 못 찾으면 −1.</summary>
+    private static float SideWall(Vector3 c, Vector3 dir, float max)
+    {
+        Transform player = PlayerRoot();
+        RaycastHit[] hits = Physics.RaycastAll(new Vector3(c.x, c.y + 1.2f, c.z), dir, max, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+        float best = -1f;
+        for (int i = 0; i < hits.Length; i++)
+        {
+            if (player != null && hits[i].collider.transform.IsChildOf(player)) continue;
+            if (Mathf.Abs(hits[i].normal.y) > 0.3f) continue;
+            if (best < 0f || hits[i].distance < best) best = hits[i].distance;
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    /// 사람 나무 줄기에 단단한 충돌체(44차: 걸어서 통과됐다). 반지름 0.55m — 플레이어(0.3m)가 붙어 서면 H1 근접(1.2m) 안이라 「다가가지 않기」 판정은 그대로다.
+    /// 김진선님 프리팹은 그대로, 세운 인스턴스에만 붙인다.
+    /// </summary>
+    private static void AddTrunk(GameObject tree)
+    {
+        if (tree == null) return;
+        Bounds b = new Bounds(tree.transform.position + Vector3.up, Vector3.one * 0.2f);
+        bool any = false;
+        foreach (Renderer r in tree.GetComponentsInChildren<Renderer>())
+        {
+            if (!any)
+            {
+                b = r.bounds;
+                any = true;
+            }
+            else
+            {
+                b.Encapsulate(r.bounds);
+            }
+        }
+
+        GameObject trunk = new GameObject("사람 나무 줄기");
+        trunk.transform.SetParent(tree.transform, false);
+        trunk.transform.position = new Vector3(tree.transform.position.x, b.center.y, tree.transform.position.z);
+        trunk.transform.rotation = Quaternion.identity;
+        CapsuleCollider cap = trunk.AddComponent<CapsuleCollider>();
+        float scale = Mathf.Max(0.0001f, tree.transform.lossyScale.x);
+        cap.direction = 1;
+        cap.radius = 0.55f / scale;
+        cap.height = Mathf.Max(1.8f, b.size.y) / scale;
+    }
+
+    /// <summary>
+    /// 플레이어 발(<paramref name="feet"/>)에서 그 점 쪽으로 허리·눈 높이가 트여 있으면 그대로, 막혔으면 조금씩 돌려(±25·50·80·120·180°) 트인 방향,
+    /// 다 막혔으면 가장 멀리 트인 방향에 둔다. 높이(천장 다리의 +2.4m 등)는 그대로.
+    /// </summary>
+    private static Vector3 InSight(Vector3 point, Vector3 feet)
+    {
+        Vector3 to = point - feet;
+        float dy = to.y;
+        to.y = 0f;
+        float want = to.magnitude;
+        if (want < 0.5f) return point;
+        Vector3 dir = to / want;
+        float[] turns = { 0f, 25f, -25f, 50f, -50f, 80f, -80f, 120f, -120f, 180f };
+        Vector3 best = point;
+        float bestGot = -1f;
+        for (int i = 0; i < turns.Length; i++)
+        {
+            Vector3 d = Quaternion.Euler(0f, turns[i], 0f) * dir;
+            float got = Mathf.Min(want, Clearance(feet, d, want + 0.7f) - 0.7f);
+            if (got >= want - 0.01f) return feet + d * want + Vector3.up * dy;
+            if (got > bestGot)
+            {
+                bestGot = got;
+                best = feet + d * Mathf.Max(1.2f, got) + Vector3.up * dy;
+            }
+        }
+
+        return best;
+    }
+
+    private static float Clearance(Vector3 feet, Vector3 dir, float max)
+    {
+        Transform player = PlayerRoot();
+        float free = max;
+        float[] heights = { 1.1f, 1.7f };   // 책상 위·눈 높이 — 책상은 넘겨 보이므로 막힘으로 치지 않는다
+        for (int k = 0; k < heights.Length; k++)
+        {
+            RaycastHit[] hits = Physics.RaycastAll(feet + Vector3.up * heights[k], dir, max, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                if (player != null && hits[i].collider.transform.IsChildOf(player)) continue;
+                if (hits[i].distance < free) free = hits[i].distance;
+            }
+        }
+
+        return free;
+    }
+
+    /// <summary>그 점 쪽으로 보이는 첫 수직면이 벽이면 그 벽에 붙인 자리·방향(문 앞면이 방 쪽). 2~12m 안에서 못 찾으면 false.</summary>
+    private static bool OnWall(Vector3 point, Vector3 feet, out Vector3 at, out Quaternion facing)
+    {
+        at = point;
+        facing = Quaternion.identity;
+        Transform player = PlayerRoot();
+        Vector3 to = point - feet;
+        to.y = 0f;
+        Vector3 dir = to.sqrMagnitude > 0.01f ? to.normalized : (player != null ? Vector3.ProjectOnPlane(player.forward, Vector3.up).normalized : Vector3.forward);
+        float[] turns = { 0f, 30f, -30f, 60f, -60f, 90f, -90f };
+        for (int t = 0; t < turns.Length; t++)
+        {
+            Vector3 d = Quaternion.Euler(0f, turns[t], 0f) * dir;
+            RaycastHit[] hits = Physics.RaycastAll(feet + Vector3.up * 1.2f, d, 12f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (x, y) => x.distance.CompareTo(y.distance));
+            for (int i = 0; i < hits.Length; i++)
+            {
+                RaycastHit h = hits[i];
+                if (player != null && h.collider.transform.IsChildOf(player)) continue;
+                if (Mathf.Abs(h.normal.y) > 0.3f || h.distance < 2f) break;                  // 처음 막는 것이 바닥·너무 가까움
+                if (h.collider.name.IndexOf("Wall", System.StringComparison.OrdinalIgnoreCase) < 0) break;   // 벽이 아닌 가구가 먼저 막는다
+                Vector3 n = h.normal;
+                n.y = 0f;
+                n.Normalize();
+                Vector3 p = h.point + n * 0.05f;
+                at = new Vector3(p.x, feet.y, p.z);   // 같은 층 — 벽 앞 가구 윗면을 바닥으로 잡지 않게 플레이어 발 높이
+                facing = Quaternion.LookRotation(n, Vector3.up);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static Texture2D s_holeTex;
+
+    /// <summary>천장 다리가 매달린 자리에 검은 구멍(43차: 멀쩡한 천장 판을 뚫고 다리가 나와 있었다). 다리와 함께 거둔다.</summary>
+    private static void AddCeilingHole(GameObject legs, Vector3 ceiling)
+    {
+        if (legs == null) return;
+        if (s_holeTex == null)
+        {
+            const int n = 64;
+            s_holeTex = new Texture2D(n, n, TextureFormat.RGBA32, false);
+            s_holeTex.wrapMode = TextureWrapMode.Clamp;
+            Color32[] px = new Color32[n * n];
+            System.Random rng = new System.Random(77);
+            for (int y = 0; y < n; y++)
+            {
+                for (int x = 0; x < n; x++)
+                {
+                    float u = (x + 0.5f) / n * 2f - 1f;
+                    float v = (y + 0.5f) / n * 2f - 1f;
+                    float ang = Mathf.Atan2(v, u);
+                    float edge = 0.78f + 0.08f * Mathf.Sin(ang * 5f + 1.3f) + 0.05f * Mathf.Sin(ang * 9f + 0.4f);
+                    float rad = Mathf.Sqrt(u * u + v * v);
+                    float a = Mathf.Clamp01((edge - rad) / 0.12f);
+                    px[y * n + x] = new Color32(0, 0, 0, (byte)(a * 255f));
+                }
+            }
+
+            s_holeTex.SetPixels32(px);
+            s_holeTex.Apply();
+        }
+
+        GameObject hole = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        hole.name = "천장 구멍";
+        Collider c = hole.GetComponent<Collider>();
+        if (c != null) UnityEngine.Object.Destroy(c);
+        hole.transform.SetParent(legs.transform, true);
+        hole.transform.SetPositionAndRotation(ceiling + Vector3.down * 0.015f, Quaternion.LookRotation(Vector3.up, Vector3.forward));
+        hole.transform.localScale = new Vector3(0.95f, 0.95f, 1f) * (1f / Mathf.Max(0.0001f, legs.transform.lossyScale.x));
+        Renderer r = hole.GetComponent<Renderer>();
+        Material m = new Material(Shader.Find("Sprites/Default"));
+        m.mainTexture = s_holeTex;
+        m.color = Color.black;
+        r.sharedMaterial = m;
+        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
     /// <summary>
@@ -364,6 +660,12 @@ public sealed class DirectionStage : MonoBehaviour
     {
         DoorHandle h = DoorHandle.Of(door);
         if (!h.IsValid) return;
+        if (PlayerInteractor.IsSealed(h))
+        {
+            Debug.LogWarning("[Direction] 쓰지 않는 문(판자로 막힌 문 등)은 연출로 열지 않습니다: " + door.name, door);
+            return;
+        }
+
         if (door.GetComponentInParent<DoorRelay>() != null || door.GetComponentInChildren<DoorRelay>() != null)
         {
             Debug.LogWarning("[Direction] 문 발신기가 달린 문은 연출로 열지 않습니다(H2 방아쇠가 됨): " + door.name, door);
@@ -487,8 +789,11 @@ public sealed class DirectionStage : MonoBehaviour
                 break;
             case "C4":
             {
-                LightGroup g = Group(SpaceId.Classroom);
-                g.Tint(new Color(1f, 0.12f, 0.08f), 0.7f);
+                // 44차: 정규화 공간(Classroom)의 묶음은 1-1 교실 상자였다 — 1-3 교실에 있어도 1-1 등이 붉어졌다. 플레이어가 선 교실의 등.
+                SpaceId here = ClassroomHere();
+                LightGroup g = here != SpaceId.None ? ExactGroup(here) : Group(SpaceId.Classroom);
+                // 44차: 교실 등은 평소 꺼져 있다(RoomDarkness) — 어둠 속에 붉은 등이 확 들어오도록 세기 0.7 → 2.4배.
+                g.Tint(new Color(1f, 0.12f, 0.08f), 2.4f);
                 st.Undo.Add(g.Untint);
                 break;
             }
@@ -671,6 +976,35 @@ public sealed class DirectionStage : MonoBehaviour
         }
     }
 
+    /// <summary>정규화하지 않은 그 방 하나의 조명 묶음(교실 두 곳을 가른다).</summary>
+    private LightGroup ExactGroup(SpaceId exact)
+    {
+        LightGroup g;
+        if (!_groups.TryGetValue(exact, out g))
+        {
+            g = LightGroup.Collect(exact, Zones());
+            _groups[exact] = g;
+        }
+
+        return g;
+    }
+
+    /// <summary>플레이어 발이 든 교실(1-1·1-3). 어느 교실도 아니면 None.</summary>
+    private SpaceId ClassroomHere()
+    {
+        SpaceZones zones = Zones();
+        if (zones == null) return SpaceId.None;
+        Vector3 feet = PlayerFeet() + Vector3.up * 0.5f;
+        SpaceId[] rooms = { SpaceId.Classroom_1_1, SpaceId.Classroom_1_3 };
+        for (int i = 0; i < rooms.Length; i++)
+        {
+            Bounds box;
+            if (zones.TryGetSpaceBox(rooms[i], out box) && box.Contains(feet)) return rooms[i];
+        }
+
+        return SpaceId.None;
+    }
+
     private LightGroup Group(SpaceId space)
     {
         SpaceId key = SpaceIds.Canonical(space);
@@ -754,17 +1088,44 @@ public sealed class DirectionStage : MonoBehaviour
     /// <summary>이름으로 연출 소리를 그 자리에서 3D로 낸다(<c>Resources/Direction/이름</c> → 소리 표). 없으면 false.</summary>
     internal static bool PlaySound(string name, Vector3 at)
     {
+        return PlaySound(name, at, SoundMinDistance, 1f);
+    }
+
+    // 연출 소리의 거리 감쇠: 최소 3m(전에는 PlayClipAtPoint 기본 1m — 6m 앞 소리가 1/6로 줄었다, 44차).
+    private const float SoundMinDistance = 3f;
+    private const float SoundMaxDistance = 40f;
+
+    /// <summary>최소 거리·3D 비율을 정해 낸다(대면은 가깝고 크게).</summary>
+    internal static bool PlaySound(string name, Vector3 at, float minDistance, float spatial)
+    {
         float volume = 1f;
         AudioClip clip = Resources.Load<AudioClip>("Direction/" + name);
         if (clip == null) clip = DirectionSoundTableSO.Find(name, out volume);   // 표(다른 폴더의 클립을 이름으로 묶음).
         if (clip == null) return false;
-        AudioSource.PlayClipAtPoint(clip, at, volume);
+        PlayClip(clip, at, volume, minDistance, spatial);
         if (Verbose) Debug.Log("[Direction] 소리 " + name + " ← " + clip.name);
 
         // 같은 순간 겹치는 둘째 소리(C4 = 칠판 긁기 + 교탁 의자). 공통(*) 대체는 쓰지 않는다.
         float v2;
         AudioClip layer = DirectionSoundTableSO.FindExact(name + "+", out v2);
-        if (layer != null) AudioSource.PlayClipAtPoint(layer, at, v2);
+        if (layer != null) PlayClip(layer, at, v2, minDistance, spatial);
         return true;
+    }
+
+    private static void PlayClip(AudioClip clip, Vector3 at, float volume, float minDistance, float spatial)
+    {
+        GameObject go = new GameObject("연출 소리 " + clip.name);
+        go.transform.position = at;
+        AudioSource s = go.AddComponent<AudioSource>();
+        s.clip = clip;
+        s.volume = volume;
+        s.spatialBlend = spatial;
+        s.rolloffMode = AudioRolloffMode.Logarithmic;
+        s.minDistance = minDistance;
+        s.maxDistance = SoundMaxDistance;
+        s.dopplerLevel = 0f;
+        s.priority = 16;
+        s.Play();
+        Destroy(go, clip.length + 0.2f);
     }
 }

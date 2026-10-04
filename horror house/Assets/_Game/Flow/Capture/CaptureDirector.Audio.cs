@@ -172,7 +172,7 @@ public sealed partial class CaptureDirector
         }
 
         PlayerTablet tablet = FindAnyObjectByType<PlayerTablet>();
-        _tabletAtCapture = tablet != null && tablet.IsOpened;
+        _tabletAtCapture = TabletZoom.Reading(tablet);
     }
 
     private bool _tabletAtCapture;

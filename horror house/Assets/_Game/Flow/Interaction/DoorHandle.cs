@@ -263,6 +263,113 @@ public struct DoorHandle
         }
     }
 
+    /// <summary>
+    /// 반쯤 열린 채 시작한 문(벤더 <c>OpenedAtStart</c> — 열림 애니메이션을 그 지점에 세워 둔다. <see cref="IsOpen"/>은 false)을
+    /// 닫힌 자세로 되돌린다. 닫았으면 true. 2026-10-04(42차) 민: 「나무판자로 막힌 문이 저절로 열려 있다」 — 쓰지 않는 문(Sealed)에 쓴다.
+    /// </summary>
+    public bool ShutIfAjar()
+    {
+        if (!IsValid || IsOpen)
+        {
+            return false;
+        }
+
+        Animation anim = _door.GetComponent<Animation>();
+        if (anim == null || anim.clip == null)
+        {
+            return false;
+        }
+
+        AnimationState state = anim[anim.clip.name];
+        if (state == null || state.normalizedTime <= 0.001f)
+        {
+            return false;
+        }
+
+        state.normalizedTime = 0f;
+        state.speed = 0f;
+        anim.Sample();
+        anim.Stop();
+        return true;
+    }
+
+    /// <summary>
+    /// 반쯤 열린 자세로 세운다(벤더 <c>OpenedAtStart</c>와 같은 방식 — 열림 애니메이션을 그 지점에 멈춤, <see cref="IsOpen"/>은 false).
+    /// 플레이어가 [E]로 열면 그 자리에서 마저 열린다. <paramref name="fraction"/> 0~1. 애니메이션이 없으면 false.
+    /// </summary>
+    public bool SetAjar(float fraction)
+    {
+        if (!IsValid)
+        {
+            return false;
+        }
+
+        Animation anim = _door.GetComponent<Animation>();
+        if (anim == null || anim.clip == null)
+        {
+            return false;
+        }
+
+        AnimationState state = anim[anim.clip.name];
+        if (state == null)
+        {
+            return false;
+        }
+
+        WriteBool(s_fOpened, _door, false);
+        state.normalizedTime = Mathf.Clamp01(fraction);
+        state.speed = 0f;
+        anim.Play(anim.clip.name);
+        anim.Sample();
+        return true;
+    }
+
+    /// <summary>열림 상태와 상관없이 곧바로 닫힌 자세로(소리·애니메이션 없이). 연출을 되돌릴 때 쓴다.</summary>
+    public void SnapClosed()
+    {
+        if (!IsValid)
+        {
+            return;
+        }
+
+        WriteBool(s_fOpened, _door, false);
+        Animation anim = _door.GetComponent<Animation>();
+        if (anim == null || anim.clip == null)
+        {
+            return;
+        }
+
+        AnimationState state = anim[anim.clip.name];
+        if (state == null)
+        {
+            return;
+        }
+
+        state.enabled = true;
+        state.weight = 1f;
+        state.normalizedTime = 0f;
+        state.speed = 0f;
+        anim.Sample();
+        anim.Stop();
+    }
+
+    private static void WriteBool(FieldInfo field, object target, bool value)
+    {
+        if (field == null || target == null)
+        {
+            return;
+        }
+
+        try
+        {
+            field.SetValue(target, value);
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
+    }
+
     // ─────────────────────────────── 리플렉션 ───────────────────────────────
 
     private static Type DoorType()

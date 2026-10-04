@@ -3,6 +3,65 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
+> **개정: 2026-10-04(44차). 43차 ⓗ 시뮬 피드백 6건을 판단해 고침(민: 「결정이 필요한 것들을 너가 적절하게 판단해서 고쳐줘」) + 민: 「조우했을 때 나오는 사운드가 너무 임팩트가 없어. 놀라지도 않아」. EditMode 334/334, PlayScene에서 어두운 교실·C4 붉은 등·사람 나무 자리·스팅어·덕킹 실측, 에러 0.**
+> ⓐ **불 꺼진 교실**(`Flow/Presentation/RoomDarkness`, 자동): 몹 연출 장면 「교실 조우」(Docs/몹연출장면)는 등이 꺼진 교실을 손전등으로 본다 — 실제로는 구운 라이트맵 때문에 교실이 밝았다(실시간 형광등을 꺼도 그대로). 근무 동안 1-1·1-3 교실 렌더러가 쓰는 라이트맵을 `BakedScale` 0.4배로 어둡게 GPU 복사해 `LightmapSettings`에 덧붙이고 그 렌더러만 복사본으로 옮긴다(`Resources/NightDutyLightmapScale.shader` 블릿, RGBAHalf — DX11에서 B10G11R11은 Texture2D 샘플 불가). 방 안 라이트 프로브도 같은 배수. 천장 형광등(실시간·발광)은 끈다. 끝나면 원래 라이트맵·프로브로 되돌린다. 과학실·화장실은 암전 조우가 있어 그대로, 도서관은 원래 어둡다.
+> ⓑ **C4 붉은 불빛**: 교실 등이 꺼져 있으므로 C4 동안만 그 등이 붉게 켜진다(`LightGroup.IsLightTinted`) — 세기 0.7 → 2.4배. **옛 버그**: `Group(SpaceId.Classroom)`은 1-1 교실 상자라 1-3 교실에 있어도 1-1 등이 물들었다 — 이제 플레이어가 선 교실(`ClassroomHere`·`ExactGroup`).
+> ⓒ **사람 나무 자리·충돌**(`DirectionStage.TreeSpot`): 플레이어가 보는 쪽에 가까운 축 중 5m 넘게 트인 쪽 4~9m, 그 단면이 복도(방 상자 밖)이고 양옆 벽이 3.5m 안일 때 **한쪽 벽에서 0.65m**(몹 연출 장면 「복도 가운데서 생성」 = 복도 길이의 한복판, 그림은 벽에 기댐). 폭 한가운데면 H1(1.2m 접근 금지) 때문에 3m 복도가 통째로 막힌다. 세운 인스턴스에 줄기 캡슐(반지름 0.55m) — 붙어 서면 여전히 H1 안이다. 김진선님 프리팹은 그대로.
+> ⓓ **숨소리**(`BodyMeter.Breathe`): 전용 소스, 직전과 다른 판, 음높이 ±6%·좌우 ±0.12, 간격 ×0.65~1.45, 15% 숨 참음(건너뜀), 20% 0.9~1.5초 뒤 짧게 한 번 더.
+> ⓔ **노란 얼굴(L3) 대응 창 8 → 11초** — 마주 비추고 버티는 시간.
+> ⓕ **첫 가짜 놀람**: 출근(00:00~00:16, 실시간 1분)은 기획대로 조용히 두고, 판정이 열린 뒤 4~14초(`FirstFakeMin/Max`)에 첫 가짜 놀람(전에는 30~75초 뒤라 출근 뒤에도 한참 비었다). 테스트 「출근_동안은_조용하고_판정이_열리면_곧_첫_가짜_놀람」.
+> ⓖ **후광 링**: 매끈한 원 → 끊기고 번진 빛무리, 2.5m 안은 다 보이고 6.5m 밖은 사라진다(멀리서 UI처럼 보였다). 접근성(색 + 모양 단서)은 그대로.
+> ⓗ **조우 타격감**(`Flow/Direction/EncounterImpact`, DirectionStage가 붙임): 원인 ① 대면 소리를 `PlayClipAtPoint`(최소 거리 1m)로 4~8m 앞에서 내 12~18dB 작았다 ② 엠비언트 스팅어·덕킹(`AmbiencePlayer.PlayStinger/Duck`)이 있었지만 아무도 부르지 않았다 ③ 소리 전후 대비가 없었다. 이제 연출 소리는 최소 거리 3m(대면은 6m·3D 75%), 전조 = 엠비언트 45%(헛예고는 6초 뒤 복귀), 대면 = 덮치기(모형 급습·소년 머리 박기·복도 끝·노란 얼굴·화장실 소녀·창밖 남자·CCTV) 10%로 끊고 `stinger_hit` + 몸 계기 심박 급등(`BodyMeter.Startle`) · 스며들기(사람 나무·천장 다리·없던 문·앉은 소년) 25% + `stinger_whisper` · 암전 4% + `stinger_breath` + 심박 · 소리 조우(발소리·목소리) 30%만. 창 닫힘·결과·중단에 2.5초 복귀, 최대 12초.
+> **회의에서 확인할 것(김진선님)**: 사람 나무 프리팹에 충돌체를 직접 넣을지(지금은 런타임 캡슐), 대면 소리 원본(의자 삐걱·나뭇가지 등)을 더 센 판으로 바꿀지.
+> **되살리지 마십시오:** 「교실 형광등만 끄면 어두워진다」(구운 빛이 그대로) · 「B10G11R11 Texture2D 라이트맵 복사」(DX11 샘플 불가 → 검은 방) · 「C4 = Group(Classroom)」(1-1만 물듦) · 「사람 나무를 복도 폭 한가운데」(H1로 복도가 막힘) · 「플레이어 앞 8m를 그대로(교실 안·교탁 위)」 · 「연출 소리 PlayClipAtPoint」 · 「스팅어·덕킹 미사용」 · 「숨소리 ±10% 메트로놈」 · 「첫 가짜 놀람 30~75초」.
+
+> **개정: 2026-10-04(43차). 민 요청 — ① 화면 시계를 00:00~04:00으로(「응 바꿔」 — 김진선님 프리팹 승인) ② 결과창에는 점검 결과만 ③ 사물함은 정상이면 [E]에 「잠겨 있습니다」, H-4 이상 사물함만 여닫힘 ④ 밤을 돌려 보며 연출·긴장감 피드백. EditMode 333/333, PlayScene에서 시계 00:xx·잠긴/열리는 사물함 프롬프트·결과창 「금일 점검」 한글·천장 다리 구멍·체크포인트 시계 02:16 실측, 에러 0.**
+> ⓐ **시계**: `PlaySystems.prefab`의 `GameTime` 시작 0:00·끝 4:00·24시간 표기(김진선님 승인). 판정 분과 화면 분이 1:1이 됐다. 결과창 `HUD_Result_Design`의 「근무 시간 00:00–04:00」. 붙잡힘 재시작 `CaptureDirector.RewindClock`은 `JumpToHour`(시 단위) 뒤에 런타임 인스턴스의 `currentSeconds`를 반사로 분까지 맞춘다(체크포인트가 02:00으로 나오던 것 → 02:16). 김진선님 코드는 그대로.
+> ⓑ **결과창 「금일 점검」**: Core `Inspection/InspectionLedger`(보고 결과 → 정확/오보/놓침/미완료, 편성 순서, 보고 안 한 항목 = 미완료) + `Flow/Presentation/ResultInspectionNotes`(자동, `DayEnded` 때 보드 상태와 맞춰 문장을 만들고, 결과 씬의 `DutyLogView` 특이사항 칸(`Txt_Notes`)을 「금일 점검」으로 바꿔 쓴다 — 칸 높이 78px, 자동 크기, 틀린 결과만 빨강, 항목 이름은 줄바꿈 안 되는 공백). 김진선님 `DutyLogView`는 안 고침.
+> ⓒ **동적 폰트 아틀라스**: `99 Resources/FONT`의 TMP 폰트 에셋 전부 `Multi Atlas Textures` 켬. 1024² 한 장이 90pt에서 135자쯤 차면 그 뒤 글자가 □로 나왔다(수칙 「인체 □□을」, 결과 「놓□」).
+> ⓓ **사물함**: `PlayerInteractor.IsLockedLocker` — 이름이 `Locker`로 시작하는 보관함 문은 [E]에 「잠겨 있습니다」. H-4가 이상인 밤만 `InspectionAnomalies`가 그 사물함을 `SetLockerUnlocked`로 풀고(되돌리면 다시 잠금), 문은 `DoorHandle.SetAjar`로 애니메이션 시간을 이진 탐색해 **실제 문짝 각도**를 20/35/55/85°에 맞춘다(애니메이션이 이징이라 0.21 정규화 시간이 79°였다). 되돌림은 `SnapClosed`.
+> ⓔ **연출 자리 보정**(`DirectionStage.SpawnAt`, 고정 앵커가 없을 때): 디렉터의 「플레이어 앞 n m」 점이 벽 너머면 `InSight`가 0·±25·±50·±80·±120·180° 방향을 1.1/1.7m 높이 레이로 재 시야가 트인 쪽·거리로 당긴다(과학실 모형 급습이 남쪽 벽 너머 교실에 섰다). 없던 문(`prop.phantomdoor`)은 `OnWall`로 2m 밖 실제 벽(이름에 Wall)에 붙이고 바닥 높이는 플레이어 발(가구 윗면에 떠 있었다). 천장 다리(`mob.legs`)는 고정 앵커여도 검은 불규칙 구멍(0.95m)을 함께 둔다.
+> ⓕ **헛예고는 조우마다 한 번**(`TensionDirector.Begin`, `r.FalseCount == 0`일 때만 굴림): 같은 조우 헛예고가 26초 사이로 연달아 나와 김이 샜다. 테스트 「헛예고는_조우마다_한_번까지_다음은_진짜다」.
+> ⓖ S-2 현미경 빛을 약하게(세기 0.8×구간 세기), 빛 이상 후광 링 알파 0.1+0.025×구간.
+> ⓗ **시뮬 피드백(고치지 않음 — 결정·협업 필요)**: ① 교실 등 방이 꽤 밝아 손전등을 거의 안 켜게 된다(조도 축이 낮은 밤) ② 사람 나무(김진선님)는 충돌체가 없어 걸어서 통과되고, 플레이어 앞 8m 자리가 출입구에 걸리기도 한다 ③ 몸 계기 숨소리가 높은 구간에서 6초마다 같은 소리 ④ 노란 얼굴 대면 창 6.4초가 짧다 ⑤ 밤 초반 실시간 1분가량 아무 일도 없는 구간 ⑥ 빛 이상 후광 링이 게임 UI처럼 보일 수 있다.
+> **되살리지 마십시오:** 「GameTime 2:00~5:00·12시간 표기」 · 「재시작 시계를 JumpToHour만으로(분 버림)」 · 「결과창 특이사항에 점검 아닌 문구」 · 「동적 폰트 아틀라스 1장」 · 「사물함 모두 여닫힘」 · 「H-4 각도를 정규화 시간으로 바로 씀」 · 「AheadOfPlayer 점을 벽 검사 없이 그대로」 · 「없던 문을 방 한가운데·가구 위에」 · 「멀쩡한 천장 타일에서 다리가 나옴」 · 「헛예고를 매번 독립으로 굴림(연달아 헛예고)」.
+
+> **개정: 2026-10-04(42차). 시뮬 플레이 점검(민: 「직접 시뮬 테스트해 보며 버그·수정할 것 찾기」) + 민 요청 3건 — ① 과학실 몬스터 인체 모형이 첫날부터 서 있다가 점점 움직여 복도로 ② 점검 대상 외곽선 ③ 나무판자로 막힌 문이 열리지 않게. EditMode 330/330, PlayScene에서 1일차 점검 5개를 실제 응시·보고 경로로 끝내고 전화로 퇴근 → 결과창 → 2일차, 4일차 모형 급습·붙잡힘·재시작, 4→5일차 CCTV 다시보기까지 에러 0.**
+> ⓐ **`Flow/Direction/ScienceModel`**(자동 설치, 규칙은 Core `Direction/ModelProgress`): 근무 내내 과학실에 `mob.dummy.stand` 하나. 자리 0 테이프 안·등 돌림 → 1 테이프 안·들어온 문을 봄 → 2 동쪽 문 안쪽 구석(통로를 막지 않음) → 3 과학실 앞 복도 동쪽 끝. 시작 자리 = max(일차 1일 0·2일 1·3일~ 2, 조도·배치 중 큰 구간 1 → 1, 2 이상 → 2). 1일차는 움직이지 않고, 2일차부터 **과학실을 나갈 때마다** 한 칸(그 밤 최대까지). 최대 = 모형 급습이 가능한 밤(조도 3 + 배치 2 또는 편성에 `E.ModelRush`)만 복도(3), 아니면 과학실 안(2). 모형 급습이 대면하면 숨고 그 밤엔 돌아오지 않는다. 복도 끝에 선 자가 나와 있는 동안도 숨는다. 재시작이면 그 밤 시작 자리. 디버그 `ScienceModel.Active.DebugSpot(0~3)`.
+> ⓑ **S3 대상이 응시로 잡히지 않던 버그**: 씬의 `rule.S3.model`(바닥 토르소 자식)에 단단한 콜라이더가 없어 응시 원뿔·중심 레이 어느 쪽에도 걸리지 않았다 — S3 「인체 모형을 빛으로 확인하십시오」가 영영 위반될 수 없었다. 이제 기준점은 몬스터 모형의 조준점(몸을 감싸는 응시 상자)이고, 바닥 토르소는 근무 중 숨긴다(씬 파일 그대로).
+> ⓒ **점검 대상 외곽선**(`InspectionSensor`): 오늘 점검표에서 보고 전·열린 항목의 소품은 수평 9m(`OutlineRange`) 안이면 옅게(0.65, `HintOutline`), 보고 가능한 포커스는 진하게. 벽 너머는 깊이 검사로 안 보인다. 정상·이상 같은 선. 보고한 항목·호출 2 전 항목은 그리지 않는다. **[옮김] 대역 소품(C-1·L-1)은 점검 기준점이 대역을 따라간다** — 외곽선도 옮겨 간 소품에 그려진다(41차 ⓑ의 「기준점은 원래 자리」를 바꿈).
+> ⓓ **판자로 막힌 문**: 원인은 벤더 `DoorScript.OpenedAtStart` — 쓰지 않는 문(정책 Sealed) 몇 개가 반쯤 열린 채 시작했다(라커룸 판자 문 `DoorNarrowSolid (1)`, 뒷문 `DoorBack` 등). `PlayerInteractor`가 첫 프레임에 Sealed 문을 `DoorHandle.ShutIfAjar()`로 닫는다. 연출 개방도 Sealed 문을 건너뛴다(`PlayerInteractor.IsSealed` — 노란 얼굴 문 열기 `RevealDoor`·피날레 경비실 문). H2 자동 개방은 원래 Openable만.
+> ⓔ 디버그 콘솔 점검 [이동]이 1.6m → 1.2m(책상에 막히면 보고 거리 2m 밖에 서서 보고가 안 켜졌다).
+> ⓕ **시뮬로 찾았지만 고치지 않은 것(결정·협업 필요)**: ① 화면 시계는 김진선님 `GameTime` 2:00~5:00인데 판정·태블릿·기획서는 00:00~04:00(비례 환산) — 「02:16 호출」 때 HUD는 3:42. `PlaySystems` 프리팹 GameTime 시작 0시·끝 4시로 맞추면 끝(김진선님 프리팹). 결과창 「근무 시간 2:00–5:00」도 같은 값. ② 결과창에 기획서 「보고별 정확/오보/놓침/미완료 · 경고 누계 · 몸 계기 줄」이 없다(김진선님 `DutyLogView` — 데이터는 `DaySummary`·`InspectionBoard`에 있다). ③ 점검 소품 사물함(H-4)은 [E]로 여닫을 수 있어 「사물함은 모두 잠겨 있습니다」와 어긋난다.
+> **되살리지 마십시오:** 「몬스터 모형은 그날 조우가 있을 때만 나온다」 · 「S3 기준점 = 바닥 토르소의 콜라이더 없는 자식」(응시로 안 잡힘) · 「모형을 과학실 통로 z 42.75에 세움」(동쪽으로 못 지나간다) · 「재시작으로 과학실 밖에 옮겨진 것을 『나갔다』로 세어 모형을 옮김」 · 「점검 외곽선은 보고 가능할 때만」 · 「Sealed 문도 OpenedAtStart대로 반쯤 열어 둠」.
+
+> **개정: 2026-10-04(41차). 점검 이상의 눈에 보이는 모습 — 그날 편성에서 이상인 항목마다 [옮김]·[켬]·[빛] 연출을 그 밤 내내 세운다(민: 「테스트할 것 말고 처리할 것」). EditMode 326/326, PlayScene에서 [소리] 5개를 뺀 12항목을 모두 세워 화면 확인·CCTV 한 컷 미리보기·되돌림 실측, 에러 0.**
+> ⓐ **`Flow/Presentation/InspectionAnomalies`**(자동 설치): `NightRun.Inspections.Plan`이 바뀌면 전부 거두고 `IsAnomaly` 항목을 `Intensity`(구간 1~4) 세기로 다시 세운다. 재시작은 편성이 같아 그대로 둔다. 판정과 무관. [옮김] H-4 사물함 문(경첩 축 바깥쪽 20/35/55/85°) · S-1 모형이 돌아섬(20/45/100/180°) · C-1 화분이 창가 반대편 학생 책상 위로(거리순 40/60/80/100% 지점) · L-1 의자가 0.35~0.7m 빠져 가장 가까운 출입구를 향함. [켬] H-2 식수대 앞 물(길이 0.6/1.4/2.2/3.4m — 웅덩이 → 줄기 → 침수, 반투명 premultiply Lit) · T-1 변기 속 검은 머리카락(2구간부터 앞 턱으로 늘어짐) + 넘친 물 · K-1 한 채널(일차로 고름)에 `CctvOnlyVisible` 사람이 화면을 비스듬히 0.45m/s로 가로지르고 8초 사라졌다가 반대로. [빛] H-1 압력계 초록 · C-2 램프 주황 · S-2 현미경 흰빛 · T-3 거울 위 형광등 깜빡임(`PhotosensitiveSafe`면 2Hz 아래 맥동) · L-2 블라인드를 숨기고 창 위에 말린 막대 + 창밖 달빛 스포트. 빛 이상은 대상 둘레 후광 링(`HaloRing` — 최종 기획서 「색과 함께 정적인 모양 단서」, 카메라 쪽으로 띄워 벽에 잘리지 않음).
+> ⓑ **정적 배칭 소품은 옮기지 않는다**: Batching Static으로 묶인 C-1·L-1은 원본 렌더러·충돌체를 끄고 같은 프리팹을 옮긴 자리에 하나 더 세운다. 프리팹은 `Resources/InspectionAnomalyProps`(`InspectionAnomalyPropsSO`, 메뉴 「야간근무/연출/점검 이상 소품 표 다시 만들기」가 씬의 [옮김] 대상 부모 프리팹에서 채움). 점검 기준점(`Inspect X`)은 ~~원래 자리에 남는다~~ → 42차부터 대역을 따라간다. 씬·김진선님 프리팹은 고치지 않는다.
+> ⓒ 수치는 Core `Inspection/AnomalyLook`(구간이 오를수록 커지기만, 옮김 최소 15°, 광과민 2Hz 이하). 테스트 `AnomalyLookTests` 6개(대역 소품 표·연출 코드가 12항목을 다 다루는지 포함).
+> ⓓ `CctvReplay` 한 컷은 찍는 순간에만 그 이상을 `InspectionAnomalies.Preview(항목, 그날 강도)`로 세웠다 거둔다 — 다음 날 「어제」 모습이 찍힌다(`Missed`에 강도, `DebugShow(항목, 분, 강도 = 2)`). 디버그 `InspectionAnomalies.Active.DebugApply(항목, 구간)` · `DebugClear()` · `Summary`.
+> ⓔ **아직**: 「가까이」 놀람은 소리만. 광과민 옵션(`InspectionAnomalies.PhotosensitiveSafe`·`BodyMeter.ScreenShakeEnabled`)을 설정 화면에 잇는 일은 김진선님과. 빛 세기·물 색은 걸어서 한 번 더 볼 일.
+> **되살리지 마십시오:** 「정적 배칭 소품을 런타임에 옮김」(그림이 따라오지 않는다 — 대역 프리팹) · 「물을 불투명 검정 판으로」(구멍처럼 보였다) · 「변기 머리카락 높이를 콜라이더 레이로」(상자 콜라이더 윗면 = 물탱크 높이) · 「K-1 사람의 바닥을 `DirectionStage.FloorBelow`로」(1.5m 위에서 쏘아 천장 윗면을 잡았다).
+
+> **개정: 2026-10-04(40차). ① 태블릿은 늘 손에 든다(내린 상태 삭제, 민) — Tab은 「든 상태 ↔ 확대」만 오간다. ② 놓친 이상을 다음 날 출근 CCTV 한 컷으로 공개. EditMode 320/320, PlayScene에서 시작부터 든 태블릿·확대 = Tab 신호·CRT 「어제 02:40 · CAM03」 정지 화면 실측, 에러 0.**
+> ⓐ **「읽는 중」 = 확대**: `TabletZoom.alwaysHeld`(기본 켬). 시작하자마자 들고, CCTV를 들여다보는 동안만 내린다(모니터를 가리지 않게). Tab 판정 신호·센서 정지(`TabletBridge`)·CCTV 사용 금지(`CctvSystem`)·전화기 금지(`ShiftEndPhone`)·붙잡힘 「태블릿 든 채」 소리가 모두 `TabletZoom.Reading(태블릿)`을 본다 — 든 상태만으로는 판정이 멈추지 않는다. 김진선님 `TabletAlarm`·`TabletMessageEvents`는 여전히 `IsOpened`(늘 참)를 보므로, 메시지 탭이 떠 있으면 확대하지 않아도 알람이 확인된다(화면이 늘 보이므로 의도에 맞음).
+> ⓑ **`Flow/Cctv/CctvReplay`**(자동 설치): 밤 동안 이상을 [정상]으로 보고하면 그 시각, 밤이 끝날 때 이상 항목이 미완료면 항목마다 고정된 01:00~03:30 시각을 적어 두고(정적 — 결과 씬을 건너 다음 날로), 다음 날 근무 시작 1.5초 뒤 그 공간 채널 카메라를 항목 쪽으로 돌려 찍은 정지 화면을 CRT에 10초(들여다보면 그 뒤 4초 더) 띄우며 화면 아래에 「● 어제 02:40 · CAM03」(글자 크기는 재서 맞춤)과 철컥 소리(`cctv.replay`). 여럿이면 가장 늦은 것 한 컷. 디버그 `CctvReplay.Active.DebugShow(항목, 분)`.
+> ⓒ **아직**: 점검 이상의 시각 연출(옮김·빛·켬)이 씬에 없어 한 컷은 「그 자리」만 보여 준다 — 이상 연출이 들어오면 같은 컷에 찍힌다. 재시작 씬 다시 불러오기는 김진선님과 맞춘 뒤. 회피 불가 연결 조우(S5×H3·H4×T1·C2×C-3) 자리·순서는 플레이로 맞출 일.
+> ⓓ **든 자세**(민: 왼쪽 시야를 덜 가리게): `TabletZoom.heldPosition` (-0.218, -0.104, 0.36) · `heldRotation` (8, -9, -4) — 김진선님 올린 자세(-0.16, -0.05, 0.30)·(8, -12, -9)보다 왼쪽 아래로 조금 멀리. 1280×720에서 화면 왼쪽 약 30%·아래쪽 약 55%만 차지하고 수칙 글은 읽힌다. 실행 중 인스턴스 값만 바꾸고 끝나면 되돌린다.
+> **되살리지 마십시오:** 「태블릿을 들었다 = Tab(판정 정지)」(늘 들고 있으므로 확대만 Tab) · 「CCTV를 볼 때도 태블릿을 든 채로」. · 「든 자세 = 김진선님 올린 자세 그대로」(왼쪽 시야를 너무 가림).
+
+> **개정: 2026-10-04(39차). 태블릿 확대(민 요청) — Tab 들기 → 한 번 더 Tab = 화면 정중앙에 꽉 차게 확대 → 한 번 더 Tab = 내리기. EditMode 320/320, PlayScene에서 확대 화면·되돌림 실측.**
+> ⓐ `Flow/Interaction/TabletZoom`(자동 설치): 김진선님 `PlayerTablet`은 고치지 않고, 실행 중 인스턴스의 `readInput`을 끄고 같은 키를 받아 `Open`/`Close`를 부른다. 확대는 올린 자세(`openedPosition`·`openedRotation`)를 확대 자세 쪽으로 0.22초에 옮기고 `ApplyPose`로 기준 자세를 다시 잡는다 — `ViewmodelSway`가 그 위에 얹히므로 그대로 따라온다. 확대 자세는 화면 판 `Screen/BG`(0.075×0.125m)를 재서 판이 카메라 정면·중심·뷰모델 카메라 화면의 90%(`fill`)를 채우는 거리(약 0.15m)로 계산. 확대 중에는 호흡·시선 지연·걸음 흔들림을 끄고 내리면 되돌린다. 판정·Tab 신호와 무관.
+> **되살리지 마십시오:** 「확대를 위해 PlayerTablet 코드·프리팹을 고침」 · 「확대 자세를 손으로 박은 숫자로」(판을 재서 계산).
+
+> **개정: 2026-10-04(38차). 2′단계 몸 계기 + 맵 소리·교차 연출 소리·수칙 위반 현장 반응. EditMode 320/320(몸 계기 규칙 6건 추가), PlayScene에서 층 전환·경계 신호·호흡 주기·박동 흔들림·발소리 에코·경비실 교차·위반 반응 실측, 에러 0.**
+> ⓐ **몸 계기**(최종 기획서 「몸 계기」 표 그대로): 규칙은 코어 `Core/BodyRules`(층 25/50/75/90 · 심박 62/72/86/104 · 귀 먹먹함 층 2+ · 이명 층 3+ · 박동 흔들림 층 4 · 호흡 10/8/6/4.5초 · 에코 1/2/3회·잔향 ×1/1.15/1.3 · 층 4 한 박 늦은 발소리 · 경계 70/85 · 재시작 뒤 30초 한 층 약하게). 화면은 `Flow/Audio/BodyMeter`(청각 심박 루프 크로스페이드 + 층별로 더해지는 귀 먹먹함·이명, 층 4는 심박 루프의 박마다 카메라를 0.55° 차고 다음 프레임에 걷어 냄 — `ScreenShakeEnabled`로 끔 / 조도 거친 숨 / 경계 신호 / 정확한 보고로 축이 내려가면 긴 한숨) · 배치 에코는 `PlayerFootsteps.Echo`·`GhostStep`. 층은 `BodyMeter.TierOf(축)` 하나로 읽는다. 생존 수치는 `NightRun.Axes.GetValue`.
+> ⓑ **청각 맵 소리**(`Flow/Audio/WorldSounds`): 그 공간 청각 연출 구간 n이면 1..n의 소리가 **하루 한 번씩**(재시작해도 다시 안 남), 머문 지 6~18초 뒤부터 18~40초 간격. 복도 1 앞쪽 문·멀리 사물함 / 2 지나온 문 / 3 손잡이 + 뒤쪽 문 / 4 따라오다 멈추는 발소리(H3 편성 날 제외) · 교실 1 지우개 / 2 나갈 때 책상 타격 / 3 칠판 긁기 + 교탁 의자 / 4 교탁 의자 · 과학실 1 유리 / 2 긁힘 / 3 책상 아래 유리 / 4 무거운 물체 · 화장실 2 배관. 배치 3 천장 조각 · 배치 4 소품 떨림(계속) · 조도 소등 순간 형광등 꺼짐(`IlluminanceMap.LampWentOff`, 밤 시작 5초 뒤부터).
+> ⓒ **교차·신뢰**: 청각 2 + 조도 2 = 화장실 소등 중 물소리가 칸(`toilet.stall.inner/outer`)을 옮겨 다님 · 청각 2 + 신뢰 3 = 경비실 문 밖 숨소리(가장 가까운 문) · 신뢰 4 = 경비실 소품 요동.
+> ⓓ **위반 현장 반응**(위반 피드백 1단계, 어긴 대상의 소리): C1 분필 부러짐(마지막 분필 단서 자리) · L1 책장(`rule.L1.shelf`) · L2 책 덮임 · L5 창 손바닥 · S2 유리 밟음(발밑) · G1 멈추면 뒤에서 따라오다 멈추는 구두 · K2 CCTV 화면에서 의자 삐걱.
+> ⓔ **넣지 않은 것**: 교실 0 「문밖 분필 세 획」·화장실 1 「안쪽 칸 물 내림」(C1·T1 방아쇠와 같은 소리라 맵 소리가 수칙 신호처럼 들림) · 복도 3/4·화장실 3/4의 `_Hear75`·`_Hear90` 합본(36차에 지운 파일 — git에서 `Assets/_Game/Audio/hall/SFX_HALL_DoorClose_Hear75/90.wav`·`toilet/SFX_TOILET_Flush_Hear75/90.wav`를 되살리면 그 판으로 바꿀 수 있다. 지금은 손잡이 + 문 닫힘, 따라오는 발소리로 대신) · 배치 3 + 신뢰 3 「없던 방」·조도 2 + 신뢰 2 「CCTV 노란 얼굴」(화면 연출이 아직 없음) · 조도 1·3 손전등 깜빡임(시각 연출이 아직 없음).
+> **되살리지 마십시오:** 「몸 계기를 연속 값으로(체력바처럼)」 · 「층마다 음량만 키움」(새 소리가 더해지는 방식) · 「흔들림 오프셋을 카메라에 누적」(매 프레임 걷어 낸다) · 「맵 소리를 수칙 방아쇠와 같은 소리로」 · 「맵 소리를 재시작마다 다시」.
+
 > **개정: 2026-10-04(37차). 클라이맥스_VARCO생성본(CLX, `NCAI_BrokenCompass/Assets/클라이맥스_VARCO생성본`) 적용 — 「클라이맥스」는 5일차 피날레가 아니라 **플레이어 긴장의 꼭대기**(붙잡히기 직전~얼굴~여운)다(민). EditMode 314/314, 세 축 붙잡힘 미리 보기·처벌·대면 긴장음 실측, 에러 0.**
 > ⓐ **흔들림 구간(새로)**: 붙잡히면 소리가 끊기기 전에 조작이 멈춘 채 화면이 점점 세게 떨리는 구간(`CaptureDirector.riseSeconds` 2.5초, 같은 축 두 번째부터 `riseRepeatSeconds` 1.2초, 세 번째부터 아무 키로 건너뜀). 축별 상승음(청각 아이 합창 + 심장 멈춤 · 조도 쇠 긁힘 · 배치 아이 합창)과 숨 들이켬이 **끊김 순간에 꼭대기**에 닿고 거기서 0.06초에 줄여 끊는다. 미리 보기·피날레 K4 붙잡힘도 같다.
 > ⓑ **충격음 박자 맞추기**: `DirectionSoundTableSO.Entry.hits` = 판마다 가장 큰 지점(초), 빌더가 WAV에서 잰다. `FindExact(키, out 볼륨, out hitAt)`. 얼굴 순간의 저음(CLX-04)·중음(소년·나무 CLX-01 / 모형 CLX-09)·고음(분필 CLX-07 / 현 CLX-05 / 가지 CLX-21)·목소리(비명 CLX-03 / 속삭임 폭발 CLX-22)는 **꼭대기 0.04초 앞부터** 틀어 정적을 깨지 않고 그 프레임에 터진다. 빨려 듦(CLX-08)·얼굴 직전(소년 거대한 쿵 CLX-10 / 모형 관절 꺾임 CLX-27)만 정적 동안 차오른다. 끊김 = CLX-32 「뚝」, 조도 끊김 = 손전등 딸깍 CLX-24(파일 처음부터), 태블릿을 든 채면 TV 잡음 폭발 CLX-25. 여운 = 낮은 웅— CLX-30 · 청각 이명 CLX-31, 다시 근무 때 0.6초에 줄인다. 카드 직전 = 소년 일그러진 웃음 CLX-18 · 나머지 마지막 쿵 CLX-12.
@@ -624,7 +683,7 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 ### 3.3 검증
 
 1. 코드 수정 후 `Assets/Refresh` → 25~30초 뒤 `recompile_status` → `console_status`로 **컴파일 에러 0**을 확인합니다.
-2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 314/314 통과**(2026-10-04 37차 실측). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
+2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 334/334 통과**(2026-10-04 44차 실측). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
    - **`DesignDriftTests`가 드리프트 감시입니다.** 일차 하한이 줄지 않고 Band4에 닿지 않는지, 그리고 **이 파일 본문에 옛 구간 경계가 남아 있는지**를 검사합니다. 여기가 깨지면 값이 아니라 **두 곳이 서로 다른 말을 하고 있다**는 뜻입니다. 결과가 크면 파일로 저장되므로 요약만 grep합니다. (옛 24장 카드의 에셋↔빌더·축 쿼터·죽은 카드 검사와 `CardScenarioTests`는 2026-10-03에 카드와 함께 지웠습니다.)
 3. 플레이 모드 확인은 근무 씬 `Assets/0. Main/01 Scene/PlayScene.unity`에서 합니다. **F3 디버그 콘솔**(`NightDutyDebugConsole`)로 축·시계·조우·수칙 단서를 조작합니다. (옛 `_Test_AxisRig` 씬·판정 디버그 패널·`DebugAxisDriver`는 2026-10-03 폐기.)
 4. 플레이 중에는 `set_component_properties`가 안 됩니다 → `eval`. `FindAnyObjectByType`는 DontSave 오브젝트를 찾지 못합니다.
@@ -699,27 +758,27 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 ```
 Assets/_Game/
 ├── Scripts/NightDuty.Core.asmdef     references: []   판정 · 수치 · 편성 (Tests·Editor에 InternalsVisibleTo)
-│   ├── Core/          AssemblyInfo · Vocabulary · Bands · EventBus · IFearAxisReader · Deltas · SensingRules
+│   ├── Core/          AssemblyInfo · Vocabulary · Bands · EventBus · IFearAxisReader · Deltas · SensingRules · BodyRules(몸 계기)
 │   ├── Data/          RuleSO(태블릿 표시 전용) · NightDeckTableSO(비어 있음, 김진선님 폴백)
 │   ├── Rules/         JudgeSignal (신호 어휘만)
 │   ├── FinalRules/    FinalRuleBook · FinalJudges (새 수칙 판정)
 │   ├── Program/       NightProgram · ProgramCatalog (밤 편성 · 수칙/조우 카탈로그)
 │   ├── Paradox/       ParadoxCatalog · ParadoxPlanner(+ParadoxPlan) · ParadoxRun · UnavoidableCatalog · UnavoidableRun (10단계 역설·변조·회피 불가)
-│   ├── Inspection/    InspectionBoard · InspectionCatalog · InspectionPlan
-│   ├── Direction/     NightRun(.Final/.Program/.Direction/.Tablet/.Ending/.Paradox/.Unavoidable) · FinaleWatch · JudgeTarget · JudgeTargetRegistry · NightClock · ParadoxMessage
+│   ├── Inspection/    InspectionBoard · InspectionCatalog · InspectionPlan · AnomalyLook(이상이 보이는 정도) · InspectionLedger(결과창 점검 줄 — 정확/오보/놓침/미완료)
+│   ├── Direction/     NightRun(.Final/.Program/.Direction/.Tablet/.Ending/.Paradox/.Unavoidable) · FinaleWatch · JudgeTarget · JudgeTargetRegistry · NightClock · ParadoxMessage · ModelProgress(과학실 모형 자리)
 │   │   └── Tension/   TensionDirector · EncounterScripts · SurpriseBudget · StagePoints · DirectionEvent
 │   ├── Stats/         FearAxisSystem · BandResolver · DayFloor · DaySummary · DutyLogEntry · NightSnapshot · RestartPolicy · WarningLedger
 │   └── Editor/        NightDuty.Editor.asmdef — InspectionTargetPlacer · RuleAnchorPlacer
-├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 314개(2026-10-04 37차)
-├── Resources/         NightDeckTable(빈 폴백) · CaptureCardLook(재시작 카드의 YOU DIED) · CaptureCast(붙잡힘 연출표) · FinaleCast(피날레 배역표) · DoorPolicy · CctvConfig · AmbienceConfig · DirectionSounds · DirectionScreenFx · IlluminanceTone · StandIns/
+├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 334개(2026-10-04 44차)
+├── Resources/         NightDeckTable(빈 폴백) · CaptureCardLook(재시작 카드의 YOU DIED) · CaptureCast(붙잡힘 연출표) · FinaleCast(피날레 배역표) · DoorPolicy · CctvConfig · AmbienceConfig · DirectionSounds · DirectionScreenFx · IlluminanceTone · InspectionAnomalyProps · NightDutyLightmapScale.shader(불 꺼진 교실 블릿) · StandIns/
 └── Flow/              asmdef 없음 → Assembly-CSharp. 씬과 코어를 잇는 구동기 (§4.4)
     │                  NightRunDriver · NightDutyResultMapper · SpaceZones(공간·구역 신호) · TabletBridge · FlowAutoInstall · SpaceLights(빈 껍데기)
     ├── Sensors/       PlayerSensors · GazeProbe · FlashlightRelay · DoorRelay · FinalRuleRelay · InspectionSensor (근무 씬에 자동 설치)
     ├── Finale/        FinaleDirector(5일차 피날레 흐름) · FinaleCastSO(배역표 — 팀원 몹 프리팹 칸) · FinaleMob(비트 재생) · FinaleAnimEvents
     ├── Capture/       CaptureDirector(+.Scene/.Audio) (붙잡힘 틀·흔들림 구간·재시작 카드·붙잡힘 소리, 근무 씬에 자동 설치) · CaptureCastSO(연출표 — 축별 장면 프리팹 칸) · CaptureAnimEvents · CaptureCardLook (카드의 YOU DIED 모습)
-    ├── Audio/         NightDutySfx(보고·경고·처벌·점검 「가까이」·점검 이상 루프) · PlayerFootsteps(바닥별 발소리) (근무 씬에 자동 설치)
-    ├── Direction/ · Presentation/ · Interaction/ · Cctv/ · Ambience/ · Debug/(F3 콘솔)
-    └── Editor/        JudgeGizmos · JudgeSceneReport · SpaceZonesEditor · StandInPrefabBuilder · DirectionSoundTableBuilder(소리 표 정본) · FootstepSplitter · NightDutyAudioImportRules · DoorPolicyBuilder · GuardRoomPhoneBuilder · …
+    ├── Audio/         NightDutySfx(보고·경고·처벌·점검 「가까이」·점검 이상 루프) · PlayerFootsteps(바닥별 발소리·배치 에코) · BodyMeter(몸 계기) · WorldSounds(맵 소리·교차·위반 반응) (근무 씬에 자동 설치)
+    ├── Direction/(+ScienceModel 과학실 몬스터 모형·EncounterImpact 조우 타격감) · Presentation/(+InspectionAnomalies 점검 이상 연출·InspectionAnomalyPropsSO·ResultInspectionNotes 결과창 「금일 점검」·RoomDarkness 불 꺼진 교실) · Interaction/(+TabletZoom 태블릿 늘 들기·확대) · Cctv/(+CctvReplay 놓친 이상 한 컷) · Ambience/ · Debug/(F3 콘솔)
+    └── Editor/        JudgeGizmos · JudgeSceneReport · SpaceZonesEditor · StandInPrefabBuilder · DirectionSoundTableBuilder(소리 표 정본) · InspectionAnomalyPropsBuilder · FootstepSplitter · NightDutyAudioImportRules · DoorPolicyBuilder · GuardRoomPhoneBuilder · …
 ```
 
 - **`NightDuty.Client` 어셈블리는 아직 없습니다.** 진선님 코드(GameFlow·Result·HUD)와 Lee의 시험 리그는 개인 폴더의 `Assembly-CSharp`에 있습니다. `_Game`으로 옮길지는 결정 대기(Q8)입니다.

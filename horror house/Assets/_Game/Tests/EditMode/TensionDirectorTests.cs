@@ -265,6 +265,22 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void 헛예고는_조우마다_한_번까지_다음은_진짜다()
+        {
+            DirectorFixture f = new DirectorFixture(1, 0.0, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.Footsteps));
+            f.Minute = 70f;
+            f.Enter(SpaceId.Corridor).Pose(0f, 43f, 90f);
+            for (int i = 1; i <= 11; i++) f.Pose(i, 43f, 90f);
+            f.Wait(30f);   // 헛예고 + 재시도 대기(FalseRetry 20초)
+            for (int i = 1; i <= 11; i++) f.Pose(11f + i, 43f, 90f);
+            f.Wait(0.5f);
+            int falseCount = 0;
+            foreach (DirectionEvent e in f.Events) if (e.SourceId == ProgramCatalog.Footsteps && e.Phase == DirectionPhase.FalseForeshadow) falseCount++;
+            Assert.AreEqual(1, falseCount, "rng가 늘 0이어도 헛예고는 한 번뿐");
+            Assert.IsTrue(f.HasPhase(ProgramCatalog.Footsteps, DirectionPhase.Foreshadow), "두 번째는 진짜 전조");
+        }
+
+        [Test]
         public void 슬롯이_끝날_때까지_방아쇠가_없으면_놓침()
         {
             DirectorFixture f = new DirectorFixture(1, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
@@ -451,6 +467,20 @@ namespace NightDuty.Tests
             Assert.Greater(n.Count, 0);
             foreach (KeyValuePair<string, int> kv in n) Assert.LessOrEqual(kv.Value, TensionDirector.FakePerId, kv.Key);
             Assert.LessOrEqual(f.Director.FakesUsed, 2 + DirectorMoods.ExtraFakes(DirectorMood.Easy), "조우가 없으면 2(+쉬움 1)까지");
+        }
+
+        [Test]
+        public void 출근_동안은_조용하고_판정이_열리면_곧_첫_가짜_놀람()
+        {
+            DirectorFixture arrival = new DirectorFixture(1, 0.5, null);
+            arrival.Minute = NightClock.JudgingStart - 6f;
+            arrival.Wait(200f);
+            Assert.AreEqual(0, arrival.Director.FakesUsed, "출근(00:16 전)에는 가짜 놀람이 없다");
+
+            DirectorFixture open = new DirectorFixture(1, 0.99, null);
+            open.Minute = NightClock.JudgingStart + 1f;
+            open.Wait(NightClock.RealSecondsAt(NightClock.JudgingStart) + TensionDirector.FirstFakeMax + 0.5f);
+            Assert.AreEqual(1, open.Director.FakesUsed, "판정이 열린 뒤 14초 안에 첫 가짜 놀람");
         }
 
         [Test]

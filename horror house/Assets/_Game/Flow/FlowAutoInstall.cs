@@ -2,11 +2,10 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 근무 씬 자동 설치의 공통 판단. <see cref="NightRunDriver"/>·<see cref="TabletBridge"/>·
-/// <see cref="EncounterStager"/>가 각자 쓰던 「근무 씬인가」 판단과 카메라 찾기를 한 곳에 모은다.
+/// 근무 씬 자동 설치의 공통 판단. <see cref="NightRunDriver"/>·<see cref="TabletBridge"/> 등이 각자 쓰던 「근무 씬인가」 판단과 카메라 찾기를 한 곳에 모은다.
 ///
 /// <para><b>왜 필요했나 (2026-09-24).</b> PlayScene에 <c>PlayerSensors</c>·<c>FlashlightRelay</c>·
-/// <c>DoorRelay</c>·<c>AnomalyCueDirector</c>가 저장돼 있지 않아, 정식 흐름(메인 → 로딩 → 플레이)으로
+/// <c>DoorRelay</c>가 저장돼 있지 않아, 정식 흐름(메인 → 로딩 → 플레이)으로
 /// 들어오면 판정 코어는 밤을 열지만 <b>신호를 만드는 쪽이 통째로 비어 있었다</b>.
 /// 그동안 테스트 하네스가 런타임에 대신 만들어 주고 있었을 뿐이다.
 /// 씬 파일을 건드리면 LFS 잠금·병합 충돌이 생기므로, 기존 자동 설치 패턴을 센서에도 넓혔다.</para>

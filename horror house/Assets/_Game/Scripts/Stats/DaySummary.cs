@@ -32,13 +32,13 @@ namespace NightDuty
         /// <summary>정산 대상 일차(1부터 시작).</summary>
         public readonly int Day;
 
-        /// <summary>그날 일반 점검을 완료한 점검 ID 수(복도·1-1·1-3·과학실·화장실 중).</summary>
+        /// <summary>그날 점검표에서 보고한 항목 수(2026-10-03부터 — 옛 「다섯 공간 점검 상자 체류」를 대신한다).</summary>
         public readonly int PatrolDone;
 
-        /// <summary>전체 점검 ID 수(5).</summary>
+        /// <summary>그날 점검표 항목 수.</summary>
         public readonly int PatrolTotal;
 
-        /// <summary>그날 위반으로 정산된 카드 수. 화면에는 발생 시각만 보여 주고 어떤 수칙이었는지는 밝히지 않는다.</summary>
+        /// <summary>그날 위반으로 정산된 수칙 수(위반 시각 수). 화면에는 발생 시각만 보여 주고 어떤 수칙이었는지는 밝히지 않는다.</summary>
         public readonly int Violations;
 
         /// <summary>
@@ -69,12 +69,12 @@ namespace NightDuty
         public readonly FearAxis? ImprintAxis;
 
         private static readonly int[] NoMinutes = new int[0];
-        private static readonly RuleResult[] NoResults = new RuleResult[0];
+        private static readonly FinalRuleResult[] NoResults = new FinalRuleResult[0];
         private static readonly DutyLogEntry[] NoLog = new DutyLogEntry[0];
         private readonly IReadOnlyList<DutyLogEntry> _dutyLog;
 
         private readonly IReadOnlyList<int> _violationMinutes;
-        private readonly IReadOnlyList<RuleResult> _results;
+        private readonly IReadOnlyList<FinalRuleResult> _results;
 
         /// <summary>하룻밤이 끝난 방식. 기존 11인자 생성자로 만들면 <see cref="NightOutcome.Completed"/>.</summary>
         public readonly NightOutcome Outcome;
@@ -89,14 +89,14 @@ namespace NightDuty
             get { return _violationMinutes ?? NoMinutes; }
         }
 
-        /// <summary>카드별 정산 결과(미판정 포함). 개발 로그·근무 종료 리뷰용이며 화면 표시용이 아니다.</summary>
-        public IReadOnlyList<RuleResult> Results
+        /// <summary>새 수칙 정산 결과(위반·위협 대응·밤 종료 준수·기록). 개발 로그·근무 종료 리뷰용이며 화면 표시용이 아니다.</summary>
+        public IReadOnlyList<FinalRuleResult> Results
         {
             get { return _results ?? NoResults; }
         }
 
         /// <summary>
-        /// 근무 일지 줄(그날 덱 순서). 결과창의 「금일 근무 지침」 재료다. 기존 생성자로 만들면 비어 있다.
+        /// 근무 일지 줄(그날 편성 덱 순서). 결과창의 「금일 근무 지침」 재료다. 기존 생성자로 만들면 비어 있다.
         /// </summary>
         public IReadOnlyList<DutyLogEntry> DutyLog
         {
@@ -149,7 +149,7 @@ namespace NightDuty
             NightOutcome outcome,
             TerminationCause cause,
             IReadOnlyList<int> violationMinutes,
-            IReadOnlyList<RuleResult> results)
+            IReadOnlyList<FinalRuleResult> results)
             : this(day, patrolDone, patrolTotal, auditory, illuminance, layout, trust, outcome, cause, violationMinutes, results, null)
         {
         }
@@ -168,7 +168,7 @@ namespace NightDuty
             NightOutcome outcome,
             TerminationCause cause,
             IReadOnlyList<int> violationMinutes,
-            IReadOnlyList<RuleResult> results,
+            IReadOnlyList<FinalRuleResult> results,
             IReadOnlyList<DutyLogEntry> dutyLog)
         {
             Day = day;

@@ -105,72 +105,37 @@ namespace NightDuty.Tests
         }
     }
 
-    /// <summary>태블릿을 든 동안에도 판정이 흐른다(최종 기획서 「태블릿·시간 규칙」).</summary>
+    /// <summary>태블릿을 든 동안에도 판정이 흐른다(최종 기획서 「태블릿·시간 규칙」). 옛 규칙(Tab 중 정지) 스위치는 2026-10-03에 없앴다.</summary>
     public sealed class TabletJudgingTests
     {
-        private TestKit _kit;
-
         [SetUp]
         public void SetUp()
         {
-            _kit = new TestKit();
-            RuleSO h1 = _kit.Card(c =>
-            {
-                c.CardId = "H1";
-                c.Space = SpaceId.Corridor;
-                c.TriggerKind = SignalKind.DoorAutoOpenObserved;
-                c.TargetIds = new[] { "corridor.door.auto" };
-                c.Failure = new SignalCondition(SignalKind.DoorCommandAccepted, TargetMatchIds.Trigger, SpaceId.None, FlagFilter.True);
-                c.Success = new SignalCondition(SignalKind.PassageCompleted, "corridor.passage");
-            });
-
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
-            NightRun.DeckOverride = day => new List<RuleSO> { h1 };
         }
 
         [TearDown]
         public void TearDown()
         {
-            NightRun.DeckOverride = null;
-            NightRun.JudgeWhileTabOpen = false;
+            NightRun.ProgramEnabled = false;
             NightRun.StartNewRun();
             EventBus.ClearAll();
-            _kit.Dispose();
-        }
-
-        private static void Violate()
-        {
-            NightRun.Send(JudgeSignal.Target(SignalKind.DoorAutoOpenObserved, "corridor.door.auto"));
-            NightRun.Send(JudgeSignal.DoorCommand("corridor.door.auto", true, ActionSource.Player));
         }
 
         [Test]
-        public void 켜면_태블릿을_든_동안에도_판정한다()
+        public void 태블릿을_든_동안에도_판정한다()
         {
-            NightRun.JudgeWhileTabOpen = true;
-            NightRun.BeginNight(1, () => 30);
+            TestKit.BeginProgramNight(1, () => 30);
 
             NightRun.Send(JudgeSignal.Tab(true));
             Assert.IsTrue(NightRun.TabletOpen);
-            Violate();
+            TestKit.ViolateRunning();
 
-            Assert.AreEqual(Deltas.RuleViolation, NightRun.Axes.GetValue(FearAxis.Layout));
+            Assert.AreEqual(Deltas.RuleViolation, NightRun.Axes.GetValue(FearAxis.Auditory));
+            Assert.AreEqual(SpaceId.Corridor, NightRun.CurrentSpace, "태블릿을 든 채 들어간 공간도 현재 공간이다");
 
             NightRun.Send(JudgeSignal.Tab(false));
             Assert.IsFalse(NightRun.TabletOpen);
-        }
-
-        [Test]
-        public void 끄면_옛_규칙대로_태블릿_중엔_판정이_멈춘다()
-        {
-            NightRun.BeginNight(1, () => 30);
-
-            NightRun.Send(JudgeSignal.Tab(true));
-            Assert.IsTrue(NightRun.TabletOpen);
-            Violate();
-
-            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Layout));
         }
     }
 }

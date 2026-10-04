@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,7 +23,7 @@ namespace NightDuty
     /// <para>
     /// <b>밤 시계(<see cref="NightClock"/>)</b>: <see cref="JudgingWindowEnabled"/>가 켜져 있으면 00:16~03:30(이완 01:52~02:16 제외)에만
     /// 수칙을 판정한다. 판정 정지 중에는 상태 신호(공간·구역·손전등·Tab)만 판정에 넘기고, 델타는 <see cref="Deltas.SoftCap"/>에서 멈춘다.
-    /// 끄면(기본값·테스트) 시각과 무관하게 판정한다. 태블릿을 든 동안의 판정은 <see cref="JudgeWhileTabOpen"/>(NightRun.Tablet.cs).
+    /// 끄면(기본값·테스트) 시각과 무관하게 판정한다. 태블릿을 든 동안에도 판정은 흐른다(NightRun.Tablet.cs).
     /// </para>
     /// <para>
     /// <b>점검(<see cref="InspectionBoard"/>)</b>: <see cref="InspectionsEnabled"/>가 켜져 있으면 밤 시작에 <see cref="AnomalyAssigner"/>가
@@ -33,49 +33,27 @@ namespace NightDuty
     /// 점검 편성 뒤에는 밤 편성(조우 슬롯 + 새 수칙 덱, <see cref="Program"/> — NightRun.Program.cs)이 온다.
     /// </para>
     /// <para>
-    /// 덱 배정은 <see cref="DayDirector"/>가 맡는다(<c>LoadDeck</c>에서 만들어 매일 6장을 고른다 — <b>옛 24장 구조, 6단계에서 교체</b>).
-    /// <see cref="NightDeckTableSO"/>는 일차별 덱이 아니라 <b>카드 풀의 공급원</b>이다 — <c>CollectPool</c>이 모든 일차를 합쳐 중복 없이 읽는다.
-    /// 역설 문자 발송은 <see cref="ParadoxDirector"/>가 맡는다.
-    /// 대상 참조 검사: <see cref="RegisteredTargets"/>를 직접 넣었으면(null이 아니면) 그것을, 아니면 씬의 <see cref="JudgeTargetRegistry"/>를 쓴다.
-    /// <see cref="RegisteredTargets"/>가 null이고 등록부에도 ID가 없으면 검사를 건너뛴다.
-    /// 등록부는 밤 시작 순간 <b>켜져 있는</b> 표식만 담는다.
+    /// 판정은 새 수칙(<see cref="FinalRules"/>, 그날 편성 <see cref="Program"/>)이 한다. 옛 24장 카드·하루 6장 배정기·옛 판정 책(RuleBook과 조건들)·
+    /// 옛 역설/조우 연출기는 2026-10-03에 폐기했다. 밤 동안의 현재 공간은 여기서 직접 들고, 근무일지는 새 수칙 결과로 만든다.
+    /// 역설 문자는 아직 새 편성에 없다(10단계).
     /// </para>
     /// </summary>
     public static partial class NightRun
     {
-        /// <summary>옛 순찰 점검 ID 수(복도·1-1·1-3·과학실·화장실). 새 점검표는 <see cref="Inspections"/>.</summary>
-        public const int PatrolTotal = 5;
-
         private static FearAxisSystem _axes;
         private static BandResolver _bands;
         private static WarningLedger _ledger;
-        private static RuleBook _book;
+        private static bool _nightOpen;
+        private static SpaceId _currentSpace;
         private static Func<int> _clockMinutes;
         private static readonly List<int> ViolationMinutesToday = new List<int>();
-        private static readonly HashSet<SpaceId> InspectedToday = new HashSet<SpaceId>();
-        private static readonly HashSet<SpaceId> VisitedToday = new HashSet<SpaceId>();
-        private static readonly List<RuleSO> DeckToday = new List<RuleSO>();
-        private static readonly ParadoxDirector Paradox = new ParadoxDirector();
         private static readonly InspectionBoard Board = new InspectionBoard();
         private static readonly List<string>[] RaisedThisAttempt = { new List<string>(), new List<string>(), new List<string>() };
         private static AnomalyAssigner _assigner;
-        private static DayDirector _director;
-        private static EncounterDirector _encounter;
         private static DaySummary _lastSummary;
         private static NightSnapshot _nightStart;
         private static NightSnapshot _checkpoint;
         private static List<string> _lastCaptureSources = new List<string>();
-
-        /// <summary>
-        /// 테스트·에디터 도구가 덱을 직접 넣을 때 쓴다. null이면 <see cref="NightDeckTableSO"/>를 읽는다.
-        /// </summary>
-        public static Func<int, IReadOnlyList<RuleSO>> DeckOverride { get; set; }
-
-        /// <summary>
-        /// 대상 ID 목록을 직접 지정한다(테스트·도구). null이면 <see cref="JudgeTargetRegistry"/>를 쓰고,
-        /// 등록부도 비어 있으면 참조 검사를 건너뛴다.
-        /// </summary>
-        public static ICollection<string> RegisteredTargets { get; set; }
 
         /// <summary>
         /// 밤 시계의 판정 시간창을 쓸지. 켜면 시계(근무 시작부터의 분)가 00:16~03:30(이완 제외)일 때만 수칙을 판정한다.
@@ -90,9 +68,6 @@ namespace NightDuty
 
         /// <summary>테스트·도구가 점검 편성을 직접 넣을 때 쓴다(일차, 연출 구간 → 편성). 값이 있으면 <see cref="InspectionsEnabled"/>와 무관하게 쓴다.</summary>
         public static Func<int, IFearAxisReader, InspectionPlan> InspectionPlanOverride { get; set; }
-
-        /// <summary>이번 밤 시작 때 실제로 쓴 대상 ID 목록. 검사를 건너뛰었으면 null.</summary>
-        public static ICollection<string> TargetsInUse { get; private set; }
 
         /// <summary>현재 일차(1부터). 회차 시작 전에는 0.</summary>
         public static int Day { get; private set; }
@@ -120,6 +95,16 @@ namespace NightDuty
             }
         }
 
+        /// <summary>
+        /// 그 공간에 <b>지금 보이는</b> 축의 연출 구간(공간 보류 반영 — 단기 수칙이 걸린 공간은 풀릴 때까지 옛 구간).
+        /// 순찰 공간이 아니면(도서관·경비실) 축 전체의 연출 구간. 화면 표현(조도 톤·소등, <c>IlluminanceMap</c>)이 읽는다.
+        /// </summary>
+        public static Band ShownBand(SpaceId space, FearAxis axis)
+        {
+            EnsureRun();
+            return _bands.GetShown(space, axis);
+        }
+
         /// <summary>경고 장부(도장·대기 처벌). 경고는 <see cref="AddWarning"/>으로 더한다.</summary>
         public static WarningLedger Warnings
         {
@@ -134,6 +119,16 @@ namespace NightDuty
         public static InspectionBoard Inspections
         {
             get { return Board; }
+        }
+
+        /// <summary>
+        /// 경비실 전화로 근무를 일찍 끝낼 수 있는가(2026-10-03 민): 밤이 진행 중이고 붙잡히지 않았으며,
+        /// 오늘 점검표가 있고 <b>전부 보고했을 때</b>. 끝내는 길은 04:00과 같은 <see cref="RequestEndNight"/>다 —
+        /// 남은 카드 정산·조우 이월이 그대로 돈다(미완료 점검이 없으니 경고는 붙지 않는다).
+        /// </summary>
+        public static bool CanEndShiftEarly
+        {
+            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCount == 0; }
         }
 
         /// <summary>
@@ -172,7 +167,7 @@ namespace NightDuty
         /// <summary>하룻밤이 진행 중인지(<see cref="BeginNight"/> 이후, 종료 전).</summary>
         public static bool IsNightActive
         {
-            get { return _book != null; }
+            get { return _nightOpen; }
         }
 
         /// <summary>
@@ -198,25 +193,19 @@ namespace NightDuty
             get { return CurrentMinute(); }
         }
 
-        /// <summary>진행 중인 하룻밤의 판정(디버그·테스트용). 없으면 null.</summary>
-        public static RuleBook CurrentBook
+        /// <summary>플레이어 발밑 기준점이 지금 속한 공간(밤 동안 공간 신호로 갱신). 밤이 아니거나 모르면 None.</summary>
+        public static SpaceId CurrentSpace
         {
-            get { return _book; }
+            get { return _nightOpen ? _currentSpace : SpaceId.None; }
         }
 
         /// <summary>
-        /// 그날 편성된 카드(덱 표시 순서). 밤이 닫힌 뒤에도 다음 <see cref="BeginNight"/> 전까지 남는다.
-        /// 새 편성(<see cref="ProgramEnabled"/>)이면 태블릿이 읽도록 <see cref="DisplayDeck"/>(새 수칙 + 점검표, 판정 조건 없는 표시용)를 돌려준다.
+        /// 태블릿 「근무 수칙」에 실을 그날 수칙 — 새 수칙의 표시 전용 <see cref="RuleSO"/>(<see cref="DisplayDeck"/>). 점검표는 메시지(<see cref="ChecklistMessage"/>)로 간다.
+        /// 밤이 닫힌 뒤에도 다음 편성 전까지 남는다. 새 편성이 꺼져 있으면 비어 있다.
         /// </summary>
         public static IReadOnlyList<RuleSO> TodayDeck
         {
-            get { return ProgramEnabled && _displayDeck.Count > 0 ? (IReadOnlyList<RuleSO>)_displayDeck : DeckToday; }
-        }
-
-        /// <summary>오늘 발밑 기준점으로 들어간 적이 있는 공간인지(Tab 중·포획 뒤의 진입은 세지 않는다).</summary>
-        public static bool WasVisitedToday(SpaceId space)
-        {
-            return VisitedToday.Contains(space);
+            get { return _displayDeck; }
         }
 
         /// <summary>마지막으로 닫힌 하룻밤 결과(정상 종료·포획·결근·중단 모두).</summary>
@@ -259,7 +248,8 @@ namespace NightDuty
             _ledger.Changed += EventBus.RaiseWarningsChanged;
             _assigner = new AnomalyAssigner();
             Board.Begin(InspectionPlan.Empty(0));
-            _book = null;
+            _nightOpen = false;
+            _currentSpace = SpaceId.None;
             _clockMinutes = null;
             Day = 0;
             RestartsTonight = 0;
@@ -269,13 +259,7 @@ namespace NightDuty
             ClearRaised();
             ResetExtensions(false);
             ViolationMinutesToday.Clear();
-            InspectedToday.Clear();
-            VisitedToday.Clear();
-            DeckToday.Clear();
             _lastSummary = default;
-            TargetsInUse = null;
-            _director = null;   // 첫 LoadDeck에서 카드 풀을 읽어 만든다.
-            _encounter = null;  // 첫 BeginNight에서 조우 표를 읽어 만든다.
         }
 
         /// <summary>
@@ -293,21 +277,17 @@ namespace NightDuty
 
         private static void BeginNightCore(int day, Func<int> clockMinutes, bool isRestart)
         {
-            if (_book != null)
+            if (_nightOpen)
             {
                 Debug.LogWarning("[NightRun] 이전 밤이 끝나지 않은 채 새 밤을 시작합니다. 이전 밤의 남은 판정은 버립니다.");
-                _book.Settled -= OnSettled;
-                _book.Abandon();
             }
 
             Day = Mathf.Max(1, day);
             _clockMinutes = clockMinutes;
             _axes.SoftCap = null;
             ViolationMinutesToday.Clear();
-            InspectedToday.Clear();
-            VisitedToday.Clear();
             ClearRaised();
-            ResetTabletState(false);
+            ResetTabletState();
 
             // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
@@ -320,22 +300,6 @@ namespace NightDuty
                 RestartsTonight = 0;
                 _checkpoint = null;
 
-                // 조우를 **덱보다 먼저** 정한다. DayDirector가 「그날 조우 공간의 카드 1장」을 보장하려면
-                // 그 공간을 이미 알고 있어야 한다. 조우 배정은 축을 읽지 않으므로 하한 뒤·덱 앞이 안전하다.
-                // 새 편성(ProgramEnabled)에서는 조우를 ProgramDirector가 정한다 — 옛 조우 연출기는 쓰지 않는다.
-                if (!ProgramEnabled)
-                {
-                    EnsureEncounter();
-                    if (_encounter != null)
-                    {
-                        _encounter.BeginNight(Day);
-                    }
-                }
-
-                IReadOnlyList<RuleSO> deck = LoadDeck(Day);
-                DeckToday.Clear();
-                DeckToday.AddRange(deck);
-
                 // 점검 편성도 밤 시작에 확정한다 — 이상의 축은 연출 구간(하한 적용 뒤)을 본다.
                 plannedToday = BuildInspectionPlan(Day);
                 Board.Begin(plannedToday);
@@ -345,11 +309,8 @@ namespace NightDuty
             }
 
             // 재시작한 밤은 덱·점검을 다시 뽑지 않는다 — 이상 배정·덱·조우·역설 편성은 밤 시작에 확정된다(2026-09-30 최종 기획서).
-            TargetsInUse = ResolveTargets();
-            _book = new RuleBook(DeckToday, _axes, _bands, TargetsInUse);
-            _book.Settled += OnSettled;
-            Paradox.BeginNight(_bands.Shown);   // 그날 상한을 근무 시작 시 신뢰로 고정한다(기획서 C절).
-            _book.BeginNight();   // 밤 시작부터 감시하는 장기 카드(C6)를 시작한다.
+            _currentSpace = SpaceId.None;
+            _nightOpen = true;
 
             if (!isRestart)
             {
@@ -398,14 +359,14 @@ namespace NightDuty
         /// </summary>
         public static void Tick(float judgeSeconds)
         {
-            if (_book == null || judgeSeconds <= 0f)
+            if (!_nightOpen || judgeSeconds <= 0f)
             {
                 return;
             }
 
             // 긴장 디렉터는 판정 정지 구간에도 흐른다(슬롯·단서는 디렉터가 밤 시각으로 거른다).
             DirectionTick(judgeSeconds);
-            if (_book == null)
+            if (!_nightOpen)
             {
                 return;
             }
@@ -420,10 +381,9 @@ namespace NightDuty
             try
             {
                 JudgeSignal tick = JudgeSignal.Tick(judgeSeconds);
-                _book.Dispatch(tick);
                 FinalDispatch(tick, true);
-                ObserveEncounter(tick);   // 시야에 걸려 대기 중인 배치를 여기서 푼다.
-                PollParadox();
+                ParadoxObserve(tick, true);
+                UnavoidableObserve(tick, true);
             }
             finally
             {
@@ -440,7 +400,7 @@ namespace NightDuty
         /// </summary>
         public static void Send(in JudgeSignal signal)
         {
-            if (_book == null)
+            if (!_nightOpen)
             {
                 return;
             }
@@ -453,38 +413,22 @@ namespace NightDuty
             bool judging = IsJudgingNow;
             _axes.SoftCap = judging ? (int?)null : Deltas.SoftCap;
 
-            bool counts = signal.Space != SpaceId.None && !_book.World.TabOpen && !IsCaptured;
-            if (counts && signal.Kind == SignalKind.InspectionCompleted)
-            {
-                InspectedToday.Add(signal.Space);
-            }
-
-            if (counts && signal.Kind == SignalKind.SpaceEntered)
-            {
-                VisitedToday.Add(signal.Space);
-            }
-
+            bool counts = signal.Space != SpaceId.None && !IsCaptured;
             _axes.BeginFrame();
             try
             {
-                if (judging || IsStateSignal(signal.Kind))
-                {
-                    _book.Dispatch(signal);
-                }
+                TrackSpace(signal);
+                FinaleObserve(signal);
 
                 // 새 수칙은 모든 신호로 상태(공간·자세·손전등)를 갱신하고, 판정 구간에만 판정한다.
                 if (!IsCaptured)
                 {
                     FinalDispatch(signal, judging);
+                    ParadoxObserve(signal, judging);
+                    UnavoidableObserve(signal, judging);
                 }
 
                 DirectionObserve(signal);
-
-                if (judging)
-                {
-                    ObserveEncounter(signal);
-                    PollParadox();
-                }
             }
             finally
             {
@@ -492,7 +436,7 @@ namespace NightDuty
             }
 
             // 대기 중인 처벌은 판정 구간에 다음 공간 경계를 넘을 때 나온다.
-            if (counts && judging && signal.Kind == SignalKind.SpaceEntered && _book != null && !IsCaptured)
+            if (counts && judging && signal.Kind == SignalKind.SpaceEntered && _nightOpen && !IsCaptured)
             {
                 TryPunish(signal.Space);
             }
@@ -502,12 +446,17 @@ namespace NightDuty
             FlushDirection();
         }
 
-        /// <summary>판정 정지 중에도 판정에 넘기는 상태 신호인지. 넘기지 않으면 「나간 적 없는 공간에서 나감」이 생긴다.</summary>
-        private static bool IsStateSignal(SignalKind kind)
+        /// <summary>현재 공간을 갱신한다(판정 정지 중에도). 경계 위에서는 직전 공간을 유지한다 — 나간 공간이 지금 공간일 때만 비운다.</summary>
+        private static void TrackSpace(in JudgeSignal signal)
         {
-            return kind == SignalKind.SpaceEntered || kind == SignalKind.SpaceExited
-                || kind == SignalKind.ZoneEntered || kind == SignalKind.ZoneExited
-                || kind == SignalKind.FlashlightChanged || kind == SignalKind.TabChanged;
+            if (signal.Kind == SignalKind.SpaceEntered)
+            {
+                _currentSpace = signal.Space;
+            }
+            else if (signal.Kind == SignalKind.SpaceExited && _currentSpace == signal.Space)
+            {
+                _currentSpace = SpaceId.None;
+            }
         }
 
         // ── 점검과 보고 ─────────────────────────────────────────
@@ -523,14 +472,18 @@ namespace NightDuty
             InspectionItem item = InspectionCatalog.FindByTarget(itemId);
             string id = item != null ? item.Id : itemId;
 
-            if (_book == null) return InspectionReport.Reject(id, saysAnomaly, ReportRejection.NoNight);
+            if (!_nightOpen) return InspectionReport.Reject(id, saysAnomaly, ReportRejection.NoNight);
             if (IsCaptured) return InspectionReport.Reject(id, saysAnomaly, ReportRejection.Captured);
+            if (item != null && _unavoidable.Banned != SpaceId.None && SpaceIds.Canonical(item.Space) == _unavoidable.Banned)
+            {
+                return InspectionReport.Reject(id, saysAnomaly, ReportRejection.SpaceClosed);   // 회피 불가 역설 — 금일 재입실 불가
+            }
 
             _axes.SoftCap = IsJudgingNow ? (int?)null : Deltas.SoftCap;
             InspectionReport report;
             try
             {
-                report = Board.Report(id, saysAnomaly, CurrentMinute(), _axes, _book.World.CurrentSpace);
+                report = Board.Report(id, saysAnomaly, CurrentMinute(), _axes, _currentSpace);
             }
             finally
             {
@@ -553,21 +506,14 @@ namespace NightDuty
         /// </summary>
         public static bool InspectionStartle(string itemId)
         {
-            if (_book == null || IsCaptured || !IsJudgingNow) return false;
+            if (!_nightOpen || IsCaptured || !IsJudgingNow) return false;
 
             InspectionItem item = InspectionCatalog.FindByTarget(itemId);
-            if (item == null || !Board.Startle(item.Id, _axes, _book.World.CurrentSpace)) return false;
+            if (item == null || !Board.Startle(item.Id, _axes, _currentSpace)) return false;
 
             EventBus.RaiseInspectionStartled(item.Id, item.Axis);
             CloseIfCaptured();
             return true;
-        }
-
-        /// <summary>환청이 그 항목 근처에서 났다(환청 연출이 부른다). 그 뒤 [이상] 보고는 G2 위반(청각 +6)이다.</summary>
-        public static void MarkHallucination(string itemId)
-        {
-            InspectionItem item = InspectionCatalog.FindByTarget(itemId);
-            Board.MarkHallucination(item != null ? item.Id : itemId);
         }
 
         /// <summary>T4 역보고를 그 항목에 건다(여자아이가 칸으로 들어가는 것을 봤을 때). 수칙·조우 쪽이 부른다.</summary>
@@ -643,7 +589,7 @@ namespace NightDuty
         /// <returns>찍었으면 true.</returns>
         public static bool SignCheckpoint()
         {
-            if (_book == null || IsCaptured || _checkpoint != null)
+            if (!_nightOpen || IsCaptured || _checkpoint != null)
             {
                 return false;
             }
@@ -696,8 +642,8 @@ namespace NightDuty
             _bands.RestoreReached(from.ReachedCopy());
             _ledger.RestoreFromSnapshot(from);
             from.RestoreParts(SnapshotParts());
+            ParadoxAfterRestore();
 
-            EndEncounterNight();
             BeginNightCore(Day, _clockMinutes, true);
             DirectionRestart(k, from.StartMinute);
 
@@ -720,13 +666,6 @@ namespace NightDuty
                 return new RestartResult(RestartKind.None, RestartsTonight, -1, default);
             }
 
-            if (_book != null)
-            {
-                _book.Settled -= OnSettled;
-                _book.Abandon();
-                _book = null;
-            }
-
             return EndAsAbsent(_axes.IsLocked ? _axes.Cause.Axis : HighestSensory());
         }
 
@@ -744,7 +683,6 @@ namespace NightDuty
             _bands.RestoreReached(_nightStart.ReachedCopy());
             _ledger.RestoreFromSnapshot(_nightStart);
             Board.Settle(_axes, false);
-            EndEncounterNight();
 
             _lastSummary = BuildSummary(NightOutcome.Absent);
             CloseNight();
@@ -753,135 +691,6 @@ namespace NightDuty
             EventBus.RaiseNightRestarted(result);
             EventBus.RaiseDayEnded(_lastSummary);
             return result;
-        }
-
-        /// <summary>
-        /// 그날 조우 연출기. 씬(구동기)이 <see cref="EncounterDirector.IsVisible"/>과
-        /// <see cref="EncounterDirector.PlaceModel"/>을 채워 준다. 회차가 시작되기 전에는 null이다.
-        /// <para>
-        /// <b>씬 쪽 연결이 없으면 조우가 통째로 멈추지 않고, 「항상 시야 밖」으로 보고 배치를 지시만 한다.</b>
-        /// 반대(항상 보임)로 두면 조우가 조용히 사라져 빈 게임이 되는데 그게 알아채기 훨씬 어렵다.
-        /// </para>
-        /// </summary>
-        public static EncounterDirector Encounter
-        {
-            get { return _encounter; }
-        }
-
-        /// <summary>
-        /// 조우 연출기를 준비한다. <c>Resources</c>에 조우 표가 없으면 만들지 않고 경고만 남긴다 —
-        /// 표가 없다고 밤이 시작되지 못하면 수칙 판정까지 같이 죽는다.
-        /// </summary>
-        private static void EnsureEncounter()
-        {
-            if (_encounter != null)
-            {
-                return;
-            }
-
-            EncounterTableSO table = Resources.Load<EncounterTableSO>(EncounterTableSO.ResourcePath);
-            if (table == null)
-            {
-                Debug.LogWarning("[NightRun] Resources/" + EncounterTableSO.ResourcePath + " 조우 표가 없습니다. " +
-                                 "조우·유도 문자 없이 밤을 시작합니다. 수칙 판정은 그대로 돕니다.");
-                return;
-            }
-
-            _encounter = new EncounterDirector(table);
-            _encounter.ClockMinutes = CurrentMinute;
-            _encounter.ParadoxSentToday = ParadoxSentToday;
-            _encounter.BeginRun();
-        }
-
-        /// <summary>그날 조우 장면이 쓰는 공간. 조우가 없으면 빈 목록.</summary>
-        private static IReadOnlyList<SpaceId> EncounterSpacesToday()
-        {
-            List<SpaceId> spaces = new List<SpaceId>();
-            if (_encounter == null)
-            {
-                return spaces;
-            }
-
-            IReadOnlyList<string> scenes = _encounter.TodayScenes;
-            for (int i = 0; i < scenes.Count; i++)
-            {
-                SpaceId space = _encounter.SpaceOf(scenes[i]);
-                if (space != SpaceId.None && !spaces.Contains(space))
-                {
-                    spaces.Add(space);
-                }
-            }
-
-            return spaces;
-        }
-
-        /// <summary>그 조우 장면이 오늘 깔렸는지. 조우가 없으면 false.</summary>
-        private static bool IsEncounterActive(string sceneId)
-        {
-            return _encounter != null && _encounter.IsActive(sceneId);
-        }
-
-        /// <summary>오늘 역설 문자를 한 통이라도 보냈는지. N1(재방문)이 같은 날 겹치지 않게 하려고 쓴다.</summary>
-        private static bool ParadoxSentToday()
-        {
-            return Paradox.Today.Count > 0;
-        }
-
-        /// <summary>
-        /// 조우 연출기에 신호를 흘린다. <b>수칙 판정이 먼저 본 뒤</b>에 부른다 —
-        /// 모형 배치가 카드 판정에 끼어들지 않게 하기 위해서다. Tab 중(옛 규칙)·포획 뒤에는 보내지 않는다.
-        /// </summary>
-        private static void ObserveEncounter(in JudgeSignal signal)
-        {
-            if (_encounter == null || _book == null || _book.World.TabOpen || IsCaptured)
-            {
-                return;
-            }
-
-            try
-            {
-                _encounter.Observe(signal);
-            }
-            catch (Exception e)
-            {
-                // 조우가 넘어져도 수칙 판정은 계속 돌아야 한다.
-                Debug.LogException(e);
-            }
-        }
-
-        /// <summary>밤을 닫으며 미관찰 장면을 다음 날로 이월한다. 정상 종료·중단·재시작·결근에서 부른다.</summary>
-        private static void EndEncounterNight()
-        {
-            if (_encounter == null)
-            {
-                return;
-            }
-
-            try
-            {
-                _encounter.EndNight();
-            }
-            catch (Exception e)
-            {
-                Debug.LogException(e);
-            }
-        }
-
-        /// <summary>오늘 보낸 역설 문자(발송 순서).</summary>
-        public static IReadOnlyList<ParadoxMessage> MessagesToday
-        {
-            get { return Paradox.Today; }
-        }
-
-        /// <summary>진행 중인 카드 중 역설 문자를 보낼 것이 있으면 보낸다. Tab 중(옛 규칙)에는 보내지 않는다.</summary>
-        private static void PollParadox()
-        {
-            if (_book == null || _book.World.TabOpen || IsCaptured)
-            {
-                return;
-            }
-
-            Paradox.Poll(_book, _bands.Shown, CurrentMinute());
         }
 
         private static int CurrentMinute()
@@ -908,13 +717,11 @@ namespace NightDuty
         /// </summary>
         public static void AbandonNight()
         {
-            if (_book == null)
+            if (!_nightOpen)
             {
                 return;
             }
 
-            _book.Abandon();
-            EndEncounterNight();
             _lastSummary = BuildSummary();
             CloseNight();
         }
@@ -927,7 +734,7 @@ namespace NightDuty
         /// </summary>
         public static bool RequestEndNight()
         {
-            if (_book == null || IsCaptured)
+            if (!_nightOpen || IsCaptured)
             {
                 return false;
             }
@@ -935,9 +742,7 @@ namespace NightDuty
             _axes.SoftCap = Deltas.SoftCap;
             try
             {
-                _book.EndNight();
                 FinalEndNight();
-                EndEncounterNight();
                 InspectionSettlement settle = Board.Settle(_axes, true);
                 if (settle.Unfinished > 0)
                 {
@@ -976,15 +781,13 @@ namespace NightDuty
 
         private static DaySummary BuildSummary(NightOutcome outcome)
         {
-            List<RuleResult> results = _book != null
-                ? new List<RuleResult>(_book.Results)
-                : new List<RuleResult>(_lastSummary.Results);
-            List<DutyLogEntry> dutyLog = BuildDutyLog(results);
+            List<FinalRuleResult> results = new List<FinalRuleResult>(FinalResults);
+            List<DutyLogEntry> dutyLog = BuildDutyLog();
 
             return new DaySummary(
                 Day,
-                InspectedToday.Count,
-                PatrolTotal,
+                Board.ReportedCount,   // 결과창 「점검」 칸 = 오늘 점검표에서 보고한 항목 수 / 전체
+                Board.Total,
                 _axes.GetValue(FearAxis.Auditory),
                 _axes.GetValue(FearAxis.Illuminance),
                 _axes.GetValue(FearAxis.Layout),
@@ -996,41 +799,29 @@ namespace NightDuty
                 dutyLog);
         }
 
-        /// <summary>그날 덱 순서대로 근무 일지 줄을 만든다. 같은 카드의 결과가 여럿이면 마지막 것을 쓴다.</summary>
-        private static List<DutyLogEntry> BuildDutyLog(List<RuleResult> results)
+        /// <summary>
+        /// 근무일지 줄 — 그날 편성 덱 순서(공간 수칙 → 경비실 → 공통)대로 새 수칙 한 줄씩(최종 기획서 「근무일지 정산 화면」).
+        /// 한 번이라도 어겼으면 「어김」, 방아쇠가 왔고 어기지 않았으면 「준수」, 방아쇠가 오지 않았으면 표시 없음.
+        /// 미방문 공간에 빨간 줄을 긋던 옛 규칙은 2026-10-03에 없앴다(최종 기획서에 없음). 「지시를 따름」은 그날 그 수칙을 겨눈 역설 문자를 받았는지(<see cref="ParadoxSentFor"/>), 안전한 읽기를 마쳤으면 「확인함 → …」 메모가 붙는다. 「불가피」는 회피 불가 역설이 들어오면 채운다.
+        /// </summary>
+        private static List<DutyLogEntry> BuildDutyLog()
         {
-            Dictionary<string, CardState> last = new Dictionary<string, CardState>();
-            for (int i = 0; i < results.Count; i++)
+            List<DutyLogEntry> log = new List<DutyLogEntry>();
+            if (_program == null)
             {
-                if (!string.IsNullOrEmpty(results[i].CardId))
-                {
-                    last[results[i].CardId] = results[i].State;
-                }
+                return log;
             }
 
-            List<DutyLogEntry> log = new List<DutyLogEntry>(DeckToday.Count);
-            for (int i = 0; i < DeckToday.Count; i++)
+            IReadOnlyList<RuleDef> deck = _program.Deck;
+            for (int i = 0; i < deck.Count; i++)
             {
-                RuleSO card = DeckToday[i];
-                if (card == null)
-                {
-                    continue;
-                }
-
-                CardState state;
-                if (!last.TryGetValue(card.CardId, out state))
-                {
-                    state = CardState.Waiting;
-                }
-
-                log.Add(new DutyLogEntry(
-                    i + 1,
-                    card.CardId,
-                    card.Space,
-                    card.PlayerText,
-                    state,
-                    VisitedToday.Contains(card.Space),
-                    Paradox.WasSentToday(card.CardId)));
+                RuleDef def = deck[i];
+                FinalJudge judge = _finalBook != null ? _finalBook.Judge(def.Id) : null;
+                RuleVerdict verdict = judge == null || !judge.Triggered ? RuleVerdict.NotTriggered
+                    : judge.Violated ? RuleVerdict.Violated : RuleVerdict.Complied;
+                bool instructed = ParadoxSentFor(def.Id);
+                string note = instructed && _paradox.SafeRead && _reveals.Count > 0 ? "확인함 → " + _reveals[_reveals.Count - 1].Label : string.Empty;
+                log.Add(new DutyLogEntry(i + 1, def.Id, def.Space, def.Text, verdict, instructed, note, UnavoidableBrokeFor(def.Id)));
             }
 
             return log;
@@ -1042,7 +833,7 @@ namespace NightDuty
         /// </summary>
         private static void CloseIfCaptured()
         {
-            if (_book == null || !IsCaptured)
+            if (!_nightOpen || !IsCaptured)
             {
                 return;
             }
@@ -1056,7 +847,7 @@ namespace NightDuty
         {
             EnsureRun();
             int remain = Bands.Max - _axes.GetValue(axis);
-            SpaceId space = _book != null ? _book.World.CurrentSpace : SpaceId.None;
+            SpaceId space = CurrentSpace;
             int? cap = _axes.SoftCap;
             _axes.SoftCap = null;
             _axes.Apply(axis, remain, "debug", space);
@@ -1076,7 +867,7 @@ namespace NightDuty
                 return;
             }
 
-            SpaceId space = _book != null ? _book.World.CurrentSpace : SpaceId.None;
+            SpaceId space = CurrentSpace;
             _axes.Apply(axis, delta, "debug", space);
             CloseIfCaptured();
         }
@@ -1088,26 +879,6 @@ namespace NightDuty
         {
             EnsureRun();
             _bands.BroadcastAll();
-        }
-
-        private static ICollection<string> ResolveTargets()
-        {
-            if (RegisteredTargets != null)
-            {
-                return new HashSet<string>(RegisteredTargets);
-            }
-
-            return JudgeTargetRegistry.Count > 0 ? JudgeTargetRegistry.Snapshot() : null;
-        }
-
-        private static void OnSettled(RuleResult result)
-        {
-            if (result.State != CardState.Violated)
-            {
-                return;
-            }
-
-            ViolationMinutesToday.Add(CurrentMinute());
         }
 
         /// <summary>감각 축을 올린 출처를 이번 시도 기록에 더한다(재시작 카드용). 디버그·처벌은 이름이 아니므로 뺀다.</summary>
@@ -1122,7 +893,7 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 출처 ID를 재시작 카드에 쓸 이름으로 줄인다: 「G2:H-3[이상]」 → 「G2」, 「H-2[이상]」 → 「H-2」, 「H-1(가까이)」 → 「H-1」.
+        /// 출처 ID를 재시작 카드에 쓸 이름으로 줄인다: 「T4:T-1[정상]」 → 「T4」, 「H-2[이상]」 → 「H-2」, 「H-1(가까이)」 → 「H-1」.
         /// </summary>
         public static string DisplaySource(string sourceId)
         {
@@ -1145,76 +916,9 @@ namespace NightDuty
 
         private static void CloseNight()
         {
+            if (_finale.Active) _finale.End();
             DirectionAbort("밤 닫힘");
-            if (_book != null)
-            {
-                _book.Settled -= OnSettled;
-            }
-
-            _book = null;
-        }
-
-        private static IReadOnlyList<RuleSO> LoadDeck(int day)
-        {
-            if (DeckOverride != null)
-            {
-                return DeckOverride(day) ?? new List<RuleSO>();
-            }
-
-            // 새 편성이 켜져 있으면 옛 24장 덱은 판정하지 않는다 — 새 수칙 판정(FinalRuleBook)이 대신한다(2026-10-01, 6단계 후반).
-            if (ProgramEnabled)
-            {
-                return new List<RuleSO>();
-            }
-
-            NightDeckTableSO table = Resources.Load<NightDeckTableSO>(NightDeckTableSO.ResourcePath);
-            if (table == null)
-            {
-                Debug.LogWarning("[NightRun] Resources/" + NightDeckTableSO.ResourcePath + " 편성표가 없습니다. 카드 없이 밤을 시작합니다. " +
-                                 "NightDuty ▸ 복도 카드 에셋 생성 메뉴로 만들 수 있습니다.");
-                return new List<RuleSO>();
-            }
-
-            // 2026-09-21 재설계: 편성표는 이제 **카드 풀**로만 쓰고, 그날 6장은 DayDirector가 고른다.
-            if (_director == null)
-            {
-                _director = new DayDirector(CollectPool(table));
-                _director.EncounterSpacesToday = EncounterSpacesToday;
-                _director.IsEncounterActive = IsEncounterActive;
-            }
-
-            return _director.BuildDeck(day, _bands.Shown);
-        }
-
-        /// <summary>
-        /// 편성표의 모든 일차를 훑어 중복 없는 카드 풀을 만든다.
-        /// 편성표가 「일차별 덱」에서 「풀」로 뜻이 바뀌었지만, 기획팀이 쓰던 에셋을 그대로 살리려고
-        /// 표의 모든 칸을 합쳐서 읽는다. 표가 비어 있으면 빈 풀이 되고, 그날은 카드 없는 밤이 된다.
-        /// </summary>
-        private static List<RuleSO> CollectPool(NightDeckTableSO table)
-        {
-            List<RuleSO> pool = new List<RuleSO>();
-            HashSet<string> seen = new HashSet<string>();
-
-            for (int day = 1; day <= DayFloor.LastDay; day++)
-            {
-                IReadOnlyList<RuleSO> cards = table.DeckFor(day);
-                for (int i = 0; i < cards.Count; i++)
-                {
-                    RuleSO card = cards[i];
-                    if (card != null && seen.Add(card.CardId))
-                    {
-                        pool.Add(card);
-                    }
-                }
-            }
-
-            if (pool.Count == 0)
-            {
-                Debug.LogWarning("[NightRun] 편성표에 카드가 하나도 없습니다. 카드 없이 밤을 시작합니다.");
-            }
-
-            return pool;
+            _nightOpen = false;
         }
 
         private static void EnsureRun()
@@ -1235,7 +939,8 @@ namespace NightDuty
             _axes = null;
             _bands = null;
             _ledger = null;
-            _book = null;
+            _nightOpen = false;
+            _currentSpace = SpaceId.None;
             _clockMinutes = null;
             Day = 0;
             RestartsTonight = 0;
@@ -1245,20 +950,12 @@ namespace NightDuty
             ClearRaised();
             ResetExtensions(true);
             ViolationMinutesToday.Clear();
-            InspectedToday.Clear();
-            VisitedToday.Clear();
-            DeckToday.Clear();
             Board.Begin(InspectionPlan.Empty(0));
             _assigner = null;
             _lastSummary = default;
-            DeckOverride = null;
-            RegisteredTargets = null;
-            TargetsInUse = null;
             JudgingWindowEnabled = false;
             InspectionsEnabled = false;
             InspectionPlanOverride = null;
-            _director = null;
-            _encounter = null;
         }
     }
 }

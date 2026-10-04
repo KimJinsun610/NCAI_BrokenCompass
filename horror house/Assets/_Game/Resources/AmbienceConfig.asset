@@ -16,7 +16,8 @@ MonoBehaviour:
   masterVolume: 1
   zones:
   - label: "\uACBD\uBE44\uC2E4"
-    roomClip: Ambience/Rooms/amb_guardroom
+    roomClip: Ambience/Rooms/AMB_GUARD_Low
+    roomClipHigh: Ambience/Rooms/AMB_GUARD_High
     box:
       m_Center: {x: 34.05, y: 3.4, z: 46.15}
       m_Extent: {x: 3.75, y: 2, z: 1.9499989}
@@ -29,7 +30,8 @@ MonoBehaviour:
     - Ambience/OneShots/os_floor_creak_a
     roomVolume: 1
   - label: "\uACFC\uD559\uC2E4"
-    roomClip: Ambience/Rooms/amb_science
+    roomClip: Ambience/Rooms/AMB_LAB_Low
+    roomClipHigh: Ambience/Rooms/AMB_LAB_High
     box:
       m_Center: {x: 48.699997, y: 3.4, z: 41.9}
       m_Extent: {x: 5.3999996, y: 2, z: 1.6999989}
@@ -43,7 +45,8 @@ MonoBehaviour:
     - Ambience/OneShots/os_fluoro_flicker
     roomVolume: 1
   - label: "\uAD50\uC2E4"
-    roomClip: Ambience/Rooms/amb_classroom
+    roomClip: Ambience/Rooms/AMB_CLASS_Low
+    roomClipHigh: Ambience/Rooms/AMB_CLASS_High
     box:
       m_Center: {x: 44.05, y: 3.4, z: 34.85}
       m_Extent: {x: 5.75, y: 2, z: 4.8500004}
@@ -57,7 +60,8 @@ MonoBehaviour:
     - Ambience/OneShots/os_knock_2b
     roomVolume: 1
   - label: "\uD654\uC7A5\uC2E4"
-    roomClip: Ambience/Rooms/amb_toilet
+    roomClip: Ambience/Rooms/AMB_TOILET_Low
+    roomClipHigh: Ambience/Rooms/AMB_TOILET_High
     box:
       m_Center: {x: 1.45, y: 3.4, z: 35.65}
       m_Extent: {x: 4.55, y: 2, z: 4.3500004}
@@ -71,7 +75,8 @@ MonoBehaviour:
     - Ambience/OneShots/os_metal_groan_b
     roomVolume: 1
   - label: "\uB3C4\uC11C\uAD00"
-    roomClip: Ambience/Rooms/amb_library
+    roomClip: Ambience/Rooms/AMB_LIBRARY_Low
+    roomClipHigh: Ambience/Rooms/AMB_LIBRARY_High
     box:
       m_Center: {x: 8.2, y: 3.4, z: 48}
       m_Extent: {x: 6.2, y: 2, z: 8}
@@ -84,7 +89,8 @@ MonoBehaviour:
     - Ambience/OneShots/os_electric_pop
     roomVolume: 1
   - label: "\uB3C4\uC11C\uAD00"
-    roomClip: Ambience/Rooms/amb_library
+    roomClip: Ambience/Rooms/AMB_LIBRARY_Low
+    roomClipHigh: Ambience/Rooms/AMB_LIBRARY_High
     box:
       m_Center: {x: 16.2, y: 3.4, z: 52.25}
       m_Extent: {x: 1.8000002, y: 2, z: 3.75}
@@ -98,7 +104,8 @@ MonoBehaviour:
     roomVolume: 1
   defaultZone:
     label: "\uBCF5\uB3C4"
-    roomClip: Ambience/Rooms/amb_corridor
+    roomClip: Ambience/Rooms/AMB_HALL_Low
+    roomClipHigh: Ambience/Rooms/AMB_HALL_High
     box:
       m_Center: {x: 0, y: 0, z: 0}
       m_Extent: {x: 0, y: 0, z: 0}
@@ -122,10 +129,14 @@ MonoBehaviour:
     m_Center: {x: 20, y: 3.4, z: 42}
     m_Extent: {x: 35, y: 2, z: 15}
   roomFadeSeconds: 2.5
+  highFromBand: 3
+  highFadeSeconds: 5
+  baseClip: Ambience/Base/AMB_COMMON_School_Base
+  baseVolume: 0.45
   dreadClips:
-  - Ambience/Dread/dread_b1
-  - Ambience/Dread/dread_b2
-  - Ambience/Dread/dread_b3
+  - Ambience/Dread/AMB_Dread_B1
+  - Ambience/Dread/AMB_Dread_B2
+  - Ambience/Dread/AMB_Dread_B3
   - Ambience/Dread/dread_b4
   dreadVolumes:
   - 1

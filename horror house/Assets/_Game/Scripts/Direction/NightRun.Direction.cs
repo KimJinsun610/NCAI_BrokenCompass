@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace NightDuty
 {
@@ -96,7 +96,6 @@ namespace NightDuty
 
         private static void DirectionRestart(int restarts, int startMinute)
         {
-            RefreshDisplayDeck();
             if (_tension == null) return;
             _tension.ResetToRest(restarts, startMinute);
         }
@@ -108,6 +107,15 @@ namespace NightDuty
         {
             if (_tension == null) return false;
             bool ok = _tension.ForceEncounter(encounterId);
+            FlushDirection();
+            return ok;
+        }
+
+        /// <summary>디버그: 가짜 놀람을 지금 건다(예산을 쓰지 않음). 디렉터가 없거나 목록에 없으면 false.</summary>
+        public static bool DebugForceFake(string fakeId)
+        {
+            if (_tension == null) return false;
+            bool ok = _tension.ForceFake(fakeId);
             FlushDirection();
             return ok;
         }

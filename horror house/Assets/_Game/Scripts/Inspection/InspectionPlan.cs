@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
@@ -51,7 +51,6 @@ namespace NightDuty
         private readonly List<InspectionAssignment> _assignments;
         private readonly List<SpaceId> _spaces;
         private readonly ReadOnlyCollection<SpaceId> _spacesView;
-        private readonly List<string> _hallucinations;
 
         /// <summary>일차.</summary>
         public readonly int Day;
@@ -64,13 +63,12 @@ namespace NightDuty
 
         /// <summary>편성을 만든다.</summary>
         public InspectionPlan(int day, IEnumerable<InspectionAssignment> assignments, SpaceId lateSpace,
-            string call1ItemId, IEnumerable<string> hallucinations)
+            string call1ItemId)
         {
             Day = day;
             LateSpace = lateSpace;
             Call1ItemId = call1ItemId ?? string.Empty;
             _assignments = assignments != null ? new List<InspectionAssignment>(assignments) : new List<InspectionAssignment>();
-            _hallucinations = hallucinations != null ? new List<string>(hallucinations) : new List<string>();
             _spaces = new List<SpaceId>();
             for (int i = 0; i < _assignments.Count; i++)
             {
@@ -86,7 +84,7 @@ namespace NightDuty
         /// <summary>빈 편성(점검을 쓰지 않는 밤·테스트).</summary>
         public static InspectionPlan Empty(int day)
         {
-            return new InspectionPlan(day, null, SpaceId.None, string.Empty, null);
+            return new InspectionPlan(day, null, SpaceId.None, string.Empty);
         }
 
         /// <summary>점검표 줄(편성 순).</summary>
@@ -99,15 +97,6 @@ namespace NightDuty
         public ReadOnlyCollection<SpaceId> Spaces
         {
             get { return _spacesView; }
-        }
-
-        /// <summary>
-        /// 그날 환청. 청각 연출 구간 2~3이면 1회, 4면 1.5배(1~2회). 각 원소는 환청을 얹을 <b>정상 [소리] 항목 ID</b>이고,
-        /// 얹을 항목이 없으면 빈 문자열(떠도는 환청 — 보고할 대상이 없다).
-        /// </summary>
-        public IReadOnlyList<string> Hallucinations
-        {
-            get { return _hallucinations; }
         }
 
         /// <summary>점검 항목 수.</summary>
@@ -157,7 +146,6 @@ namespace NightDuty
             }
 
             sb.Append(" · 늦게 ").Append(LateSpace).Append(" · 호출1 ").Append(Call1ItemId);
-            sb.Append(" · 환청 ").Append(_hallucinations.Count);
             return sb.ToString();
         }
     }
@@ -197,7 +185,6 @@ namespace NightDuty
     /// <item>이상의 축은 그 축의 <b>연출 구간</b>이 1 이상일 때만 고르고, 구간이 높을수록 가중치가 크다(가중치 = 구간 번호).</item>
     /// <item>공간을 처음 점검하는 날에는 그 공간에 이상을 두지 않는다(1일차 튜토리얼 제외).</item>
     /// <item>그날 마지막 점검 공간 하나는 호출 2(02:16)에 열린다(경비실 제외, 좌측 동 우선). 호출 1은 먼저 열린 항목 하나를 가리킨다.</item>
-    /// <item>환청: 청각 연출 구간 2~3이면 1회, 4면 1.5배 — 정상인 [소리] 항목에 얹는다.</item>
     /// </list>
     /// 조건을 다 만족하는 편성이 없으면(예: 이상 후보 부족) 이상 수를 줄이고 <see cref="LastReport"/>에 남긴다.
     /// </summary>
@@ -301,7 +288,7 @@ namespace NightDuty
             list.Add(new InspectionAssignment(extra, false, Band.Band0, extra.Space == SpaceId.Classroom));
 
             string call1 = PickCall1(list, InspectionCatalog.FirstInspection);
-            return new InspectionPlan(1, list, SpaceId.Classroom, call1, Hallucinations(list, shown));
+            return new InspectionPlan(1, list, SpaceId.Classroom, call1);
         }
 
         // ── 2일차부터 ──────────────────────────────────────────
@@ -380,7 +367,7 @@ namespace NightDuty
             }
 
             string call1 = PickCall1(final, null);
-            InspectionPlan plan = new InspectionPlan(day, final, late, call1, Hallucinations(final, shown));
+            InspectionPlan plan = new InspectionPlan(day, final, late, call1);
             LastReport = note.Length > 0 ? note + plan.ToString() : plan.ToString();
             return plan;
         }
@@ -489,37 +476,6 @@ namespace NightDuty
             }
 
             return ids.Count > 0 ? Pick(ids) : string.Empty;
-        }
-
-        /// <summary>청각 연출 구간 2~3이면 1회, 4면 1.5배(1회 + 반반으로 1회 더).</summary>
-        private List<string> Hallucinations(List<InspectionAssignment> list, IFearAxisReader shown)
-        {
-            Band band = shown.GetBand(FearAxis.Auditory);
-            int count = 0;
-            if (band == Band.Band2 || band == Band.Band3) count = 1;
-            else if (band == Band.Band4) count = 1 + (_rng.Next(2) == 0 ? 1 : 0);
-
-            List<string> targets = new List<string>();
-            for (int i = 0; i < list.Count; i++)
-            {
-                if (!list[i].IsAnomaly && list[i].Item.Template == AnomalyTemplate.Sound) targets.Add(list[i].Id);
-            }
-
-            List<string> result = new List<string>();
-            for (int n = 0; n < count; n++)
-            {
-                if (targets.Count == 0)
-                {
-                    result.Add(string.Empty);
-                    continue;
-                }
-
-                string id = Pick(targets);
-                targets.Remove(id);
-                result.Add(id);
-            }
-
-            return result;
         }
 
         private T Pick<T>(List<T> list)

@@ -24,24 +24,18 @@ MonoBehaviour:
   - Wardrobe
   storageIsOpenable: 1
   openablePaths:
-  - Exterior/Doors/DoorMain
+  - Interior/Corridors/DoorNarrow (3)
+  - Interior/Corridors/DoorWide (2)
+  - Interior/Corridors/DoorNarrowSolid (9)
+  - Interior/Corridors/DoorNarrowSolid (8)
   - Interior/Toilet02/DoorNarrowSolid (4)
   - Interior/Toilet02/ToiletCabin_openable (2)
   - Interior/Toilet02/ToiletCabin_openable (4)
-  - Interior/Corridors/DoorNarrowSolid (8)
-  - Interior/Corridors/DoorNarrowSolid (3)
-  - Interior/Corridors/DoorNarrow (3)
-  - Interior/Corridors/DoorNarrowSolid (9)
-  - Interior/Classroom01/DoorNarrow
-  - Interior/Toilet01/DoorNarrowSolid
   openableIds:
   - corridor.door.auto
-  - corridor.door.back
-  - corridor.door.11
-  - corridor.door.13
   - science.door
   - toilet.door
   - toilet.stall.outer
   - toilet.stall.inner
-  judgeTargetsAreOpenable: 1
+  judgeTargetsAreOpenable: 0
   openEverything: 0

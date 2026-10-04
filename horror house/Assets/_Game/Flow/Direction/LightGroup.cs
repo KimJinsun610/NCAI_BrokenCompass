@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
 
@@ -10,6 +10,21 @@ using UnityEngine;
 public sealed class LightGroup
 {
     private static readonly int EmissionId = Shader.PropertyToID("_EmissionColor");
+
+    // 지금 붉게 물든 라이트. RoomDarkness가 평소 꺼 두는 교실 등을 C4 붉은 불빛 동안만 켜게 한다(44차).
+    private static readonly HashSet<Light> s_tinted = new HashSet<Light>();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetTinted()
+    {
+        s_tinted.Clear();
+    }
+
+    /// <summary>그 라이트가 지금 어느 묶음에서 붉게 물들어 있는지.</summary>
+    public static bool IsLightTinted(Light light)
+    {
+        return light != null && s_tinted.Contains(light);
+    }
 
     private readonly List<Light> _lights = new List<Light>();
     private readonly List<bool> _wasEnabled = new List<bool>();
@@ -115,6 +130,7 @@ public sealed class LightGroup
             _color.Add(l != null ? l.color : Color.white);
             _intensity.Add(l != null ? l.intensity : 1f);
             if (l == null) continue;
+            s_tinted.Add(l);
             l.color = color;
             l.intensity *= intensityScale;
         }
@@ -128,6 +144,7 @@ public sealed class LightGroup
         for (int i = 0; i < _lights.Count && i < _color.Count; i++)
         {
             if (_lights[i] == null) continue;
+            s_tinted.Remove(_lights[i]);
             _lights[i].color = _color[i];
             _lights[i].intensity = _intensity[i];
         }

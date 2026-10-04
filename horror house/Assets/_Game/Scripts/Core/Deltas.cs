@@ -1,4 +1,4 @@
-namespace NightDuty
+﻿namespace NightDuty
 {
     /// <summary>
     /// 수치 변화량 표(2026-09-30 최종 기획서 「밸런스 수치표」). <b>변화량 숫자는 여기 한 곳에만 둔다.</b>
@@ -32,8 +32,6 @@ namespace NightDuty
         /// </summary>
         public const int FalseReport = 7;
 
-        /// <summary>환청(머리 안쪽 2D 음)을 [이상]으로 기록 — 공통 수칙 G2 위반. 청각에 준다. 오보를 겹쳐 주지 않는다.</summary>
-        public const int HallucinationRecorded = 6;
 
         /// <summary>경고 누적 처벌 이벤트 — 가장 높은 감각 축에 준다(<see cref="SoftCap"/>에서 멈춘다).</summary>
         public const int Punishment = 15;

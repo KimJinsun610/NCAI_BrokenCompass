@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
 
 /// <summary>
-/// 엠비언트(공간 룸톤 · 청각축 불안 레이어 · 무작위 원샷) 설정.
+/// 엠비언트(학교 공통 바탕 · 공간 룸톤 약/강 · 청각축 불안 레이어 · 무작위 원샷) 설정.
 ///
 /// <para><b>소리 파일은 이름으로 찾는다.</b> 전부 <c>Resources/Ambience/…</c> 아래에 두고
 /// <see cref="Resources.Load{T}(string)"/>로 읽는다. 에셋이 파일을 직접 가리키지 않으므로
@@ -40,8 +40,11 @@ public sealed class AmbienceConfigSO : ScriptableObject
         [Tooltip("같은 이름의 상자는 한 공간으로 친다(ㄱ자 방을 상자 둘로 덮을 때).")]
         public string label = "공간";
 
-        [Tooltip("룸톤 루프. Resources 기준 경로(확장자 없이).")]
-        public string roomClip = "Ambience/Rooms/amb_corridor";
+        [Tooltip("룸톤 루프(약한 판). Resources 기준 경로(확장자 없이).")]
+        public string roomClip = "Ambience/Rooms/AMB_HALL_Low";
+
+        [Tooltip("룸톤 강한 판. 이 공간의 청각 구간이 HighFromBand 이상이면 약한 판에서 이쪽으로 넘어간다. 비우면 약한 판만.")]
+        public string roomClipHigh = "Ambience/Rooms/AMB_HALL_High";
 
         [Tooltip("월드 상자. 플레이어 카메라(귀) 위치로 검사한다.")]
         public Bounds box;
@@ -75,13 +78,24 @@ public sealed class AmbienceConfigSO : ScriptableObject
     [Tooltip("공간을 옮길 때 룸톤이 바뀌는 시간(초).")]
     [Min(0.05f)] [SerializeField] private float roomFadeSeconds = 2.5f;
 
+    [Tooltip("룸톤이 강한 판으로 넘어가는 청각 구간(이 값 이상). 2026-10-04 민 결정 = 3.")]
+    [Range(1, 4)] [SerializeField] private int highFromBand = 3;
+
+    [Tooltip("약한 판 ↔ 강한 판이 바뀌는 시간(초).")]
+    [Min(0.05f)] [SerializeField] private float highFadeSeconds = 5f;
+
+    [Header("학교 공통 바탕 — 건물 안이면 어디서나 룸톤 밑에 깔린다")]
+    [SerializeField] private string baseClip = "Ambience/Base/AMB_COMMON_School_Base";
+
+    [Range(0f, 2f)] [SerializeField] private float baseVolume = 0.45f;
+
     [Header("청각축 불안 레이어 — 구간 n이면 1..n이 쌓인다")]
     [SerializeField] private string[] dreadClips =
     {
-        "Ambience/Dread/dread_b1",
-        "Ambience/Dread/dread_b2",
-        "Ambience/Dread/dread_b3",
-        "Ambience/Dread/dread_b4",
+        "Ambience/Dread/AMB_Dread_B1",
+        "Ambience/Dread/AMB_Dread_B2",
+        "Ambience/Dread/AMB_Dread_B3",
+        "Ambience/Dread/dread_b4",   // 전달본 B4는 보류(2026-10-04) — 예전 파일을 그대로 쓴다
     };
 
     [SerializeField] private float[] dreadVolumes = { 1f, 1f, 1f, 1f };
@@ -125,6 +139,10 @@ public sealed class AmbienceConfigSO : ScriptableObject
     public string DefaultLabel { get { return defaultZone != null ? defaultZone.label : "복도"; } }
     public Bounds Building { get { return building; } }
     public float RoomFadeSeconds { get { return roomFadeSeconds; } }
+    public int HighFromBand { get { return highFromBand; } }
+    public float HighFadeSeconds { get { return highFadeSeconds; } }
+    public string BaseClip { get { return baseClip; } }
+    public float BaseVolume { get { return baseVolume; } }
     public IReadOnlyList<string> DreadClips { get { return dreadClips; } }
     public float DreadVolume { get { return dreadVolume; } }
     public float DreadFadeSeconds { get { return dreadFadeSeconds; } }
@@ -180,22 +198,22 @@ public sealed class AmbienceConfigSO : ScriptableObject
 
         zones = new List<Zone>
         {
-            Make("경비실", "amb_guardroom", Box(30.3f, 37.8f, 44.2f, 48.1f, Y, H), BandSource.MaxOfAllMinusOne, SpaceId.None,
+            Make("경비실", "GUARD", Box(30.3f, 37.8f, 44.2f, 48.1f, Y, H), BandSource.MaxOfAllMinusOne, SpaceId.None,
                 "os_wind_gust", "os_knock_1a", "os_knock_2a", "os_floor_creak_a"),
-            Make("과학실", "amb_science", Box(43.3f, 54.1f, 40.2f, 43.6f, Y, H), BandSource.Space, SpaceId.ScienceRoom,
+            Make("과학실", "LAB", Box(43.3f, 54.1f, 40.2f, 43.6f, Y, H), BandSource.Space, SpaceId.ScienceRoom,
                 "os_electric_pop", "os_metal_groan_a", "os_pipe_clank_a", "os_floor_creak_b", "os_fluoro_flicker"),
-            Make("교실", "amb_classroom", Box(38.3f, 49.8f, 30.0f, 39.7f, Y, H), BandSource.Space, SpaceId.Classroom_1_3,
+            Make("교실", "CLASS", Box(38.3f, 49.8f, 30.0f, 39.7f, Y, H), BandSource.Space, SpaceId.Classroom_1_3,
                 "os_debris", "os_floor_creak_a", "os_floor_creak_c", "os_wind_gust", "os_knock_2b"),
-            Make("화장실", "amb_toilet", Box(-3.1f, 6.0f, 31.3f, 40.0f, Y, H), BandSource.Space, SpaceId.Toilet,
+            Make("화장실", "TOILET", Box(-3.1f, 6.0f, 31.3f, 40.0f, Y, H), BandSource.Space, SpaceId.Toilet,
                 "os_drip_a", "os_drip_b", "os_pipe_clank_b", "os_knock_4a", "os_metal_groan_b"),
             // 도서관은 ㄱ자라 상자 둘. 판정 공간(SpaceId)이 아직 없어 옆 복도의 청각 구간을 따른다.
-            Make("도서관", "amb_library", Box(2.0f, 14.4f, 40.0f, 56.0f, Y, H), BandSource.Space, SpaceId.Corridor,
+            Make("도서관", "LIBRARY", Box(2.0f, 14.4f, 40.0f, 56.0f, Y, H), BandSource.Space, SpaceId.Corridor,
                 "os_floor_creak_c", "os_thud_upstairs", "os_knock_1a", "os_electric_pop"),
-            Make("도서관", "amb_library", Box(14.4f, 18.0f, 48.5f, 56.0f, Y, H), BandSource.Space, SpaceId.Corridor,
+            Make("도서관", "LIBRARY", Box(14.4f, 18.0f, 48.5f, 56.0f, Y, H), BandSource.Space, SpaceId.Corridor,
                 "os_floor_creak_c", "os_thud_upstairs", "os_knock_1a", "os_electric_pop"),
         };
 
-        defaultZone = Make("복도", "amb_corridor", new Bounds(), BandSource.Space, SpaceId.Corridor,
+        defaultZone = Make("복도", "HALL", new Bounds(), BandSource.Space, SpaceId.Corridor,
             "os_knock_1a", "os_knock_2a", "os_knock_2b", "os_knock_4a", "os_door_slam", "os_thud_upstairs",
             "os_pipe_clank_a", "os_pipe_clank_b", "os_metal_groan_a", "os_metal_groan_b", "os_fluoro_flicker",
             "os_floor_creak_b");
@@ -210,7 +228,8 @@ public sealed class AmbienceConfigSO : ScriptableObject
     {
         Zone z = new Zone();
         z.label = label;
-        z.roomClip = "Ambience/Rooms/" + room;
+        z.roomClip = "Ambience/Rooms/AMB_" + room + "_Low";
+        z.roomClipHigh = "Ambience/Rooms/AMB_" + room + "_High";
         z.box = box;
         z.bandSource = source;
         z.space = space;

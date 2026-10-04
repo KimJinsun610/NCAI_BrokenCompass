@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -386,15 +386,20 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void S3_테이프_밖에서_2초_비추면_위반하고_모형급습_예약()
+        public void S3_빛_없이_모형을_2초_보면_위반하고_모형급습_예약()
         {
             FinalFixture f = new FinalFixture("S3");
-            f.Send(JudgeSignal.Target(SignalKind.ZoneEntered, FinalCues.TapeZone));
-            f.Samples(() => JudgeSignal.Beam(FinalCues.ModelTarget, 0.1f), 3f);
-            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "테이프 안은 괜찮다");
-            f.Send(JudgeSignal.Target(SignalKind.ZoneExited, FinalCues.TapeZone));
-            f.Samples(() => JudgeSignal.Beam(FinalCues.ModelTarget, 0.1f), 2f);
-            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance));
+            for (int i = 0; i < 30; i++)
+            {
+                f.Send(JudgeSignal.Beam(FinalCues.ModelTarget, 0.1f));
+                f.Samples(() => JudgeSignal.Gaze(FinalCues.ModelTarget, 0.1f), 0.1f);
+            }
+
+            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "비추며 보는 것은 괜찮다(3초)");
+            f.Samples(() => JudgeSignal.Gaze(FinalCues.ModelTarget, 0.1f), 1.9f);
+            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "빛이 꺼진 직후 0.3초는 비춘 것으로 본다 — 아직 2초가 안 됐다");
+            f.Samples(() => JudgeSignal.Gaze(FinalCues.ModelTarget, 0.1f), 0.5f);
+            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance), "빛 없이 2초");
             CollectionAssert.AreEqual(new[] { ProgramCatalog.ModelRush }, f.Requested);
         }
 
@@ -568,7 +573,6 @@ namespace NightDuty.Tests
         [TearDown]
         public void TearDown()
         {
-            NightRun.DeckOverride = null;
             NightRun.ProgramEnabled = false;
             NightRun.InspectionsEnabled = false;
             NightRun.StartNewRun();
@@ -579,7 +583,6 @@ namespace NightDuty.Tests
         public void 편성이_켜지면_그날_덱으로_판정하고_옛덱은_쉰다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             NightRun.BeginNight(1, () => 30);
 
@@ -607,7 +610,6 @@ namespace NightDuty.Tests
         public void 재시작하면_새_판정책을_만들지_않고_스냅샷으로_되돌린다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             NightRun.BeginNight(1, () => 30);
             FinalRuleBook book = NightRun.FinalRules;
@@ -628,7 +630,6 @@ namespace NightDuty.Tests
         public void 편성이_꺼지면_새_판정책이_없다()
         {
             NightRun.StartNewRun();
-            NightRun.DeckOverride = day => new List<RuleSO>();
             NightRun.BeginNight(1, () => 30);
             Assert.IsNull(NightRun.FinalRules);
             Assert.AreEqual(0, NightRun.FinalResults.Count);

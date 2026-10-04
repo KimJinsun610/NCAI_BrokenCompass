@@ -133,338 +133,42 @@ namespace NightDuty.Tests
         }
     }
 
-    /// <summary>
-    /// 하루 6장 배정(재설계안 7절 「모델 A」). 시드를 고정해 결정적으로 본다.
-    /// 풀은 실제 24장과 같은 모양 — 축마다 6장씩에 자격 미달 카드를 섞어 둔다.
-    /// </summary>
-    public sealed class DayDirectorTests
-    {
-        /// <summary>고정 시드. 이 값이 바뀌면 아래 테스트의 조합도 바뀐다.</summary>
-        private const int Seed = 20260921;
-
-        private TestKit _kit;
-        private List<RuleSO> _pool;
-        private DayDirector _director;
-        private FearAxisSystem _axes;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _kit = new TestKit();
-            _pool = BuildPool();
-            _axes = new FearAxisSystem();
-            _director = new DayDirector(_pool, new System.Random(Seed));
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            _director = null;
-            _pool = null;
-            _kit.Dispose();
-        }
-
-        /// <summary>자격 제한이 없는 보통 카드.</summary>
-        private RuleSO Plain(string id, SpaceId space, FearAxis axis)
-        {
-            return _kit.Card(c =>
-            {
-                c.CardId = id;
-                c.Space = space;
-                c.FailureAxis = axis;
-                c.TriggerKind = SignalKind.DoorAutoOpenObserved;
-                c.TargetIds = new[] { id.ToLowerInvariant() + ".door" };
-                c.Failure = new SignalCondition(SignalKind.DoorCommandAccepted, TargetMatchIds.Trigger, SpaceId.None, FlagFilter.True);
-                c.Success = new SignalCondition(SignalKind.PassageCompleted, id.ToLowerInvariant() + ".passage");
-            });
-        }
-
-        /// <summary>Band3 이상에서만 열리는 카드. 축이 0인 동안에는 후보에도 못 들어간다.</summary>
-        private RuleSO Gated(string id, SpaceId space, FearAxis axis)
-        {
-            return _kit.Card(c =>
-            {
-                c.CardId = id;
-                c.Space = space;
-                c.FailureAxis = axis;
-                c.UseEligibleBand = true;
-                c.EligibleAxis = axis;
-                c.EligibleFrom = Band.Band3;
-                c.EligibleTo = Band.Band4;
-                c.TriggerKind = SignalKind.DoorAutoOpenObserved;
-                c.TargetIds = new[] { id.ToLowerInvariant() + ".door" };
-                c.Failure = new SignalCondition(SignalKind.DoorCommandAccepted, TargetMatchIds.Trigger, SpaceId.None, FlagFilter.True);
-                c.Success = new SignalCondition(SignalKind.PassageCompleted, id.ToLowerInvariant() + ".passage");
-            });
-        }
-
-        /// <summary>
-        /// 축마다 6장 + 1일차 고정 S1 + 자격 미달 3장 = 22장.
-        /// 축별 6장은 의도적이다 — 5장이면 회차 재등장 한도(배치·청각 2회)에 5일차가 딱 맞아떨어져
-        /// 뽑기 운에 따라 쿼터 미달이 날 수 있고, 그러면 테스트가 간헐적으로 흔들린다.
-        /// </summary>
-        private List<RuleSO> BuildPool()
-        {
-            List<RuleSO> pool = new List<RuleSO>();
-
-            // 배치 6장
-            pool.Add(Plain("H1", SpaceId.Corridor, FearAxis.Layout));
-            pool.Add(Plain("H2", SpaceId.Corridor, FearAxis.Layout));
-            pool.Add(Plain("C1", SpaceId.Classroom_1_1, FearAxis.Layout));
-            pool.Add(Plain("C2", SpaceId.Classroom_1_1, FearAxis.Layout));
-            pool.Add(Plain("S5", SpaceId.ScienceRoom, FearAxis.Layout));
-            pool.Add(Plain(DayDirector.ConflictCardA, SpaceId.Toilet, FearAxis.Layout));   // T1
-
-            // 청각 6장
-            pool.Add(Plain("H3", SpaceId.Corridor, FearAxis.Auditory));
-            pool.Add(Plain("H4", SpaceId.Corridor, FearAxis.Auditory));
-            pool.Add(Plain("C3", SpaceId.Classroom_1_1, FearAxis.Auditory));
-            pool.Add(Plain("S2", SpaceId.ScienceRoom, FearAxis.Auditory));
-            pool.Add(Plain("S3", SpaceId.ScienceRoom, FearAxis.Auditory));
-            pool.Add(Plain("T6", SpaceId.Toilet, FearAxis.Auditory));
-
-            // 조도 6장
-            pool.Add(Plain("H5", SpaceId.Corridor, FearAxis.Illuminance));
-            pool.Add(Plain("H6", SpaceId.Corridor, FearAxis.Illuminance));
-            pool.Add(Plain("C4", SpaceId.Classroom_1_1, FearAxis.Illuminance));
-            pool.Add(Plain("S4", SpaceId.ScienceRoom, FearAxis.Illuminance));
-            pool.Add(Plain("T2", SpaceId.Toilet, FearAxis.Illuminance));
-            pool.Add(Plain(DayDirector.ConflictCardB, SpaceId.Toilet, FearAxis.Illuminance));   // T3
-
-            // 1일차 고정 카드. 준수 전용이라 위반축은 기본값(배치)으로 남는다.
-            pool.Add(Plain(DayDirector.FirstDayFixedCardId, SpaceId.ScienceRoom, FearAxis.Layout));
-
-            // 자격 미달 3장 — 축이 0인 동안에는 한 장도 덱에 들어오면 안 된다.
-            pool.Add(Gated("T4", SpaceId.Toilet, FearAxis.Layout));
-            pool.Add(Gated("T5", SpaceId.Toilet, FearAxis.Auditory));
-            pool.Add(Gated("C5", SpaceId.Classroom_1_1, FearAxis.Illuminance));
-
-            return pool;
-        }
-
-        private static int CountAxis(IReadOnlyList<RuleSO> deck, FearAxis axis)
-        {
-            int count = 0;
-            for (int i = 0; i < deck.Count; i++)
-            {
-                if (deck[i] != null && deck[i].FailureAxis == axis)
-                {
-                    count++;
-                }
-            }
-
-            return count;
-        }
-
-        private static bool Has(IReadOnlyList<RuleSO> deck, string cardId)
-        {
-            for (int i = 0; i < deck.Count; i++)
-            {
-                if (deck[i] != null && deck[i].CardId == cardId)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private static List<string> IdsOf(IReadOnlyList<RuleSO> deck)
-        {
-            List<string> ids = new List<string>(deck.Count);
-            for (int i = 0; i < deck.Count; i++)
-            {
-                ids.Add(deck[i] == null ? string.Empty : deck[i].CardId);
-            }
-
-            return ids;
-        }
-
-        [Test]
-        public void 덱은_여섯장이다()
-        {
-            IReadOnlyList<RuleSO> deck = _director.BuildDeck(2, _axes);
-
-            Assert.AreEqual(DayDirector.DeckSize, deck.Count, _director.LastReport);
-        }
-
-        [Test]
-        public void 축쿼터는_배치둘_청각둘_조도둘이다()
-        {
-            // 1일차는 S1(위반축 기본값 배치)이 한 자리를 가져가므로 2일차로 본다.
-            IReadOnlyList<RuleSO> deck = _director.BuildDeck(2, _axes);
-
-            Assert.AreEqual(DayDirector.QuotaLayout, CountAxis(deck, FearAxis.Layout), _director.LastReport);
-            Assert.AreEqual(DayDirector.QuotaAuditory, CountAxis(deck, FearAxis.Auditory), _director.LastReport);
-            Assert.AreEqual(DayDirector.QuotaIlluminance, CountAxis(deck, FearAxis.Illuminance), _director.LastReport);
-        }
-
-        [Test]
-        public void 일차1은_S1고정에_조도한장이다()
-        {
-            IReadOnlyList<RuleSO> deck = _director.BuildDeck(1, _axes);
-
-            Assert.AreEqual(DayDirector.DeckSize, deck.Count, _director.LastReport);
-            Assert.AreEqual(DayDirector.FirstDayFixedCardId, deck[0].CardId, "고정 카드가 그날의 척추라 맨 앞에 온다");
-            Assert.AreEqual(DayDirector.QuotaIlluminanceFirstDay, CountAxis(deck, FearAxis.Illuminance), _director.LastReport);
-
-            // S1은 위반축이 기본값(배치)이라 배치 칸으로 세어진다. 쿼터로 뽑은 배치 2장 + S1 = 3장.
-            Assert.AreEqual(DayDirector.QuotaLayout + 1, CountAxis(deck, FearAxis.Layout), _director.LastReport);
-            Assert.AreEqual(DayDirector.QuotaAuditory, CountAxis(deck, FearAxis.Auditory), _director.LastReport);
-        }
-
-        [Test]
-        public void S1은_2일차부터_나오지_않는다()
-        {
-            Assert.IsTrue(Has(_director.BuildDeck(1, _axes), DayDirector.FirstDayFixedCardId), "1일차에는 나온다");
-
-            for (int day = 2; day <= DayFloor.LastDay; day++)
-            {
-                IReadOnlyList<RuleSO> deck = _director.BuildDeck(day, _axes);
-                Assert.IsFalse(Has(deck, DayDirector.FirstDayFixedCardId),
-                    day + "일차에 " + DayDirector.FirstDayFixedCardId + "가 들어왔다: " + _director.LastReport);
-            }
-        }
-
-        [Test]
-        public void T1과_T3는_같은날_함께_나오지_않는다()
-        {
-            for (int day = 1; day <= DayFloor.LastDay; day++)
-            {
-                IReadOnlyList<RuleSO> deck = _director.BuildDeck(day, _axes);
-                bool hasA = Has(deck, DayDirector.ConflictCardA);
-                bool hasB = Has(deck, DayDirector.ConflictCardB);
-
-                Assert.IsFalse(hasA && hasB,
-                    day + "일차에 " + DayDirector.ConflictCardA + "·" + DayDirector.ConflictCardB +
-                    "가 같이 배정됐다: " + _director.LastReport);
-            }
-        }
-
-        [Test]
-        public void 자격미달_카드는_배정되지_않는다()
-        {
-            // 축이 전부 0이면 Band0이라, Band3부터 열리는 카드는 후보에도 못 들어간다.
-            for (int day = 1; day <= DayFloor.LastDay; day++)
-            {
-                IReadOnlyList<RuleSO> deck = _director.BuildDeck(day, _axes);
-
-                Assert.IsFalse(Has(deck, "T4"), day + "일차: " + _director.LastReport);
-                Assert.IsFalse(Has(deck, "T5"), day + "일차: " + _director.LastReport);
-                Assert.IsFalse(Has(deck, "C5"), day + "일차: " + _director.LastReport);
-            }
-        }
-
-        [Test]
-        public void 같은날_두번_부르면_같은_결과를_돌려준다()
-        {
-            List<string> first = IdsOf(_director.BuildDeck(2, _axes));
-            List<string> second = IdsOf(_director.BuildDeck(2, _axes));
-
-            // 이력이 두 번 오르면 회차 재등장 한도가 어긋난다. 그래서 다시 뽑지 않고 직전 결과를 그대로 준다.
-            CollectionAssert.AreEqual(first, second);
-        }
-
-        [Test]
-        public void Reset뒤에는_다시_1일차처럼_동작한다()
-        {
-            _director.BuildDeck(1, _axes);
-            _director.BuildDeck(2, _axes);
-
-            _director.Reset();
-
-            IReadOnlyList<RuleSO> deck = _director.BuildDeck(1, _axes);
-            Assert.AreEqual(DayDirector.DeckSize, deck.Count, _director.LastReport);
-            Assert.AreEqual(DayDirector.FirstDayFixedCardId, deck[0].CardId, "회차를 새로 시작하면 고정 카드가 다시 온다");
-        }
-
-        /// <summary>
-        /// <b>장면 ID가 곧 트리거인 카드는 그 장면이 깔린 날에만 덱에 든다</b>(S5 ↔ S-B · T3 ↔ T-A).
-        /// <para>
-        /// 장면이 없는 날에 들어가면 <b>시작할 방법이 없어 미판정으로 끝난다</b> — 하루 여섯 자리 중
-        /// 한 자리를 헛되이 쓴다. 2026-09-22 자격 재설계로 두 카드가 Band0이 되면서
-        /// 「자격이 곧 그 장면이 깔리는 날」이던 우연한 일치가 사라져 이 검사가 필요해졌다.
-        /// </para>
-        /// </summary>
-        [Test]
-        public void 장면에_묶인_카드는_그_장면이_깔린_날에만_덱에_든다()
-        {
-            // 풀에 이미 S5가 있으므로(배치 6장) 겹치지 않는 ID를 쓴다 — 여기서 보는 것은 카드 이름이 아니라
-            // 「트리거가 조우 장면 ID인 카드」라는 모양이다.
-            RuleSO bound = _kit.Card(c =>
-            {
-                c.CardId = "S6";
-                c.Space = SpaceId.ScienceRoom;
-                c.FailureAxis = FearAxis.Layout;
-                c.TriggerKind = SignalKind.ModelObserved;
-                c.TriggerId = EncounterDirector.SceneSB;
-                c.TargetIds = new[] { "science.model.sb" };
-                c.Failure = new ProximityCondition("science.model.sb", 1.5f);
-                c.Success = new SignalCondition(SignalKind.SpaceExited, string.Empty, SpaceId.ScienceRoom);
-            });
-
-            List<RuleSO> pool = new List<RuleSO>(_pool);
-            pool.Add(bound);
-
-            // ① 그 장면이 깔린 날 — 들어갈 수 있어야 한다.
-            DayDirector open = new DayDirector(pool, new System.Random(Seed));
-            open.IsEncounterActive = delegate (string sceneId) { return sceneId == EncounterDirector.SceneSB; };
-
-            bool seenWhenLaid = false;
-            for (int day = 1; day <= 5 && !seenWhenLaid; day++)
-            {
-                IReadOnlyList<RuleSO> deck = open.BuildDeck(day, _axes);
-                for (int i = 0; i < deck.Count; i++)
-                {
-                    if (deck[i].CardId == "S6") { seenWhenLaid = true; break; }
-                }
-            }
-
-            Assert.IsTrue(seenWhenLaid, "장면이 깔린 날에도 카드가 한 번도 안 들어갔다 — 게이트가 너무 세다");
-
-            // ② 그 장면이 없는 날 — 어느 일차에서도 들어가면 안 된다.
-            DayDirector closed = new DayDirector(pool, new System.Random(Seed));
-            closed.IsEncounterActive = delegate { return false; };
-
-            for (int day = 1; day <= 5; day++)
-            {
-                IReadOnlyList<RuleSO> deck = closed.BuildDeck(day, _axes);
-                for (int i = 0; i < deck.Count; i++)
-                {
-                    Assert.AreNotEqual("S6", deck[i].CardId,
-                                       day + "일차에 S-B가 안 깔렸는데 장면에 묶인 카드가 덱에 들어갔다 — 시작할 방법이 없는 헛자리다. "
-                                           + closed.LastReport);
-                }
-            }
-        }
-    }
+    // 2026-10-03: 옛 「하루 6장 배정」 테스트(DayDirectorTests)를 지웠다. 옛 24장 카드와 DayDirector를 함께 폐기했다 — 되살리지 마십시오.
 
     // 2026-10-01: 옛 「미방문 벌점 +9」 테스트(UnvisitedPenaltyTests)를 지웠다.
     // 최종 기획서에서 점검 미완료 경고가 그 역할을 넘겨받았다 — InspectionTests의 04:00 정산 테스트가 대신한다.
 
     /// <summary>
-    /// 결산 3구분(2026-09-21 재설계). <see cref="DutyLogEntry"/>는 순수 구조체라 직접 만들어 표시만 본다.
+    /// 근무일지 줄 표시(최종 기획서 「근무일지 정산 화면」). <see cref="DutyLogEntry"/>는 순수 구조체라 직접 만들어 표시만 본다.
+    /// 2026-10-03: 「가지 않은 공간도 어김」(옛 24장 규칙)을 없앴다 — 그 테스트들도 함께 지웠다.
     /// </summary>
     public sealed class DutyLogMarkTests
     {
-        private static DutyLogEntry Entry(CardState state, bool visited, bool instructed)
+        private static DutyLogEntry Entry(RuleVerdict verdict, bool instructed)
         {
-            return new DutyLogEntry(1, "H1", SpaceId.Corridor, "테스트 본문", state, visited, instructed);
+            return new DutyLogEntry(1, "H1", SpaceId.Corridor, "테스트 본문", verdict, instructed);
         }
 
         [Test]
         public void 지킨_줄은_표시가_없다()
         {
-            DutyLogEntry entry = Entry(CardState.Complied, true, false);
+            DutyLogEntry entry = Entry(RuleVerdict.Complied, false);
 
             Assert.IsFalse(entry.Struck);
             Assert.AreEqual(DutyMark.None, entry.Mark);
         }
 
         [Test]
+        public void 방아쇠가_오지_않은_줄도_표시가_없다()
+        {
+            Assert.AreEqual(DutyMark.None, Entry(RuleVerdict.NotTriggered, false).Mark);
+            Assert.AreEqual(DutyMark.None, Entry(RuleVerdict.NotTriggered, true).Mark, "문자를 받았어도 어기지 않았으면 표시 없음");
+        }
+
+        [Test]
         public void 그냥_어긴_줄은_어김이다()
         {
-            DutyLogEntry entry = Entry(CardState.Violated, true, false);
+            DutyLogEntry entry = Entry(RuleVerdict.Violated, false);
 
             Assert.IsTrue(entry.Struck);
             Assert.AreEqual(DutyMark.Struck, entry.Mark);
@@ -473,7 +177,7 @@ namespace NightDuty.Tests
         [Test]
         public void 역설문자를_받고_어긴_줄은_지시를따름이다()
         {
-            DutyLogEntry entry = Entry(CardState.Violated, true, true);
+            DutyLogEntry entry = Entry(RuleVerdict.Violated, true);
 
             // 수치 손해는 「어김」과 똑같다. 다른 것은 종이가 부르는 이름뿐이다.
             Assert.IsTrue(entry.Struck);
@@ -481,62 +185,9 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 문자를_받았어도_그_공간에_안_갔으면_어김이다()
+        public void 문자를_받았어도_지켰으면_표시가_없다()
         {
-            // 가지 않았으면 지시를 따른 것이 아니다.
-            DutyLogEntry entry = Entry(CardState.Waiting, false, true);
-
-            Assert.IsTrue(entry.Struck);
-            Assert.AreEqual(DutyMark.Struck, entry.Mark);
-        }
-
-        [Test]
-        public void 미방문은_판정이_없어도_어김이다()
-        {
-            DutyLogEntry entry = Entry(CardState.Undetermined, false, false);
-
-            Assert.IsTrue(entry.Struck);
-            Assert.AreEqual(DutyMark.Struck, entry.Mark);
-        }
-
-        [Test]
-        public void Struck은_예전_뜻_그대로다()
-        {
-            // 하위호환: 역설 문자를 모르는 예전 생성자는 Instructed가 false로 들어간다.
-            DutyLogEntry complied = new DutyLogEntry(1, "H1", SpaceId.Corridor, "본문", CardState.Complied, true);
-            DutyLogEntry violated = new DutyLogEntry(2, "H2", SpaceId.Corridor, "본문", CardState.Violated, true);
-            DutyLogEntry unvisited = new DutyLogEntry(3, "H3", SpaceId.Corridor, "본문", CardState.Waiting, false);
-
-            Assert.IsFalse(complied.Struck);
-            Assert.IsTrue(violated.Struck, "위반");
-            Assert.IsTrue(unvisited.Struck, "가지 않은 공간");
-
-            Assert.AreEqual(DutyMark.None, complied.Mark);
-            Assert.AreEqual(DutyMark.Struck, violated.Mark);
-            Assert.AreEqual(DutyMark.Struck, unvisited.Mark);
-        }
-
-        [Test]
-        public void 미방문인데_위반까지_난_줄은_문자를_받았어도_어김이다()
-        {
-            // 「가지 않았으면 지시를 따른 것이 아니다」가 설계 의도다(DutyLogEntry.Mark 주석).
-            // 2026-09-21 이전에는 Mark가 Visited를 보지 않아 이 조합에서 Instructed가 나왔다 — 버그였다.
-            // 이 조합은 실제로 일어난다: C6는 밤 시작 트리거라 그 교실에 한 번도 안 가고도 위반이 나고,
-            // T1·S2 같은 장기 카드도 공간 밖에서 위반이 성립할 수 있다.
-            DutyLogEntry entry = Entry(CardState.Violated, false, true);
-
-            Assert.IsTrue(entry.Struck);
-            Assert.AreEqual(DutyMark.Struck, entry.Mark, "가지 않은 줄은 문자를 받았어도 「어김」이다");
-        }
-
-        [Test]
-        public void 방문했고_문자를_받고_어긴_줄만_지시를따름이다()
-        {
-            // 위 테스트의 짝. 셋 중 하나라도 빠지면 「지시를 따름」이 아니다.
-            Assert.AreEqual(DutyMark.Instructed, Entry(CardState.Violated, true, true).Mark, "방문 + 위반 + 문자");
-            Assert.AreEqual(DutyMark.Struck, Entry(CardState.Violated, true, false).Mark, "문자를 안 받았으면 그냥 어김");
-            Assert.AreEqual(DutyMark.Struck, Entry(CardState.Violated, false, true).Mark, "안 갔으면 그냥 어김");
-            Assert.AreEqual(DutyMark.None, Entry(CardState.Complied, true, true).Mark, "지켰으면 표시 없음");
+            Assert.AreEqual(DutyMark.None, Entry(RuleVerdict.Complied, true).Mark);
         }
     }
 }

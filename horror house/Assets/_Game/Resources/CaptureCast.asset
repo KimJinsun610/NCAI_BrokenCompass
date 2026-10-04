@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ef7b066e3e778547b382fbca6484cca, type: 3}
+  m_Name: CaptureCast
+  m_EditorClassIdentifier: Assembly-CSharp::CaptureCastSO
+  entries:
+  - axis: 0
+    prefab: {fileID: 0}
+    silenceSeconds: 0.5
+    turnAround: 1
+    flashlightOff: 0
+    darkWorld: 1
+    revealSound: capture.auditory
+    maxSeconds: 8
+    repeatSpeed: 2
+    fallbackFace: mob.boy
+    faceSeconds: 0.3
+    pullDistance: 0
+  - axis: 1
+    prefab: {fileID: 0}
+    silenceSeconds: 0.5
+    turnAround: 0
+    flashlightOff: 1
+    darkWorld: 1
+    revealSound: capture.illuminance
+    maxSeconds: 8
+    repeatSpeed: 2
+    fallbackFace: mob.dummy.stand
+    faceSeconds: 0.3
+    pullDistance: 0
+  - axis: 2
+    prefab: {fileID: 0}
+    silenceSeconds: 0.5
+    turnAround: 1
+    flashlightOff: 0
+    darkWorld: 1
+    revealSound: capture.layout
+    maxSeconds: 8
+    repeatSpeed: 2
+    fallbackFace: mob.tree
+    faceSeconds: 0.3
+    pullDistance: 0.3

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -80,6 +80,7 @@ public static class AmbienceMenu
     {
         AmbienceConfigSO cfg = AmbienceConfigSO.Load();
         List<string> paths = new List<string>();
+        if (!string.IsNullOrEmpty(cfg.BaseClip)) paths.Add(cfg.BaseClip);
         Add(paths, cfg.DefaultZone);
         for (int i = 0; i < cfg.Zones.Count; i++)
         {
@@ -134,6 +135,7 @@ public static class AmbienceMenu
         }
 
         into.Add(z.roomClip);
+        if (!string.IsNullOrEmpty(z.roomClipHigh)) into.Add(z.roomClipHigh);
         if (z.oneShots != null)
         {
             into.AddRange(z.oneShots);

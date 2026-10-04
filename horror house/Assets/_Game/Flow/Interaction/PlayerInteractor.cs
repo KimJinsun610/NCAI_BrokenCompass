@@ -1,4 +1,4 @@
-using NightDuty;
+﻿using NightDuty;
 using UnityEngine;
 
 /// <summary>
@@ -186,7 +186,7 @@ public sealed class PlayerInteractor : MonoBehaviour
         bool storage = _kind == DoorPolicySO.Kind.Storage;
         // 정책은 절대적이다. 잠금 무시(F4)는 열쇠만 건너뛰지 기획을 건너뛰지 않는다 —
         // 정책까지 무시하려면 DoorPolicySO.OpenEverythingOverride(F5)를 켜야 한다.
-        bool sealedOff = _kind == DoorPolicySO.Kind.Sealed;
+        bool sealedOff = _kind == DoorPolicySO.Kind.Sealed || (storage && IsLockedLocker(door));
         bool needsKey = door.IsLocked && !IgnoreLocks;
 
         if (sealedOff || (needsKey && !door.IsOpen))
@@ -278,8 +278,42 @@ public sealed class PlayerInteractor : MonoBehaviour
         return DoorHandle.Of(hit.collider);
     }
 
+    private static readonly System.Collections.Generic.HashSet<Component> s_unlockedLockers = new System.Collections.Generic.HashSet<Component>();
+
+    /// <summary>
+    /// 사물함은 잠겨 있다(점검표 H-4 「사물함은 모두 잠겨 있습니다」, 2026-10-04 43차 민). [E]를 누르면 「잠겨 있습니다」.
+    /// 그날 H-4가 이상이면 그 사물함만 풀린다(<see cref="SetLockerUnlocked"/> — 연출 <c>InspectionAnomalies</c>가 부른다) — 여닫히면 [이상]이다.
+    /// 사물함 = 이름이 <c>Locker</c>로 시작하는 벤더 문(복도·라커룸의 사물함). 서랍·책장·교탁은 그대로 여닫힌다.
+    /// </summary>
+    public static bool IsLockedLocker(DoorHandle door)
+    {
+        if (!door.IsValid || door.Owner == null) return false;
+        if (!door.Owner.name.StartsWith("Locker")) return false;
+        return !s_unlockedLockers.Contains(door.Owner);
+    }
+
+    /// <summary>그 사물함(벤더 문 컴포넌트가 붙은 오브젝트)을 풀거나 다시 잠근다.</summary>
+    public static void SetLockerUnlocked(Component owner, bool unlocked)
+    {
+        if (owner == null) return;
+        if (unlocked) s_unlockedLockers.Add(owner);
+        else s_unlockedLockers.Remove(owner);
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetLockers()
+    {
+        s_unlockedLockers.Clear();
+    }
+
+    /// <summary>쓰지 않는 문(정책 Sealed — 나무판자로 막힌 문 등)인가. 연출로도 열지 않는다(2026-10-04 42차).</summary>
+    public static bool IsSealed(DoorHandle door)
+    {
+        return door.IsValid && Classify(door) == DoorPolicySO.Kind.Sealed;
+    }
+
     /// <summary>이 문이 기획이 쓰는 문인가, 서랍인가, 아니면 그냥 배경인가.</summary>
-    private static DoorPolicySO.Kind Classify(DoorHandle door)
+    public static DoorPolicySO.Kind Classify(DoorHandle door)
     {
         DoorPolicySO policy = DoorPolicySO.Load();
         if (policy == null || door.Owner == null)
@@ -312,11 +346,6 @@ public sealed class PlayerInteractor : MonoBehaviour
             return false;   // 일시정지.
         }
 
-        if (PlayerSensors.TabOpen)
-        {
-            return false;   // 태블릿을 펼친 동안은 조작하지 않는다(DoorRelay도 같은 조건에서 신호를 멈춘다).
-        }
-
         return !NightRun.IsCaptured;
     }
 
@@ -347,6 +376,8 @@ public sealed class PlayerInteractor : MonoBehaviour
 
         DoorHandle[] doors = DoorHandle.All();
         int count = 0;
+        int unlocked = 0;
+        int shut = 0;
         for (int i = 0; i < doors.Length; i++)
         {
             if (!doors[i].IsValid)
@@ -356,11 +387,25 @@ public sealed class PlayerInteractor : MonoBehaviour
 
             doors[i].SilenceVendorInput();
             count++;
+
+            // 쓰지 않는 문(Sealed — 나무판자로 막힌 문 등)이 반쯤 열린 채 시작하지 않게 닫는다(2026-10-04 42차 민).
+            if (Classify(doors[i]) == DoorPolicySO.Kind.Sealed && doors[i].ShutIfAjar())
+            {
+                shut++;
+            }
+
+            // 동선의 문(정책 「열리는 문」)은 벤더 잠금을 푼다 — 2026-10-01 민: 「쓰는 문은 잠기면 안 된다」.
+            // 쓰지 않는 문은 정책(Sealed)이 막으므로 벤더 잠금과 무관하게 열리지 않는다. 런타임 값만 바꾼다(씬 파일 그대로).
+            if (doors[i].IsLocked && Classify(doors[i]) == DoorPolicySO.Kind.Openable)
+            {
+                doors[i].ForceUnlock();
+                unlocked++;
+            }
         }
 
         if (logActions)
         {
-            Debug.Log("[상호작용] 문 " + count + "개의 벤더 입력을 거뒀습니다(여기서 전부 다룹니다).", this);
+            Debug.Log("[상호작용] 문 " + count + "개의 벤더 입력을 거뒀습니다(여기서 전부 다룹니다). 동선의 잠긴 문 " + unlocked + "개를 풀었고, 반쯤 열려 있던 쓰지 않는 문 " + shut + "개를 닫았습니다.", this);
         }
     }
 }

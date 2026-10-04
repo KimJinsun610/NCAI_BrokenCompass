@@ -5,12 +5,11 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// 손전등 발신기. On/Off 토글 입력을 받아 실제 라이트를 켜고 끄고 <see cref="SignalKind.FlashlightChanged"/>를 보낸다.
 ///
-/// <para><b>밤 시작 직후 현재 상태를 1회 반드시 보낸다.</b> <c>JudgeWorld.FlashlightOn</c>은 매 밤 <c>false</c>로 시작한다.
+/// <para><b>밤 시작 직후 현재 상태를 1회 반드시 보낸다.</b> 새 수칙의 상태(<c>FinalWorld.Flashlight</c>)는 매 밤 꺼짐으로 시작한다.
 /// 씬의 <c>FPController/Camera/Flashlight_ON_FirstPerson</c>은 지금 <b>켜진 채로 저장돼 있어서</b>,
-/// 초기 1회를 보내지 않으면 플레이어 화면은 밝은데 코어는 꺼진 것으로 안다 → H3는 통과, C5는 실패가 된다.</para>
+/// 초기 1회를 보내지 않으면 플레이어 화면은 밝은데 코어는 꺼진 것으로 안다.</para>
 ///
-/// <para><b>유예 2초 타이머를 여기서 만들지 말 것.</b> <c>FlashlightCondition</c>이 카드의 <c>GraceSeconds</c>로 직접 센다.
-/// 발신기는 「바뀌었다」만 보낸다.</para>
+/// <para><b>유예 타이머를 여기서 만들지 말 것.</b> 손전등 수칙 판정기가 판정 시간으로 직접 센다. 발신기는 「바뀌었다」만 보낸다.</para>
 ///
 /// <para><b>입력 시스템.</b> 이 프로젝트는 Active Input Handling이 <i>Both</i>라 레거시와 New Input System이 둘 다 켜져 있다.
 /// <c>FPController</c>(WASD·Tab·Esc)와 벤더 <c>DoorScript</c>(E)가 전부 <c>KeyCode</c> 레거시 입력이므로
@@ -169,16 +168,10 @@ public sealed class FlashlightRelay : MonoBehaviour
 
         // 기획 변경(2026-09-30): 손전등은 태블릿을 연 채로도 켜고 끌 수 있다.
         // 이전에는 「Tab 중 손전등 조작 정지」(기획 정본 공통 명세 2절)라 여기서 입력째 막았다.
-        // 입력은 받되, Tab 중에는 코어가 신호를 버리므로 SetOn이 초기 1회를 다시 무장해 두고
-        // 태블릿을 닫은 첫 프레임에 아래에서 현재 상태를 보낸다.
+        // 태블릿을 든 동안에도 판정이 흐르므로(최종 기획서) 바로 보낸다.
         if (ReadToggleInput())
         {
             Toggle();
-        }
-
-        if (PlayerSensors.TabOpen)
-        {
-            return;
         }
 
         // 밤 시작 직후 현재 상태 1회 + Tab 중에 바뀐 상태를 닫은 뒤 1회.
@@ -209,7 +202,7 @@ public sealed class FlashlightRelay : MonoBehaviour
         _isOn = on;
         ApplyToWorld(on);
 
-        if (NightRun.IsNightActive && !NightRun.IsCaptured && !PlayerSensors.TabOpen)
+        if (NightRun.IsNightActive && !NightRun.IsCaptured)
         {
             NightRun.Send(JudgeSignal.Flashlight(on));
             _sentForDay = NightRun.Day;

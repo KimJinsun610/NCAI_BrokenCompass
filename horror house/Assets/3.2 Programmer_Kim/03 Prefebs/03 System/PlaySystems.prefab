@@ -125,12 +125,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb5935b6d59585445b552199e20a57e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameTime
-  startHour: 2
+  startHour: 0
   startMinute: 0
-  endHour: 5
+  endHour: 4
   endMinute: 0
   timeMultiplier: 30
-  use12HourFormat: 1
+  use12HourFormat: 0
 --- !u!114 &2461339111152588588
 MonoBehaviour:
   m_ObjectHideFlags: 0

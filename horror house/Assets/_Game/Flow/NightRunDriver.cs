@@ -1,4 +1,4 @@
-using NightDuty;
+﻿using NightDuty;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -6,8 +6,7 @@ using UnityEngine.SceneManagement;
 /// 게임 흐름(GameSession·GameTime)과 판정 코어(<see cref="NightRun"/>)를 잇는 Play 씬 구동기.
 /// <list type="bullet">
 /// <item>Start: 최종 기획서 규칙 셋을 켠다 — 판정 시간창(<see cref="NightRun.JudgingWindowEnabled"/>),
-/// 점검표 편성(<see cref="NightRun.InspectionsEnabled"/>), 밤 편성(<see cref="NightRun.ProgramEnabled"/>),
-/// 태블릿을 든 동안에도 판정(<see cref="NightRun.JudgeWhileTabOpen"/>).
+/// 점검표 편성(<see cref="NightRun.InspectionsEnabled"/>), 밤 편성(<see cref="NightRun.ProgramEnabled"/>).
 /// 그리고 <see cref="NightRun.BeginNight"/>(현재 일차, <b>밤 시계 분</b>). 씬의 JudgeTarget이 모두 켜진 뒤라 대상 검사가 맞다.</item>
 /// <item>Update: 게임 시계가 흐를 때만 <see cref="NightRun.Tick"/>. 판정 시간은 <b>실제 초</b>다 — 시계 배속을 곱하지 않는다.
 /// DayIntro 연출 중(시계 정지)·일시정지(timeScale 0)·근무 종료 뒤에는 흐르지 않는다. 판정 정지 구간(출근·이완·03:30 뒤)은 코어가 거른다.</item>
@@ -163,10 +162,10 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.JudgingWindowEnabled = true;
         NightRun.InspectionsEnabled = true;
         NightRun.ProgramEnabled = true;
-        NightRun.JudgeWhileTabOpen = true;
 
         _rewindOffset = 0f;
         _tracker.Reset(NightMinute);
+        DoorRelay.RescanForNight(gameObject.scene);
         NightRun.BeginNight(GameSession.CurrentDay, CurrentNightMinute);
         _begun = true;
         s_owner = this;
@@ -201,13 +200,16 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.JudgingWindowEnabled = false;
         NightRun.InspectionsEnabled = false;
         NightRun.ProgramEnabled = false;
-        NightRun.JudgeWhileTabOpen = false;
         NightRun.DirectorAutoRun = true;
     }
 
     private void OnShiftEnded()
     {
         if (s_owner != this || !NightRun.IsNightActive) return;   // 이미 포획·중단된 밤
+
+        // 5일차 04:00 — 정산하지 않고 피날레(11단계). 결말에서 FinaleDirector가 NightRun.EndFinale로 정산한다.
+        if (NightRun.Finale.Active) return;
+        if (NightRun.Day >= FinaleWatch.Day && FinaleDirector.Active != null && FinaleDirector.Active.Begin()) return;
 
         if (!NightRun.RequestEndNight() && !NightRun.IsCaptured)
         {
@@ -224,6 +226,19 @@ public sealed class NightRunDriver : MonoBehaviour
         _rewindOffset = result.StartMinute - NightMinute;
         _tracker.Reset(result.StartMinute);
         Debug.Log("[NightRunDriver] 밤 재시작(k=" + result.K + ", " + result.Kind + "). 게임 시계 되돌리기는 GameTime 쪽 연결이 필요합니다.", this);
+    }
+
+    /// <summary>디버그: 지금 밤을 버리고 그 일차로 다시 연다(피날레 시험용 5일차). 회차 축·기록은 그대로다.</summary>
+    public void DebugRestartAsDay(int day)
+    {
+        if (s_owner != this) return;
+        if (NightRun.IsNightActive) NightRun.AbandonNight();
+        GameSession.SetDay(day);
+        _rewindOffset = 0f;
+        _tracker.Reset(NightMinute);
+        DoorRelay.RescanForNight(gameObject.scene);
+        NightRun.BeginNight(GameSession.CurrentDay, CurrentNightMinute);
+        Debug.Log("[NightRunDriver] 디버그: " + GameSession.CurrentDay + "일차로 다시 열었습니다.", this);
     }
 
     private int CurrentNightMinute()

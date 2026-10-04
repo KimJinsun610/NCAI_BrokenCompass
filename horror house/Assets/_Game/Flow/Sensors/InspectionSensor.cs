@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
@@ -233,6 +233,8 @@ public sealed class InspectionSensor : MonoBehaviour
 
     private void Update()
     {
+        RequestFocusOutline();
+
         if (_focus.Length == 0 || Time.timeScale <= 0f)
         {
             _hold = 0f;
@@ -259,6 +261,41 @@ public sealed class InspectionSensor : MonoBehaviour
         {
             _hold = 0f;
             Report(anomaly);
+        }
+    }
+
+    /// <summary>점검 대상 외곽선을 옅게 그리는 거리(m, 수평). 벽 너머는 깊이 검사로 가려진다.</summary>
+    public const float OutlineRange = 9f;
+
+    /// <summary>아직 보고 가능하지 않은 점검 대상 외곽선의 진하기(보고 가능한 포커스는 1).</summary>
+    public const float HintOutline = 0.65f;
+
+    /// <summary>
+    /// 점검 대상 외곽선. 2026-10-03: 보고 가능한 포커스만 → <b>2026-10-04(42차) 민: 「비슷한 물품이 많아 무엇을 점검해야 하는지 모르겠다」</b> —
+    /// 오늘 점검표에서 아직 보고하지 않았고 열려 있는 항목의 소품은 <see cref="OutlineRange"/> 안에 오면 옅게(<see cref="HintOutline"/>),
+    /// 보고 가능한 포커스는 진하게 그린다. 점검 표식(<c>Inspect H-1</c> 등)은 소품의 자식인 보이지 않는 상자라 그 <b>부모</b>(소화기·현미경·CRT 모니터 …)에 그린다.
+    /// 정상·이상 어느 쪽이든 같은 외곽선이다(이상 여부를 알려 주지 않는다). 보고한 항목·아직 열리지 않은 항목(호출 2)은 그리지 않는다.
+    /// </summary>
+    private void RequestFocusOutline()
+    {
+        if (_plan == null || !NightRun.IsNightActive || NightRun.IsCaptured) return;
+        InspectionBoard board = NightRun.Inspections;
+        if (board == null) return;
+
+        PlayerSensors hub = PlayerSensors.Active;
+        Transform root = hub != null && hub.PlayerRoot != null ? hub.PlayerRoot : transform;
+        int minute = NightRun.NightMinute;
+        IReadOnlyList<InspectionAssignment> rows = _plan.Assignments;
+        for (int i = 0; i < rows.Count; i++)
+        {
+            string id = rows[i].Id;
+            bool focus = id == _focus;
+            if (!focus && (board.StateOf(id) != InspectionState.Pending || !board.IsOpen(id, minute))) continue;
+
+            JudgeTarget target;
+            if (!JudgeTargetRegistry.TryGet(rows[i].Item.TargetId, out target) || target == null) continue;
+            if (!focus && SensingRules.HorizontalDistance(root.position, target.AnchorPosition) > OutlineRange) continue;
+            InteractionOutline.Request(target.transform.parent != null ? target.transform.parent : target.transform, focus ? 1f : HintOutline);
         }
     }
 

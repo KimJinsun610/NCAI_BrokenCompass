@@ -16,8 +16,6 @@ namespace NightDuty
     /// </list>
     /// </para>
     /// <list type="bullet">
-    /// <item><b>사건 중 고정:</b> 공간에 진행 중인 단기 사건이 있으면(<see cref="SetHold"/>) 그 공간의 구간 반영을 미루고,
-    /// 사건이 끝나면 한 번에 반영한다. 다른 공간은 계속 따른다.</item>
     /// <item><b>100 도달은 미루지 않는다</b> — 그 신호는 <see cref="FearAxisSystem"/>이 별도로 보낸다.</item>
     /// <item>신뢰 축은 월드에 그리지 않으므로 방송하지 않는다. 신뢰의 구간은 <b>신뢰 전용 경계</b>(<see cref="Bands.OfTrust"/>)로 읽는다(신뢰는 줄지 않는다).</item>
     /// </list>
@@ -39,7 +37,6 @@ namespace NightDuty
 
         private readonly IFearAxisReader _reader;
         private readonly Band[,] _shown;
-        private readonly bool[] _hold;
         private readonly int[] _peak = new int[WorldAxisCount];
         private Band _dayFloor = Band.Band0;
 
@@ -49,7 +46,6 @@ namespace NightDuty
             _reader = reader ?? throw new ArgumentNullException(nameof(reader));
             int spaceSlots = MaxSpaceIndex() + 1;
             _shown = new Band[spaceSlots, WorldAxes.Length];
-            _hold = new bool[spaceSlots];
             Shown = new ShownReader(this);
 
             for (int a = 0; a < WorldAxes.Length; a++)
@@ -80,18 +76,14 @@ namespace NightDuty
 
         /// <summary>
         /// 그날의 일차 하한을 건다. <b>덱을 짜기 전에</b> 부른다 — 카드 자격이 연출 구간을 보기 때문이다.
-        /// 보류 중이 아닌 공간은 바로 올라간다. 하한이 내려가도 이미 올라간 연출 구간은 내려가지 않는다.
+        /// 하한이 내려가도 이미 올라간 연출 구간은 내려가지 않는다.
         /// </summary>
         public void SetDayFloor(Band floor)
         {
             _dayFloor = floor;
             for (int s = 0; s < PatrolSpaces.Length; s++)
             {
-                SpaceId space = PatrolSpaces[s];
-                if (!_hold[(int)space])
-                {
-                    RefreshSpace(space);
-                }
+                RefreshSpace(PatrolSpaces[s]);
             }
         }
 
@@ -110,7 +102,7 @@ namespace NightDuty
 
         /// <summary>
         /// 도달값을 스냅샷으로 되돌리고 모든 공간의 연출 구간을 다시 계산한다(붙잡힌 뒤 재시작 전용).
-        /// <b>연출 구간이 내려갈 수 있는 유일한 길이다.</b> 보류는 모두 풀고, 바뀐 공간에만 <see cref="EventBus.BandChanged"/>를 보낸다.
+        /// <b>연출 구간이 내려갈 수 있는 유일한 길이다.</b> 바뀐 공간에만 <see cref="EventBus.BandChanged"/>를 보낸다.
         /// </summary>
         /// <param name="reached">청각·조도·배치 순 도달값. 짧거나 null이면 남는 축은 현재 생존 수치로 둔다.</param>
         public void RestoreReached(int[] reached)
@@ -126,7 +118,6 @@ namespace NightDuty
             for (int s = 0; s < PatrolSpaces.Length; s++)
             {
                 SpaceId space = PatrolSpaces[s];
-                _hold[(int)space] = false;
                 for (int a = 0; a < WorldAxes.Length; a++)
                 {
                     FearAxis axis = WorldAxes[a];
@@ -144,7 +135,7 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 축의 연출 구간(공간 보류와 무관한 목표치) = max(도달 구간, 일차 하한).
+        /// 축의 연출 구간 = max(도달 구간, 일차 하한).
         /// 신뢰는 신뢰 전용 경계의 원시 구간 그대로다.
         /// </summary>
         public Band Target(FearAxis axis)
@@ -170,29 +161,7 @@ namespace NightDuty
             return _shown[(int)space, a];
         }
 
-        /// <summary>공간의 구간 반영을 멈추거나 재개한다. 재개하면 밀린 변화를 즉시 반영한다.</summary>
-        public void SetHold(SpaceId space, bool hold)
-        {
-            if (!IsPatrol(space))
-            {
-                return;
-            }
-
-            bool was = _hold[(int)space];
-            _hold[(int)space] = hold;
-            if (was && !hold)
-            {
-                RefreshSpace(space);
-            }
-        }
-
-        /// <summary>공간이 반영 보류 중인지.</summary>
-        public bool IsHeld(SpaceId space)
-        {
-            return IsPatrol(space) && _hold[(int)space];
-        }
-
-        /// <summary>축 값이 바뀌었을 때 호출한다. 도달값을 올리고, 보류 중이 아닌 공간만 갱신한다.</summary>
+        /// <summary>축 값이 바뀌었을 때 호출한다. 도달값을 올리고 모든 순찰 공간을 갱신한다.</summary>
         public void OnValueChanged(FearAxis axis)
         {
             int a = AxisSlot(axis);
@@ -209,11 +178,7 @@ namespace NightDuty
 
             for (int s = 0; s < PatrolSpaces.Length; s++)
             {
-                SpaceId space = PatrolSpaces[s];
-                if (!_hold[(int)space])
-                {
-                    Update(space, a);
-                }
+                Update(PatrolSpaces[s], a);
             }
         }
 

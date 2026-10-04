@@ -36,6 +36,17 @@ public class DeathCutscene : MonoBehaviour
     [Tooltip("Timeline이 세기를 움직이는 화면 효과 볼륨. 평소·복구 때 세기를 0으로 둔다(화면 효과가 남지 않게).")]
     [SerializeField] private UnityEngine.Rendering.Volume[] volumes = new UnityEngine.Rendering.Volume[0];
 
+    [Header("소리 (DeathCutsceneSoundLayout이 채움)")]
+    [Tooltip("빌드업 소리에 붙은 저역 통과 필터. muffleFrom~muffleTo 동안 차단 주파수를 낮춰 먹먹하게 한다(Timeline으로는 차단 주파수를 움직일 수 없다).")]
+    [SerializeField] private AudioLowPassFilter[] muffleFilters = new AudioLowPassFilter[0];
+    [SerializeField, Min(0f)] private float muffleFrom = 4.10f;
+    [SerializeField, Min(0f)] private float muffleTo = 4.30f;
+    [SerializeField, Min(10f)] private float muffledCutoff = 700f;
+    [Tooltip("컷신이 끝나고 게임으로 돌아올 때(디버그 복구) 내는 소리 — 짧은 「흡」과 떨리는 숨.")]
+    [SerializeField] private AudioSource[] returnAudio = new AudioSource[0];
+
+    private const float OpenCutoff = 22000f;
+
     [Header("시선 보정 — 씬마다 플레이어 눈높이가 다르다")]
     [Tooltip("돌아본 끝에 봐야 하는 지점(소년의 Head 뼈). 비우면 보정하지 않는다.")]
     [SerializeField] private Transform aimPoint;
@@ -113,7 +124,29 @@ public class DeathCutscene : MonoBehaviour
             a.playOnAwake = false;
             a.ignoreListenerPause = true;   // AudioListener.pause로 다른 소리를 끊어도 이건 들린다
         }
+        foreach (AudioSource a in returnAudio)
+        {
+            if (a != null) a.playOnAwake = false;
+        }
         ResetVolumes();
+        SetMuffle(OpenCutoff);
+    }
+
+    private void SetMuffle(float cutoff)
+    {
+        foreach (AudioLowPassFilter f in muffleFilters)
+        {
+            if (f != null) f.cutoffFrequency = cutoff;
+        }
+    }
+
+    /// <summary>빌드업이 얼굴 직전에 먹먹해진다 — 디렉터 시각으로 차단 주파수를 지수적으로 내린다.</summary>
+    private void UpdateMuffle()
+    {
+        if (muffleFilters.Length == 0 || director == null) return;
+        float t = (float)director.time;
+        float k = muffleTo <= muffleFrom ? (t >= muffleTo ? 1f : 0f) : Mathf.Clamp01((t - muffleFrom) / (muffleTo - muffleFrom));
+        SetMuffle(Mathf.Exp(Mathf.Lerp(Mathf.Log(OpenCutoff), Mathf.Log(muffledCutoff), k)));
     }
 
     private void ResetVolumes()
@@ -190,6 +223,7 @@ public class DeathCutscene : MonoBehaviour
         blendFromRot = playerCam.transform.rotation;
         elapsed = 0f;
 
+        SetMuffle(OpenCutoff);
         Playing = this;
         startedFrame = Time.frameCount;
         gameObject.SetActive(true);
@@ -265,6 +299,7 @@ public class DeathCutscene : MonoBehaviour
 
         // 다른 UI(개발자 모드 등)가 컷신 도중 커서를 켜도 다시 숨긴다.
         if (Cursor.visible) HideCursor();
+        UpdateMuffle();
 
         // 디렉터가 다 그린 뒤(LateUpdate) 카메라를 목표에 붙인다.
         elapsed += Time.deltaTime;
@@ -319,6 +354,13 @@ public class DeathCutscene : MonoBehaviour
         if (viewmodel != null) viewmodel.SetActive(viewmodelWasActive);
         if (pausedAudio && !GamePause.IsPaused) AudioListener.pause = false;
         pausedAudio = false;
+        SetMuffle(OpenCutoff);
+
+        // 게임 소리가 돌아오는 순간 짧게 「흡」 하고 숨을 떤다.
+        foreach (AudioSource a in returnAudio)
+        {
+            if (a != null && a.clip != null) a.Play();
+        }
 
         // 디렉터를 처음으로 되돌려 다음 재생 전까지 소년이 보이지 않게 한다(Activation 트랙의 끝 상태).
         if (director != null) director.time = 0;

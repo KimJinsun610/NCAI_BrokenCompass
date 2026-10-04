@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &787867874763567849
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8351541976039916640, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8602039492894786763, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_Pitch
+      value: 0.8925
+      objectReference: {fileID: 0}
+    - target: {fileID: 8602039492894786763, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_Resource
+      value: 
+      objectReference: {fileID: 8300000, guid: 593a31d6d8ffc5a44a56bc36b3c5d2a8, type: 3}
+    - target: {fileID: 9028148906568771941, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}
+      propertyPath: m_Name
+      value: Decal_WetSpot_Water_D
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 0ec2fa6ac92a5d0438b1dcff3b2d6355, type: 3}

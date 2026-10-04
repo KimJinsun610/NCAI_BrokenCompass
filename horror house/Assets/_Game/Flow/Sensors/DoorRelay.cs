@@ -3,15 +3,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 문 발신기. 문 하나에 붙어 <see cref="SignalKind.DoorCommandAccepted"/>·
-/// <see cref="SignalKind.DoorCloseCompleted"/>·<see cref="SignalKind.DoorAutoOpenObserved"/>를 보낸다.
+/// 문 발신기. 문 하나에 붙어 <see cref="SignalKind.DoorCommandAccepted"/>·<see cref="SignalKind.DoorAutoOpenObserved"/>를 보낸다.
 ///
 /// <para><b>벤더 <c>DoorScript</c>를 참조하지 않는 이유.</b> <c>Assets/NOT_Lonely/</c>는 asmdef가 없어
 /// <c>Assembly-CSharp</c>에 들어가고, 폴더 자체가 gitignore 대상이다(CLAUDE.md §5.1-2).
 /// 그 타입을 이름으로 참조하면 패키지를 받지 않은 팀원의 빌드가 깨지고, 나중에 <c>_Game</c>에 자체 문 컨트롤러를 만들면
 /// 이 파일을 통째로 다시 써야 한다. 그래서 이 발신기는 <b>같은 오브젝트의 <c>UnityEngine.Animation</c>만 관찰</b>한다.
 /// <c>Animation</c>은 엔진 타입이므로 어떤 문 구현이 와도 그대로 쓸 수 있고, 자체 컨트롤러로 바꿀 때는
-/// <see cref="ReportMoveStarted"/>·<see cref="ReportCloseCompleted"/>를 직접 부르면 된다.</para>
+/// <see cref="ReportMoveStarted"/>를 직접 부르면 된다.</para>
 ///
 /// <para><b>씬에서 확인한 벤더 문의 동작.</b> 문마다 열기 클립이 하나뿐이고(<c>DoorNarrow_open</c> 등),
 /// 닫기는 같은 클립을 <b>음수 speed</b>로 되감아 재생한다. 그래서 「재생 중인 상태의 speed 부호」가 곧 열기/닫기다.</para>
@@ -19,8 +18,6 @@ using UnityEngine.SceneManagement;
 /// <list type="bullet">
 /// <item><b><c>DoorCommandAccepted</c> = 명령 수락 = 애니메이션 시작.</b> 사거리 밖이라 벤더가 무시한 입력은
 /// 애니메이션이 시작되지 않으므로 자동으로 보내지지 않는다 — 키 입력을 직접 신호로 바꾸지 않는 이유다.</item>
-/// <item><b><c>DoorCloseCompleted</c> = 닫힘 애니메이션이 끝난 시점.</b> T3의 성공은
-/// <c>AllOf(DoorCloseCompleted, SpaceExited)</c>라 이걸 안 보내면 T3는 영원히 실패한다.</item>
 /// <item><b><c>DoorAutoOpenObserved</c>는 「열렸다」가 아니라 「보았다」.</b> 연출이 여는 동작이
 /// <b>진행되는 동안</b> 플레이어가 실제로 그 문을 보고 있어야 한다. <see cref="PlayerSensors"/>의
 /// <c>GazeProbe.CurrentId</c>로 판단한다. 한 번의 자동 개방에 한 번만 보낸다.</item>
@@ -28,8 +25,7 @@ using UnityEngine.SceneManagement;
 ///
 /// <para><b>출처 구분(<see cref="ActionSource"/>)은 절대 섞으면 안 된다.</b>
 /// 플레이어가 연 문은 <c>Player</c>, 연출이 연 문은 <c>Direction</c>이다.
-/// <c>DoorObligationCondition</c>(C6)은 <b>플레이어가 연 문만</b> 의무로 잡고, H1의 실패는
-/// 자동 개방을 본 뒤 <b>플레이어가</b> 닫기 명령을 낸 것이다. 섞으면 H1·C6·T3가 통째로 오판한다.</para>
+/// 새 수칙 H2(「열린 문은 열린 채로」)는 자동 개방을 본 뒤 <b>플레이어가</b> 닫기 명령을 낸 것만 위반으로 본다. 섞으면 오판한다.</para>
 ///
 /// <para><b>출처를 어떻게 정하는가.</b>
 /// ① 연출이 움직이기 직전에 <see cref="BeginDirectionMove"/>를 부르면 그 움직임은 무조건 <c>Direction</c>이다.
@@ -99,16 +95,16 @@ public sealed class DoorRelay : MonoBehaviour
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
         SceneManager.sceneLoaded += OnSceneLoaded;
-
-        // 씬 전환 타이밍에 따라 sceneLoaded 시점에 아직 잡히지 않는 문이 있었다(2026-09-24: 8개 중 7개).
-        // 문이 실제로 필요해지는 시점은 밤이 열릴 때이므로 그때 한 번 더 훑는다.
-        EventBus.DayStarted -= OnDayStarted;
-        EventBus.DayStarted += OnDayStarted;
     }
 
-    private static void OnDayStarted(int day, ClauseZeroType clause)
+    /// <summary>
+    /// 밤이 열릴 때 한 번 더 훑는다 — 씬 전환 타이밍에 따라 sceneLoaded 때 아직 잡히지 않는 문이 있었다(2026-09-24: 8개 중 7개).
+    /// 구동기(<see cref="NightRunDriver"/>)가 밤을 열기 직전에 부른다. 예전엔 「하루 시작」 이벤트(EventBus.DayStarted)에 걸어 두었는데
+    /// 그 이벤트를 보내는 곳이 없어 재검사가 한 번도 돌지 않았다(2026-10-03 확인, 이벤트는 폐기).
+    /// </summary>
+    public static void RescanForNight(Scene scene)
     {
-        EnsureFor(SceneManager.GetActiveScene());
+        EnsureFor(scene);
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -198,7 +194,7 @@ public sealed class DoorRelay : MonoBehaviour
         }
 #endif
 
-        bool canSend = NightRun.IsNightActive && !NightRun.IsCaptured && !PlayerSensors.TabOpen;
+        bool canSend = NightRun.IsNightActive && !NightRun.IsCaptured;
 
         bool moving;
         bool closing;
@@ -233,13 +229,7 @@ public sealed class DoorRelay : MonoBehaviour
         }
         else if (!moving && _wasMoving)
         {
-            _wasMoving = false;
-
-            if (_movingClose && canSend)
-            {
-                // 닫힘 완료. 출처는 시작할 때 정한 것을 그대로 쓴다.
-                Send(new JudgeSignal(SignalKind.DoorCloseCompleted, SpaceId.None, _doorId, _moveSource, false, 0f));
-            }
+            _wasMoving = false;   // 움직임 끝(옛 「닫힘 완료」 신호는 2026-10-03 폐기 — 읽는 수칙이 없다)
         }
 
         // 자동 개방을 「보았다」 — 여는 동작이 진행되는 동안에만, 한 번만.
@@ -268,8 +258,7 @@ public sealed class DoorRelay : MonoBehaviour
 
     /// <summary>
     /// 연출이 이 문을 움직이기 <b>직전</b>에 부른다. 이 예약 동안 시작된 움직임은 <see cref="ActionSource.Direction"/>이다.
-    /// 앞으로 만들 <c>AnomalyCueDirector</c>(복도 Band0 「지정 통행에서 문 자동 개방 1회」,
-    /// 화장실 Band0 「입구 쪽 칸 자동 개방 1회」)가 이것을 부른다.
+    /// 연출 실행기(DirectionStage — H2 「열린 문」 자동 개방 등)가 이것을 부른다.
     /// </summary>
     public void BeginDirectionMove(float seconds = 1f)
     {
@@ -294,20 +283,9 @@ public sealed class DoorRelay : MonoBehaviour
         _moveSource = source;
         _autoOpenReported = false;
 
-        if (NightRun.IsNightActive && !NightRun.IsCaptured && !PlayerSensors.TabOpen)
+        if (NightRun.IsNightActive && !NightRun.IsCaptured)
         {
             Send(JudgeSignal.DoorCommand(_doorId, isClose, source));
-        }
-    }
-
-    /// <summary>애니메이션이 아닌 문 구현이 쓸 수동 보고(닫힘 완료).</summary>
-    public void ReportCloseCompleted()
-    {
-        _wasMoving = false;
-
-        if (NightRun.IsNightActive && !NightRun.IsCaptured && !PlayerSensors.TabOpen)
-        {
-            Send(new JudgeSignal(SignalKind.DoorCloseCompleted, SpaceId.None, _doorId, _moveSource, false, 0f));
         }
     }
 

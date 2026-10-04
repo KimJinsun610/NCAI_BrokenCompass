@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace NightDuty.Tests
@@ -257,27 +257,13 @@ namespace NightDuty.Tests
     /// <summary>NightRun의 판정 시간창·경고·처벌·재시작·체크포인트·결근.</summary>
     public sealed class NightRunRestartTests
     {
-        private TestKit _kit;
-        private RuleSO _h1;
         private int _clock;
 
         [SetUp]
         public void SetUp()
         {
-            _kit = new TestKit();
-            _h1 = _kit.Card(c =>
-            {
-                c.CardId = "H1";
-                c.Space = SpaceId.Corridor;
-                c.TriggerKind = SignalKind.DoorAutoOpenObserved;
-                c.TargetIds = new[] { "corridor.door.auto" };
-                c.Failure = new SignalCondition(SignalKind.DoorCommandAccepted, TargetMatchIds.Trigger, SpaceId.None, FlagFilter.True);
-                c.Success = new SignalCondition(SignalKind.PassageCompleted, "corridor.passage");
-            });
-
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
-            NightRun.DeckOverride = day => new List<RuleSO> { _h1 };
+            NightRun.ProgramEnabled = true;   // 수칙 위반은 새 편성의 G1(청각)으로 만든다(TestKit)
             NightRun.JudgingWindowEnabled = false;
             _clock = 30;
         }
@@ -285,18 +271,16 @@ namespace NightDuty.Tests
         [TearDown]
         public void TearDown()
         {
-            NightRun.DeckOverride = null;
             NightRun.InspectionPlanOverride = null;
             NightRun.JudgingWindowEnabled = false;
+            NightRun.ProgramEnabled = false;
             NightRun.StartNewRun();
             EventBus.ClearAll();
-            _kit.Dispose();
         }
 
         private static void Violate()
         {
-            NightRun.Send(JudgeSignal.Target(SignalKind.DoorAutoOpenObserved, "corridor.door.auto"));
-            NightRun.Send(JudgeSignal.DoorCommand("corridor.door.auto", true, ActionSource.Player));
+            TestKit.ViolateRunning();
         }
 
         [Test]
@@ -308,26 +292,26 @@ namespace NightDuty.Tests
             Assert.IsFalse(NightRun.IsJudgingNow);
 
             Violate();
-            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Layout), "출근 중에는 판정하지 않는다");
+            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Auditory), "출근 중에는 판정하지 않는다");
 
             _clock = 120;   // 이완
             Violate();
-            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Layout), "이완 중에는 판정하지 않는다");
+            Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Auditory), "이완 중에는 판정하지 않는다");
 
             _clock = 40;
             Assert.IsTrue(NightRun.IsJudgingNow);
             Violate();
-            Assert.AreEqual(Deltas.RuleViolation, NightRun.Axes.GetValue(FearAxis.Layout));
+            Assert.AreEqual(Deltas.RuleViolation, NightRun.Axes.GetValue(FearAxis.Auditory));
         }
 
         [Test]
-        public void 판정정지_중에도_공간진입은_방문으로_센다()
+        public void 판정정지_중에도_현재공간은_갱신한다()
         {
             NightRun.JudgingWindowEnabled = true;
             _clock = 5;
             NightRun.BeginNight(1, () => _clock);
             NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Toilet));
-            Assert.IsTrue(NightRun.WasVisitedToday(SpaceId.Toilet));
+            Assert.AreEqual(SpaceId.Toilet, NightRun.CurrentSpace);
         }
 
         [Test]
@@ -368,7 +352,7 @@ namespace NightDuty.Tests
             EventBus.DayEnded += s => dayEnded++;
             NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day,
                 new[] { new InspectionAssignment(InspectionCatalog.Find("H-4"), true, Band.Band1, false) },
-                SpaceId.None, string.Empty, null);
+                SpaceId.None, string.Empty);
 
             NightRun.BeginNight(1, () => _clock);
             NightRun.DebugAddAxis(FearAxis.Layout, 90);
@@ -390,6 +374,7 @@ namespace NightDuty.Tests
             NightRun.DebugAddAxis(FearAxis.Trust, 20);
             NightRun.AddWarning(1, "전날 미완료");   // 밤 시작 전에 찍힌 도장은 스냅샷에 들어간다
             NightRun.BeginNight(2, () => _clock);
+            RuleSO firstLine = NightRun.TodayDeck[0];
 
             NightRun.DebugAddAxis(FearAxis.Trust, 10);   // 이번 시도에서 번 신뢰는 사라진다
             NightRun.AddWarning(1, "미완료");            // 이번 시도에서 받은 경고도 사라진다
@@ -414,7 +399,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(20, NightRun.Axes.GetValue(FearAxis.Trust), "신뢰는 스냅샷 그대로");
             Assert.AreEqual(1, NightRun.Warnings.Count, "경고도 스냅샷 그대로");
             Assert.AreEqual(Band.Band3, NightRun.Shown.GetBand(FearAxis.Auditory), "붙잡힌 100이 연출을 구간 4로 묶지 않는다");
-            Assert.AreSame(_h1, NightRun.TodayDeck[0], "덱은 다시 뽑지 않는다");
+            Assert.AreSame(firstLine, NightRun.TodayDeck[0], "덱은 다시 뽑지 않는다");
 
             NightRun.DebugForceCapture(FearAxis.Auditory);
             result = NightRun.RestartAfterCapture();
@@ -462,19 +447,19 @@ namespace NightDuty.Tests
             NightRun.BeginNight(1, () => _clock);
             Assert.IsFalse(NightRun.SignCheckpoint(), "이완 구간이 아니면 서명할 수 없다");
 
-            Violate();   // 배치 12
+            Violate();   // 청각 12
             _clock = 120;
             Assert.IsTrue(NightRun.SignCheckpoint());
             Assert.IsFalse(NightRun.SignCheckpoint(), "밤당 한 번");
-            Assert.AreEqual(Deltas.RuleViolation, NightRun.Checkpoint.Value(FearAxis.Layout));
+            Assert.AreEqual(Deltas.RuleViolation, NightRun.Checkpoint.Value(FearAxis.Auditory));
 
             _clock = 150;
-            NightRun.DebugForceCapture(FearAxis.Layout);
+            NightRun.DebugForceCapture(FearAxis.Auditory);
             RestartResult r = NightRun.RestartAfterCapture();
 
             Assert.AreEqual(RestartKind.FromCheckpoint, r.Kind);
             Assert.AreEqual(NightClock.Call2, r.StartMinute);
-            Assert.AreEqual(Deltas.RuleViolation, NightRun.Axes.GetValue(FearAxis.Layout), "40 이하라 보정하지 않는다");
+            Assert.AreEqual(Deltas.RuleViolation, NightRun.Axes.GetValue(FearAxis.Auditory), "40 이하라 보정하지 않는다");
         }
 
         [Test]

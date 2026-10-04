@@ -25,14 +25,6 @@ namespace NightDuty
         /// <summary>축 값의 상한(포함). 이 값에 도달하면 붙잡힘이다.</summary>
         public const int Max = 100;
 
-        /// <summary>
-        /// <b>폐기 예정.</b> 확정 기획서(2026-09-12)에는 공통 「붉게 보인다」 임계가 없다.
-        /// 다른 코드가 아직 참조하고 있을 수 있어 바로 지우지 않고 경고로 표시해 둔다.
-        /// 새 코드에서 쓰지 말 것.
-        /// </summary>
-        [System.Obsolete("확정 기획서에 없는 값입니다. RuleSO의 eligible 구간을 쓰십시오.")]
-        public const int RedThreshold = 75;
-
         /// <summary>구간 개수.</summary>
         public const int Count = 5;
 

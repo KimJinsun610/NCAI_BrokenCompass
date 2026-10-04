@@ -23,6 +23,15 @@ public sealed class StageAnchor : MonoBehaviour
     [Tooltip("응시·비춤 판정 상자 자리(선택). 위치·회전 = 상자 중심·방향, 스케일 = 상자 크기.")]
     [SerializeField] private Transform gazeProxy;
 
+    [Tooltip("대면 동안 열어 둘 문(선택). 잠겨 있으면 그동안만 풀고, 끝나면 닫고 다시 잠근다(문간의 노란 얼굴 — 도서관 정문).")]
+    [SerializeField] private Transform revealDoor;
+
+    [Tooltip("걸어갈 끝점(선택). 있으면 이 자리에서 끝점까지 걸어가 사라진다(화장실 소녀가 칸으로 들어감).")]
+    [SerializeField] private Transform walkTo;
+
+    [Tooltip("걷는 속도(m/s).")]
+    [SerializeField, Min(0.05f)] private float walkSpeed = 0.45f;
+
     [Tooltip("디버그 콘솔 [이동+실행]이 플레이어를 세울 거리(자리 앞 m).")]
     [SerializeField, Min(0.5f)] private float debugViewDistance = 4f;
 
@@ -44,6 +53,24 @@ public sealed class StageAnchor : MonoBehaviour
         get { return debugViewDistance; }
     }
 
+    /// <summary>대면 동안 열어 둘 문. 없으면 null.</summary>
+    public Transform RevealDoor
+    {
+        get { return revealDoor; }
+    }
+
+    /// <summary>걸어갈 끝점. 없으면 null.</summary>
+    public Transform WalkTo
+    {
+        get { return walkTo; }
+    }
+
+    /// <summary>걷는 속도(m/s).</summary>
+    public float WalkSpeed
+    {
+        get { return walkSpeed; }
+    }
+
     /// <summary>그 ID의 자리. 없으면 null.</summary>
     public static StageAnchor Find(string id)
     {
@@ -58,6 +85,14 @@ public sealed class StageAnchor : MonoBehaviour
         anchorId = id ?? string.Empty;
         gazeProxy = proxy;
         debugViewDistance = Mathf.Max(0.5f, viewDistance);
+    }
+
+    /// <summary>에디터 도구가 쓴다 — 문 열기·걷기 설정.</summary>
+    public void ConfigureExtras(Transform door, Transform walkEnd, float speed)
+    {
+        revealDoor = door;
+        walkTo = walkEnd;
+        walkSpeed = Mathf.Max(0.05f, speed);
     }
 
     private void OnEnable()
@@ -89,6 +124,13 @@ public sealed class StageAnchor : MonoBehaviour
         Gizmos.color = new Color(1f, 0.4f, 0.1f, 0.9f);
         Gizmos.DrawWireSphere(transform.position, 0.12f);
         Gizmos.DrawLine(transform.position, transform.position + transform.forward * 0.6f);
+        if (walkTo != null)
+        {
+            Gizmos.color = new Color(1f, 0.2f, 0.2f, 0.9f);
+            Gizmos.DrawLine(transform.position, walkTo.position);
+            Gizmos.DrawWireSphere(walkTo.position, 0.1f);
+        }
+
         if (gazeProxy != null)
         {
             Gizmos.color = new Color(0.2f, 1f, 0.9f, 0.8f);

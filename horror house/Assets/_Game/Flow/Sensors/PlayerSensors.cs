@@ -4,21 +4,21 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 플레이어 센서 허브. <b>0.1초 누산 틱</b>으로 <see cref="GazeProbe"/>·<see cref="ProximityProbe"/>를
+/// 플레이어 센서 허브. <b>0.1초 누산 틱</b>으로 <see cref="GazeProbe"/>를
 /// CLAUDE.md §4.4.1이 정한 고정 순서로 돌린다.
 ///
 /// <para><b>왜 누산기인가.</b> <c>SpaceZones</c>처럼 <c>if (Time.time &lt; _next)</c> 게이트로 재면
 /// 프레임이 0.016초씩 들쭉날쭉한 만큼 매 샘플이 뒤로 밀린다(60fps에서 샘플 하나가 0.1초가 아니라 0.100~0.116초).
-/// 그런데 <c>GazeCondition</c>의 유예 2초와 응시 3초는 <b>샘플 Value의 합</b>으로만 흐르므로,
-/// 게이트 방식이면 코어는 3초를 셌는데 실제로는 3.4초가 지나 있다(H2·C3). 누산기는 이 오차를 남기지 않는다.</para>
+/// 그런데 응시 수칙의 연속 응시 시간은 <b>샘플 Value의 합</b>으로 흐르므로,
+/// 게이트 방식이면 코어는 3초를 셌는데 실제로는 3.4초가 지나 있다. 누산기는 이 오차를 남기지 않는다.</para>
 ///
 /// <para><b>실행 순서.</b> <c>[DefaultExecutionOrder(50)]</c>으로 기본 순서(0)의 <c>NightRunDriver</c>(Tick)와
 /// <c>SpaceZones</c>(공간·구역·점검) 뒤에 돈다. 같은 프레임 안에서 §4.4.1의 「<c>Tick</c> 먼저」가 지켜진다.</para>
 ///
-/// <para><b>태블릿(2026-09-30 최종 기획서).</b> 태블릿을 든 동안에도 시간과 판정이 흐르고(<see cref="NightRun.JudgeWhileTabOpen"/>),
-/// 응시 기준점만 태블릿 위 가운데(화면 높이 78%)로 옮긴다. 옛 규칙(판정 정지)을 켜 두면 <see cref="TabOpen"/>이 참인 동안 발신을 멈춘다.</para>
+/// <para><b>태블릿(2026-09-30 최종 기획서).</b> 태블릿을 든 동안에도 시간과 판정이 흐르고 발신기들도 그대로 돈다.
+/// 응시 기준점만 태블릿 위 가운데(화면 높이 78%)로 옮긴다(<see cref="TabletRaised"/>). 옛 규칙(Tab 중 발신 정지)은 2026-10-03에 없앴다.</para>
 ///
-/// <para><b>보내지 않는 것.</b> <c>Tick</c>·<c>NightBegan</c>·<c>NightEndAccepted</c>는 코어가 만든다.
+/// <para><b>보내지 않는 것.</b> <c>Tick</c>은 구동기(NightRunDriver)가 만든다.
 /// <c>TabChanged</c>는 <c>TabletBridge</c>가 보낸다 — 이 허브는 태블릿 상태를 <b>읽기만</b> 한다.</para>
 /// </summary>
 [DisallowMultipleComponent]
@@ -41,7 +41,6 @@ public sealed class PlayerSensors : MonoBehaviour
 
     [Header("발신기")]
     [SerializeField] private GazeProbe gaze = new GazeProbe();
-    [SerializeField] private ProximityProbe proximity = new ProximityProbe();
 
     [Header("태블릿(Tab)")]
     [Tooltip("이 오브젝트가 켜져 있으면 태블릿이 올라온 것으로 본다. 태블릿 UI 루트를 넣는다. 비워도 된다.")]
@@ -61,9 +60,9 @@ public sealed class PlayerSensors : MonoBehaviour
     /// <summary>
     /// 한 샘플이 끝날 때마다 발생한다. 인자는 이 샘플이 대표하는 시간(초, 기본 0.1).
     /// <para>
-    /// <b>이 허브 밖의 발신기(<c>AnomalyCueDirector</c>·<c>InspectionSensor</c> 등)가 자체 <c>Update</c>로 0.1초를 세지 않게 하려고 둔다.</b>
+    /// <b>이 허브 밖의 발신기(<c>InspectionSensor</c>·<c>FinalRuleRelay</c> 등)가 자체 <c>Update</c>로 0.1초를 세지 않게 하려고 둔다.</b>
     /// 발신기마다 따로 재면 같은 순간의 신호 순서가 Unity의 Update 순서에 맡겨지고,
-    /// 그러면 CLAUDE.md §4.4.1의 고정 순서(Tick → PassageCompleted → ZoneExited → InspectionCompleted → SpaceExited)를
+    /// 그러면 CLAUDE.md §4.4.1의 고정 순서(Tick → ZoneExited → SpaceExited)를
     /// 보장할 수 없다.
     /// </para>
     /// <para>
@@ -80,12 +79,6 @@ public sealed class PlayerSensors : MonoBehaviour
         get { return gaze; }
     }
 
-    /// <summary>근접 발신기.</summary>
-    public ProximityProbe Proximity
-    {
-        get { return proximity; }
-    }
-
     /// <summary>플레이어 발밑 기준점. 없으면 null.</summary>
     public Transform PlayerRoot
     {
@@ -96,16 +89,6 @@ public sealed class PlayerSensors : MonoBehaviour
     public static bool TabletRaised
     {
         get { return s_tabOpen; }
-    }
-
-    /// <summary>
-    /// <b>신호를 멈춰야 하는</b> 태블릿 상태인지 — 옛 규칙(Tab 중 판정 정지)일 때만 참이다.
-    /// 최종 기획서 규칙(<see cref="NightRun.JudgeWhileTabOpen"/>)에서는 태블릿을 들어도 false라 발신기들이 그대로 돈다.
-    /// 문·손전등·공간 발신기와 조작기가 이 값으로 멈춘다(이름은 하위 호환으로 남겼다).
-    /// </summary>
-    public static bool TabOpen
-    {
-        get { return s_tabOpen && !NightRun.JudgeWhileTabOpen; }
     }
 
     /// <summary>
@@ -170,15 +153,10 @@ public sealed class PlayerSensors : MonoBehaviour
         s_active = this;
         _acc = 0f;
         _lastDay = -1;
-
-        // EventBus는 구독하지 않는다. 대신 정적 등록부 이벤트를 쓰므로 OnDisable에서 반드시 푼다(CLAUDE.md §5.2-6).
-        JudgeTargetRegistry.Changed += OnTargetsChanged;
     }
 
     private void OnDisable()
     {
-        JudgeTargetRegistry.Changed -= OnTargetsChanged;
-
         if (s_active == this)
         {
             s_active = null;
@@ -194,7 +172,7 @@ public sealed class PlayerSensors : MonoBehaviour
 
         // 밤이 아니거나 포획됐으면 발신하지 않는다. 누산기도 비워 둔다
         // (다시 열렸을 때 밀린 시간이 한꺼번에 쏟아지면 안 된다).
-        if (!NightRun.IsNightActive || NightRun.IsCaptured || TabOpen)
+        if (!NightRun.IsNightActive || NightRun.IsCaptured)
         {
             _acc = 0f;
             return;
@@ -205,7 +183,6 @@ public sealed class PlayerSensors : MonoBehaviour
             _lastDay = NightRun.Day;
             _acc = 0f;
             gaze.Reset();
-            proximity.Reset();
         }
 
         Camera cam = ResolveCamera();
@@ -236,17 +213,14 @@ public sealed class PlayerSensors : MonoBehaviour
     /// 한 샘플. <b>순서를 바꾸지 말 것.</b>
     /// ① 응시를 먼저 재고 보낸다 — 같은 프레임의 <c>DoorRelay</c>가 <see cref="GazeProbe.CurrentId"/>로
     /// 「자동 개방을 보았다」를 판단하기 때문이다. 태블릿을 들었으면 기준점이 화면 높이 78%로 올라간다.
-    /// ② 근접을 보낸다.
     /// </summary>
     private void Sample(Camera cam, Transform root, float step)
     {
         gaze.Probe(cam, root, SensingRules.GazeViewportY(s_tabOpen));
         gaze.Send(step);
 
-        proximity.Sample(root, step);
-
-        // ③ 마지막으로 허브 밖 발신기에 같은 틱을 나눠 준다.
-        //    응시·근접 뒤에 부르는 이유: 구독자가 갱신된 GazeProbe.CurrentId를 읽어 식별 0.2초를 세기 때문이다.
+        // ② 마지막으로 허브 밖 발신기에 같은 틱을 나눠 준다.
+        //    응시 뒤에 부르는 이유: 구독자가 갱신된 GazeProbe.CurrentId를 읽어 식별 0.2초를 세기 때문이다.
         //    구독자 하나가 던진 예외로 나머지 발신이 멈추면 안 되므로 한 건씩 감싼다.
         Action<float> handler = Sampled;
         if (handler == null) return;
@@ -263,11 +237,6 @@ public sealed class PlayerSensors : MonoBehaviour
                 Debug.LogException(e, this);
             }
         }
-    }
-
-    private void OnTargetsChanged()
-    {
-        proximity.MarkDirty();
     }
 
     private Camera ResolveCamera()

@@ -6,7 +6,7 @@ namespace NightDuty.EditorTools
     /// <summary>
     /// 판정용 표시를 Scene 뷰에 그린다 — <b>선택하지 않아도 보인다</b>.
     /// <list type="bullet">
-    /// <item>공간 상자(초록) · 제외 공간(빨강) · 점검 자리(파랑) · 구역(노랑)</item>
+    /// <item>공간 상자(초록) · 제외 공간(빨강) · 구역(노랑)</item>
     /// <item>판정 대상(<see cref="JudgeTarget"/>)의 ID를 오브젝트 위에 글자로</item>
     /// </list>
     /// <para>씬을 눈으로 검수할 때만 쓰는 도구다. 런타임에는 아무것도 하지 않는다.</para>
@@ -16,7 +16,6 @@ namespace NightDuty.EditorTools
     {
         private static readonly Color SpaceColor = new Color(0.25f, 0.9f, 0.55f, 1f);
         private static readonly Color OutColor = new Color(0.95f, 0.35f, 0.3f, 1f);
-        private static readonly Color InspectColor = new Color(0.2f, 0.65f, 1f, 1f);
         private static readonly Color ZoneColor = new Color(1f, 0.85f, 0.25f, 1f);
         private static readonly Color TargetColor = new Color(1f, 0.55f, 0.15f, 1f);
 
@@ -35,12 +34,6 @@ namespace NightDuty.EditorTools
                 string label = outOfScope ? "제외" : Label(space);
 
                 Frame(box, outOfScope ? OutColor : SpaceColor, label);
-
-                Bounds inspect = e.FindPropertyRelative("InspectionBox").boundsValue;
-                if (!outOfScope && inspect.size.sqrMagnitude > 0f)
-                {
-                    Frame(inspect, InspectColor, "점검 자리");
-                }
             }
 
             SerializedProperty signals = so.FindProperty("signalZones");

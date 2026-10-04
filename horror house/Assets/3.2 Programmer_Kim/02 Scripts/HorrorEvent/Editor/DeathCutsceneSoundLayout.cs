@@ -482,7 +482,7 @@ public static class DeathCutsceneSoundLayout
     }
 
     /// <summary>파일 이름(확장자 없이)이 정확히 같은 오디오 클립을 프로젝트 전체에서 찾는다. 여럿이면 _Game/Audio를 먼저.</summary>
-    private static AudioClip FindClip(string fileName)
+    internal static AudioClip FindClip(string fileName)
     {
         string best = null;
         foreach (string guid in AssetDatabase.FindAssets(fileName + " t:AudioClip"))
@@ -584,7 +584,7 @@ public static class DeathCutsceneSoundLayout
     }
 
     /// <summary>WAV를 직접 읽어 소리가 시작되는 지점과 가장 큰 지점(10ms RMS)을 잰다. 읽지 못하면 둘 다 0.</summary>
-    private struct WavInfo
+    internal struct WavInfo
     {
         public double onset;
         public double peak;

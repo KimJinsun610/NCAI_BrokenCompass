@@ -22,8 +22,10 @@ using UnityEngine.Playables;
 [DisallowMultipleComponent]
 public class DeathCutscene : MonoBehaviour
 {
-    /// <summary>씬에 없을 때 디버그 키로 불러올 프리팹 이름(어느 Resources 폴더든).</summary>
+    /// <summary>씬에 없을 때 디버그 키로 불러올 프리팹 이름(어느 Resources 폴더든) — 청각 붙잡힘.</summary>
     public const string ResourceName = "DeathCutscene_Auditory";
+    /// <summary>조도 붙잡힘 — 손전등이 꺼지고 암흑 뒤 다시 켜지면 해부 모형 얼굴.</summary>
+    public const string ResourceNameIlluminance = "DeathCutscene_Illuminance";
 
     [Header("연결 (빌더가 채움)")]
     [SerializeField] private PlayableDirector director;
@@ -46,6 +48,16 @@ public class DeathCutscene : MonoBehaviour
     [SerializeField] private AudioSource[] returnAudio = new AudioSource[0];
 
     private const float OpenCutoff = 22000f;
+
+    [Header("손전등 · 암전 (Timeline이 움직임 — 조도 컷신)")]
+    [Tooltip("켜면 컷신 동안 플레이어 손전등을 붙잡아 flashlightLevel대로 밝기를 바꾼다. 끄면(청각 컷신) 손전등을 건드리지 않는다.")]
+    [SerializeField] private bool controlFlashlight;
+    [Tooltip("손전등 밝기 배율(원래 세기 × 이 값). Timeline 애니메이션 트랙이 움직인다 — 깜빡임·꺼짐·다시 켜짐.")]
+    [SerializeField, Min(0f)] private float flashlightLevel = 1f;
+    [Tooltip("화면을 덮는 검은 판의 불투명도(0 = 없음, 1 = 완전한 암흑). Timeline이 움직인다.")]
+    [SerializeField, Range(0f, 1f)] private float blackout;
+    [Tooltip("blackout 값을 그리는 화면 전체 검은 이미지(빌더가 만든 오버레이 캔버스). 비우면 암전하지 않는다.")]
+    [SerializeField] private UnityEngine.UI.Image blackoutImage;
 
     [Header("시선 보정 — 씬마다 플레이어 눈높이가 다르다")]
     [Tooltip("돌아본 끝에 봐야 하는 지점(소년의 Head 뼈). 비우면 보정하지 않는다.")]
@@ -77,6 +89,9 @@ public class DeathCutscene : MonoBehaviour
 
     public bool IsPlaying { get { return Playing == this; } }
 
+    /// <summary>이 컷신의 디버그 재생 키(청각 F8 · 조도 F7).</summary>
+    public KeyCode DebugKey { get { return debugKey; } }
+
     // 복구용
     private Transform player;
     private Camera playerCam;
@@ -97,6 +112,13 @@ public class DeathCutscene : MonoBehaviour
     private int startedFrame = -1;
     private float pitchCorrection;   // 실제 눈→얼굴 각도 − designedPitch
     private CursorLockMode cursorWasLock;
+
+    // 붙잡은 손전등(controlFlashlight) — 복구용 원래 상태
+    private GameObject lampRoot;
+    private bool lampWasActive;
+    private Light[] lampLights = new Light[0];
+    private float[] lampIntensity = new float[0];
+    private bool[] lampEnabled = new bool[0];
 
     private static void HideCursor()
     {
@@ -130,6 +152,73 @@ public class DeathCutscene : MonoBehaviour
         }
         ResetVolumes();
         SetMuffle(OpenCutoff);
+        SetBlackout(0f);
+    }
+
+    private void SetBlackout(float alpha)
+    {
+        if (blackoutImage == null) return;
+        Color c = blackoutImage.color;
+        c.a = Mathf.Clamp01(alpha);
+        blackoutImage.color = c;
+        blackoutImage.enabled = c.a > 0.001f;
+    }
+
+    /// <summary>
+    /// 플레이어 손전등을 붙잡는다 — 카메라 아래 이름에 Flashlight가 들어가고 Light를 가진 가지(FlashlightRelay와 같은 규칙).
+    /// 꺼져 있었어도 켜 두고, 밝기는 매 프레임 <see cref="flashlightLevel"/>로 맞춘다.
+    /// <see cref="FlashlightRelay"/>의 켜짐 상태(판정 신호)는 건드리지 않는다 — 연출용 빛일 뿐이다.
+    /// </summary>
+    private void GrabFlashlight()
+    {
+        lampRoot = null;
+        foreach (Transform t in playerCam.GetComponentsInChildren<Transform>(true))
+        {
+            if (t == playerCam.transform) continue;
+            if (t.name.IndexOf("Flashlight", StringComparison.OrdinalIgnoreCase) < 0) continue;
+            if (t.GetComponentInChildren<Light>(true) == null) continue;
+            lampRoot = t.gameObject;
+            break;
+        }
+        if (lampRoot == null)
+        {
+            Debug.LogWarning("[DeathCutscene] 카메라 아래에서 손전등을 찾지 못해 손전등 연출을 건너뜁니다.");
+            lampLights = new Light[0];
+            return;
+        }
+
+        lampWasActive = lampRoot.activeSelf;
+        lampLights = lampRoot.GetComponentsInChildren<Light>(true);
+        lampIntensity = new float[lampLights.Length];
+        lampEnabled = new bool[lampLights.Length];
+        for (int i = 0; i < lampLights.Length; i++)
+        {
+            lampIntensity[i] = lampLights[i].intensity;
+            lampEnabled[i] = lampLights[i].enabled;
+            lampLights[i].enabled = true;
+        }
+        lampRoot.SetActive(true);
+    }
+
+    private void ApplyFlashlight()
+    {
+        for (int i = 0; i < lampLights.Length; i++)
+        {
+            if (lampLights[i] != null) lampLights[i].intensity = lampIntensity[i] * flashlightLevel;
+        }
+    }
+
+    private void ReleaseFlashlight()
+    {
+        for (int i = 0; i < lampLights.Length; i++)
+        {
+            if (lampLights[i] == null) continue;
+            lampLights[i].intensity = lampIntensity[i];
+            lampLights[i].enabled = lampEnabled[i];
+        }
+        if (lampRoot != null) lampRoot.SetActive(lampWasActive);
+        lampRoot = null;
+        lampLights = new Light[0];
     }
 
     private void SetMuffle(float cutoff)
@@ -195,6 +284,7 @@ public class DeathCutscene : MonoBehaviour
 
         PlaceAtPlayer(fp);
         pitchCorrection = ComputePitchCorrection();
+        if (controlFlashlight) GrabFlashlight();
 
         // 조작 잠금 — FPController를 끄면 시점·이동·Esc(일시정지)가 막힌다.
         // 손전등(F)은 FlashlightRelay가 「플레이어 조작이 꺼져 있으면 받지 않음」으로 막는다.
@@ -300,6 +390,8 @@ public class DeathCutscene : MonoBehaviour
         // 다른 UI(개발자 모드 등)가 컷신 도중 커서를 켜도 다시 숨긴다.
         if (Cursor.visible) HideCursor();
         UpdateMuffle();
+        if (controlFlashlight) ApplyFlashlight();
+        SetBlackout(blackout);
 
         // 디렉터가 다 그린 뒤(LateUpdate) 카메라를 목표에 붙인다.
         elapsed += Time.deltaTime;
@@ -351,6 +443,8 @@ public class DeathCutscene : MonoBehaviour
         Cursor.visible = false;
         Cursor.lockState = cursorWasLock;
         ResetVolumes();
+        ReleaseFlashlight();
+        SetBlackout(0f);
         if (viewmodel != null) viewmodel.SetActive(viewmodelWasActive);
         if (pausedAudio && !GamePause.IsPaused) AudioListener.pause = false;
         pausedAudio = false;
@@ -396,10 +490,14 @@ public class DeathCutscene : MonoBehaviour
 }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-/// <summary>씬에 <see cref="DeathCutscene"/>가 없을 때만 F8로 Resources의 프리팹을 불러 재생한다.</summary>
+/// <summary>
+/// 씬에 그 키를 받는 <see cref="DeathCutscene"/>가 없을 때만 Resources의 프리팹을 불러 재생한다.
+/// F8 = 청각 · F7 = 조도. 한 번 불러온 컷신은 남아서 다음부터는 그 컷신이 자기 키를 직접 받는다.
+/// </summary>
 public class DeathCutsceneDebugSpawner : MonoBehaviour
 {
-    private const KeyCode Key = KeyCode.F8;
+    private static readonly KeyCode[] Keys = { KeyCode.F8, KeyCode.F7 };
+    private static readonly string[] Prefabs = { DeathCutscene.ResourceName, DeathCutscene.ResourceNameIlluminance };
 
     private void Awake()
     {
@@ -408,14 +506,25 @@ public class DeathCutsceneDebugSpawner : MonoBehaviour
 
     private void Update()
     {
-        if (!Input.GetKeyDown(Key)) return;
-        if (FindAnyObjectByType<DeathCutscene>(FindObjectsInactive.Include) != null) return;   // 씬 것이 직접 받는다
+        for (int i = 0; i < Keys.Length; i++)
+        {
+            if (Input.GetKeyDown(Keys[i])) Spawn(Keys[i], Prefabs[i]);
+        }
+    }
+
+    private static void Spawn(KeyCode key, string resourceName)
+    {
+        foreach (DeathCutscene c in FindObjectsByType<DeathCutscene>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (c.DebugKey == key) return;   // 씬 것이 직접 받는다
+        }
+        if (DeathCutscene.Playing != null) return;   // 다른 컷신이 재생 중
         if (FindAnyObjectByType<FPController>() == null) return;
 
-        DeathCutscene prefab = Resources.Load<DeathCutscene>(DeathCutscene.ResourceName);
+        DeathCutscene prefab = Resources.Load<DeathCutscene>(resourceName);
         if (prefab == null)
         {
-            Debug.LogWarning("[DeathCutscene] Resources/" + DeathCutscene.ResourceName + " 프리팹이 없습니다. 빌더 메뉴를 먼저 실행하십시오.");
+            Debug.LogWarning("[DeathCutscene] Resources/" + resourceName + " 프리팹이 없습니다. 빌더 메뉴를 먼저 실행하십시오.");
             return;
         }
 

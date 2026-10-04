@@ -53,13 +53,15 @@ namespace NightDuty
             if (_finalBook == null || _program == null)
             {
                 _paradox = new ParadoxRun(ParadoxPlan.None);
+                DisposeUnavoidable();
                 return;
             }
 
             InspectionPlan inspections = Board.Plan;
             Band trust = _bands.Shown.GetBand(FearAxis.Trust);
-            ParadoxPlan plan = _paradoxPlanner.Plan(Day, trust, _program.Deck, s => SpaceHasAnomaly(inspections, s));
+            ParadoxPlan plan = _paradoxPlanner.Plan(Day, trust, _program.Deck, s => SpaceHasAnomaly(inspections, s), _plannedUnavoidable, _emptyRoomChannel);
             _paradox = new ParadoxRun(plan);
+            BeginUnavoidable(plan);
             if (plan.Tampered != null)
             {
                 _finalBook.SetKeepReward(plan.Tampered, Deltas.TrustVariantKept, "변조본을 보고도 원본대로 지킴");
@@ -72,6 +74,7 @@ namespace NightDuty
         {
             _paradox = new ParadoxRun(ParadoxPlan.None);
             _reveals.Clear();
+            DisposeUnavoidable();
         }
 
         private static void ResetParadox(bool clearSwitches)
@@ -92,6 +95,14 @@ namespace NightDuty
         /// <summary>새 수칙 정산 한 건(위협 대응 성공 = 「멈춰서」 안전한 읽기).</summary>
         private static void ParadoxSettled(FinalRuleResult result)
         {
+            UnavoidableSettled(result);
+            if (result.Outcome == FinalOutcome.Violated)
+            {
+                RefreshRuleCards();   // 위반 얼룩
+                EventBus.RaiseTabletTextChanged();
+                return;
+            }
+
             if (result.Outcome != FinalOutcome.ThreatKept) return;
             ParadoxApply(_paradox.NoteThreatKept(result.RuleId));
         }
@@ -100,7 +111,9 @@ namespace NightDuty
         private static void ParadoxAfterRestore()
         {
             _paradox.ResetEpisode();
+            _unavoidable.ResetEpisode();
             if (_paradox.Sent && _finalBook != null) _finalBook.MarkTriggered(_paradox.RuleId);
+            RefreshRuleCards();   // 되돌린 위반의 얼룩을 지운다
         }
 
         private static void ParadoxApply(ParadoxStep step)
@@ -123,7 +136,6 @@ namespace NightDuty
                 case ParadoxStep.SafeRead:
                     SafeReadReveal reveal = new SafeReadReveal(id, _paradox.Space, SpaceHasAnomaly(Board.Plan, _paradox.Space));
                     _reveals.Add(reveal);
-                    RefreshDisplayDeck();
                     Debug.Log("[NightRun] 안전한 읽기 " + id + " → " + reveal.Space + " " + reveal.Label);
                     EventBus.RaiseSafeReadConfirmed(reveal);
                     break;

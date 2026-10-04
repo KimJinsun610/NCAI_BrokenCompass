@@ -42,9 +42,11 @@ public sealed partial class CaptureDirector
 
         EnsureUi();
         HideOtherHud();
+        yield return PreCapture(axis, count);
         AudioListener.pause = true;
         yield return PlayScene(axis, count, player);
         AudioListener.pause = false;
+        EndCaptureSounds();
         if (player != null) player.transform.rotation = facing;
         yield return FadeFromBlack();
         RestoreOtherHud();
@@ -68,10 +70,12 @@ public sealed partial class CaptureDirector
 
         EnsureUi();
         HideOtherHud();
+        yield return PreCapture(axis, 1);
         AudioListener.pause = true;
         yield return PlayScene(axis, 1, player);
         MovePlayerToStart(player);
         AudioListener.pause = false;
+        EndCaptureSounds();
         yield return new WaitForSecondsRealtime(0.6f);
         yield return FadeFromBlack();
         RestoreOtherHud();
@@ -106,6 +110,7 @@ public sealed partial class CaptureDirector
 
         // ② 정적·암전 — 그동안 돌아보게 하고 장면을 세운다
         SetBlack(1f);
+        SceneSoundsCut(axis, e.silenceSeconds);
         if (e.turnAround && player != null) player.transform.Rotate(0f, 180f, 0f, Space.World);
 
         bool usePrefab = e.prefab != null && cam != null;
@@ -150,6 +155,7 @@ public sealed partial class CaptureDirector
 
             SetBlack(0f);
             PlaySceneSound(e.revealSound, scene.transform.position + Vector3.up * 1.5f);
+            SceneSoundsReveal(axis);
 
             if (usePrefab)
             {
@@ -192,9 +198,11 @@ public sealed partial class CaptureDirector
         else if (skipped)
         {
             LastScene += " → 건너뜀";
+            SceneSoundsSkipped();
         }
 
         SetBlack(1f);
+        SceneSoundsBlack(axis);
         if (scene != null) Destroy(scene);
         if (lamp != null) Destroy(lamp);
         if (flashlight != null) flashlight.SetOn(flashlightWasOn);

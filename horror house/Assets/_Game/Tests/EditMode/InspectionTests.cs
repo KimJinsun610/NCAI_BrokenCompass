@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace NightDuty.Tests
@@ -113,7 +113,6 @@ namespace NightDuty.Tests
 
                 Assert.AreNotEqual("K-1", plan.Call1ItemId);
                 Assert.IsFalse(plan.Find(plan.Call1ItemId).IsLate, "호출 1은 먼저 열린 항목");
-                Assert.AreEqual(0, plan.Hallucinations.Count, "청각 구간 0 — 환청 없음");
             }
         }
 
@@ -200,34 +199,6 @@ namespace NightDuty.Tests
             Assert.Greater(layout, auditory * 2, "배치 구간 4(가중치 4) 대 청각 구간 1(가중치 1)");
         }
 
-        [TestCase(Band.Band1, 0, 0)]
-        [TestCase(Band.Band2, 1, 1)]
-        [TestCase(Band.Band3, 1, 1)]
-        [TestCase(Band.Band4, 1, 2)]
-        public void 환청은_청각구간_2_3에서_1회_4에서_1_5배(Band auditory, int min, int max)
-        {
-            bool sawTwo = false;
-            for (int seed = 0; seed < 100; seed++)
-            {
-                AnomalyAssigner a = new AnomalyAssigner(new System.Random(seed));
-                a.MarkSeen(SpaceIds.Final);
-                InspectionPlan plan = a.Build(3, new FixedBands(auditory, Band.Band1, Band.Band1));
-                Assert.GreaterOrEqual(plan.Hallucinations.Count, min);
-                Assert.LessOrEqual(plan.Hallucinations.Count, max);
-                if (plan.Hallucinations.Count == 2) sawTwo = true;
-
-                foreach (string id in plan.Hallucinations)
-                {
-                    if (id.Length == 0) continue;
-                    InspectionAssignment row = plan.Find(id);
-                    Assert.IsNotNull(row, "환청은 그날 점검 항목에 얹는다");
-                    Assert.IsFalse(row.IsAnomaly, "정답은 [정상] — 이상 항목에는 얹지 않는다");
-                    Assert.AreEqual(AnomalyTemplate.Sound, row.Item.Template);
-                }
-            }
-
-            if (max == 2) Assert.IsTrue(sawTwo, "구간 4에서는 두 번 나오는 밤도 있다");
-        }
     }
 
     /// <summary>점검판 — 보고 경제·가까이·04:00 정산·스냅샷.</summary>
@@ -241,7 +212,7 @@ namespace NightDuty.Tests
         private static InspectionBoard Board(params InspectionAssignment[] rows)
         {
             InspectionBoard board = new InspectionBoard();
-            board.Begin(new InspectionPlan(3, rows, SpaceId.Toilet, string.Empty, null));
+            board.Begin(new InspectionPlan(3, rows, SpaceId.Toilet, string.Empty));
             return board;
         }
 
@@ -277,21 +248,6 @@ namespace NightDuty.Tests
 
             Assert.AreEqual(ReportOutcome.CorrectNormal, board.Report("S-2", false, -1, axes, SpaceId.ScienceRoom).Outcome);
             Assert.AreEqual(Deltas.MissedAnomaly, axes.GetValue(FearAxis.Illuminance), "정상을 정상 — 변화 없음");
-        }
-
-        [Test]
-        public void 환청을_이상으로_적으면_G2_6만이고_오보는_없다()
-        {
-            InspectionBoard board = Board(Row("S-1", false));
-            FearAxisSystem axes = new FearAxisSystem();
-            board.MarkHallucination("S-1");
-
-            InspectionReport r = board.Report("S-1", true, -1, axes, SpaceId.ScienceRoom);
-
-            Assert.AreEqual(ReportOutcome.HallucinationRecorded, r.Outcome);
-            Assert.AreEqual(FearAxis.Auditory, r.Axis);
-            Assert.AreEqual(Deltas.HallucinationRecorded, axes.GetValue(FearAxis.Auditory));
-            Assert.AreEqual(0, axes.GetValue(FearAxis.Layout), "S-1의 축(배치)에 오보 +7이 겹치지 않는다");
         }
 
         [Test]
@@ -402,7 +358,7 @@ namespace NightDuty.Tests
 
         private static void UsePlan(params InspectionAssignment[] rows)
         {
-            NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day, rows, SpaceId.None, string.Empty, null);
+            NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day, rows, SpaceId.None, string.Empty);
         }
 
         private static InspectionAssignment Row(string id, bool anomaly)
@@ -649,7 +605,7 @@ namespace NightDuty.Tests
         {
             NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day,
                 new[] { new InspectionAssignment(InspectionCatalog.Find("H-2"), false, Band.Band0, false) },
-                SpaceId.None, string.Empty, null);
+                SpaceId.None, string.Empty);
             TestKit.BeginProgramNight(2, () => _clock);
 
             TestKit.ViolateRunning();                  // G1 청각 +12
@@ -662,7 +618,6 @@ namespace NightDuty.Tests
             Assert.AreEqual(0, NightRun.RaisedSources(FearAxis.Auditory).Count, "새 시도는 비어서 시작한다");
         }
 
-        [TestCase("G2:H-3[이상]", "G2")]
         [TestCase("T4:T-1[정상]", "T4")]
         [TestCase("H-2[이상]", "H-2")]
         [TestCase("H-1(가까이)", "H-1")]

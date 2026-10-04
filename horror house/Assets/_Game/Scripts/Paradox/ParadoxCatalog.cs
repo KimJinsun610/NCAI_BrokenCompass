@@ -70,8 +70,10 @@ namespace NightDuty
 
     /// <summary>
     /// 역설·변조 문구표(최종 기획서 2026-09-30 정본, 10단계). <b>문구는 기획서 그대로</b> — 고칠 때는 기획서와 함께.
-    /// 「없음」인 칸은 null. T4·K4·G1·G2·G3은 겨누지도 변조하지도 않는다.
-    /// K2(「CAM0n에 신호가 잡힙니다.」)는 n이 그날 빈 방 채널이라 편성 때 알 수 없어 아직 겨누지 않는다.
+    /// 2026-10-04 민 수정(텍스트 목록 문서): C3·C5·L2·L5·K1 역설 폐기(몬스터를 미리 알려 긴장을 깎는다), S2 안전한 읽기 CCTV로 → 눈으로만, S3 변조본 폐기(수칙 문구 변경).
+    /// 「없음」인 칸은 null. T4·K4·G1·G3은 겨누지도 변조하지도 않는다.
+    /// K2(「CAM0n에 신호가 잡힙니다.」)의 n은 그날의 빈 방 채널(<see cref="ParadoxPlan.EmptyRoomChannel"/>) — 문자의 {0}을 채운다.
+    /// K2의 「눈으로만」은 그 채널을 잠깐(0.5초) 보고 다른 채널로 넘기는 것이다(3초 넘게 보면 K2 위반).
     /// </summary>
     public static class ParadoxCatalog
     {
@@ -85,12 +87,12 @@ namespace NightDuty
             Add("H4", null, SafeReadPattern.None, null, null, null);
             Add("C1", "교실에서 소리가 나면 즉시 점검하십시오.", SafeReadPattern.StandStill, FinalCues.Chalk, null, "판서 를 합류 하지 마시오.");
             Add("C2", "천장에서 물이 샙니다. 지금 바닥을 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.Legs, null, "교실의 ??은 무시 대상 입니 다.");
-            Add("C3", "교실에 학생이 남아 있습니다. 지금 인원을 확인하십시오.", SafeReadPattern.StandStill, FinalCues.BoySeated, null, "수업 중 이동 은 금지입니 ㄷ ㅏ.");
+            Add("C3", null, SafeReadPattern.None, null, null, "수업 중 이동 은 금지입니 ㄷ ㅏ.");   // 민 2026-10-04: 역설 폐기(몬스터를 과하게 예고해 긴장 저하)
             Add("C4", "붉은 등이 켜졌습니다. 즉시 조명 상태를 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.RedLight, null, "붉은 불빛 아래 손전등 은 끄지 마. 끄지 마.");
-            Add("C5", "교실에 새 문이 달렸습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.PhantomDoor, null, "정상 문은? 교실이 아닙 니다. 교실 의 문은 고장.");
+            Add("C5", null, SafeReadPattern.None, null, null, "정상 문은? 교실이 아닙 니다. 교실 의 문은 고장.");   // 민 2026-10-04: 역설 폐기
             Add("S1", "반대편 문이 열렸습니다. 지금 점검하십시오.", SafeReadPattern.EyesOnly, null, null, "과학 실은 통로 입니까?. 아니오.");
-            Add("S2", "지금 과학실의 훼손 물품을 점검하십시오.", SafeReadPattern.Cctv, FinalCues.Glass, null, "깨지는 소리 가 나면? 오늘 과학실 은 끝.");
-            Add("S3", null, SafeReadPattern.None, null, null, "인체 모형? 테이프 안 에서만 확인 하십시오?.");
+            Add("S2", "지금 과학실의 훼손 물품을 점검하십시오.", SafeReadPattern.EyesOnly, FinalCues.Glass, null, "깨지는 소리 가 나면? 오늘 과학실 은 끝.");   // 민 2026-10-04: CCTV로 → 눈으로만
+            Add("S3", null, SafeReadPattern.None, null, null, null);   // 민 2026-10-04: 수칙 문구를 「빛으로 확인」으로 바꾸며 변조본 폐기
             Add("S4", null, SafeReadPattern.None, null, null, "어둠을 지양하십시오?.");
             Add("S5", "복도 끝 출구를 즉시 확인하십시오.", SafeReadPattern.StandStill, FinalCues.HallEnd, null, "복도 _?에 눈 부십니까?. 끄고 기다리 십시오.");
             Add("T1", "물이 내려가고 있습니다. 지금 칸을 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.Flush, null, null);
@@ -98,11 +100,12 @@ namespace NightDuty
             Add("T3", "정전입니다. 즉시 비상등을 찾으십시오.", SafeReadPattern.StandStill, FinalCues.ToiletBlackout, null, "어둠 에서 대기 하라.");
             Add("T5", "불이 켜진 칸이 있습니다. 그 불빛이면 충분합니다.", SafeReadPattern.EyesOnly, FinalCues.StallLit, null, "빛? 에는 빛?으로 대처 하세요.");
             Add("L1", "쓰러진 책장 밑에 책이 깔렸습니다. 지금 비추십시오.", SafeReadPattern.EyesOnly, null, FinalCues.L1Shelf, "쓰러진 책장 곁 에 서 지 마 십 시 오");
-            Add("L2", "열람실에 이용자가 있습니다. 지금 확인하십시오.", SafeReadPattern.Cctv, FinalCues.Pages, null, "종이 넘기 는 소리 가 들리면? 열람 끝.");
+            Add("L2", null, SafeReadPattern.None, null, null, "종이 넘기 는 소리 가 들리면? 열람 끝.");   // 민 2026-10-04: 역설 폐기(몹 예고)
             Add("L3", null, SafeReadPattern.None, null, null, "도서관 ?_? 을 계속 비추 십니까? 예.");
             Add("L4", "바닥에 상자가 쏟아져 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, FinalCues.L4Box, "상자 에서 떨어 져 걸으 십시오?");
-            Add("L5", "창밖에 누가 서 있습니다. 즉시 블라인드를 점검하십시오.", SafeReadPattern.EyesOnly, FinalCues.WindowKnock, FinalCues.ManTarget, "창밖에 먼저 인사 하지 마시오. 먼저.");
-            Add("K1", "화면 속 인원을 지금 추적하십시오.", SafeReadPattern.StandStill, FinalCues.CctvPerson, null, null);
+            Add("L5", null, SafeReadPattern.None, null, null, "창밖에 먼저 인사 하지 마시오. 먼저.");   // 민 2026-10-04: 역설 폐기(몹 예고)
+            Add("K1", null, SafeReadPattern.None, null, null, null);   // 민 2026-10-04: 역설 폐기(몹 예고)
+            Add("K2", "CAM{0}에 신호가 잡힙니다. 즉시 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.EmptyRoom, null, null);   // {0} = 그날 빈 방 채널(CAM01~05)
             Add("K3", "복도에 위험 신고가 있습니다. 즉시 CCTV로 확인하십시오.", SafeReadPattern.Cctv, null, null, null, SpaceId.Corridor);
         }
 
@@ -138,11 +141,14 @@ namespace NightDuty
             return t + "?";
         }
 
-        /// <summary>검게 지운 줄(신뢰 구간 4) — 원문 길이에 맞춘 검은 막대.</summary>
+        /// <summary>검은 막대 색 — 태블릿 화면(거의 검정)보다 한 단 밝은 먹색. 흰 █는 어두운 화면에서 밝은 막대로 보였다(31차).</summary>
+        public const string BlackedColor = "#262D31";
+
+        /// <summary>검게 지운 줄(신뢰 구간 4) — 원문 길이에 맞춘 먹색 막대(TMP 색 태그).</summary>
         public static string Blacked(string original)
         {
             int n = string.IsNullOrEmpty(original) ? 12 : Math.Max(8, (int)(original.Length * 0.8f));
-            return new string('█', n);
+            return "<color=" + BlackedColor + ">" + new string('█', n) + "</color>";
         }
     }
 }

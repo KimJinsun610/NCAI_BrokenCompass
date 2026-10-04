@@ -156,6 +156,9 @@ public sealed partial class CaptureDirector : MonoBehaviour
         EnsureUi();
         HideOtherHud();
 
+        // ⓪ 흔들림 구간 — 소리가 끊기기 전 긴장의 꼭대기(조작은 이미 멈춤)
+        yield return PreCapture(axis, count);
+
         // ① 소리 끊김 — 리스너를 멈춘다(장면 프리팹의 AudioSource와 장면 소리만 예외).
         AudioListener.pause = true;
 
@@ -174,6 +177,7 @@ public sealed partial class CaptureDirector : MonoBehaviour
         {
             // 결근: 결과창(PlayResultRouter)이 DayEnded로 이어받는다. 암전은 그대로 둔다.
             AudioListener.pause = false;
+            EndCaptureSounds();
             RestoreOtherHud();
             if (clock != null) clock.Release(this);
             _running = false;
@@ -184,6 +188,7 @@ public sealed partial class CaptureDirector : MonoBehaviour
         if (result.Kind != RestartKind.None)
         {
             FillCard(axis, result);
+            CardSounds(axis, _lookParts.Count > 0);
             yield return FadeCard(1f);
             float shown = 0f;
             while (shown < cardAutoSeconds)
@@ -200,6 +205,13 @@ public sealed partial class CaptureDirector : MonoBehaviour
 
         // ⑥ 다시 근무
         AudioListener.pause = false;
+        EndCaptureSounds();
+        if (result.Kind != RestartKind.None)
+        {
+            CaptureSfx("capture.return");
+            CaptureSfx("capture.wake", 0.9f);
+        }
+
         yield return FadeFromBlack();
         RestoreOtherHud();
         if (player != null) player.enabled = true;

@@ -632,69 +632,10 @@ public static class StandInPrefabBuilder
 
     // ── 소리 표 ─────────────────────────────────────────────
 
+    /// <summary>소리 표는 <see cref="DirectionSoundTableBuilder"/>가 채운다(2026-10-04 사운드 전달본).</summary>
     private static string BuildSoundTable()
     {
-        DirectionSoundTableSO table = AssetDatabase.LoadAssetAtPath<DirectionSoundTableSO>(SoundTablePath);
-        if (table == null)
-        {
-            table = ScriptableObject.CreateInstance<DirectionSoundTableSO>();
-            AssetDatabase.CreateAsset(table, SoundTablePath);
-        }
-
-        const string amb = "Assets/_Game/Resources/Ambience/";
-        const string kim = "Assets/3.2 Programmer_Kim/99 Resources/04 Sound/";
-        const string au = "Assets/_Game/Audio/";   // 2026-10-01 민 제공(NCAI_BrokenCompass/Assets/사운드) — 각 폴더 README가 쓰임새
-        // 이름 뒤 "+"는 같은 순간 겹쳐 재생하는 둘째 소리(C4 = 칠판 긁기 + 교탁 의자, README class).
-        string[,] map =
-        {
-            { "*.foreshadow", amb + "Stingers/stinger_riser.ogg", "0.55" },
-            { "E.BoySeated.confront", au + "class/SFX_CLASS_DeskHit.wav", "0.9" },
-            { "E.BoyBang.confront", au + "class/SFX_CLASS_DeskHit.wav", "0.9" },
-            { "E.BoyBang.headbang", au + "class/SFX_CLASS_DeskThump.wav", "1" },
-            { "E.CeilingLegs.confront", au + "hall/SFX_HALL_CeilingDrop.wav", "0.8" },
-            { "E.PhantomDoor.confront", au + "hall/SFX_HALL_LatchOnly.wav", "0.9" },
-            { "E.Footsteps.confront", au + "hall/SFX_HALL_DoorClose_Hear90.wav", "0.9" },
-            { "E.CallingVoice.confront", amb + "Stingers/stinger_whisper.ogg", "0.9" },
-            { "E.PeopleTree.confront", amb + "OneShots/os_metal_groan_a.ogg", "0.6" },
-            { "E.YellowFace.confront", amb + "Stingers/stinger_breath.ogg", "0.8" },
-            { "E.SuitMan.confront", amb + "OneShots/os_knock_2a.ogg", "1" },
-            { "E.HallEndFigure.confront", kim + "SFX_MosterBreath.wav", "0.8" },
-            { "E.ModelRush.confront", au + "lab/SFX_LAB_HeavySet.wav", "1" },
-            { "E.ScienceBlackout.confront", amb + "OneShots/os_electric_pop.ogg", "1" },
-            { "E.ToiletBlackout.confront", amb + "OneShots/os_electric_pop.ogg", "1" },
-            { "E.ToiletGirl.confront", au + "toilet/SFX_TOILET_DoorClose.wav", "1" },
-            { "E.CctvPerson.confront", "Assets/_Game/Resources/Cctv/cctv_static.ogg", "0.6" },
-            { "H2.cue", au + "hall/SFX_HALL_DoorOpenSlow.wav", "0.9" },
-            { "C1.cue", au + "class/SFX_CLASS_ChalkStroke.wav", "1" },
-            { "C4.cue", au + "class/SFX_CLASS_BoardScratch.wav", "0.9" },
-            { "C4.cue+", au + "class/SFX_CLASS_TeacherChair.wav", "0.9" },
-            { "S2.cue", au + "lab/SFX_LAB_GlassBreak.wav", "1" },
-            { "T1.cue", au + "toilet/SFX_TOILET_Flush_Hear25.wav", "1" },
-            { "T2.cue", au + "toilet/SFX_TOILET_Fabric.wav", "0.9" },
-            { "K2.cue", "Assets/_Game/Resources/Cctv/cctv_static.ogg", "0.5" },
-            { "fake.locker.rattle", kim + "SFX_CabinetMoving.wav", "0.7" },
-            { "fake.locker.row", kim + "SFX_Drawer.wav", "0.7" },
-            { "fake.bugs", kim + "SFX_BugCrawl.wav", "0.6" }
-        };
-
-        table.Entries.Clear();
-        int ok = 0;
-        StringBuilder missing = new StringBuilder();
-        for (int i = 0; i < map.GetLength(0); i++)
-        {
-            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(map[i, 1]);
-            if (clip == null)
-            {
-                missing.Append(map[i, 0]).Append(' ');
-                continue;
-            }
-
-            table.Entries.Add(new DirectionSoundTableSO.Entry { key = map[i, 0], clip = clip, volume = float.Parse(map[i, 2], System.Globalization.CultureInfo.InvariantCulture) });
-            ok++;
-        }
-
-        EditorUtility.SetDirty(table);
-        return "✓ 소리 표 " + ok + "개" + (missing.Length > 0 ? " (클립 없음: " + missing + ")" : string.Empty);
+        return DirectionSoundTableBuilder.Build();
     }
 
     // ── 씬 고정 자리 ────────────────────────────────────────

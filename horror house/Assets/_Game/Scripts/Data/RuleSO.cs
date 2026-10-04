@@ -3,7 +3,7 @@
 namespace NightDuty
 {
     /// <summary>
-    /// 태블릿에 실리는 수칙 한 줄(<b>표시 전용</b>). <see cref="NightRun.TodayDeck"/>이 그날 새 수칙·점검표로 런타임에 만든다(NightRun.Final.cs).
+    /// 태블릿에 실리는 수칙 한 줄(<b>표시 전용</b>). <see cref="NightRun.TodayDeck"/>이 그날 새 수칙으로 런타임에 만든다(점검표는 메시지 — NightRun.ChecklistMessage)(NightRun.Final.cs).
     /// <para>
     /// 김진선님 코드가 이 타입을 읽는다 — <c>TabletDocument</c>(본문·조작 안내), <c>GuardRoomLoiterTrigger</c>(ID), <see cref="NightDeckTableSO"/>(밤 전 폴백).
     /// 그래서 이름과 네 필드는 그대로 둔다.

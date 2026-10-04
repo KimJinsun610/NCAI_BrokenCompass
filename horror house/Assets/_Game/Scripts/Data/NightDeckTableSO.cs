@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,7 +8,7 @@ namespace NightDuty
     /// 옛 근무수칙 카드 편성표. <b>2026-10-03에 옛 24장 카드를 폐기하면서 비웠다</b> — 판정 코어는 더 읽지 않는다.
     /// <para>
     /// 타입을 남긴 이유: 김진선님의 <c>TabletDocument</c>가 밤이 시작되기 전 폴백으로 <c>Resources/NightDeckTable</c>을 읽는다.
-    /// 밤 중의 태블릿 수칙은 <see cref="NightRun.TodayDeck"/>(새 수칙 + 점검표)가 정본이다.
+    /// 밤 중의 태블릿 수칙은 <see cref="NightRun.TodayDeck"/>(새 수칙)가 정본이다 — 점검표는 메시지로 간다.
     /// 표에 옛 카드를 다시 채우지 마십시오 — 되살리지 마십시오.
     /// </para>
     /// </summary>

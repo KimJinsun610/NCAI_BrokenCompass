@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 
 namespace NightDuty.Tests
@@ -352,7 +352,7 @@ namespace NightDuty.Tests
             EventBus.DayEnded += s => dayEnded++;
             NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day,
                 new[] { new InspectionAssignment(InspectionCatalog.Find("H-4"), true, Band.Band1, false) },
-                SpaceId.None, string.Empty, null);
+                SpaceId.None, string.Empty);
 
             NightRun.BeginNight(1, () => _clock);
             NightRun.DebugAddAxis(FearAxis.Layout, 90);

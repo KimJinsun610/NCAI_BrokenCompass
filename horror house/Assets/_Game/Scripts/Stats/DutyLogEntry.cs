@@ -16,7 +16,12 @@
         /// 「지시를 따름」. 그날 이 수칙을 겨눈 역설 문자를 받고 따라서 어겼다.
         /// <b>수치 손해는 <see cref="Struck"/>과 똑같다</b> — 다른 것은 이름뿐이다.
         /// </summary>
-        Instructed = 2
+        Instructed = 2,
+
+        /// <summary>
+        /// 「불가피」. 진짜 회피 불가 역설 속에서 어긴 쪽(10단계). <b>수치 손해는 <see cref="Struck"/>과 똑같다</b>.
+        /// </summary>
+        Unavoidable = 3
     }
 
     /// <summary>새 수칙 한 장의 그날 결과(근무일지용).</summary>
@@ -65,6 +70,9 @@
         /// </summary>
         public readonly string Note;
 
+        /// <summary>진짜 회피 불가 역설 속에서 어겼는지. 어긴 줄이면 표시가 「불가피」가 된다(「지시를 따름」보다 앞선다).</summary>
+        public readonly bool Unavoidable;
+
         /// <summary>빨간 줄 여부 — 어겼다.</summary>
         public bool Struck
         {
@@ -81,12 +89,13 @@
                     return DutyMark.None;
                 }
 
+                if (Unavoidable) return DutyMark.Unavoidable;
                 return Instructed ? DutyMark.Instructed : DutyMark.Struck;
             }
         }
 
         /// <summary>한 줄을 만든다.</summary>
-        public DutyLogEntry(int number, string ruleId, SpaceId space, string playerText, RuleVerdict verdict, bool instructed, string note = "")
+        public DutyLogEntry(int number, string ruleId, SpaceId space, string playerText, RuleVerdict verdict, bool instructed, string note = "", bool unavoidable = false)
         {
             Number = number;
             RuleId = ruleId ?? string.Empty;
@@ -95,6 +104,7 @@
             Verdict = verdict;
             Instructed = instructed;
             Note = note ?? string.Empty;
+            Unavoidable = unavoidable;
         }
     }
 }

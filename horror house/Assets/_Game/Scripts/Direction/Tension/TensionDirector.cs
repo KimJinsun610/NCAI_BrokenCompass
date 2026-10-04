@@ -172,6 +172,8 @@ namespace NightDuty
         private int _fakesUsed;
         private int _encountersDone;
         private string _lastNote = string.Empty;
+        private readonly HashSet<string> _held = new HashSet<string>(StringComparer.Ordinal);
+        private string _gateRule = string.Empty;
 
         /// <summary>그날 편성으로 만든다.</summary>
         public TensionDirector(NightProgram program, int day, int restarts = 0, Random rng = null)
@@ -201,6 +203,63 @@ namespace NightDuty
 
         /// <summary>연출 알림(대역·소등·소리·로그).</summary>
         public event Action<DirectionEvent> Emitted;
+
+        // ── 10단계: 점검과 맞물린 단서 · 회피 불가 역설 ──────────────────
+
+        /// <summary>「나가라」 신호형 수칙(S2·L2·T1) — 평소에는 그 공간 점검을 끝냈거나 그날 그 공간 점검이 없을 때만 울린다(최종 기획서 「밤중 발동」).</summary>
+        public static readonly string[] ExitSignalRules = { "S2", "L2", "T1" };
+
+        /// <summary>그 공간에 아직 보고하지 않은 점검이 있는지(NightRun이 넣는다). null이면 「나가라」 문을 걸지 않는다(옛 동작·시험).</summary>
+        public Func<SpaceId, bool> InspectionPendingIn { get; set; }
+
+        /// <summary>그날의 빈 방 채널(<c>cctv.chN</c>) — K2 단서가 늘 이 채널을 가리킨다. 비면 지금 보지 않는 채널 하나를 고른다(옛 동작).</summary>
+        public string EmptyRoomChannel { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 그날 회피 불가 역설을 건다(밤 시작에 한 번). 쌍의 「나가라」 수칙은 점검이 남아도 울리고(문을 연다),
+        /// 둘째 조우(<see cref="UnavoidableDef.ChainEncounter"/>)는 제 슬롯에서 따로 걸지 않는다 — <see cref="ChainEncounter"/>로만.
+        /// </summary>
+        public void SetUnavoidable(UnavoidableDef def)
+        {
+            _held.Clear();
+            _gateRule = string.Empty;
+            if (def == null) return;
+            if (!string.IsNullOrEmpty(def.ChainEncounter)) _held.Add(def.ChainEncounter);
+            if (!string.IsNullOrEmpty(def.GateRule)) _gateRule = def.GateRule;
+            Note(def.Id, "회피 불가 역설 편성(" + (def.Real ? "진짜" : "가짜") + ")");
+        }
+
+        /// <summary>
+        /// 그 조우를 지금 곧장 대면으로 건다(회피 불가 역설의 둘째 조우). 전조·헛예고·예산 없이, <b>진행 중인 다른 조우를 끊지 않는다</b>.
+        /// 대본이 없으면 false.
+        /// </summary>
+        public bool ChainEncounter(string encounterId)
+        {
+            EncounterScript script = EncounterScripts.Find(encounterId);
+            EncounterDef def = ProgramCatalog.Encounter(encounterId);
+            if (script == null || def == null) return false;
+
+            for (int i = 0; i < _runs.Count; i++)
+            {
+                EncounterRun held = _runs[i];
+                if (held.Def.Id == encounterId && held.State == EncounterRunState.Waiting) held.State = EncounterRunState.Done;   // 제 슬롯 몫은 이것으로 갈음
+            }
+
+            EncounterRun run = new EncounterRun { Slot = EncounterSlot.A, Def = def, Script = script, Forced = true };
+            _runs.Add(run);
+            _held.Remove(encounterId);
+            Note(encounterId, "회피 불가 역설 — 겹쳐 건다");
+            run.Point = PointFor(script);
+            Confront(run);
+            return true;
+        }
+
+        private bool ExitGateBlocks(RuleTriggerScript s)
+        {
+            if (InspectionPendingIn == null || Array.IndexOf(ExitSignalRules, s.RuleId) < 0) return false;
+            if (s.RuleId == _gateRule) return false;   // 회피 불가 밤: 점검이 남아도 울린다
+            return InspectionPendingIn(s.Space);
+        }
 
         /// <summary>디렉터 시각(실제 초, Tick의 누적).</summary>
         public float Now { get; private set; }
@@ -411,6 +470,12 @@ namespace NightDuty
             {
                 EncounterRun r = _runs[i];
                 if (r.State != EncounterRunState.Waiting || Now < r.RetryAt || !SlotOpen(r, minute)) continue;
+                if (_held.Contains(r.Def.Id))
+                {
+                    r.Waiting = "회피 불가 역설의 둘째 조우 — 겹칠 때만";
+                    continue;
+                }
+
 
                 if (!Triggered(r, minute))
                 {
@@ -601,7 +666,12 @@ namespace NightDuty
         private bool RuleReady(RuleTriggerRun r)
         {
             RuleTriggerScript s = r.Script;
-            if (s.WhileViewingCctv) return ViewingCctv && Now - _cctvSince >= r.NeedDwell;
+            if (ExitGateBlocks(s)) return false;
+            if (s.WhileViewingCctv)
+            {
+                if (EmptyRoomChannel.Length > 0 && _channel == EmptyRoomChannel) return false;   // 빈 방 채널을 보는 중에는 그 채널을 가리키지 않는다
+                return ViewingCctv && Now - _cctvSince >= r.NeedDwell;
+            }
 
             if (s.Zone.Length > 0)
             {
@@ -616,7 +686,7 @@ namespace NightDuty
         {
             RuleTriggerScript s = r.Script;
             string target = s.Target;
-            if (target == "cctv") target = OtherChannel();
+            if (target == "cctv") target = EmptyRoomChannel.Length > 0 ? EmptyRoomChannel : OtherChannel();
             string cue = target.Length > 0 ? s.Cue + "@" + target : s.Cue;
 
             r.SentCue = cue;

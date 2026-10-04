@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -46,7 +46,7 @@ namespace NightDuty
 
     /// <summary>
     /// 하룻밤 편성 — 조우 슬롯과 수칙 덱. 밤 시작에 확정되고 재시작해도 바뀌지 않는다(장치 2의 수칙 교체만 예외, 런타임 몫).
-    /// 덱 순서: 공간 수칙(복도·교실·과학실·화장실·도서관) → 경비실 → G1·G2.
+    /// 덱 순서: 공간 수칙(복도·교실·과학실·화장실·도서관) → 경비실 → G1.
     /// </summary>
     public sealed class NightProgram
     {
@@ -174,7 +174,7 @@ namespace NightDuty
     /// 밤 편성기(최종 기획서 「수칙과 덱 — 배정 순서」). 조우를 먼저 뽑고 대응 수칙을 고정해 덱과 조우가 서로를 정하는 순환을 끊는다.
     /// 규칙이 부딪히면 앞 번호가 이긴다.
     /// <list type="number">
-    /// <item>1일차 고정 덱: 복도 H1·H2 중 1 + 교실 C3(소년 착석, 슬롯 A) + 과학실 S1·S3 중 1 + G1·G2.</item>
+    /// <item>1일차 고정 덱: 복도 H1·H2 중 1 + 교실 C3(소년 착석, 슬롯 A) + 과학실 S1·S3 중 1 + G1.</item>
     /// <item>강제 수칙: 회피 불가 역설의 쌍(요청), 2일차 첫 역설 C2.</item>
     /// <item>지난 밤 예약 조우: S3 위반 → 모형 급습(S5, 3일차부터), 노란 얼굴에서 빛을 뗌 → 정장 남자(L5).</item>
     /// <item>슬롯 조우: 발동 조건·대응 수칙 배정 가능·놀람 예산을 통과한 후보 중 점수(주축 구간×2 · 회차에 아직 안 봄 +3 · 교차 +2 ·
@@ -184,7 +184,7 @@ namespace NightDuty
     /// <item>손전등 수칙 하루 3장, 역보고 T4 회차 2번.</item>
     /// <item>남은 칸: 혼자 서는 수칙에서, 가장 높은 감각 축(연출 구간) ×2, 가장 낮은 축 최소 1장.</item>
     /// </list>
-    /// 경비실은 2일차부터 하루 1장(CCTV 사람이 편성되면 K1, 5일차는 K4, 아니면 K2·K3), 공통 G1·G2는 매일.
+    /// 경비실은 2일차부터 하루 1장(CCTV 사람이 편성되면 K1, 5일차는 K4, 아니면 K2·K3), 공통 G1은 매일(G2는 2026-10-04 폐기).
     /// </summary>
     public sealed class ProgramDirector
     {
@@ -264,8 +264,7 @@ namespace NightDuty
                 ProgramCatalog.Rule("H2"),
                 ProgramCatalog.Rule("C4"),
                 ProgramCatalog.Rule(_rng.Next(2) == 0 ? "S1" : "S3"),
-                ProgramCatalog.Rule("G1"),
-                ProgramCatalog.Rule("G2")
+                ProgramCatalog.Rule("G1")
             };
 
             return new NightProgram(1, new List<SlotEncounter>(), deck, "1일차 고정 덱(조우 없음)");
@@ -397,7 +396,6 @@ namespace NightDuty
             for (int s = 0; s < ProgramCatalog.RuleSpaces.Length; s++) deck.AddRange(d.In(ProgramCatalog.RuleSpaces[s]));
             deck.AddRange(d.In(SpaceId.SecurityRoom));
             deck.Add(ProgramCatalog.Rule("G1"));
-            deck.Add(ProgramCatalog.Rule("G2"));
 
             d.Slots.Sort((a, b) => a.Slot.CompareTo(b.Slot));
             NightProgram program = new NightProgram(day, d.Slots, deck, null);

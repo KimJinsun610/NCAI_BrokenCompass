@@ -25,7 +25,13 @@ public sealed class FinaleDirector : MonoBehaviour
 {
     [Header("문구")]
     [SerializeField] private string shiftOverNotice = "근무 시간이 종료되었습니다.";
-    [SerializeField] private string letMeIn = "들어가게 해줘";
+    // 2026-10-04 민: 「들어가게 해줘」 문자 → 「꿻」 같은 한글 괴이문자로 메시지함 도배(WeirdFlood).
+    [Tooltip("괴이문자 문자를 몇 통 보내는지(도배).")]
+    [SerializeField, Min(1)] private int weirdMessages = 6;
+    [Tooltip("괴이문자 한 통의 글자 수.")]
+    [SerializeField, Min(4)] private int weirdLength = 14;
+    [Tooltip("괴이문자 문자 사이 간격(초, 실제 시간).")]
+    [SerializeField, Min(0f)] private float weirdInterval = 0.22f;
     [SerializeField] private string cameIn = "들어왔다";
     [SerializeField] private string endingShiftOver = "근무 종료. 수고하셨습니다.";
     [SerializeField] private string endingShiftChange = "근무 교대. 수고하셨습니다.";
@@ -56,6 +62,8 @@ public sealed class FinaleDirector : MonoBehaviour
     [Header("소리 이름(Resources/Direction 또는 연출 소리 표, 없으면 조용히)")]
     [SerializeField] private string letMeInSound = "finale.letmein";
     [SerializeField] private string smileSound = "finale.smile";
+    [SerializeField] private string crtOffSound = "finale.crtoff";
+    [SerializeField] private string wipeSound = "finale.wipe";
 
     private sealed class GuardDoor
     {
@@ -191,7 +199,7 @@ public sealed class FinaleDirector : MonoBehaviour
         yield return new WaitForSeconds(k4Lead);
 
         Phase = "들어가게 해줘 · 창 두드림";
-        Message(letMeIn);
+        StartCoroutine(WeirdFlood());
         FinaleMob window = stage != null ? stage.StageFinale(FinaleRole.WindowMan) : null;
         if (window != null) PlaySound(letMeInSound, window.transform.position + Vector3.up * 1.5f);
         if (window != null)
@@ -215,6 +223,7 @@ public sealed class FinaleDirector : MonoBehaviour
 
         Phase = "들어왔다";
         if (window != null) window.Play(FinaleBeat.Idle);   // 두드림이 멎는다 — 들어왔다
+        PlaySound(wipeSound, EarPoint());
         ClearTabletMessages();
         Message(cameIn);
         NightRun.FillFinaleBlank();
@@ -222,7 +231,11 @@ public sealed class FinaleDirector : MonoBehaviour
         yield return new WaitForSeconds(messageToHum);
 
         Phase = "험 멈춤 · 웃는 얼굴";
-        if (cctv != null) cctv.SetHum(false);
+        if (cctv != null)
+        {
+            cctv.SetHum(false);
+            PlaySound(crtOffSound, cctv.ScreenCenter);
+        }
         yield return new WaitForSeconds(humToSmile);
         yield return FlashSmile(cctv);
         yield return new WaitForSeconds(smileToEnding);
@@ -532,6 +545,50 @@ public sealed class FinaleDirector : MonoBehaviour
 
     // ── 태블릿 ─────────────────────────────────────────────────
 
+    // ── 괴이문자 도배 ────────────────────────────────────────
+    //
+    // 된소리·거센소리 초성 + 겹모음 + 겹받침을 엮은 낯선 음절(「꿻」「뷁」 같은)만 골라 메시지함을 채운다.
+    // 태블릿 글꼴에 없는 음절은 □로 보이므로 글꼴이 가진 글자만 쓴다(동적 글꼴이면 그 자리에서 채운다).
+
+    private static readonly int[] WeirdInitials = { 1, 4, 8, 10, 13, 15, 16, 17, 18 };          // ㄲ ㄸ ㅃ ㅆ ㅉ ㅋ ㅌ ㅍ ㅎ
+    private static readonly int[] WeirdMedials = { 3, 7, 10, 11, 14, 15, 16, 19 };              // ㅒ ㅖ ㅙ ㅚ ㅝ ㅞ ㅟ ㅢ
+    private static readonly int[] WeirdFinals = { 3, 5, 6, 9, 10, 11, 12, 13, 14, 15, 18, 27 }; // ㄳ ㄵ ㄶ ㄺ ㄻ ㄼ ㄽ ㄾ ㄿ ㅀ ㅄ ㅎ
+    private readonly System.Random _weirdRng = new System.Random();
+
+    private IEnumerator WeirdFlood()
+    {
+        TMP_FontAsset font = TabletFont();
+        for (int i = 0; i < weirdMessages; i++)
+        {
+            Message(WeirdLine(weirdLength, font));
+            if (weirdInterval > 0f) yield return new WaitForSecondsRealtime(weirdInterval);
+        }
+    }
+
+    private string WeirdLine(int length, TMP_FontAsset font)
+    {
+        System.Text.StringBuilder sb = new System.Text.StringBuilder(length);
+        int guard = 0;
+        while (sb.Length < length && guard++ < length * 40)
+        {
+            int ini = WeirdInitials[_weirdRng.Next(WeirdInitials.Length)];
+            int med = WeirdMedials[_weirdRng.Next(WeirdMedials.Length)];
+            int fin = WeirdFinals[_weirdRng.Next(WeirdFinals.Length)];
+            char c = (char)(0xAC00 + (ini * 21 + med) * 28 + fin);
+            if (font != null && !font.HasCharacter(c, true, true)) continue;
+            sb.Append(c);
+        }
+
+        if (sb.Length == 0) sb.Append('꿻', length);   // 글꼴을 못 찾았을 때
+        return sb.ToString();
+    }
+
+    private static TMP_FontAsset TabletFont()
+    {
+        TabletDocument doc = FindAnyObjectByType<TabletDocument>(FindObjectsInactive.Include);
+        return doc != null && doc.bodyText != null ? doc.bodyText.font : null;
+    }
+
     private void Message(string text)
     {
         if (string.IsNullOrEmpty(text)) return;
@@ -547,6 +604,13 @@ public sealed class FinaleDirector : MonoBehaviour
     private static void ReloadTablet()
     {
         foreach (TabletDocument doc in FindObjectsByType<TabletDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None)) doc.Reload();
+    }
+
+    /// <summary>플레이어 귀(주 카메라) 자리. 태블릿 소리처럼 몸 가까이에서 나는 소리용.</summary>
+    private static Vector3 EarPoint()
+    {
+        Camera cam = Camera.main;
+        return cam != null ? cam.transform.position : Vector3.zero;
     }
 
     private static void PlaySound(string soundName, Vector3 at)

@@ -70,6 +70,7 @@ namespace NightDuty
         private readonly ParadoxPlan _plan;
         private readonly ParadoxEntry _entry;
         private readonly SpaceId _space;
+        private readonly string _channel;
         private float _seen;
 
         /// <summary>그날 편성으로 만든다.</summary>
@@ -77,7 +78,8 @@ namespace NightDuty
         {
             _plan = plan ?? ParadoxPlan.None;
             _entry = _plan.AmbiguousEntry;
-            _space = _plan.Ambiguous != null ? SpaceOf(_plan.Ambiguous) : SpaceId.None;
+            _space = _plan.Ambiguous != null ? SpaceOf(_plan.Ambiguous, _plan.EmptyRoomChannel) : SpaceId.None;
+            _channel = _plan.EmptyRoomChannel >= 0 ? "cctv.ch" + _plan.EmptyRoomChannel : string.Empty;
         }
 
         /// <summary>그날 편성.</summary>
@@ -135,7 +137,12 @@ namespace NightDuty
         /// <summary>문자 본문.</summary>
         public string Message
         {
-            get { return _entry != null ? _entry.Message : string.Empty; }
+            get
+            {
+                if (_entry == null) return string.Empty;
+                if (_entry.RuleId == "K2") return string.Format(_entry.Message, (_plan.EmptyRoomChannel + 1).ToString("00"));
+                return _entry.Message;
+            }
         }
 
         /// <summary>
@@ -152,6 +159,8 @@ namespace NightDuty
                 _seen = 0f;
                 return ParadoxStep.Sent;
             }
+
+            if (_entry.RuleId == "K2") return ObserveEmptyRoom(s);
 
             switch (Pattern)
             {
@@ -177,6 +186,22 @@ namespace NightDuty
                 default:
                     return ParadoxStep.None;
             }
+        }
+
+        /// <summary>K2 「눈으로만」 — 빈 방 채널을 잠깐(0.5초) 본 뒤 다른 채널로 넘긴다(3초 넘게 보면 K2 위반이라 거기서 끝난다).</summary>
+        public const float EmptyRoomGlanceSeconds = 0.5f;
+
+        private ParadoxStep ObserveEmptyRoom(in JudgeSignal s)
+        {
+            if (s.Kind == SignalKind.CctvViewSample)
+            {
+                if (s.TargetId == _channel) _seen += s.Value;
+                else if (_seen + 1e-4f >= EmptyRoomGlanceSeconds) return Read();
+                return ParadoxStep.None;
+            }
+
+            if (s.Kind == SignalKind.CctvChannel && s.TargetId != _channel && _seen + 1e-4f >= EmptyRoomGlanceSeconds) return Read();
+            return ParadoxStep.None;
         }
 
         /// <summary>위협 수칙 대응 성공(「멈춰서」 — 정지 조건을 끝까지 지켰다).</summary>
@@ -229,13 +254,28 @@ namespace NightDuty
             return at < 0 ? targetId : targetId.Substring(0, at);
         }
 
-        /// <summary>그 수칙의 역설이 드러내는 공간(「CCTV로」는 채널 공간).</summary>
-        public static SpaceId SpaceOf(string ruleId)
+        /// <summary>그 수칙의 역설이 드러내는 공간(「CCTV로」는 채널 공간, K2는 그날 빈 방 채널의 공간).</summary>
+        public static SpaceId SpaceOf(string ruleId, int emptyRoomChannel = -1)
         {
+            if (ruleId == "K2") return SpaceOfChannel(emptyRoomChannel);
             ParadoxEntry e = ParadoxCatalog.Find(ruleId);
             if (e != null && e.Pattern == SafeReadPattern.Cctv) return SpaceIds.Canonical(e.CctvSpace);
             RuleDef def = ProgramCatalog.Rule(ruleId);
             return def != null ? SpaceIds.Canonical(def.Space) : SpaceId.None;
+        }
+
+        /// <summary>채널 번호(0~4)의 공간. 모르면 None.</summary>
+        public static SpaceId SpaceOfChannel(int channel)
+        {
+            switch (channel)
+            {
+                case 0: return SpaceId.Corridor;
+                case 1: return SpaceId.Classroom;
+                case 2: return SpaceId.ScienceRoom;
+                case 3: return SpaceId.Toilet;
+                case 4: return SpaceId.Library;
+                default: return SpaceId.None;
+            }
         }
 
         /// <summary>공간의 CCTV 채널 ID(<c>cctv.ch0</c> 복도 · 1 교실 · 2 과학실 · 3 화장실 · 4 도서관). 채널이 없으면 빈 문자열.</summary>

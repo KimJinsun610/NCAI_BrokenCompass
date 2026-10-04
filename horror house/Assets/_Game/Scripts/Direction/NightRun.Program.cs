@@ -41,6 +41,7 @@ namespace NightDuty
             if (!ProgramEnabled)
             {
                 _program = NightProgram.Empty(Day);
+                _plannedUnavoidable = null;
                 DisposeFinalRules();
                 return;
             }
@@ -50,10 +51,12 @@ namespace NightDuty
                 Day = Day,
                 Shown = _bands.Shown,
                 Survival = _axes,
-                Inspections = inspections
+                Inspections = inspections,
+                ForcedRules = PlanUnavoidable(inspections)   // 10단계: 회피 불가 역설의 쌍(덱 편성 전에 고른다)
             };
 
             _program = _programDirector.Build(request);
+            ConfirmUnavoidable();
             Debug.Log("[NightRun] " + _program.Report);
             BeginFinalRules();
         }
@@ -64,6 +67,7 @@ namespace NightDuty
             ResetTabletState();
             ResetFinale(clearSwitches);
             ResetParadox(clearSwitches);
+            ResetUnavoidable();
             _programDirector = new ProgramDirector();
             _program = NightProgram.Empty(0);
             DisposeFinalRules();

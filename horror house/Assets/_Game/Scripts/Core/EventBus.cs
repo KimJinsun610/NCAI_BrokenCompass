@@ -65,6 +65,9 @@ namespace NightDuty
         /// </summary>
         public static event Action<SafeReadReveal> SafeReadConfirmed;
 
+        /// <summary>태블릿에 보이는 글(수칙 얼룩·점검 지시)이 바뀌었다. 태블릿은 다시 읽는다(10단계 위반 얼룩·재입실 불가).</summary>
+        public static event Action TabletTextChanged;
+
         /// <summary>
         /// 경고 도장이나 대기 중인 처벌이 바뀌었다. 인자: (도장 수 0~2, 대기 중인 처벌 수).
         /// 태블릿 상단 바의 도장 세 칸이 구독한다. 세 번째 도장이 찍히는 순간은 대기 수가 늘어난 것으로 안다.
@@ -133,6 +136,18 @@ namespace NightDuty
         public static void RaiseMessageSent(ParadoxMessage message)
         {
             Invoke(MessageSent, message);
+        }
+
+        /// <summary><see cref="TabletTextChanged"/>를 발생시킨다.</summary>
+        public static void RaiseTabletTextChanged()
+        {
+            Action h = TabletTextChanged;
+            if (h == null) return;
+            foreach (Delegate d in h.GetInvocationList())
+            {
+                try { ((Action)d)(); }
+                catch (Exception e) { Debug.LogException(e); }
+            }
         }
 
         /// <summary><see cref="SafeReadConfirmed"/>를 발생시킨다.</summary>
@@ -241,6 +256,7 @@ namespace NightDuty
             Captured = null;
             MessageSent = null;
             SafeReadConfirmed = null;
+            TabletTextChanged = null;
             WarningsChanged = null;
             Punished = null;
             NightRestarted = null;

@@ -570,6 +570,7 @@ public sealed class DirectionStage : MonoBehaviour
         if (e.SourceId == "fake.flashlight.flicker")
         {
             StartCoroutine(FlickerFlashlight());
+            PlaySound(e.SourceId, PlayerFeet() + Vector3.up * 1.2f);   // 손전등 지지직(2026-10-04 사운드)
             return;
         }
 

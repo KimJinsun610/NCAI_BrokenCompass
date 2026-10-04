@@ -417,6 +417,12 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         if (GUILayout.Button("안전한 읽기 완료", GUILayout.ExpandWidth(false))) Later(() => Log(NightRun.DebugSafeRead() ? "안전한 읽기 완료" : "보낸 문자가 없음"));
         GUILayout.EndHorizontal();
 
+        UnavoidableRun ur = NightRun.Unavoidable;
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("<b>회피 불가</b>  " + Escape(ur.Status) + (NightRun.EmptyRoomChannel >= 0 ? "  <color=#999>빈 방 채널 CAM0" + (NightRun.EmptyRoomChannel + 1) + "</color>" : string.Empty), _rich);
+        if (GUILayout.Button("지금 걸기", GUILayout.ExpandWidth(false))) Later(() => Log(NightRun.DebugStageUnavoidable() ? "회피 불가 역설을 걸었습니다" : "오늘 회피 불가 역설이 없거나 이미 걸림"));
+        GUILayout.EndHorizontal();
+
         TensionDirector t = NightRun.Tension;
         if (t != null)
         {

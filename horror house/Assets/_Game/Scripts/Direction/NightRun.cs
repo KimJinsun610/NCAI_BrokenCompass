@@ -200,7 +200,7 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 태블릿에 실을 그날 수칙 — 새 수칙 → 점검표 순의 표시 전용 <see cref="RuleSO"/>(<see cref="DisplayDeck"/>).
+        /// 태블릿 「근무 수칙」에 실을 그날 수칙 — 새 수칙의 표시 전용 <see cref="RuleSO"/>(<see cref="DisplayDeck"/>). 점검표는 메시지(<see cref="ChecklistMessage"/>)로 간다.
         /// 밤이 닫힌 뒤에도 다음 편성 전까지 남는다. 새 편성이 꺼져 있으면 비어 있다.
         /// </summary>
         public static IReadOnlyList<RuleSO> TodayDeck
@@ -383,6 +383,7 @@ namespace NightDuty
                 JudgeSignal tick = JudgeSignal.Tick(judgeSeconds);
                 FinalDispatch(tick, true);
                 ParadoxObserve(tick, true);
+                UnavoidableObserve(tick, true);
             }
             finally
             {
@@ -424,6 +425,7 @@ namespace NightDuty
                 {
                     FinalDispatch(signal, judging);
                     ParadoxObserve(signal, judging);
+                    UnavoidableObserve(signal, judging);
                 }
 
                 DirectionObserve(signal);
@@ -472,6 +474,10 @@ namespace NightDuty
 
             if (!_nightOpen) return InspectionReport.Reject(id, saysAnomaly, ReportRejection.NoNight);
             if (IsCaptured) return InspectionReport.Reject(id, saysAnomaly, ReportRejection.Captured);
+            if (item != null && _unavoidable.Banned != SpaceId.None && SpaceIds.Canonical(item.Space) == _unavoidable.Banned)
+            {
+                return InspectionReport.Reject(id, saysAnomaly, ReportRejection.SpaceClosed);   // 회피 불가 역설 — 금일 재입실 불가
+            }
 
             _axes.SoftCap = IsJudgingNow ? (int?)null : Deltas.SoftCap;
             InspectionReport report;
@@ -508,13 +514,6 @@ namespace NightDuty
             EventBus.RaiseInspectionStartled(item.Id, item.Axis);
             CloseIfCaptured();
             return true;
-        }
-
-        /// <summary>환청이 그 항목 근처에서 났다(환청 연출이 부른다). 그 뒤 [이상] 보고는 G2 위반(청각 +6)이다.</summary>
-        public static void MarkHallucination(string itemId)
-        {
-            InspectionItem item = InspectionCatalog.FindByTarget(itemId);
-            Board.MarkHallucination(item != null ? item.Id : itemId);
         }
 
         /// <summary>T4 역보고를 그 항목에 건다(여자아이가 칸으로 들어가는 것을 봤을 때). 수칙·조우 쪽이 부른다.</summary>
@@ -822,7 +821,7 @@ namespace NightDuty
                     : judge.Violated ? RuleVerdict.Violated : RuleVerdict.Complied;
                 bool instructed = ParadoxSentFor(def.Id);
                 string note = instructed && _paradox.SafeRead && _reveals.Count > 0 ? "확인함 → " + _reveals[_reveals.Count - 1].Label : string.Empty;
-                log.Add(new DutyLogEntry(i + 1, def.Id, def.Space, def.Text, verdict, instructed, note));
+                log.Add(new DutyLogEntry(i + 1, def.Id, def.Space, def.Text, verdict, instructed, note, UnavoidableBrokeFor(def.Id)));
             }
 
             return log;
@@ -894,7 +893,7 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 출처 ID를 재시작 카드에 쓸 이름으로 줄인다: 「G2:H-3[이상]」 → 「G2」, 「H-2[이상]」 → 「H-2」, 「H-1(가까이)」 → 「H-1」.
+        /// 출처 ID를 재시작 카드에 쓸 이름으로 줄인다: 「T4:T-1[정상]」 → 「T4」, 「H-2[이상]」 → 「H-2」, 「H-1(가까이)」 → 「H-1」.
         /// </summary>
         public static string DisplaySource(string sourceId)
         {

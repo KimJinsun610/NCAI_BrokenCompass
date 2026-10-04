@@ -130,7 +130,7 @@ namespace NightDuty.Tests
                     new InspectionAssignment(InspectionCatalog.Find("H-2"), false, Band.Band0, false),
                     new InspectionAssignment(InspectionCatalog.Find("H-4"), false, Band.Band0, false)
                 },
-                SpaceId.None, string.Empty, null);
+                SpaceId.None, string.Empty);
             NightRun.BeginNight(1, () => _clock);
             Assert.IsTrue(NightRun.ReportInspection("H-2", false).Accepted);
 

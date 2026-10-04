@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace NightDuty
 {
@@ -96,7 +96,6 @@ namespace NightDuty
 
         private static void DirectionRestart(int restarts, int startMinute)
         {
-            RefreshDisplayDeck();
             if (_tension == null) return;
             _tension.ResetToRest(restarts, startMinute);
         }

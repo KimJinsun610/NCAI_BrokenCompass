@@ -1,13 +1,15 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 엠비언트 재생기. 세 겹으로 깐다.
+/// 엠비언트 재생기. 네 겹으로 깐다.
 /// <list type="number">
-/// <item><b>룸톤</b> — 플레이어가 선 공간의 루프(복도·교실·과학실·화장실·도서관·경비실). 공간을 옮기면 천천히 바뀐다.</item>
+/// <item><b>학교 공통 바탕</b> — 건물 안이면 어디서나 룸톤 밑에 깔린다(2026-10-04 사운드 전달본).</item>
+/// <item><b>룸톤</b> — 플레이어가 선 공간의 루프(복도·교실·과학실·화장실·도서관·경비실). 공간을 옮기면 천천히 바뀐다.
+/// 공간마다 약한 판·강한 판이 있고, <b>그 공간의</b> 청각 구간이 <see cref="AmbienceConfigSO.HighFromBand"/>(3) 이상이면 강한 판으로 넘어간다.</item>
 /// <item><b>불안 레이어</b> — 그 공간의 <b>청각축 표시 구간</b>을 따라 1~4번 루프가 쌓인다(구간 2면 1·2번).
 /// 구간은 <see cref="EventBus.BandChanged"/>로만 받는다.</item>
 /// <item><b>원샷</b> — 공간별 목록에서 무작위로, 플레이어 주변 6~14m 어딘가에서 3D로 난다. 구간이 오를수록 잦아진다.</item>
@@ -44,9 +46,12 @@ public sealed class AmbiencePlayer : MonoBehaviour
     private sealed class RoomVoice
     {
         public string label;
-        public AudioSource source;
+        public AmbienceConfigSO.Zone zone;
+        public AudioSource source;   // 약한 판
+        public AudioSource high;     // 강한 판(없으면 null)
         public float volume;   // 공간 설정 볼륨
         public float level;    // 0~1, 지금 페이드 값
+        public float mix;      // 0 = 약한 판, 1 = 강한 판
     }
 
     private readonly List<RoomVoice> _rooms = new List<RoomVoice>();
@@ -56,6 +61,8 @@ public sealed class AmbiencePlayer : MonoBehaviour
     private AudioSource[] _voices = new AudioSource[0];
     private int _nextVoice;
     private AudioSource _stinger;
+    private AudioSource _base;
+    private float _baseLevel;
 
     private readonly Band[] _auditory = new Band[16];
     private readonly bool[] _known = new bool[16];
@@ -90,6 +97,16 @@ public sealed class AmbiencePlayer : MonoBehaviour
     public int CurrentBand
     {
         get { return _band; }
+    }
+
+    /// <summary>지금 공간의 룸톤이 강한 판 쪽인가(넘어가는 중이면 절반 넘었을 때).</summary>
+    public bool CurrentRoomHigh
+    {
+        get
+        {
+            RoomVoice v;
+            return _roomByLabel.TryGetValue(_zoneLabel, out v) && v.mix > 0.5f;
+        }
     }
 
     // ─────────────────────────────── 설치 ───────────────────────────────
@@ -177,6 +194,7 @@ public sealed class AmbiencePlayer : MonoBehaviour
 
         _rng = new System.Random(Environment.TickCount);
         _building = true;
+        BuildBase();
         BuildRooms();
         BuildDread();
         BuildVoices();
@@ -237,6 +255,13 @@ public sealed class AmbiencePlayer : MonoBehaviour
         return s;
     }
 
+    private void BuildBase()
+    {
+        _base = MakeSource("School Base", true, 0f);
+        _base.clip = LoadClip(config.BaseClip);
+        _base.priority = 30;
+    }
+
     private void BuildRooms()
     {
         AddRoom(config.DefaultZone);
@@ -256,10 +281,18 @@ public sealed class AmbiencePlayer : MonoBehaviour
 
         RoomVoice v = new RoomVoice();
         v.label = z.label;
+        v.zone = z;
         v.volume = z.roomVolume;
         v.source = MakeSource("Room " + z.label, true, 0f);
         v.source.clip = LoadClip(z.roomClip);
         v.source.priority = 32;
+        if (!string.IsNullOrEmpty(z.roomClipHigh))
+        {
+            v.high = MakeSource("Room " + z.label + " High", true, 0f);
+            v.high.clip = LoadClip(z.roomClipHigh);
+            v.high.priority = 32;
+        }
+
         _rooms.Add(v);
         _roomByLabel[z.label] = v;
     }
@@ -367,6 +400,7 @@ public sealed class AmbiencePlayer : MonoBehaviour
         }
 
         UpdateMaster(dt);
+        UpdateBase(dt);
         UpdateRooms(dt);
         UpdateDread(dt);
         UpdateShots();
@@ -435,15 +469,38 @@ public sealed class AmbiencePlayer : MonoBehaviour
         get { return config.MasterVolume * _master * _duck; }
     }
 
+    private void UpdateBase(float dt)
+    {
+        float step = dt / Mathf.Max(0.05f, config.RoomFadeSeconds);
+        _baseLevel = Mathf.MoveTowards(_baseLevel, _zoneLabel.Length > 0 ? 1f : 0f, step);
+        Drive(_base, _baseLevel * config.BaseVolume * Gain);
+    }
+
     private void UpdateRooms(float dt)
     {
         float step = dt / Mathf.Max(0.05f, config.RoomFadeSeconds);
+        float mixStep = dt / Mathf.Max(0.05f, config.HighFadeSeconds);
+        bool night = NightRun.IsNightActive;
         for (int i = 0; i < _rooms.Count; i++)
         {
             RoomVoice v = _rooms[i];
             float target = v.label == _zoneLabel ? 1f : 0f;
             v.level = Mathf.MoveTowards(v.level, target, step);
-            Drive(v.source, v.level * v.volume * Gain);
+
+            // 강한 판: 그 공간의 청각 구간이 기준 이상일 때. 밤이 아니면 약한 판.
+            bool wantHigh = v.high != null && v.high.clip != null && night && BandFor(v.zone) >= config.HighFromBand;
+            if (v.level <= 0f)
+            {
+                v.mix = wantHigh ? 1f : 0f;   // 들리지 않는 동안은 바로 맞춰 둔다 — 들어설 때 넘어가는 소리가 나지 않게
+            }
+            else
+            {
+                v.mix = Mathf.MoveTowards(v.mix, wantHigh ? 1f : 0f, mixStep);
+            }
+
+            float lowGain = v.high != null ? Mathf.Cos(v.mix * Mathf.PI * 0.5f) : 1f;
+            Drive(v.source, v.level * v.volume * lowGain * Gain);
+            if (v.high != null) Drive(v.high, v.level * v.volume * Mathf.Sin(v.mix * Mathf.PI * 0.5f) * Gain);
         }
     }
 

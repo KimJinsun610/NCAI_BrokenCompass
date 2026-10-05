@@ -270,7 +270,7 @@ public class DeathCutscene : MonoBehaviour
     /// </summary>
     public bool Play(bool restoreAfter)
     {
-        if (Playing != null || director == null || camTarget == null) return false;
+        if (Playing != null || LayoutDeathCutscene.Playing != null || director == null || camTarget == null) return false;
 
         FPController fp = FindAnyObjectByType<FPController>();
         if (fp == null)
@@ -526,6 +526,26 @@ public class DeathCutsceneDebugSpawner : MonoBehaviour
         {
             if (Input.GetKeyDown(Keys[i])) Spawn(Keys[i], Prefabs[i]);
         }
+        if (Input.GetKeyDown(LayoutKey)) SpawnLayout();
+    }
+
+    // 배치 컷신(LayoutDeathCutscene)은 Timeline이 아니라 따로 다룬다 — F6
+    private const KeyCode LayoutKey = KeyCode.F6;
+
+    private static void SpawnLayout()
+    {
+        if (FindAnyObjectByType<LayoutDeathCutscene>(FindObjectsInactive.Include) != null) return;   // 씬 것이 직접 받는다
+        if (DeathCutscene.Playing != null || FindAnyObjectByType<FPController>() == null) return;
+
+        LayoutDeathCutscene prefab = Resources.Load<LayoutDeathCutscene>(LayoutDeathCutscene.ResourceName);
+        if (prefab == null)
+        {
+            Debug.LogWarning("[DeathCutscene] Resources/" + LayoutDeathCutscene.ResourceName + " 프리팹이 없습니다. 빌더 메뉴를 먼저 실행하십시오.");
+            return;
+        }
+        LayoutDeathCutscene cutscene = Instantiate(prefab);
+        cutscene.name = prefab.name;
+        cutscene.Play(true);   // 못 가면(금지 반경·길 없음) 이유를 로그로 남기고 그대로 남는다 — 다음 F6는 그 컷신이 받는다
     }
 
     private static void Spawn(KeyCode key, string resourceName)
@@ -534,7 +554,7 @@ public class DeathCutsceneDebugSpawner : MonoBehaviour
         {
             if (c.DebugKey == key) return;   // 씬 것이 직접 받는다
         }
-        if (DeathCutscene.Playing != null) return;   // 다른 컷신이 재생 중
+        if (DeathCutscene.Playing != null || LayoutDeathCutscene.Playing != null) return;   // 다른 컷신이 재생 중
         if (FindAnyObjectByType<FPController>() == null) return;
 
         DeathCutscene prefab = Resources.Load<DeathCutscene>(resourceName);

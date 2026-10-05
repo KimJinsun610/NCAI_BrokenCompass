@@ -50459,6 +50459,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: PlaySystems
       objectReference: {fileID: 0}
+    - target: {fileID: 6235149446408950780, guid: 2d17b90cdca22f14bb332f0b93f13775, type: 3}
+      propertyPath: previewWeight
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6461060359213525353, guid: 2d17b90cdca22f14bb332f0b93f13775, type: 3}
       propertyPath: m_LocalPosition.x
       value: 33.26645

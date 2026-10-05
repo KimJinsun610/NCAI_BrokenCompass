@@ -274,7 +274,7 @@ public sealed partial class CaptureDirector : MonoBehaviour
     /// 시 단위 JumpToHour 뒤에 분까지 맞춘다 — 체크포인트(02:16) 재시작이 HUD에 02:00으로 나왔다(43차 시뮬).
     /// GameTime(김진선님)에 분 단위 API가 없어 런타임 인스턴스의 시각 필드만 반사로 쓴다. 못 찾으면 시 단위 그대로.
     /// </summary>
-    private static void SetClockMinute(GameTime clock, int gameMinute)
+    internal static void SetClockMinute(GameTime clock, int gameMinute)
     {
         const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
         if (s_clockSeconds == null) s_clockSeconds = typeof(GameTime).GetField("currentSeconds", flags);

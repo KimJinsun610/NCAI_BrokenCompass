@@ -390,7 +390,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 ok = ChairOut(look, prop, jt.transform, band);
                 break;
             case "H-2":
-                Water(look, prop, b, band, Flat(prop.forward), new Color(0.015f, 0.02f, 0.025f, 0.8f), 0.25f, false);
+                // 44차: 김진선님 「피 식수대」(HorrorEvent_BloodyFountain) — 물이 고이고 떨어지다가, 앞에 다가서면 8초에 걸쳐 검붉게 변한다. 없으면 옛 절차 물.
+                if (!FountainEvent(look, prop, b, band)) Water(look, prop, b, band, Flat(prop.forward), new Color(0.015f, 0.02f, 0.025f, 0.8f), 0.25f, false);
                 break;
             case "T-1":
                 Water(look, prop, b, band, Flat(prop.forward), new Color(0.03f, 0.028f, 0.02f, 0.82f), 0.3f, true);
@@ -707,6 +708,92 @@ public sealed class InspectionAnomalies : MonoBehaviour
         r.sharedMaterial = WetSurface(Blob(look.ItemId.GetHashCode()), color, 0.95f);
         r.shadowCastingMode = ShadowCastingMode.Off;
         look.Objects.Add(go);
+    }
+
+    /// <summary>
+    /// H-2 피 식수대(44차, 김진선님 HorrorEvent_BloodyFountain). 그 연출 프리팹을 씬 식수대와 같은 자리·방향에 세우고(프리팹 속 식수대 모형은 끔 — 씬 것이 있다),
+    /// 바닥 물웅덩이(물·검붉은 판 둘 다)를 구간 길이(<see cref="AnomalyLook.SpreadMeters"/> 0.6/1.4/2.2/3.4m)만큼 앞으로 늘이고 높이를 실제 바닥에 맞춘다.
+    /// 앞 1m 안으로 다가서면(프리팹의 HorrorTriggerZone) 물이 검붉게 변한다 — 「가까이」 연출. 김진선님 프리팹·스크립트는 고치지 않는다.
+    /// </summary>
+    private bool FountainEvent(Look look, Transform prop, Bounds b, Band band)
+    {
+        if (_props == null) _props = Resources.Load<InspectionAnomalyPropsSO>(InspectionAnomalyPropsSO.ResourcePath);
+        GameObject prefab = _props != null ? _props.FindEvent(look.ItemId) : null;
+        if (prefab == null) return false;
+
+        GameObject inst = Instantiate(prefab, prop.position, prop.rotation);
+        inst.name = "이상 " + look.ItemId + " 피 식수대";
+        look.Objects.Add(inst);
+        Transform model = inst.transform.Find("DrinkingFountain");
+        if (model != null) model.gameObject.SetActive(false);
+        WatchSceneModel(inst, prop);
+        // 다가섬 구역(트리거)이 식수대 앞에 있어 응시·조준 레이를 막지 않게 Ignore Raycast 층으로(트리거 판정은 그대로).
+        Transform zone = inst.transform.Find("Trigger");
+        if (zone != null) zone.gameObject.layer = 2;
+
+        Vector3 fwd = Flat(prop.forward);
+        float floorY = FloorY(prop.position + fwd * 0.6f, b.min.y);
+        float len = Mathf.Max(0.45f, AnomalyLook.SpreadMeters(band));
+        float wid = Mathf.Max(0.55f, SpreadWidthByBand[Mathf.Clamp((int)band, 0, 4)]);
+        string[] puddles = { "Idle_Water/Decal_FloorPuddle", "Near_DarkRed/Decal_FloorPuddleDarkRed" };
+        for (int i = 0; i < puddles.Length; i++)
+        {
+            Transform t = inst.transform.Find(puddles[i]);
+            UnityEngine.Rendering.Universal.DecalProjector d = t != null ? t.GetComponent<UnityEngine.Rendering.Universal.DecalProjector>() : null;
+            if (d == null) continue;
+            // 판은 x 90°로 눕혀 아래로 비춘다 — 판의 y가 식수대 앞쪽(+z). 식수대 바로 앞(0.13m)에서 시작해 len만큼.
+            Vector3 lp = t.localPosition;
+            float startZ = lp.z - d.size.y * 0.5f;
+            d.size = new Vector3(wid, len, d.size.z);
+            lp.z = startZ + len * 0.5f;
+            lp.y = floorY - prop.position.y;
+            t.localPosition = lp;
+        }
+
+        // 천장 얼룩·천장 물방울(김진선님 갱신본)은 프리팹 기준 천장 3.14m — 실제 천장 바로 아래로 맞춘다.
+        RaycastHit up;
+        if (Physics.Raycast(new Vector3(prop.position.x, floorY + 1.2f, prop.position.z) + fwd * 0.44f, Vector3.up, out up, 6f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            Transform red = inst.transform.Find("Near_DarkRed");
+            if (red != null)
+            {
+                foreach (Transform c in red)
+                {
+                    if (c.localPosition.y < 2f) continue;   // 천장에 붙은 것만(얼룩·천장 물방울)
+                    Vector3 lp = c.localPosition;
+                    lp.y = up.point.y - prop.position.y - (c.name.StartsWith("PS_") ? 0.06f : 0f);
+                    c.localPosition = lp;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 김진선님 <c>HorrorUnseenReset</c>(연출이 끝난 뒤 안 보는 사이 처음 물로 되돌림)이 지켜볼 모델을 씬 식수대로 바꾼다.
+    /// 프리팹 속 모형은 꺼 두므로 그대로면 늘 「안 본다」가 되고, 씬 식수대의 점검 기준점 상자가 시선 선을 막아도 「안 본다」가 된다 —
+    /// 씬 식수대(기준점이 그 자식)를 보게 하면 둘 다 풀린다. 김진선님 코드는 고치지 않고 이 인스턴스의 필드만 반사로 바꾼다. 못 바꾸면 그 컴포넌트를 끈다.
+    /// </summary>
+    private static void WatchSceneModel(GameObject inst, Transform sceneModel)
+    {
+        foreach (MonoBehaviour mb in inst.GetComponents<MonoBehaviour>())
+        {
+            if (mb == null || mb.GetType().Name != "HorrorUnseenReset") continue;
+            const System.Reflection.BindingFlags F = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            System.Reflection.FieldInfo watched = mb.GetType().GetField("watchedModel", F);
+            System.Reflection.FieldInfo list = mb.GetType().GetField("renderers", F);
+            List<Renderer> renderers = list != null ? list.GetValue(mb) as List<Renderer> : null;
+            if (watched == null || renderers == null)
+            {
+                mb.enabled = false;
+                continue;
+            }
+
+            watched.SetValue(mb, sceneModel);
+            renderers.Clear();
+            sceneModel.GetComponentsInChildren(true, renderers);
+        }
     }
 
     private void Hair(Look look, Transform prop, Bounds b, Band band)

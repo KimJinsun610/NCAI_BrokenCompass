@@ -74,8 +74,9 @@ public sealed class NightRunDriver : MonoBehaviour
     }
 
     /// <summary>
-    /// 디버그: 밤 시계를 그 분(0~240)으로 옮긴다. 게임 시계(GameTime)의 표시는 그대로 두고 밤 시계 오프셋만 바꾼다 —
-    /// 판정 시간창·슬롯·호출은 밤 시계를 보므로 이것으로 충분하다. 구간 추적기는 그 분에서 다시 시작한다(지나간 호출을 다시 울리지 않음).
+    /// 디버그: 밤 시계를 그 분(0~240)으로 옮긴다. 게임 시계(GameTime)도 같은 분으로 옮긴다(47차 — 전에는 표시를 두고 오프셋만 바꿔,
+    /// 03:59로 뛰어도 화면 시계가 00:12라 04:00 근무 종료·5일차 피날레가 오지 않았다). 남는 차이는 오프셋으로 메운다.
+    /// 구간 추적기는 그 분에서 다시 시작한다(지나간 호출을 다시 울리지 않음).
     /// </summary>
     public void DebugJumpToNightMinute(float minute)
     {
@@ -83,8 +84,9 @@ public sealed class NightRunDriver : MonoBehaviour
         int span = gameTime.EndMinutes - gameTime.StartMinutes;
         if (span <= 0) return;
 
-        float raw = (gameTime.CurrentMinutes - gameTime.StartMinutes) * NightClock.ShiftEnd / (float)span;
         minute = Mathf.Clamp(minute, 0f, NightClock.ShiftEnd - 1f);
+        CaptureDirector.SetClockMinute(gameTime, gameTime.StartMinutes + Mathf.FloorToInt(minute * span / NightClock.ShiftEnd));
+        float raw = (gameTime.CurrentMinutes - gameTime.StartMinutes) * NightClock.ShiftEnd / (float)span;
         _rewindOffset = minute - raw;
         _tracker.Reset(NightMinute);
     }

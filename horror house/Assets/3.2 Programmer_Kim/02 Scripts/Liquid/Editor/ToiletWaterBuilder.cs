@@ -28,12 +28,12 @@ using UnityEngine;
 /// </summary>
 public static class ToiletWaterBuilder
 {
-    private const string Root = "Assets/3.2 Programmer_Kim/03 Prefebs/04 Horror/Toilet";
+    internal const string Root = "Assets/3.2 Programmer_Kim/03 Prefebs/04 Horror/Toilet";
     private const string ClearPath = Root + "/HorrorProp_ToiletA_ClearWater.prefab";
     private const string BloodPath = Root + "/HorrorProp_ToiletA_BloodHair.prefab";
 
-    private const string ToiletPrefab = "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/ToiletA.prefab";
-    private const string BloodVfx = "Assets/0. Main/99 Resources/VFX/RealisticBloodVFX/URP/RealisticBlood/Particle Systems/";
+    internal const string ToiletPrefab = "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/ToiletA.prefab";
+    internal const string BloodVfx = "Assets/0. Main/99 Resources/VFX/RealisticBloodVFX/URP/RealisticBlood/Particle Systems/";
     private const string FountainPrefab = "Assets/3.2 Programmer_Kim/03 Prefebs/04 Horror/Bloody/HorrorEvent_BloodyFountain.prefab";
     private const string FountainDrops = "Near_DarkRed/PS_Drops_DarkRed";
     private const string GushSound = "Assets/_Game/Audio/toilet/SFX_TOILET_WaterMove_3.wav";
@@ -42,12 +42,12 @@ public static class ToiletWaterBuilder
     /// 수면 높이(변기 바닥 기준, m). 실측: 테 0.39 · 그릇 바닥 0.19~0.20 · 가운데 배수 구멍.
     /// 0.25면 앞뒤 약 0.3m · 좌우 약 0.28m 웅덩이 — 실제 변기에 고인 물 정도.
     /// </summary>
-    private const float WaterY = 0.25f;
+    internal const float WaterY = 0.25f;
     /// <summary>그릇에서 가장 깊은 곳(배수 구멍 위) — 부채꼴의 가운데.</summary>
-    private static readonly Vector2 BowlCenterXZ = new Vector2(0f, 0.42f);
+    internal static readonly Vector2 BowlCenterXZ = new Vector2(0f, 0.42f);
     /// <summary>수면 가장자리를 그릇 면 속으로 밀어 넣는 여유(m).</summary>
-    private const float Overlap = 0.012f;
-    private const int FanSegments = 48;
+    internal const float Overlap = 0.012f;
+    internal const int FanSegments = 48;
 
     private static readonly Color ClearWaterColor = new Color(0.62f, 0.70f, 0.68f, 0.30f);
     // 0.13이면 어두운 화장실에서 검정으로 읽히고 검은 머리카락이 묻혔다 — 붉은 기가 남도록
@@ -139,7 +139,7 @@ public static class ToiletWaterBuilder
     }
 
     /// <summary>임시 프리뷰 씬에서 ToiletA를 중첩해 조립하고 저장한다(열린 씬을 건드리지 않음).</summary>
-    private static void Assemble(string path, string name, GameObject toilet, System.Action<Transform> fill)
+    internal static void Assemble(string path, string name, GameObject toilet, System.Action<Transform> fill)
     {
         var stage = UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
         var root = new GameObject(name);
@@ -163,7 +163,7 @@ public static class ToiletWaterBuilder
     /// 그 안에서 부딪혀 사라진다(실측: 0개). 이 프리팹에서만 껍질을 끄고 실제 모양(LOD0) 오목 충돌체로 바꾼다.
     /// 원본 프리팹은 그대로 — 중첩 인스턴스의 재정의다. 플레이어는 여전히 변기에 막힌다.
     /// </summary>
-    private static void UseBowlCollider(Transform root)
+    internal static void UseBowlCollider(Transform root)
     {
         Transform model = root.Find("ToiletA");
         MeshFilter lod0 = model != null ? model.GetComponentInChildren<MeshFilter>() : null;
@@ -260,19 +260,22 @@ public static class ToiletWaterBuilder
     }
 
     /// <summary>가운데에서 dir로 나가며 그릇 면(위에서 내려 쏜 첫 면)이 수면 높이 이상이 되는 거리.</summary>
-    private static float EdgeRadius(MeshCollider col, Vector3 dir)
+    private static float EdgeRadius(MeshCollider col, Vector3 dir) => EdgeRadius(col, dir, WaterY);
+
+    /// <summary>수면 높이 <paramref name="level"/>에서의 그릇 가장자리 거리(물 내림 빌더가 높이마다 잰다).</summary>
+    internal static float EdgeRadius(MeshCollider col, Vector3 dir, float level)
     {
         var c = new Vector3(BowlCenterXZ.x, 0f, BowlCenterXZ.y);
         for (float r = 0.02f; r < 0.4f; r += 0.003f)
         {
             Vector3 p = c + dir * r;
             if (!col.Raycast(new Ray(new Vector3(p.x, 1.5f, p.z), Vector3.down), out RaycastHit h, 2f)) return r;
-            if (h.point.y >= WaterY) return r;
+            if (h.point.y >= level) return r;
         }
         return 0.15f;
     }
 
-    private static Mesh SaveMesh(Mesh mesh, string path)
+    internal static Mesh SaveMesh(Mesh mesh, string path)
     {
         var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
         if (existing == null)
@@ -290,7 +293,7 @@ public static class ToiletWaterBuilder
 
     // ───────────────────────── 재질 ─────────────────────────
 
-    private static Material LitMaterial(string path)
+    internal static Material LitMaterial(string path)
     {
         var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
         if (mat == null)
@@ -317,7 +320,7 @@ public static class ToiletWaterBuilder
     }
 
     /// <summary>붉은 물 — 불투명한 검붉은 색, 매끈하게.</summary>
-    private static Material BloodWaterMaterial()
+    internal static Material BloodWaterMaterial()
     {
         Material m = LitMaterial(Root + "/M_ToiletWater_Blood.mat");
         m.SetColor("_BaseColor", BloodWaterColor);
@@ -463,7 +466,7 @@ public static class ToiletWaterBuilder
     }
 
     /// <summary>원본 프리팹과 연결을 끊은 사본(원본 VFX를 고치지 않으려고).</summary>
-    private static GameObject Copy(string prefabPath, UnityEngine.SceneManagement.Scene stage)
+    internal static GameObject Copy(string prefabPath, UnityEngine.SceneManagement.Scene stage)
     {
         var src = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         // 임시 씬에 바로 만든다(열린 씬에 잠깐이라도 생기지 않게) → 원본 연결을 끊는다
@@ -474,7 +477,7 @@ public static class ToiletWaterBuilder
         return go;
     }
 
-    private static void Configure(ParticleSystem ps, float duration, (float, float) life, (float, float) speed, (float, float) size, float gravity, int maxParticles)
+    internal static void Configure(ParticleSystem ps, float duration, (float, float) life, (float, float) speed, (float, float) size, float gravity, int maxParticles)
     {
         ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         var m = ps.main;
@@ -497,7 +500,7 @@ public static class ToiletWaterBuilder
     }
 
     /// <summary>세상에 닿으면 사라진다(튕겨 다니지 않게).</summary>
-    private static void KillOnHit(ParticleSystem ps, bool sendMessages)
+    internal static void KillOnHit(ParticleSystem ps, bool sendMessages)
     {
         var c = ps.collision;
         c.enabled = true;
@@ -525,7 +528,7 @@ public static class ToiletWaterBuilder
         EditorUtility.CopySerialized(from, to);
     }
 
-    private static void EnsureFolder(string path)
+    internal static void EnsureFolder(string path)
     {
         if (AssetDatabase.IsValidFolder(path)) return;
         string parent = Path.GetDirectoryName(path).Replace('\\', '/');

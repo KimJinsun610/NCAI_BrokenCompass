@@ -3,6 +3,14 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
+> **개정: 2026-10-05(48차). 플레이 중 안내 줄 한글이 □로 깨지던 것 — `TMP Settings` 전역 폴백에 `Pretendard-Medium SDF`를 넣었습니다(폴백 0개 → 1개).**
+> ⓐ **증상·실측**: 메인 `PlayScene`에서 콘솔에 **`Txt_Prompt`에서만 404건** 「수(수) … not found in [LiberationSans SDF]」. 상호작용 안내(문·점검·전화기)의 한글이 전부 □.
+> ⓑ **원인 사슬**: 메인 씬 HUD가 `HUD_Play_Design`인데 그 프리팹에 **TMP 글자가 0개**이고 씬에 **`Txt_Prompt`도 없다**(`PlayScene_test`·`PlayScene_Lee`는 진선님 `HUD_Play` + `Txt_Prompt` 보유) → `InteractionHud`가 런타임에 만들면서 **같은 캔버스에서 글꼴을 빌리려는데 빌릴 글자가 없고**(캔버스도 이름 `HUD_Play`가 없어 sortingOrder 0 폴백) → TMP 기본 LiberationSans(한글 없음)로 남았다. **전역 폴백이 비어 있어 안전망도 없었다.**
+> ⓒ **빌드 안전**: Pretendard-Medium은 Dynamic + Multi Atlas이고 원본 `Pretendard-Medium.ttf` 참조가 살아 있다 — `m_ClearDynamicDataOnBuild: 1`이라 빌드에서 글자를 새로 굽는데 그 전제가 충족된다. `TMP Settings`가 `Resources`에 있어 폰트도 빌드에 딸려 간다.
+> ⓓ **남은 결함(고치지 않음)**: 같은 일을 하는 코드 셋 중 **`InteractionHud.FindDonorFont()`만 한글 보유를 확인하지 않는다**(`CaptureDirector.DonorFont()`·`FinaleDirector.DonorFont()`는 `HasCharacter('일'/'근')` 확인). 폴백이 가려 줄 뿐이다.
+> ⓔ **함께 본 것(원인 다름)**: `Ran out of Graphics Ring Buffer space` 오늘 **10회**(씬 로드·배속 변경·피날레 중 산발) — 글자가 아니라 그 프레임 렌더링이 깨진다 · `Invalid texture used for cursor` 7회.
+> **되살리지 마십시오:** 「TMP 전역 폴백은 비워 둔다」 · 「런타임에 만든 TMP 글자는 글꼴을 지정하지 않아도 된다」.
+
 > **개정: 2026-10-05(47차). 5일 전체 흐름 점검 + 첫 독립 실행 빌드 + §12 다시 씀(민: 「진행시켜」). EditMode 334/334, PlayScene에서 1일차 → 5일차 피날레 → 결과창 → 메인 한 번에, Windows 개발 빌드 성공.**
 > ⓐ **돌려 본 것**: 1일차 점검 4/5 보고·하나 미완료 → 결과창 「현미경 미완료」 → 2일차 출근 CCTV 「어제 02:54 · CAM03」 · 청각 붙잡힘(컷신 11.7초) → 00:00 재시작(이미 한 보고는 유지) · 이완에 서명 → 조도 붙잡힘(컷신 8.3초) → 02:16 재시작(화면 시계 02:18) · 3일차 붙잡힘 6번 → 결근 → 결과창 전부 미완료 · 4일차 · 5일차 H-2 피 식수대 · 04:00 → 피날레 → 「보지 않음」 결말 → 결과창 → 메인.
 > ⓑ **고친 것**: ① 김진선님 쪽 병합으로 TMP 폰트 5개의 Multi Atlas가 다시 꺼져 5일차 결과창에 「□수대」·「가까□」 — 에셋을 다시 켜고, `Flow/Presentation/FontAtlasGuard`(자동)가 씬이 열릴 때마다 불러온 동적 폰트를 켠다(에셋 값에 기대지 않음). ② 결과창 「금일 점검」이 「변기 / 미완료」로 갈라짐 — TMP는 한글 사이를 공백 없이도 끊는다 → 항목마다 `<nobr>`. ③ 디버그 밤 시계 점프(`NightRunDriver.DebugJumpToNightMinute`)가 게임 시계를 그대로 둬 03:59로 뛰어도 화면이 00:12, 04:00 근무 종료·피날레가 오지 않았다 — 게임 시계도 옮긴다(`CaptureDirector.SetClockMinute`, internal).

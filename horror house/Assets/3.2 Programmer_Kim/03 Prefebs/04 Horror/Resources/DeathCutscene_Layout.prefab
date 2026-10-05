@@ -51,7 +51,7 @@ MonoBehaviour:
   searchRange: 35
   maxPathLength: 40
   freezeSeconds: 0.6
-  walkSpeed: 1.15
+  walkSpeed: 1.45
   stepLength: 0.72
   pullDistance: 2.3
   swayPeriod: 3.2

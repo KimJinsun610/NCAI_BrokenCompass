@@ -19,9 +19,12 @@ using UnityEngine.UI;
 ///
 /// <para>걷는 거리가 매번 달라 Timeline 대신 코드로 진행한다. 소리·나무는 빌더 메뉴
 /// 「Tools ▸ Programmer_Kim ▸ Horror ▸ Build Death Cutscene (Layout)」가 프리팹에 연결한다.</para>
+///
+/// <para><b>ver2(피 비)</b>는 <c>bloodRain</c>을 켠 프리팹(<see cref="ResourceNameV2"/>)이다 — 앞에 떨어지는 핏방울 → 천장의 피 얼룩 →
+/// 비처럼 쏟아지는 피·가득 선 사람 나무 → 가까운 나무로 걸어감. 걷기부터는 ver1과 같다. 코드는 <c>LayoutDeathCutscene.BloodRain.cs</c>.</para>
 /// </summary>
 [DisallowMultipleComponent]
-public class LayoutDeathCutscene : MonoBehaviour
+public partial class LayoutDeathCutscene : MonoBehaviour
 {
     public const string ResourceName = "DeathCutscene_Layout";
     public const float DefaultBlockRadius = 2f;
@@ -75,7 +78,7 @@ public class LayoutDeathCutscene : MonoBehaviour
 
     [Header("걸음")]
     [SerializeField, Min(0f)] private float freezeSeconds = 0.6f;
-    [SerializeField, Min(0.1f)] private float walkSpeed = 1.15f;
+    [SerializeField, Min(0.1f)] private float walkSpeed = 1.45f;
     [SerializeField, Min(0.1f)] private float stepLength = 0.72f;
     [Tooltip("나무에서 이 거리(수평 m)까지 다가가면 끌려 들어간다.")]
     [SerializeField, Min(0.5f)] private float pullDistance = 2.3f;
@@ -212,6 +215,9 @@ public class LayoutDeathCutscene : MonoBehaviour
     {
         LastRefusal = null;
         if (Playing != null || DeathCutscene.Playing != null) return Refuse("다른 사망 컷신이 재생 중입니다.");
+        if (bloodRain) return PlayBloodRain(restoreAfter);
+        baseWobble = 0f;
+        baseVignette = 0f;
 
         FPController fp = FindAnyObjectByType<FPController>();
         if (fp == null) return Refuse("플레이어(FPController)가 없습니다.");
@@ -233,14 +239,35 @@ public class LayoutDeathCutscene : MonoBehaviour
         }
 
         // ── 잠금 ──
-        controller = fp;
         restoreOnEnd = restoreAfter;
+        RememberPose();
+        LockPlayer(fp);
+
+        if (forceFlashlight) GrabFlashlight();
+        BuildRuntimeParts();
+        SpawnTree(spot, path);
+
+        Playing = this;
+        startedFrame = Time.frameCount;
+        gameObject.SetActive(true);
+        running = StartCoroutine(Run(path, feet, freezeSeconds, 0f));
+        return true;
+    }
+
+    /// <summary>끝난 뒤 되돌릴 위치·카메라를 적어 둔다(디버그 재생).</summary>
+    private void RememberPose()
+    {
         playerPos = player.position;
         playerRot = player.rotation;
         camLocalPos = cam.transform.localPosition;
         camLocalRot = cam.transform.localRotation;
         camFov = cam.fieldOfView;
+    }
 
+    /// <summary>조작을 잠근다 — 이동·커서·화면 UI를 막고 다른 소리를 끊는다(컷신 소리만 들린다).</summary>
+    private void LockPlayer(FPController fp)
+    {
+        controller = fp;
         controller.enabled = false;
         body = fp.GetComponent<Rigidbody>();
         if (body != null)
@@ -265,16 +292,6 @@ public class LayoutDeathCutscene : MonoBehaviour
             AudioListener.pause = true;
             pausedAudio = true;
         }
-
-        if (forceFlashlight) GrabFlashlight();
-        BuildRuntimeParts();
-        SpawnTree(spot, path);
-
-        Playing = this;
-        startedFrame = Time.frameCount;
-        gameObject.SetActive(true);
-        running = StartCoroutine(Run(path, feet));
-        return true;
     }
 
     private bool Refuse(string why)
@@ -503,13 +520,31 @@ public class LayoutDeathCutscene : MonoBehaviour
             Debug.LogWarning("[LayoutDeathCutscene] 사람 나무 프리팹이 비어 있습니다 — 나무 없이 진행합니다.");
             return;
         }
-        tree = Instantiate(treePrefab, treeBase, Quaternion.LookRotation(face.normalized, Vector3.up));
-        tree.name = "LayoutDeath HumanTree";
-        // 바라보면 화면이 물드는 효과(HorrorGazeHold)·흔들림(HorrorTreeSway)은 프리팹 그대로 쓴다.
+        tree = NewTree(treeBase, Quaternion.LookRotation(face.normalized, Vector3.up), "LayoutDeath HumanTree", true);
+    }
+
+    /// <summary>
+    /// 사람 나무 하나를 세운다. 흔들림(HorrorTreeSway)은 프리팹 그대로 쓰고, 바라보면 화면이 물드는 효과(HorrorGazeHold)는
+    /// <paramref name="keepGaze"/>일 때만 남긴다(나무가 여럿이면 서로 같은 화면 효과를 다툰다).
+    /// </summary>
+    private GameObject NewTree(Vector3 pos, Quaternion rot, string name, bool keepGaze)
+    {
+        GameObject t = Instantiate(treePrefab, pos, rot);
+        t.name = name;
         // 같은 볼륨을 Timeline으로 덮어쓰는 응시 트리거·이벤트는 끈다(둘이 다투면 세기가 튄다 — 2026-09-29).
-        foreach (HorrorGazeTrigger t in tree.GetComponentsInChildren<HorrorGazeTrigger>(true)) t.enabled = false;
-        foreach (HorrorEvent e in tree.GetComponentsInChildren<HorrorEvent>(true)) e.enabled = false;
-        foreach (Collider col in tree.GetComponentsInChildren<Collider>(true)) col.enabled = false;
+        foreach (HorrorGazeTrigger g in t.GetComponentsInChildren<HorrorGazeTrigger>(true)) g.enabled = false;
+        foreach (HorrorEvent e in t.GetComponentsInChildren<HorrorEvent>(true)) e.enabled = false;
+        foreach (Collider col in t.GetComponentsInChildren<Collider>(true)) col.enabled = false;
+        if (!keepGaze)
+        {
+            foreach (HorrorGazeHold h in t.GetComponentsInChildren<HorrorGazeHold>(true)) h.enabled = false;
+            // 여럿 세울 때 같은 동작을 맞춰 하면 인형처럼 보인다 — 애니메이션 시작 지점을 흩는다(0 = 지금 상태의 시간만 바꿈)
+            foreach (Animator a in t.GetComponentsInChildren<Animator>())
+            {
+                if (a.runtimeAnimatorController != null) a.Play(0, 0, UnityEngine.Random.value);   // Timeline만 쓰는 Animator(컨트롤러 없음)는 건너뜀
+            }
+        }
+        return t;
     }
 
     /// <summary>소리 소스·화면 일렁임·먹물 캔버스 — 프리팹을 단순하게 두려고 재생할 때 만든다(처음 한 번).</summary>
@@ -590,7 +625,7 @@ public class LayoutDeathCutscene : MonoBehaviour
     private void UpdateDarken(float treeDistance)
     {
         float k = 1f - Edge(pullDistance, Mathf.Max(pullDistance + 0.1f, darkenFrom), treeDistance);
-        SetAlpha(darkVignette, k * darkenVignette);
+        SetAlpha(darkVignette, Mathf.Max(baseVignette, k * darkenVignette));   // ver2는 이미 어두워진 가장자리에서 시작
         SetAlpha(darkOverall, k * k * darkenOverall);
     }
 
@@ -671,7 +706,8 @@ public class LayoutDeathCutscene : MonoBehaviour
 
     // ─────────────────────────────── 진행 ───────────────────────────────
 
-    private IEnumerator Run(List<Vector3> path, Vector3 startFeet)
+    /// <summary>굳음 → 걷기 → 끌려 들어감 → 먹물 → 끝. ver2는 굳음 없이, 내려다본 고개(<paramref name="startPitch"/>)에서 이어 걷는다.</summary>
+    private IEnumerator Run(List<Vector3> path, Vector3 startFeet, float freeze, float startPitch)
     {
         Vector3 bodyOffset = player.position - startFeet;   // 발밑 → 플레이어 루트
         float totalLength = PathLength(path);
@@ -685,7 +721,7 @@ public class LayoutDeathCutscene : MonoBehaviour
         camFovNow = camFov;
 
         float yaw = cam.transform.eulerAngles.y;
-        float pitch = 0f;
+        float pitch = startPitch;
         Vector3 eyeLocal = Vector3.up * (cam.transform.position.y - startFeet.y);
 
         StartLayers();
@@ -694,7 +730,7 @@ public class LayoutDeathCutscene : MonoBehaviour
 
         // ① 굳음 — 소리가 끊긴 채 잠깐
         Vector3 feet = path[0];
-        while (t < freezeSeconds)
+        while (t < freeze)
         {
             t += Time.deltaTime;
             SetCamera(feet + bodyOffset, yaw, pitch, 0f, 0f);
@@ -778,7 +814,7 @@ public class LayoutDeathCutscene : MonoBehaviour
             UpdateDarken(treeDist);
             UpdateLayers(p);
             SetEcho(p);
-            if (wobble != null) wobble.weight = Mathf.Pow(p, 1.3f) * wobbleMax;
+            if (wobble != null) wobble.weight = Mathf.Max(baseWobble, Mathf.Pow(p, 1.3f) * wobbleMax);
             camFovNow = Mathf.Lerp(camFov, approachFov, Mathf.SmoothStep(0f, 1f, p));
 
             // 끌려 드는 순간에 빨려 듦의 꼭대기가 오게 미리 건다(남은 거리 ÷ 지금 속도로 어림)
@@ -799,6 +835,7 @@ public class LayoutDeathCutscene : MonoBehaviour
         if (viewmodel != null) viewmodel.SetActive(false);
         stepSource.Stop();
         foreach (AudioSource s in layerSources) if (s != null) s.Stop();
+        StopBloodRain();   // ver2 — 피 비·물소리·웅성거림도 뚝
         foreach (Hit h in pullHits) PlayHit(h);
 
         Vector3 fromPos = cam.transform.position;
@@ -1089,6 +1126,7 @@ public class LayoutDeathCutscene : MonoBehaviour
 
         if (tree != null) Destroy(tree);
         tree = null;
+        CleanupBloodRain();
         foreach (AudioSource s in layerSources) if (s != null) Destroy(s.gameObject);
         layerSources.Clear();
         layerOf.Clear();

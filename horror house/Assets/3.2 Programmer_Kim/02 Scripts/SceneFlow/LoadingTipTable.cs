@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -16,6 +17,11 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "LoadingTipTable", menuName = "Programmer_Kim/Loading Tip Table")]
 public class LoadingTipTable : ScriptableObject
 {
+    [Header("CSV (우선)")]
+    [Tooltip("Id,UnlockDay,Text 형식의 CSV. 넣으면 아래 두 배열 대신 이것을 쓴다. 형식은 LoadingTipCsv 참고.")]
+    public TextAsset tipCsv;
+
+    [Header("CSV가 없을 때 쓰는 문구")]
     [Tooltip("언제 떠도 안전한 조작·규칙 안내. DAY 1 로딩에는 이것만 나온다.")]
     [TextArea(2, 4)] public string[] tips;
 
@@ -32,12 +38,48 @@ public class LoadingTipTable : ScriptableObject
     // 합친 목록을 매번 새로 만들지 않는다. 로딩은 프레임이 이미 빡빡한 구간이다.
     private string[] merged;
 
+    // CSV는 처음 고를 때 한 번만 읽는다
+    private List<LoadingTipRow> csvRows;
+    private readonly List<string> csvPool = new List<string>();
+
     /// <summary>
-    /// 지금 띄울 문구 하나. 해금 전에는 <see cref="tips"/>에서만, 해금 뒤에는 두 목록을 합쳐서 고른다.
+    /// 지금 띄울 문구 하나. CSV가 있으면 CSV에서(UnlockDay ≤ 현재 DAY),
+    /// 없으면 해금 전에는 <see cref="tips"/>에서만, 해금 뒤에는 두 목록을 합쳐서 고른다.
     /// </summary>
-    public string PickTip() => Pick(IsUnlocked ? Merged() : tips, ref lastTipIndex);
+    public string PickTip()
+    {
+        if (tipCsv != null) return PickFromCsv();
+        return Pick(IsUnlocked ? Merged() : tips, ref lastTipIndex);
+    }
 
     public Sprite PickBackground() => Pick(backgrounds, ref lastBackgroundIndex);
+
+    private string PickFromCsv()
+    {
+        if (csvRows == null) csvRows = LoadingTipCsv.Parse(tipCsv.text, tipCsv.name);
+
+        int day = Mathf.Max(1, GameSession.CurrentDay);
+        csvPool.Clear();
+        foreach (LoadingTipRow row in csvRows)
+        {
+            if (row.UnlockDay <= day) csvPool.Add(row.Text);
+        }
+
+        if (csvPool.Count == 0)
+        {
+            Debug.LogWarning($"[LoadingTipTable] {tipCsv.name}에 DAY {day}에 나올 문구가 없습니다.");
+            return string.Empty;
+        }
+
+        return Pick(csvPool.ToArray(), ref lastTipIndex);
+    }
+
+    // 인스펙터에서 CSV·배열을 바꾸면 다시 읽게 한다
+    private void OnValidate()
+    {
+        csvRows = null;
+        merged = null;
+    }
 
     /// <summary>현장 내용을 띄워도 되는 시점인지.</summary>
     private static bool IsUnlocked => GameSession.CurrentDay >= 2;

@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bc3d90af10b6b9241a0d250089e591c3, type: 3}
   m_Name: LoadingTipTable
   m_EditorClassIdentifier: Assembly-CSharp::LoadingTipTable
+  tipCsv: {fileID: 4900000, guid: 5a9ef5a487dda25429939ad0e6463399, type: 3}
   tips:
   - "W A S D \uB85C \uC774\uB3D9\uD558\uACE0, \uB9C8\uC6B0\uC2A4\uB85C \uC8FC\uBCC0\uC744
     \uB458\uB7EC\uBD05\uB2C8\uB2E4."

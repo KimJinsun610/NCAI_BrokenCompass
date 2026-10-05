@@ -102673,6 +102673,51 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4531022862580394, guid: bb1aa373bcbc58f4bad45fef1ec5259a, type: 3}
   m_PrefabInstance: {fileID: 869365614}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &869371751
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 869371753}
+  - component: {fileID: 869371752}
+  m_Layer: 0
+  m_Name: Death_spot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &869371752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 869371751}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2525c7837809aa04ea1fc67357997ce2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LayoutDeathSpot
+  faceArrival: 1
+--- !u!4 &869371753
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 869371751}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 52.61, y: 1.5, z: 46.26}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &870041161 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4879921337373818, guid: fdb4f16cb66e83145923fa99e3195424, type: 3}
@@ -167206,6 +167251,71 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4822231217955328, guid: 737ac8754d5a89949bfc42b057da3c87, type: 3}
   m_PrefabInstance: {fileID: 1965981382}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1397237908
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 196879079550823820, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_Name
+      value: HorrorProp_CeilingBloodDrip
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 33.915176
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 5.52
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 41.856
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2647211632269581839, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4019035926703192355, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: EmissionModule.m_Bursts.Array.data[0].probability
+      value: 0.09
+      objectReference: {fileID: 0}
+    - target: {fileID: 5964927936908282112, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
+      propertyPath: EmissionModule.m_Bursts.Array.data[0].probability
+      value: 0.06
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 89b37e91f4bba4643ac34cfe5abbdf2c, type: 3}
 --- !u!1001 &1397260935
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -255684,3 +255794,5 @@ SceneRoots:
   - {fileID: 107099666}
   - {fileID: 1149596301}
   - {fileID: 1859721345}
+  - {fileID: 869371753}
+  - {fileID: 1397237908}

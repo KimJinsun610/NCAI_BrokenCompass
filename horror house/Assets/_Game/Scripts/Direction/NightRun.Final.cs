@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace NightDuty
@@ -34,12 +34,14 @@ namespace NightDuty
             _finalBook.ReverseReportArmed += OnReverseReportArmed;
             _finalBook.EncounterRequested += ReserveEncounter;
             BeginDirection();
+            PlanParadox();
             BuildDisplayDeck();
         }
 
         private static void DisposeFinalRules()
         {
             DisposeDirection();
+            DisposeParadox();
             ClearDisplayDeck();
             if (_finalBook == null) return;
             _finalBook.Settled -= OnFinalSettled;
@@ -62,7 +64,13 @@ namespace NightDuty
 
         private static void OnFinalSettled(FinalRuleResult result)
         {
+            if (result.Outcome == FinalOutcome.Violated)
+            {
+                ViolationMinutesToday.Add(CurrentMinute());   // 결과창 위반 시각
+            }
+
             EventBus.RaiseFinalRuleSettled(result);
+            ParadoxSettled(result);
         }
 
         private static void OnReverseReportArmed(string itemId)
@@ -70,31 +78,27 @@ namespace NightDuty
             SetReverseReport(itemId, true);
         }
 
-        /// <summary>점검판이 이미 델타를 준 결과를 새 수칙 기록에 남긴다(G2 환청 기록, T4 역보고).</summary>
+        /// <summary>점검판이 이미 델타를 준 결과를 새 수칙 기록에 남긴다(T4 역보고).</summary>
         private static void OnFinalInspectionReported(InspectionReport report)
         {
-            RefreshDisplayDeck();
             if (_finalBook == null) return;
             switch (report.Outcome)
             {
-                case ReportOutcome.HallucinationRecorded:
-                    _finalBook.NoteExternal("G2", true, report.ItemId + " 환청 기록");
-                    break;
                 case ReportOutcome.ReverseKept:
                     _finalBook.NoteExternal(ProgramCatalog.ReverseReportRule, false, report.ItemId + " 역보고 준수");
                     break;
                 case ReportOutcome.ReverseViolated:
                     _finalBook.NoteExternal(ProgramCatalog.ReverseReportRule, true, report.ItemId + " 역보고 위반");
+                    ViolationMinutesToday.Add(CurrentMinute());
                     break;
             }
         }
         // ── 태블릿 표시용 카드 ──────────────────────────────────
         //
         // 태블릿(TabletDocument, 김진선님 코드)은 NightRun.TodayDeck의 RuleSO.PlayerText를 그대로 읽는다.
-        // 새 편성에서는 옛 24장 덱이 비므로, 그날 새 수칙 + 점검표를 「표시만 하는」 RuleSO로 만들어 TodayDeck으로 내보낸다.
-        // 판정 조건이 없는 카드라 옛 RuleBook(DeckToday를 판정)에는 들어가지 않는다. 태블릿 코드는 건드리지 않는다.
+        // 그날 새 수칙을 「표시만 하는」 RuleSO로 만들어 TodayDeck으로 내보낸다. 태블릿 코드는 건드리지 않는다. 점검표는 메시지로 간다(32차, 아래).
 
-        /// <summary>태블릿에 내보내는 표시용 카드(새 수칙 → 점검). 새 편성이 꺼져 있으면 비어 있다.</summary>
+        /// <summary>태블릿 「근무 수칙」에 내보내는 표시용 카드(새 수칙만 — 점검표는 메시지, <see cref="ChecklistMessage"/>). 새 편성이 꺼져 있으면 비어 있다.</summary>
         public static IReadOnlyList<RuleSO> DisplayDeck
         {
             get { return _displayDeck; }
@@ -105,45 +109,78 @@ namespace NightDuty
             ClearDisplayDeck();
             if (!ProgramEnabled || _program == null) return;
 
+            // 변조·검은 줄(10단계)은 태블릿에 보이는 글만 바꾼다 — 판정은 원본(def.Text)으로 한다.
+            ParadoxPlan paradox = _paradox.Plan;
             foreach (RuleDef def in _program.Deck)
             {
-                _displayDeck.Add(DisplayCard(def.Id, def.Space, def.Text, string.Empty));
+                _displayDeck.Add(DisplayCard(def.Id, def.Space, RuleCardText(def, paradox), string.Empty));
             }
 
-            InspectionPlan plan = Board.Plan;
-            if (plan == null) return;
-            for (int i = 0; i < plan.Assignments.Count; i++)
+            // 5일차: 판정 없는 G3(빈칸)을 공통 수칙 뒤에 보인다 — 피날레에서 「당신」으로 채운다(FillFinaleBlank).
+            if (Day >= FinaleWatch.Day)
             {
-                InspectionAssignment a = plan.Assignments[i];
-                _displayDeck.Add(DisplayCard(a.Item.TargetId, a.Item.Space, InspectionLine(a), i == 0 ? InspectionHowTo : string.Empty));
+                RuleDef g3 = ProgramCatalog.Rule(ProgramCatalog.FinaleBlankRule);
+                if (g3 != null) _displayDeck.Add(DisplayCard(g3.Id, g3.Space, g3.Text, string.Empty));
             }
         }
 
-        /// <summary>점검 줄의 「보고함」 표시를 다시 쓴다(보고·재시작 뒤). 태블릿은 열 때마다 다시 읽는다.</summary>
-        private static void RefreshDisplayDeck()
-        {
-            InspectionPlan plan = Board.Plan;
-            if (plan == null || _displayDeck.Count == 0) return;
-            for (int i = 0; i < _displayDeck.Count; i++)
-            {
-                RuleSO card = _displayDeck[i];
-                if (card == null) continue;
-                InspectionItem item = InspectionCatalog.FindByTarget(card.CardId);
-                if (item == null) continue;
-                InspectionAssignment a = plan.Find(item.Id);
-                if (a == null) continue;
-                card.Configure(new RuleSO.Config { CardId = card.CardId, Space = item.Space, PlayerText = InspectionLine(a), HowTo = card.HowTo });
-            }
-        }
+        // ── 점검 지시 문자 ──────────────────────────────────────
+        //
+        // 2026-10-04(32차, 민 요청): 점검표는 수칙 탭이 아니라 태블릿 <b>메시지</b>에 한 통으로 뜬다.
+        // 코어는 본문만 만든다(<see cref="ChecklistMessage"/>) — 태블릿 메시지함에 넣고 고치는 것은 TabletBridge.
 
-        /// <summary>점검 조작 안내(첫 점검 줄 아래에 한 번).</summary>
+        /// <summary>점검 지시 문자의 ID(태블릿 메시지함). 같은 ID로 다시 넣으면 본문만 바뀌고 알람은 울리지 않는다.</summary>
+        public const string ChecklistMessageId = "inspect.checklist";
+
+        /// <summary>점검 조작 안내(점검 지시 문자 맨 아래).</summary>
         public const string InspectionHowTo = "항목 2m 안에서 1초 바라본 뒤 길게 누르기 — Z 정상 / X 이상";
+
+        /// <summary>조작 안내 색(김진선님 태블릿의 수칙 안내 색과 같다).</summary>
+        public const string ChecklistHowToColor = "#7FA6B8";
+
+        /// <summary>보고한 줄의 색(흐리게).</summary>
+        public const string ChecklistDoneColor = "#5E6E77";
+
+        /// <summary>
+        /// 오늘 점검 지시 문자 본문(여러 줄, TMP 서식). 점검 편성이 없으면 빈 문자열.
+        /// 보고하면 그 줄에 「· 보고함」(흐리게), 안전한 읽기로 드러나면 그 공간 줄에 「· 확인 필요」/「· 이상 없음」.
+        /// </summary>
+        public static string ChecklistMessage
+        {
+            get
+            {
+                InspectionPlan plan = Board.Plan;
+                if (plan == null || plan.Assignments.Count == 0) return string.Empty;
+
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                sb.Append("[점검 지시] 오늘 확인할 항목 ").Append(plan.Assignments.Count).Append("개");
+                for (int i = 0; i < plan.Assignments.Count; i++)
+                {
+                    InspectionAssignment a = plan.Assignments[i];
+                    bool done = Board.StateOf(a.Id) != InspectionState.Pending;
+                    sb.Append('\n');
+                    if (done) sb.Append("<color=").Append(ChecklistDoneColor).Append('>');
+                    sb.Append(i + 1).Append(". ").Append(InspectionLine(a));
+                    if (done) sb.Append("</color>");
+                }
+
+                sb.Append("\n<color=").Append(ChecklistHowToColor).Append('>').Append(InspectionHowTo).Append("</color>");
+                return sb.ToString();
+            }
+        }
 
         private static string InspectionLine(InspectionAssignment a)
         {
-            string line = "[점검] " + SpaceLabel(a.Item.Space) + " " + a.Item.Name + " — " + a.Item.TabletLine;
+            string line = SpaceLabel(a.Item.Space) + " " + a.Item.Name + " — " + a.Item.TabletLine;
             if (a.IsLate) line += " (02:16부터)";
             if (Board.StateOf(a.Id) != InspectionState.Pending) line += " · 보고함";
+            else if (_unavoidable.Banned != SpaceId.None && SpaceIds.Canonical(a.Item.Space) == _unavoidable.Banned) line += " · 재입실 불가";
+            else
+            {
+                SafeReadReveal? reveal = RevealOf(a.Item.Space);   // 안전한 읽기(10단계) — 공간 단위로 드러난다.
+                if (reveal.HasValue) line += " · " + reveal.Value.Label;
+            }
+
             return line;
         }
 

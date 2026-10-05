@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace NightDuty
 {
@@ -10,7 +10,7 @@ namespace NightDuty
         /// <summary>
         /// 밤 편성(조우 슬롯 + 새 수칙 덱, 최종 기획서 「수칙과 덱」)을 만들지. 게임 구동기가 켠다.
         /// 켜면 밤 시작(재시작 제외)에 점검 편성 뒤 <see cref="ProgramDirector"/>가 조우를 먼저 뽑고 대응 수칙을 고정한다.
-        /// <para>켜면 새 수칙 판정(<see cref="FinalRules"/>)이 판정하고 옛 24장 덱·옛 조우 연출기는 쉰다(2026-10-01). <see cref="DeckOverride"/>를 주면 옛 덱도 함께 돈다(시험용).</para>
+        /// <para>켜면 새 수칙 판정(<see cref="FinalRules"/>)이 판정한다. 끄면(기본값·테스트) 편성도 판정도 없다 — 옛 판정 책은 2026-10-03에 폐기했다.</para>
         /// </summary>
         public static bool ProgramEnabled { get; set; }
 
@@ -41,6 +41,7 @@ namespace NightDuty
             if (!ProgramEnabled)
             {
                 _program = NightProgram.Empty(Day);
+                _plannedUnavoidable = null;
                 DisposeFinalRules();
                 return;
             }
@@ -50,10 +51,12 @@ namespace NightDuty
                 Day = Day,
                 Shown = _bands.Shown,
                 Survival = _axes,
-                Inspections = inspections
+                Inspections = inspections,
+                ForcedRules = PlanUnavoidable(inspections)   // 10단계: 회피 불가 역설의 쌍(덱 편성 전에 고른다)
             };
 
             _program = _programDirector.Build(request);
+            ConfirmUnavoidable();
             Debug.Log("[NightRun] " + _program.Report);
             BeginFinalRules();
         }
@@ -61,7 +64,10 @@ namespace NightDuty
         /// <summary>회차 시작·플레이 시작 때 확장 상태를 비운다. <paramref name="clearSwitches"/>면 켜기 스위치도 끈다.</summary>
         private static void ResetExtensions(bool clearSwitches)
         {
-            ResetTabletState(clearSwitches);
+            ResetTabletState();
+            ResetFinale(clearSwitches);
+            ResetParadox(clearSwitches);
+            ResetUnavoidable();
             _programDirector = new ProgramDirector();
             _program = NightProgram.Empty(0);
             DisposeFinalRules();

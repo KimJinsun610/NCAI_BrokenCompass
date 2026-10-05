@@ -51,14 +51,24 @@ public static class StandInFactory
         }
 
         go.transform.rotation = rotation;
+        Dress(go, NeedsGazeCollider(id), anchorId);
+        return go;
+    }
 
+    /// <summary>
+    /// 판정 장비를 붙인다: 조준점(<c>Aim</c>, 없으면 머리 높이에 만듦), <paramref name="gazeCollider"/>면 몸을 감싸는 단단한 응시 상자,
+    /// <paramref name="anchorId"/>가 있으면 그 ID의 <see cref="JudgeTarget"/>. 대역과 완성 몹 프리팹(피날레 배역 <see cref="FinaleMob"/>)이 같은 규약을 쓴다.
+    /// </summary>
+    public static Transform Dress(GameObject go, bool gazeCollider, string anchorId)
+    {
         Transform aim = Aim(go);
-        if (NeedsGazeCollider(id) && aim.GetComponent<Collider>() == null)
+        if (gazeCollider && aim.GetComponent<Collider>() == null)
         {
             Bounds b = RendererBounds(go);
             aim.position = b.center;
             BoxCollider box = aim.gameObject.AddComponent<BoxCollider>();
-            box.size = b.size;
+            Vector3 scale = aim.lossyScale;
+            box.size = new Vector3(b.size.x / Mathf.Max(0.0001f, Mathf.Abs(scale.x)), b.size.y / Mathf.Max(0.0001f, Mathf.Abs(scale.y)), b.size.z / Mathf.Max(0.0001f, Mathf.Abs(scale.z)));
         }
 
         if (!string.IsNullOrEmpty(anchorId))
@@ -68,7 +78,7 @@ public static class StandInFactory
             target.SetIds(anchorId);
         }
 
-        return go;
+        return aim;
     }
 
     /// <summary>
@@ -110,7 +120,7 @@ public static class StandInFactory
     /// <summary>대역에 단단한 응시 콜라이더가 필요한지(C2 천장 다리 · L5 창밖 남자).</summary>
     public static bool NeedsGazeCollider(string id)
     {
-        return id == "mob.legs" || id == "mob.windowman" || id == "mob.glitchman";
+        return id == "mob.legs" || id == "mob.windowman" || id == "mob.finale" || id == "mob.glitchman";
     }
 
     private static GameObject Build(string id)
@@ -127,6 +137,7 @@ public static class StandInFactory
             case "mob.duck": Duck(root); break;
             case "mob.windowman": Duck(root); break;
             case "mob.blackman": Humanoid(root, 1.8f, 0.22f); break;
+            case "mob.finale": Humanoid(root, 1.8f, 0.22f); break;
             case "mob.tree": Tree(root); break;
             case "mob.legs": Legs(root); break;
             case "prop.phantomdoor": Door(root); break;

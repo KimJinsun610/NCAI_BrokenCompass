@@ -265,6 +265,22 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void 헛예고는_조우마다_한_번까지_다음은_진짜다()
+        {
+            DirectorFixture f = new DirectorFixture(1, 0.0, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.Footsteps));
+            f.Minute = 70f;
+            f.Enter(SpaceId.Corridor).Pose(0f, 43f, 90f);
+            for (int i = 1; i <= 11; i++) f.Pose(i, 43f, 90f);
+            f.Wait(30f);   // 헛예고 + 재시도 대기(FalseRetry 20초)
+            for (int i = 1; i <= 11; i++) f.Pose(11f + i, 43f, 90f);
+            f.Wait(0.5f);
+            int falseCount = 0;
+            foreach (DirectionEvent e in f.Events) if (e.SourceId == ProgramCatalog.Footsteps && e.Phase == DirectionPhase.FalseForeshadow) falseCount++;
+            Assert.AreEqual(1, falseCount, "rng가 늘 0이어도 헛예고는 한 번뿐");
+            Assert.IsTrue(f.HasPhase(ProgramCatalog.Footsteps, DirectionPhase.Foreshadow), "두 번째는 진짜 전조");
+        }
+
+        [Test]
         public void 슬롯이_끝날_때까지_방아쇠가_없으면_놓침()
         {
             DirectorFixture f = new DirectorFixture(1, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
@@ -401,7 +417,7 @@ namespace NightDuty.Tests
             f.Minute = 30f;
             f.Enter(SpaceId.Corridor).Wait(5f);
             Assert.AreEqual(0, f.CueCount(SignalKind.CueStarted, FinalCues.Chalk));
-            f.Send(JudgeSignal.Target(SignalKind.ZoneEntered, "cls11.door.outside")).Wait(1f);
+            f.Send(JudgeSignal.Target(SignalKind.ZoneEntered, "cls13.door.outside")).Wait(1f);   // 1-1 미사용 → 1-3 출입구 앞
             Assert.AreEqual(1, f.CueCount(SignalKind.CueStarted, FinalCues.Chalk));
         }
 
@@ -452,6 +468,63 @@ namespace NightDuty.Tests
             foreach (KeyValuePair<string, int> kv in n) Assert.LessOrEqual(kv.Value, TensionDirector.FakePerId, kv.Key);
             Assert.LessOrEqual(f.Director.FakesUsed, 2 + DirectorMoods.ExtraFakes(DirectorMood.Easy), "조우가 없으면 2(+쉬움 1)까지");
         }
+
+        [Test]
+        public void 출근_동안은_조용하고_판정이_열리면_곧_첫_가짜_놀람()
+        {
+            DirectorFixture arrival = new DirectorFixture(1, 0.5, null);
+            arrival.Minute = NightClock.JudgingStart - 6f;
+            arrival.Wait(200f);
+            Assert.AreEqual(0, arrival.Director.FakesUsed, "출근(00:16 전)에는 가짜 놀람이 없다");
+
+            DirectorFixture open = new DirectorFixture(1, 0.99, null);
+            open.Minute = NightClock.JudgingStart + 1f;
+            open.Wait(NightClock.RealSecondsAt(NightClock.JudgingStart) + TensionDirector.FirstFakeMax + 0.5f);
+            Assert.AreEqual(1, open.Director.FakesUsed, "판정이 열린 뒤 14초 안에 첫 가짜 놀람");
+        }
+
+        [Test]
+        public void 벌레_떼는_창고가_있는_1_3_교실_화장실_도서관에서만()
+        {
+            Assert.Contains(TensionDirector.FakeBugs, TensionDirector.FakeScares);
+            CollectionAssert.AreEquivalent(new[] { SpaceId.Classroom_1_3, SpaceId.Toilet, SpaceId.Library }, TensionDirector.BugSpaces);
+
+            DirectorFixture outside = new DirectorFixture(1, 0.99, null);   // 0.99 = 열린 목록의 마지막(벌레 떼)을 고른다
+            outside.Minute = 30f;
+            outside.Enter(SpaceId.Corridor).Wait(600f);
+            Assert.AreEqual(0, Count(outside, TensionDirector.FakeBugs), "복도에서는 벌레 떼가 없다");
+            Assert.Greater(outside.Director.FakesUsed, 0, "다른 가짜 놀람은 그대로");
+
+            foreach (SpaceId room in TensionDirector.BugSpaces)
+            {
+                DirectorFixture inside = new DirectorFixture(1, 0.99, null);
+                inside.Minute = 30f;
+                inside.Enter(room).Wait(600f);
+                int bugs = Count(inside, TensionDirector.FakeBugs);
+                Assert.Greater(bugs, 0, room.ToString());
+                Assert.LessOrEqual(bugs, TensionDirector.FakePerId, room.ToString());
+            }
+        }
+
+        [Test]
+        public void 디버그_가짜_놀람은_횟수를_쓰지_않는다()
+        {
+            DirectorFixture f = new DirectorFixture(1, 0.0, null);
+            Assert.IsTrue(f.Director.ForceFake(TensionDirector.FakeBugs));
+            Assert.IsFalse(f.Director.ForceFake("fake.none"));
+            Assert.AreEqual(0, f.Director.FakesUsed);
+        }
+
+        private static int Count(DirectorFixture f, string fakeId)
+        {
+            int n = 0;
+            foreach (DirectionEvent e in f.Events)
+            {
+                if (e.Kind == DirectionEventKind.FakeScare && e.SourceId == fakeId) n++;
+            }
+
+            return n;
+        }
     }
 
     /// <summary>NightRun 연결 — 디렉터 단서가 실제 판정까지.</summary>
@@ -471,7 +544,6 @@ namespace NightDuty.Tests
         public void 소년_착석_단서가_C3_판정까지_간다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             _minute = 70;
             NightRun.BeginNight(1, () => _minute);
@@ -498,7 +570,6 @@ namespace NightDuty.Tests
         public void 디버그로_조우와_수칙_단서를_바로_울린다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             _minute = 30;
             NightRun.BeginNight(1, () => _minute);
@@ -558,7 +629,6 @@ namespace NightDuty.Tests
         {
             StagePoints.Set(StageAnchors.BoySeat, new Vector3(46.3f, 1.5f, 36.3f));
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
             NightRun.ProgramEnabled = true;
             NightRun.BeginNight(1, () => 70);
 
@@ -590,6 +660,8 @@ namespace NightDuty.Tests
             Assert.AreEqual(StageAnchors.LegsCeiling, EncounterScripts.Find(ProgramCatalog.BoyBang).ExtraStageAnchor);
             Assert.AreEqual(StageAnchors.WindowMan, EncounterScripts.Find(ProgramCatalog.SuitMan).StageAnchor);
             Assert.AreEqual("mob.windowman", EncounterScripts.Find(ProgramCatalog.SuitMan).StandIn, "창밖 남자 = DUCK 프리팹");
+            Assert.AreEqual(StageAnchors.YellowDoor, EncounterScripts.Find(ProgramCatalog.YellowFace).StageAnchor, "노란 남자 둘째 연출 = 도서관 정문 앞");
+            Assert.AreEqual(StageAnchors.GirlWalk, EncounterScripts.Find(ProgramCatalog.ToiletGirl).StageAnchor, "소녀는 옆으로 걸어 칸으로");
         }
     }
 }

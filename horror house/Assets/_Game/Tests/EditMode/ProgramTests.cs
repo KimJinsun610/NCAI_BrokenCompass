@@ -18,9 +18,10 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 공간수칙_28장과_공통_G1_G2_G3()
+        public void 공간수칙_28장과_공통_G1_G3()
         {
-            Assert.AreEqual(31, ProgramCatalog.AllRules.Count);
+            Assert.AreEqual(30, ProgramCatalog.AllRules.Count);
+            Assert.IsNull(ProgramCatalog.Rule("G2"), "G2는 2026-10-04 폐기");
             Assert.AreEqual(4, ProgramCatalog.RulesIn(SpaceId.Corridor).Count);
             Assert.AreEqual(5, ProgramCatalog.RulesIn(SpaceId.Classroom).Count);
             Assert.AreEqual(5, ProgramCatalog.RulesIn(SpaceId.ScienceRoom).Count);
@@ -41,7 +42,7 @@ namespace NightDuty.Tests
         public void 축_분류_규칙()
         {
             // 방아쇠나 금지 행동이 소리면 청각, 손전등·조명이면 조도(기획서 「축 분류 규칙」).
-            foreach (string id in new[] { "C1", "S2", "T1", "L2", "L5", "H3", "H4", "G1", "G2", "C3", "K3" })
+            foreach (string id in new[] { "C1", "S2", "T1", "L2", "L5", "H3", "H4", "G1", "C3", "K3" })
             {
                 Assert.AreEqual(FearAxis.Auditory, ProgramCatalog.Rule(id).Axis, id);
             }
@@ -124,12 +125,11 @@ namespace NightDuty.Tests
                 ProgramDirector d = new ProgramDirector(new System.Random(seed));
                 NightProgram p = d.Build(Request(1, FixedBands.All(Band.Band0), FixedBands.All(Band.Band0), null));
 
-                Assert.AreEqual(5, p.Deck.Count, p.ToString());
+                Assert.AreEqual(4, p.Deck.Count, p.ToString());
                 Assert.AreEqual("H2", p.Deck[0].Id, "1일차 복도 = 문 자동 열림(인체나무 없이 H1 금지)");
                 Assert.AreEqual("C4", p.Deck[1].Id);
                 Assert.IsTrue(p.Has("S1") ^ p.Has("S3"), p.ToString());
                 Assert.AreEqual("G1", p.Deck[3].Id);
-                Assert.AreEqual("G2", p.Deck[4].Id);
                 Assert.IsFalse(p.Has("H1") || p.Has("C2") || p.Has("C3"), "조우 묶인 수칙 없음");
                 Assert.AreEqual(0, p.Slots.Count, "1일차는 몹 없음(2일차부터)");
             }
@@ -161,8 +161,7 @@ namespace NightDuty.Tests
                     Assert.AreEqual(1, CountIn(p, SpaceId.SecurityRoom), why);
                     Assert.AreEqual(day == 5, p.Has("K4"), "5일차 경비실은 K4 — " + why);
                     Assert.AreEqual(p.HasEncounter(ProgramCatalog.CctvPerson), p.Has("K1"), why);
-                    Assert.AreEqual("G2", p.Deck[p.Deck.Count - 1].Id, why);
-                    Assert.AreEqual("G1", p.Deck[p.Deck.Count - 2].Id, why);
+                    Assert.AreEqual("G1", p.Deck[p.Deck.Count - 1].Id, why);
                     if (day == 2) Assert.IsTrue(p.Has(ProgramCatalog.FirstParadoxRule), "2일차 첫 역설 C2 — " + why);
 
                     int flash = 0;
@@ -312,7 +311,6 @@ namespace NightDuty.Tests
         [TearDown]
         public void TearDown()
         {
-            NightRun.DeckOverride = null;
             NightRun.ProgramEnabled = false;
             NightRun.InspectionsEnabled = false;
             NightRun.StartNewRun();
@@ -323,8 +321,6 @@ namespace NightDuty.Tests
         public void 켜면_밤시작에_편성하고_재시작해도_그대로다()
         {
             NightRun.StartNewRun();
-            NightRun.RegisteredTargets = null;
-            NightRun.DeckOverride = day => new List<RuleSO>();
             NightRun.ProgramEnabled = true;
             NightRun.InspectionsEnabled = true;
 
@@ -348,7 +344,6 @@ namespace NightDuty.Tests
         public void 끄면_빈_편성이다()
         {
             NightRun.StartNewRun();
-            NightRun.DeckOverride = day => new List<RuleSO>();
             NightRun.BeginNight(1, () => 30);
             Assert.AreEqual(0, NightRun.Program.Deck.Count);
         }

@@ -81,7 +81,7 @@ MonoBehaviour:
   maxWaitSeconds: 8
   lockPlayer: 0
   useDebugKey: 0
-  debugKey: 55
+  debugKey: 0
 --- !u!95 &1970571312432179261
 Animator:
   serializedVersion: 7

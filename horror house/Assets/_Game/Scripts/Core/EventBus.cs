@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace NightDuty
@@ -38,24 +38,35 @@ namespace NightDuty
         public static event Action<SpaceId, FearAxis, float> BandProgress;
 
         /// <summary>
-        /// 하루가 시작됐다. 인자: (일차 1~5, 지침록 §0 조항의 형태).
-        /// </summary>
-        public static event Action<int, ClauseZeroType> DayStarted;
-
-        /// <summary>
         /// 하루가 끝났다(정상 종료·결근). 인자: 그날의 결산 정보.
         /// </summary>
         public static event Action<DaySummary> DayEnded;
 
         /// <summary>
-        /// 축이 100에 도달했다. 인자: 임계에 다다른 축.
+        /// 축이 100에 도달했다 — <b>옛 「사망」 통로</b>. 인자: 임계에 다다른 축.
+        /// <see cref="Captured"/> 구독자가 있으면(근무 씬의 붙잡힘 연출) 보내지 않는다. 김진선님 <c>PlayResultRouter</c>의 사망 화면이 이것을 듣는다.
         /// </summary>
         public static event Action<FearAxis> AxisCritical;
+
+        /// <summary>
+        /// 붙잡혔다(감각 축 100, 최종 기획서 「붙잡힘과 재시작」). 인자: 붙잡힌 축.
+        /// 구독자(<c>CaptureDirector</c>)가 붙잡힘 연출 → 재시작 카드 → <see cref="NightRun.RestartAfterCapture"/>를 맡는다.
+        /// 붙잡힘은 게임 오버가 아니라 그 밤을 다시 하는 것이라, 구독자가 있으면 <see cref="AxisCritical"/>(사망)은 보내지 않는다.
+        /// </summary>
+        public static event Action<FearAxis> Captured;
 
         /// <summary>
         /// 태블릿으로 문자가 왔다. 태블릿 UI가 메시지 탭에 실으면 된다(발신자 표시 없음).
         /// </summary>
         public static event Action<ParadoxMessage> MessageSent;
+
+        /// <summary>
+        /// 역설 문자의 안전한 읽기를 마쳤다(10단계). 점검표에 그 공간의 이상 여부가 드러난다 — 태블릿이 짧게 떨고 「틱」 한 번, 태블릿을 다시 읽는다.
+        /// </summary>
+        public static event Action<SafeReadReveal> SafeReadConfirmed;
+
+        /// <summary>태블릿에 보이는 글(수칙 얼룩·점검 지시)이 바뀌었다. 태블릿은 다시 읽는다(10단계 위반 얼룩·재입실 불가).</summary>
+        public static event Action TabletTextChanged;
 
         /// <summary>
         /// 경고 도장이나 대기 중인 처벌이 바뀌었다. 인자: (도장 수 0~2, 대기 중인 처벌 수).
@@ -115,12 +126,6 @@ namespace NightDuty
             }
         }
 
-        /// <summary><see cref="DayStarted"/>를 발생시킨다.</summary>
-        public static void RaiseDayStarted(int day, ClauseZeroType clauseZero)
-        {
-            Invoke(DayStarted, day, clauseZero);
-        }
-
         /// <summary><see cref="DayEnded"/>를 발생시킨다.</summary>
         public static void RaiseDayEnded(DaySummary summary)
         {
@@ -133,9 +138,39 @@ namespace NightDuty
             Invoke(MessageSent, message);
         }
 
+        /// <summary><see cref="TabletTextChanged"/>를 발생시킨다.</summary>
+        public static void RaiseTabletTextChanged()
+        {
+            Action h = TabletTextChanged;
+            if (h == null) return;
+            foreach (Delegate d in h.GetInvocationList())
+            {
+                try { ((Action)d)(); }
+                catch (Exception e) { Debug.LogException(e); }
+            }
+        }
+
+        /// <summary><see cref="SafeReadConfirmed"/>를 발생시킨다.</summary>
+        public static void RaiseSafeReadConfirmed(SafeReadReveal reveal)
+        {
+            Invoke(SafeReadConfirmed, reveal);
+        }
+
         /// <summary><see cref="AxisCritical"/>을 발생시킨다.</summary>
         public static void RaiseAxisCritical(FearAxis axis)
         {
+            Invoke(AxisCritical, axis);
+        }
+
+        /// <summary>붙잡힘을 알린다 — <see cref="Captured"/> 구독자가 있으면 그쪽, 없으면 옛 <see cref="AxisCritical"/>.</summary>
+        public static void RaiseCapturedOrCritical(FearAxis axis)
+        {
+            if (Captured != null)
+            {
+                Invoke(Captured, axis);
+                return;
+            }
+
             Invoke(AxisCritical, axis);
         }
 
@@ -216,10 +251,12 @@ namespace NightDuty
         {
             BandChanged = null;
             BandProgress = null;
-            DayStarted = null;
             DayEnded = null;
             AxisCritical = null;
+            Captured = null;
             MessageSent = null;
+            SafeReadConfirmed = null;
+            TabletTextChanged = null;
             WarningsChanged = null;
             Punished = null;
             NightRestarted = null;

@@ -9,7 +9,7 @@ namespace NightDuty.EditorTools
     /// <list type="bullet">
     /// <item><b>판정 대상 목록</b> — 콘솔 줄을 클릭하면 그 오브젝트로 Hierarchy가 이동한다.</item>
     /// <item><b>다음 판정 대상 보기</b> — 누를 때마다 하나씩 선택하고 Scene 뷰를 그 앞으로 옮긴다.</item>
-    /// <item><b>공간 구역 요약</b> — 공간·점검 자리·구역의 좌표를 한 번에 찍는다.</item>
+    /// <item><b>공간 구역 요약</b> — 공간·구역의 좌표를 한 번에 찍는다.</item>
     /// </list>
     /// </summary>
     public static class JudgeSceneReport
@@ -82,15 +82,11 @@ namespace NightDuty.EditorTools
             {
                 SerializedProperty e = list.GetArrayElementAtIndex(i);
                 Bounds box = e.FindPropertyRelative("Box").boundsValue;
-                Bounds inspect = e.FindPropertyRelative("InspectionBox").boundsValue;
                 bool outOfScope = e.FindPropertyRelative("OutOfScope").boolValue;
-                sb.AppendLine(string.Format("  {0}{1}  x[{2:F0},{3:F0}] z[{4:F0},{5:F0}]{6}",
+                sb.AppendLine(string.Format("  {0}{1}  x[{2:F0},{3:F0}] z[{4:F0},{5:F0}]",
                     outOfScope ? "제외 " : string.Empty,
                     (SpaceId)e.FindPropertyRelative("Space").enumValueIndex,
-                    box.min.x, box.max.x, box.min.z, box.max.z,
-                    inspect.size.sqrMagnitude > 0f
-                        ? string.Format("   점검 자리 x[{0:F0},{1:F0}] z[{2:F0},{3:F0}]", inspect.min.x, inspect.max.x, inspect.min.z, inspect.max.z)
-                        : string.Empty));
+                    box.min.x, box.max.x, box.min.z, box.max.z));
             }
 
             SerializedProperty signals = so.FindProperty("signalZones");

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -16,7 +16,7 @@ namespace NightDuty
         /// <summary>밤 종료 준수(방아쇠가 한 번 이상 왔고 위반이 없는 일반 수칙, 신뢰 +2).</summary>
         Complied = 2,
 
-        /// <summary>델타 없는 기록(G2·T4처럼 점검판이 이미 델타를 준 경우).</summary>
+        /// <summary>델타 없는 기록(T4처럼 점검판이 이미 델타를 준 경우).</summary>
         Noted = 3
     }
 
@@ -78,6 +78,12 @@ namespace NightDuty
 
         /// <summary>판정 시간(ms) — 판정 구간의 Tick 누적. 수칙의 제한 시간은 이 시계로 잰다.</summary>
         public int NowMs { get; internal set; }
+
+        /// <summary>초를 밀리초 정수로 바꾼다. 판정 시간은 ms 정수로 잰다(부동소수 누적 오차를 피한다).</summary>
+        public static int ToMs(float seconds)
+        {
+            return Mathf.RoundToInt(seconds * 1000f);
+        }
 
         /// <summary>바라보는 수평 방향 단위 벡터.</summary>
         public Vector3 Forward
@@ -189,7 +195,7 @@ namespace NightDuty
     /// <list type="bullet">
     /// <item>일반 수칙: 첫 위반에서 그 축 +12 한 번. 방아쇠가 한 번 이상 왔고 위반이 없으면 밤 종료에 신뢰 +2.</item>
     /// <item>위협 수칙(H3·H4·C3·S5·T3·L3·L5): 조우마다 실패 +20 / 성공 신뢰 +3(+12·+2를 더하지 않음).</item>
-    /// <item>G2·T4는 점검판이 델타를 준다 — 여기서는 기록만(<see cref="NoteExternal"/>).</item>
+    /// <item>T4는 점검판이 델타를 준다 — 여기서는 기록만(<see cref="NoteExternal"/>). G2(환청 기록)는 2026-10-04 폐기.</item>
     /// </list>
     /// 판정 구간 밖에서는 상태만 갱신하고 판정하지 않는다(부르는 쪽이 <c>judging</c>으로 알린다). 델타 상한(95)은 부르는 쪽이 건다.
     /// </summary>
@@ -201,6 +207,7 @@ namespace NightDuty
         private readonly List<FinalJudge> _judges = new List<FinalJudge>();
         private readonly List<FinalRuleResult> _results = new List<FinalRuleResult>();
         private readonly FearAxisSystem _axes;
+        private readonly Dictionary<string, KeyValuePair<int, string>> _keepRewards = new Dictionary<string, KeyValuePair<int, string>>(StringComparer.Ordinal);
         private bool _ended;
 
         /// <summary>현재 상태.</summary>
@@ -283,7 +290,7 @@ namespace NightDuty
 
             if (s.Kind == SignalKind.Tick)
             {
-                World.NowMs += ConditionState.ToMs(s.Value);
+                World.NowMs += FinalWorld.ToMs(s.Value);
             }
 
             for (int i = 0; i < _judges.Count; i++)
@@ -311,13 +318,43 @@ namespace NightDuty
             {
                 FinalJudge j = _judges[i];
                 if (j.Def.IsThreat || !j.Def.HasAxis || !j.Triggered || j.Violated) continue;
-                if (j.Def.Id == "G2" || j.Def.Id == ProgramCatalog.ReverseReportRule) continue;   // 점검판 몫.
-                Commit(new FinalRuleResult(j.Def.Id, FinalOutcome.Complied, FearAxis.Trust, Deltas.TrustComply, "밤 종료 준수"));
+                if (j.Def.Id == ProgramCatalog.ReverseReportRule) continue;   // 점검판 몫.
+                KeyValuePair<int, string> reward;
+                if (_keepRewards.TryGetValue(j.Def.Id, out reward)) Commit(new FinalRuleResult(j.Def.Id, FinalOutcome.Complied, FearAxis.Trust, reward.Key, reward.Value));
+                else Commit(new FinalRuleResult(j.Def.Id, FinalOutcome.Complied, FearAxis.Trust, Deltas.TrustComply, "밤 종료 준수"));
             }
         }
 
         /// <summary>
-        /// 점검판이 델타를 이미 준 결과를 수칙 기록에 남긴다(G2 환청 [이상] → 위반, T4 역보고 → 준수/위반).
+        /// 밤 종료 준수 보상을 바꾼다(10단계 — 역설 문자를 받고도 지킴 +3, 변조본을 보고도 원본대로 지킴 +3).
+        /// 위협 수칙은 조우마다 따로 정산하므로 쓰이지 않는다. 재시작 스냅샷에 들지 않는다(받은 문자·본 변조는 되돌아가지 않는다).
+        /// </summary>
+        public void SetKeepReward(string ruleId, int delta, string reason)
+        {
+            if (string.IsNullOrEmpty(ruleId)) return;
+            _keepRewards[ruleId] = new KeyValuePair<int, string>(delta, reason ?? string.Empty);
+        }
+
+        /// <summary>그 수칙의 밤 종료 준수 보상(바꾸지 않았으면 <see cref="Deltas.TrustComply"/>).</summary>
+        public int KeepRewardOf(string ruleId)
+        {
+            KeyValuePair<int, string> reward;
+            return ruleId != null && _keepRewards.TryGetValue(ruleId, out reward) ? reward.Key : Deltas.TrustComply;
+        }
+
+        /// <summary>
+        /// 방아쇠가 온 것으로 표시한다(역설 문자를 받은 것 자체가 그 수칙의 시험이다 — 지키면 밤 종료 준수). 판정기가 없으면 false.
+        /// </summary>
+        public bool MarkTriggered(string ruleId)
+        {
+            FinalJudge j = Judge(ruleId);
+            if (j == null) return false;
+            j.Triggered = true;
+            return true;
+        }
+
+        /// <summary>
+        /// 점검판이 델타를 이미 준 결과를 수칙 기록에 남긴다(T4 역보고 → 준수/위반).
         /// </summary>
         public void NoteExternal(string ruleId, bool violated, string reason)
         {

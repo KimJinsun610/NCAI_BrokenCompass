@@ -73,11 +73,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HorrorEvent
   director: {fileID: 8020574607685703585}
   playOnce: 0
+  playbackSpeed: 1
+  loopSeconds: 0
+  after: {fileID: 0}
   waitUntilUnseen: {fileID: 0}
   unseenBoxSize: {x: 0.6, y: 1.8, z: 0.6}
   maxWaitSeconds: 8
   lockPlayer: 0
-  debugKey: 51
+  useDebugKey: 0
+  debugKey: 0
 --- !u!95 &8759269767475552062
 Animator:
   serializedVersion: 7

@@ -84,6 +84,9 @@ public class DeathCutscene : MonoBehaviour
     [SerializeField] private bool hideViewmodel = true;
 
     [Header("디버그")]
+    [Tooltip("켜면 아래 디버그 키로 이 컷신을 재생할 수 있다(에디터 · 개발 빌드만). 끄면 키를 눌러도 반응하지 않는다.\n" +
+             "Resources에서 키로 불러오는 감시자(DeathCutsceneDebugSpawner)도 이 프리팹의 값을 따른다.")]
+    [SerializeField] private bool useDebugKey = false;
     [Tooltip("이 키로 컷신을 재생한다(에디터 · 개발 빌드만). 디버그 재생은 끝나면 원래대로 돌아간다.")]
     [SerializeField] private KeyCode debugKey = KeyCode.F8;
 
@@ -97,6 +100,9 @@ public class DeathCutscene : MonoBehaviour
 
     /// <summary>이 컷신의 디버그 재생 키(청각 F8 · 조도 F7).</summary>
     public KeyCode DebugKey { get { return debugKey; } }
+
+    /// <summary>디버그 키로 재생할 수 있는지.</summary>
+    public bool UseDebugKey { get { return useDebugKey; } }
 
     // 복구용
     private Transform player;
@@ -483,7 +489,7 @@ public class DeathCutscene : MonoBehaviour
     {
         // 디버그 감시자가 같은 키로 이 컷신을 막 불러와 재생했으면, 같은 프레임에 다시 받아 멈추지 않는다.
         if (Time.frameCount == startedFrame) return;
-        if (debugKey != KeyCode.None && Input.GetKeyDown(debugKey)) ToggleDebug();
+        if (useDebugKey && debugKey != KeyCode.None && Input.GetKeyDown(debugKey)) ToggleDebug();
     }
 
     private void ToggleDebug()
@@ -550,6 +556,7 @@ public class DeathCutsceneDebugSpawner : MonoBehaviour
             Debug.LogWarning("[DeathCutscene] Resources/" + resourceName + " 프리팹이 없습니다. 빌더 메뉴를 먼저 실행하십시오.");
             return;
         }
+        if (!prefab.UseDebugKey) return;   // 프리팹의 「디버그 키 사용」이 꺼져 있으면 부르지 않는다
         LayoutDeathCutscene cutscene = Instantiate(prefab);
         cutscene.name = prefab.name;
         cutscene.Play(true);   // 못 가면(금지 반경·길 없음) 이유를 로그로 남기고 그대로 남는다 — 다음 같은 키는 그 컷신이 받는다
@@ -570,6 +577,7 @@ public class DeathCutsceneDebugSpawner : MonoBehaviour
             Debug.LogWarning("[DeathCutscene] Resources/" + resourceName + " 프리팹이 없습니다. 빌더 메뉴를 먼저 실행하십시오.");
             return;
         }
+        if (!prefab.UseDebugKey) return;   // 프리팹의 「디버그 키 사용」이 꺼져 있으면 부르지 않는다
 
         DeathCutscene cutscene = Instantiate(prefab);
         cutscene.name = prefab.name;

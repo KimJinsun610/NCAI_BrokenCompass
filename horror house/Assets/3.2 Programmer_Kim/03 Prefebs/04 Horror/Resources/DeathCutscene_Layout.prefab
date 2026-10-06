@@ -44,6 +44,41 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 38d9bf86c7fdf71419ea9c281aee3d82, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LayoutDeathCutscene
+  bloodRain: 0
+  bloodDripPrefab: {fileID: 0}
+  firstDropDistance: 1.4
+  firstDropsMin: 3
+  firstDropsMax: 4
+  firstDropDelay: 0.4
+  firstDropInterval: {x: 0.8, y: 1.15}
+  lockAfterLastDrop: 0.5
+  dropClips: []
+  dropVolume: 0.85
+  dropSizeScale: 2
+  lookUpSeconds: 2.6
+  stainHoldSeconds: 2.8
+  maxLookUpPitch: -75
+  lookTremble: 0.6
+  lookDownSeconds: 1.6
+  revealHoldSeconds: 2
+  rainPoints: 40
+  rainRadius: 10
+  rainRateStart: 4
+  rainRateFull: 26
+  rainRampSeconds: 5
+  rainStainChance: 0.6
+  rainStainFadeSeconds: 1.5
+  rainSoundChance: 0.4
+  crowdTrees: 14
+  crowdRadius: 12
+  crowdSpacing: 2.2
+  crowdMinDistance: 2.6
+  targetPathLength: {x: 6, y: 11}
+  pathClearance: 1.2
+  revealWobble: 0.8
+  revealVignette: 0.4
+  revealFadeSeconds: 2.5
+  rainSounds: []
   treePrefab: {fileID: 5857396982247940455, guid: 78f6fcb1281798d41b017b7389f6b78f, type: 3}
   branchHeight: 2.2
   lookHeight: 2
@@ -174,4 +209,5 @@ MonoBehaviour:
     volume: 0.6
     clipStart: 0.010000002
     delay: 0
+  useDebugKey: 0
   debugKey: 287

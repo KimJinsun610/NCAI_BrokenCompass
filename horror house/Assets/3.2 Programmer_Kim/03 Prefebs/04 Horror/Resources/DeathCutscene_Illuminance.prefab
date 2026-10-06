@@ -397,6 +397,7 @@ MonoBehaviour:
   blendInSeconds: 0.35
   cutAllSound: 1
   hideViewmodel: 1
+  useDebugKey: 0
   debugKey: 288
 --- !u!95 &5324426675885841728
 Animator:

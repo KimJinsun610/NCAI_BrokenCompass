@@ -133,6 +133,9 @@ public partial class LayoutDeathCutscene : MonoBehaviour
     [SerializeField] private Hit[] endHits = new Hit[0];
 
     [Header("디버그")]
+    [Tooltip("켜면 아래 디버그 키로 이 컷신을 재생할 수 있다(에디터 · 개발 빌드만). 끄면 키를 눌러도 반응하지 않는다.\n" +
+             "Resources에서 키로 불러오는 감시자(DeathCutsceneDebugSpawner)도 이 프리팹의 값을 따른다.")]
+    [SerializeField] private bool useDebugKey = false;
     [SerializeField] private KeyCode debugKey = KeyCode.F6;
 
     /// <summary>끝까지 재생됐을 때.</summary>
@@ -141,6 +144,8 @@ public partial class LayoutDeathCutscene : MonoBehaviour
     public static LayoutDeathCutscene Playing { get; private set; }
     public bool IsPlaying { get { return Playing == this; } }
     public KeyCode DebugKey { get { return debugKey; } }
+    /// <summary>디버그 키로 재생할 수 있는지.</summary>
+    public bool UseDebugKey { get { return useDebugKey; } }
 
     /// <summary>마지막으로 재생하지 못한 이유(디버그·로그용).</summary>
     public string LastRefusal { get; private set; }
@@ -1168,7 +1173,7 @@ public partial class LayoutDeathCutscene : MonoBehaviour
     private void Update()
     {
         if (Time.frameCount == startedFrame) return;
-        if (debugKey != KeyCode.None && Input.GetKeyDown(debugKey))
+        if (useDebugKey && debugKey != KeyCode.None && Input.GetKeyDown(debugKey))
         {
             if (IsPlaying) StopAndRestore();
             else Play(true);

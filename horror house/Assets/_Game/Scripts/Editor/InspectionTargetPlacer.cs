@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -7,7 +7,7 @@ using UnityEngine;
 namespace NightDuty.EditorTools
 {
     /// <summary>
-    /// 점검 항목 17개의 씬 대상을 놓는다(2026-10-01, 사용자 승인 씬 작업). 메뉴 <c>NightDuty ▸ 점검 대상 배치</c>.
+    /// 점검 항목 16개의 씬 대상을 놓는다(2026-10-01, 사용자 승인 씬 작업). 메뉴 <c>NightDuty ▸ 점검 대상 배치</c>.
     /// <para>
     /// 항목마다 씬의 소품 아래에 자식 <c>Inspect &lt;ID&gt;</c>를 만들고 <see cref="JudgeTarget"/>(ID <c>inspect.&lt;ID&gt;</c>)와
     /// 소품 렌더러를 감싸는 <b>트리거가 아닌</b> 상자 콜라이더를 붙인다 — 응시 원뿔(10°)은 판정 콜라이더가 있는 대상만 보고,
@@ -30,7 +30,6 @@ namespace NightDuty.EditorTools
             Pair("H-1", "Interior/Corridors/FireExtinguisherHang (2)"),
             Pair("H-2", "Interior/Corridors/DrinkingFountain (1)"),
             Pair("H-3", "Interior/Corridors/Bell (7)"),
-            Pair("H-4", "Interior/Corridors/LockerA (2)"),
             Pair("C-1", "Interior/Classroom02/Plant02 (1)"),
             Pair("C-2", "Interior/Classroom02/LampDesk (1)"),
             Pair("C-3", "Interior/Classroom02/LibraryLadder (1)"),
@@ -58,7 +57,7 @@ namespace NightDuty.EditorTools
             Debug.Log(PlaceAll(true));
         }
 
-        /// <summary>대상 17개를 놓는다(열린 활성 씬). <paramref name="save"/>면 씬을 저장한다. 결과 보고를 돌려준다.</summary>
+        /// <summary>대상 16개를 놓는다(열린 활성 씬). <paramref name="save"/>면 씬을 저장한다. 결과 보고를 돌려준다.</summary>
         public static string PlaceAll(bool save)
         {
             StringBuilder report = new StringBuilder();

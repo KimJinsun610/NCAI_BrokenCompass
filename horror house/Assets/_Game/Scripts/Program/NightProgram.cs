@@ -174,7 +174,7 @@ namespace NightDuty
     /// 밤 편성기(최종 기획서 「수칙과 덱 — 배정 순서」). 조우를 먼저 뽑고 대응 수칙을 고정해 덱과 조우가 서로를 정하는 순환을 끊는다.
     /// 규칙이 부딪히면 앞 번호가 이긴다.
     /// <list type="number">
-    /// <item>1일차 고정 덱: 복도 H1·H2 중 1 + 교실 C3(소년 착석, 슬롯 A) + 과학실 S1·S3 중 1 + G1.</item>
+    /// <item>1일차 고정 덱: H2 · C4 · S1 · G1(조우 없음 — 2026-10-01 민 결정 「몹은 2일차부터」). S3는 2일차부터, S-1 점검이 있는 날에는 채우지 않는다.</item>
     /// <item>강제 수칙: 회피 불가 역설의 쌍(요청), 2일차 첫 역설 C2.</item>
     /// <item>지난 밤 예약 조우: S3 위반 → 모형 급습(S5, 3일차부터), 노란 얼굴에서 빛을 뗌 → 정장 남자(L5).</item>
     /// <item>슬롯 조우: 발동 조건·대응 수칙 배정 가능·놀람 예산을 통과한 후보 중 점수(주축 구간×2 · 회차에 아직 안 봄 +3 · 교차 +2 ·
@@ -192,6 +192,12 @@ namespace NightDuty
         private readonly HashSet<string> _seen = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _reserved = new HashSet<string>(StringComparer.Ordinal);
         private int _reverseAssigned;
+        private InspectionPlan _planForFill;
+
+        private static bool PlanHas(InspectionPlan plan, string itemId)
+        {
+            return plan != null && plan.Find(itemId) != null;
+        }
 
         /// <summary>편성기를 만든다. 테스트는 시드를 고정한 난수를 넘긴다.</summary>
         public ProgramDirector(Random rng = null)
@@ -246,6 +252,7 @@ namespace NightDuty
             else reserved.AddRange(_reserved);
             _reserved.Clear();
 
+            _planForFill = request.Inspections;
             NightProgram program = day == 1 ? BuildDay1(request) : BuildRegular(day, request, reserved);
 
             for (int i = 0; i < program.Slots.Count; i++) _seen.Add(program.Slots[i].Encounter.Id);
@@ -263,7 +270,7 @@ namespace NightDuty
             {
                 ProgramCatalog.Rule("H2"),
                 ProgramCatalog.Rule("C4"),
-                ProgramCatalog.Rule(_rng.Next(2) == 0 ? "S1" : "S3"),
+                ProgramCatalog.Rule("S1"),   // 51차: S3(모형을 비추지 마)는 2일차부터 — 1일차는 모형 위치를 익히는 날
                 ProgramCatalog.Rule("G1")
             };
 
@@ -431,7 +438,8 @@ namespace NightDuty
                 int score = 2 * (int)request.Shown.GetBand(e.Axis)
                             + (_seen.Contains(e.Id) ? 0 : 3)
                             + (e.IsCross ? 2 : 0)
-                            - (prev != null && prev.Encounter.Axis == e.Axis ? 2 : 0);
+                            - (prev != null && prev.Encounter.Axis == e.Axis ? 2 : 0)
+                            + (IsDayFocus(day, e.Id) ? DayFocusBonus : 0);
 
                 if (score > bestScore)
                 {
@@ -448,6 +456,33 @@ namespace NightDuty
             return best.Count == 0 ? null : best[_rng.Next(best.Count)];
         }
 
+        /// <summary>그날 무게를 둘 조우에 더하는 점수(51차 분배).</summary>
+        public const int DayFocusBonus = 4;
+
+        /// <summary>
+        /// 51차(민: 「1~5일차에 밸런스 있게, 점점 무서워지도록」) — 일차별로 무게를 둘 조우.
+        /// 2일차 소년(C2·C3)·시체 낙하·노란 얼굴 · 3일차 화장실 여자아이(T4)·CCTV 얼굴·소등 · 4일차 사람 나무·발소리·복도 끝 · 5일차 모형 급습·목소리.
+        /// 점수만 더한다 — 발동 조건·예산·공간 충돌은 그대로다.
+        /// </summary>
+        public static bool IsDayFocus(int day, string encounterId)
+        {
+            switch (day)
+            {
+                case 2:
+                    return encounterId == ProgramCatalog.CeilingLegs || encounterId == ProgramCatalog.YellowFace || encounterId == ProgramCatalog.BoyBang;
+                case 3:
+                    return encounterId == ProgramCatalog.ToiletGirl || encounterId == ProgramCatalog.CctvPerson
+                           || encounterId == ProgramCatalog.ScienceBlackout || encounterId == ProgramCatalog.ToiletBlackout;
+                case 4:
+                    return encounterId == ProgramCatalog.PeopleTree || encounterId == ProgramCatalog.Footsteps
+                           || encounterId == ProgramCatalog.HallEndFigure;
+                case 5:
+                    return encounterId == ProgramCatalog.ModelRush || encounterId == ProgramCatalog.CallingVoice;
+                default:
+                    return false;
+            }
+        }
+
         /// <summary>조우별 추가 조건.</summary>
         private static bool SpecialOk(EncounterDef e, int day, ProgramRequest request)
         {
@@ -458,7 +493,7 @@ namespace NightDuty
                 case ProgramCatalog.YellowFace:
                     return CountIn(request.Inspections, SpaceId.Library) >= 2;    // 도서관 점검 2개를 끝내고.
                 case ProgramCatalog.CctvPerson:
-                    return day >= 2;
+                    return day >= 3;   // 51차 분배: CCTV 얼굴 점프스케어는 3일차부터
                 default:
                     return true;
             }
@@ -517,7 +552,8 @@ namespace NightDuty
 
         private List<RuleDef> RulesOf(EncounterDef e)
         {
-            List<RuleDef> list = new List<RuleDef> { ProgramCatalog.Rule(e.ResponseRule) };
+            List<RuleDef> list = new List<RuleDef>();
+            if (e.ResponseRule.Length > 0) list.Add(ProgramCatalog.Rule(e.ResponseRule));   // 52차: 수칙 없는 조우(시체 낙하)
             if (e.SecondRule.Length > 0) list.Add(ProgramCatalog.Rule(e.SecondRule));
             return list;
         }
@@ -585,6 +621,7 @@ namespace NightDuty
                 RuleDef r = inSpace[i];
                 if (!r.IsStandalone || !r.HasAxis) continue;
                 if (r.UsesFlashlight && flash >= ProgramCatalog.FlashlightPerDay) continue;
+                if (r.Id == "S3" && PlanHas(_planForFill, "S-1")) continue;   // 51차: 모형을 비추지 말라는 날에 모형 점검은 없다
                 if (onlyAxis.HasValue && r.Axis != onlyAxis.Value) continue;
                 candidates.Add(r);
                 weights.Add(r.Axis == highest ? 2 : 1);

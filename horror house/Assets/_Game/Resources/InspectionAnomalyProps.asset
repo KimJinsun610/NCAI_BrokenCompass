@@ -13,8 +13,6 @@ MonoBehaviour:
   m_Name: InspectionAnomalyProps
   m_EditorClassIdentifier: Assembly-CSharp::InspectionAnomalyPropsSO
   entries:
-  - itemId: H-4
-    prefab: {fileID: 1431553635338846, guid: 6ac1b8a64e12b514eb6f89c5f7717d58, type: 3}
   - itemId: C-1
     prefab: {fileID: 1072143945553088, guid: 0d237ec63f71deb438097e97018f4927, type: 3}
   - itemId: S-1

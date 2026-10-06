@@ -17,6 +17,7 @@ namespace NightDuty
         public const string Chalk = "cue.chalk";
         public const string Legs = "cue.legs";
         public const string LegsTarget = "rule.C2.legs";
+        public const string BoyTarget = "rule.C2.boy";
         public const string BoySeated = "cue.boy.seated";
         public const string Bell = "cue.bell";
         public const string RedLight = "cue.redlight";
@@ -37,6 +38,7 @@ namespace NightDuty
         public const string StallOccupied = "cue.stall.occupied";
         public const string ToiletBlackout = "cue.blackout.toilet";
         public const string GirlStall = "cue.girl.stall";
+        public const string GirlTarget = "rule.T4.girl";
         public const string StallLit = "cue.stall.lit";
 
         // 도서관
@@ -67,13 +69,13 @@ namespace NightDuty
                 case "H3": return new TakeShelterJudge(FinalCues.Footsteps, 6f, 2f);
                 case "H4": return new DontAnswerJudge(FinalCues.Voice);
                 case "C1": return new NoEntryDuringCueJudge(FinalCues.Chalk, SpaceId.Classroom, 1f);
-                case "C2": return new DontStareJudge(FinalCues.Legs, FinalCues.LegsTarget, 3f);
+                case "C2": return new DontStareJudge(FinalCues.BoySeated, FinalCues.BoyTarget, 3f);   // 52차: 앉은 소년을 3초 바라보면 위반 → 머리 박기
                 case "C3": return new StayStillJudge(FinalCues.BoySeated, FinalCues.Bell);
-                case "C4": return new LightKeepJudge(FinalCues.RedLight, null, -1f, false);
+                case "C4": return new LightOffJudge(FinalCues.RedLight, LightOffJudge.GraceSeconds);   // 52차: 붉은 불빛 아래에서는 손전등을 끈다
                 case "C5": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
                 case "S1": return new NoPassageJudge(FinalCues.S1Center);
-                case "S2": return new ExitWithinJudge(FinalCues.Glass, 10f, true);
-                case "S3": return new LitGazeJudge(FinalCues.ModelTarget, 2f, ProgramCatalog.ModelRush);   // 2026-10-04 민: 「인체 모형을 빛으로 확인하십시오.」
+                case "S2": return new LeaveAfterCueJudge(FinalCues.Glass, LeaveAfterCueJudge.GraceSeconds);   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
+                case "S3": return new BeamAvoidJudge(FinalCues.ModelTarget, BeamAvoidJudge.LimitSeconds, ProgramCatalog.ModelRush);   // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」(미션처럼 읽히던 50차 문구 폐기)
                 case "S4": return new LightKeepJudge(FinalCues.ScienceBlackout, FinalCues.ScienceDarkZone, 1f, false);
                 case "S5": return new WaitInDarkJudge(FinalCues.HallEnd, 3f);
                 case "T1": return new ExitWithinJudge(FinalCues.Flush, 8f, false);
@@ -82,11 +84,11 @@ namespace NightDuty
                 case "T4": return new ReverseReportJudge();
                 case "T5": return new LightKeepJudge(FinalCues.StallLit, null, 3f, true);
                 case "L1": return new DwellNearJudge(FinalCues.L1Shelf, 1.5f, 3f);
-                case "L2": return new ExitWithinJudge(FinalCues.Pages, 12f, false);
+                case "L2": return new LeaveAfterCueJudge(FinalCues.Pages, LeaveAfterCueJudge.GraceSeconds);
                 case "L3": return new KeepBeamJudge(FinalCues.YellowFace, FinalCues.FaceTarget, 2f, 0.5f, ProgramCatalog.SuitMan);
                 case "L4": return new ProximityAvoidJudge(FinalCues.L4Box, 1.5f);
                 case "L5": return new DontGreetJudge(FinalCues.WindowKnock, FinalCues.ManTarget, 2f);
-                case "K1": return new NoChannelChangeJudge(FinalCues.CctvPerson);
+                case "K1": return new NoChannelChangeJudge(FinalCues.CctvPerson);   // 52차 민: 원래대로
                 case "K2": return new DontWatchJudge(FinalCues.EmptyRoom, 3f);
                 case "K3": return new DwellSpaceJudge(SpaceId.SecurityRoom, 45f);
                 case "G1": return new NoRunningJudge(1f);
@@ -823,6 +825,124 @@ namespace NightDuty
         }
     }
 
+    /// <summary>
+    /// S2·L2(51차, 민: 「소리를 듣고 도서관에 그냥 있었는데 바로 어겨졌다. 5~10초 유예를 주고, 다시 들어오거나 여전히 있으면 그때 어기는 걸로」).
+    /// 단서 때 그 공간 안에 있었을 때만 해당한다. 단서부터 <see cref="GraceSeconds"/>초 동안은 드나들어도 괜찮고,
+    /// 마감 순간 그 공간 안이면 위반, 마감 뒤 그 밤 다시 들어가도 위반(밤당 한 번).
+    /// </summary>
+    public sealed class LeaveAfterCueJudge : CueEpisodeJudge
+    {
+        /// <summary>유예(초).</summary>
+        public const float GraceSeconds = 10f;
+
+        private readonly float _grace;
+        private bool _inside;
+        private bool _closed;
+
+        /// <summary>만든다.</summary>
+        public LeaveAfterCueJudge(string cueId, float graceSeconds) : base(cueId)
+        {
+            _grace = graceSeconds;
+        }
+
+        /// <inheritdoc/>
+        public override string Status
+        {
+            get { return _closed ? "종료된 공간 " : base.Status; }
+        }
+
+        internal override void Observe(in JudgeSignal s, FinalWorld w)
+        {
+            if (Def != null && SpaceIds.Canonical(s.Space) == Def.Space)
+            {
+                if (s.Kind == SignalKind.SpaceEntered) _inside = true;
+                else if (s.Kind == SignalKind.SpaceExited) _inside = false;
+
+                if (_closed && s.Kind == SignalKind.SpaceEntered && !Violated)
+                {
+                    Violate("종료된 공간에 다시 들어감");
+                    return;
+                }
+            }
+
+            base.Observe(s, w);
+        }
+
+        protected override bool OnStart(in JudgeSignal s, FinalWorld w)
+        {
+            _inside = Def == null || w.Space == Def.Space;
+            return _inside;   // 듣지 못한 소리로는 벌하지 않는다
+        }
+
+        protected override void OnEnd(FinalWorld w)
+        {
+            // 소리가 끝나도 유예는 흐른다.
+        }
+
+        protected override void OnSignal(in JudgeSignal s, FinalWorld w)
+        {
+            if (s.Kind != SignalKind.Tick || Elapsed(w) < _grace) return;
+            _closed = true;
+            if (_inside) Fail(_grace + "초 뒤에도 안에 있음");
+            else Pass("유예 안에 나감");
+        }
+
+        internal override void ResetEpisode()
+        {
+            base.ResetEpisode();
+            _inside = false;
+            _closed = Triggered && !Active;   // 재시작: 방아쇠가 이미 났고 마감이 지났다면 종료 상태 유지
+        }
+    }
+
+    /// <summary>
+    /// S3(51차, 민: 「인체 모형은 빛을 비추면 안 됩니다」): 모형을 손전등으로 연속 <see cref="LimitSeconds"/>초 비추면 위반(틈 0.2초 허용 —
+    /// 휘두르다 스친 것은 봐준다). 위반하면 다음 밤 조우(모형 급습)를 예약한다. 과학실에 들어가면 방아쇠.
+    /// S3가 있는 날은 S-1 모형 점검을 편성하지 않는다(손전등을 켠 채 모형을 점검하면 비추게 되므로 — <see cref="ProgramDirector"/>).
+    /// </summary>
+    public sealed class BeamAvoidJudge : FinalJudge
+    {
+        /// <summary>연속 비춤 한도(초).</summary>
+        public const float LimitSeconds = 1.5f;
+
+        private readonly string _target;
+        private readonly float _limit;
+        private readonly string _reserve;
+        private SampleStreak _streak;
+
+        /// <summary>만든다.</summary>
+        public BeamAvoidJudge(string target, float limitSeconds, string reserveOnViolation)
+        {
+            _target = target;
+            _limit = limitSeconds;
+            _reserve = reserveOnViolation;
+        }
+
+        internal override void Observe(in JudgeSignal s, FinalWorld w)
+        {
+            if (s.Kind == SignalKind.SpaceEntered && Def != null && SpaceIds.Canonical(s.Space) == Def.Space)
+            {
+                Trigger();
+                return;
+            }
+
+            if (s.Kind != SignalKind.BeamSample) return;
+            bool hit = s.TargetId == _target;
+            if (_streak.Feed(hit, s.Value, SensingRules.GazeGapSeconds) >= _limit)
+            {
+                _streak.Clear();
+                bool first = !Violated;
+                Violate("모형을 비춤");
+                if (first && !string.IsNullOrEmpty(_reserve)) Book.RequestEncounter(_reserve);
+            }
+        }
+
+        internal override void ResetEpisode()
+        {
+            _streak.Clear();
+        }
+    }
+
     /// <summary>S1: 들어온 쪽(기준점의 X 기준)과 나간 쪽이 다르면 통로로 쓴 것.</summary>
     public sealed class NoPassageJudge : FinalJudge
     {
@@ -1047,6 +1167,50 @@ namespace NightDuty
         }
     }
 
+    /// <summary>
+    /// C4(52차): 붉은 불빛 단서(붉은 등 아래 구역에 들어섬 — <c>RedLightSpot</c>가 보낸다) 동안 손전등이 <see cref="GraceSeconds"/>초 넘게 켜져 있으면 위반.
+    /// 단서는 구역을 나서면 끝난다.
+    /// </summary>
+    public sealed class LightOffJudge : CueEpisodeJudge
+    {
+        /// <summary>들어선 뒤 끌 여유(초).</summary>
+        public const float GraceSeconds = 1.5f;
+
+        private readonly float _grace;
+        private float _onFor;
+
+        /// <summary>만든다.</summary>
+        public LightOffJudge(string cueId, float graceSeconds) : base(cueId)
+        {
+            _grace = graceSeconds;
+        }
+
+        protected override bool OnStart(in JudgeSignal s, FinalWorld w)
+        {
+            _onFor = 0f;
+            return true;
+        }
+
+        protected override void OnSignal(in JudgeSignal s, FinalWorld w)
+        {
+            if (s.Kind != SignalKind.Tick) return;
+            if (!w.Flashlight)
+            {
+                _onFor = 0f;
+                return;
+            }
+
+            _onFor += s.Value;
+            if (_onFor > _grace) Fail("붉은 불빛 아래에서 손전등을 켬");
+        }
+
+        internal override void ResetEpisode()
+        {
+            base.ResetEpisode();
+            _onFor = 0f;
+        }
+    }
+
     /// <summary>K1: 단서 동안 채널을 넘기면 위반.</summary>
     public sealed class NoChannelChangeJudge : CueEpisodeJudge
     {
@@ -1061,17 +1225,19 @@ namespace NightDuty
         }
     }
 
-    /// <summary>K2: 단서가 가리킨 채널(<c>cue.emptyroom@cctv.ch2</c>)을 연속으로 오래 보면 위반.</summary>
+    /// <summary>K2·K1(51차): 단서가 가리킨 채널(<c>cue.emptyroom@cctv.ch2</c> · <c>cue.cctvperson@cctv.ch3</c>)을 연속으로 오래 보면 위반.</summary>
     public sealed class DontWatchJudge : CueEpisodeJudge
     {
         private readonly float _limit;
+        private readonly string _reason;
         private string _channel;
         private SampleStreak _streak;
 
         /// <summary>만든다.</summary>
-        public DontWatchJudge(string cueId, float limitSeconds) : base(cueId)
+        public DontWatchJudge(string cueId, float limitSeconds, string reason = "빈 방을 오래 봄") : base(cueId)
         {
             _limit = limitSeconds;
+            _reason = reason;
         }
 
         protected override bool OnStart(in JudgeSignal s, FinalWorld w)
@@ -1084,7 +1250,7 @@ namespace NightDuty
         protected override void OnSignal(in JudgeSignal s, FinalWorld w)
         {
             if (s.Kind != SignalKind.CctvViewSample) return;
-            if (_streak.Feed(s.TargetId == _channel, s.Value, SensingRules.GazeGapSeconds) >= _limit) Fail("빈 방을 오래 봄");
+            if (_streak.Feed(s.TargetId == _channel, s.Value, SensingRules.GazeGapSeconds) >= _limit) Fail(_reason);
         }
     }
 
@@ -1165,14 +1331,46 @@ namespace NightDuty
         }
     }
 
-    /// <summary>T4: 여자아이가 칸에 들어가는 단서가 오면 역보고(T-1)를 건다. 델타는 점검판이 준다.</summary>
+    /// <summary>
+    /// T4: 여자아이가 칸에 들어가는 것을 <b>봤으면</b>(단서 동안 <see cref="FinalCues.GirlTarget"/>을 0.5초) 역보고(T-1)를 건다. 델타는 점검판이 준다.
+    /// 51차(민: 「수칙·조우·점검 셋이 이어지게」): 보지 못했으면 걸지 않는다 — 그날 변기 점검도 나오지 않는다.
+    /// </summary>
     public sealed class ReverseReportJudge : FinalJudge
     {
+        /// <summary>목격으로 치는 응시(초).</summary>
+        public const float WitnessSeconds = 0.5f;
+
+        private bool _watching;
+        private bool _armed;
+        private float _seen;
+
         internal override void Observe(in JudgeSignal s, FinalWorld w)
         {
-            if (!IsCue(s, SignalKind.CueStarted, FinalCues.GirlStall)) return;
-            Trigger();
+            if (IsCue(s, SignalKind.CueStarted, FinalCues.GirlStall))
+            {
+                Trigger();
+                _watching = true;
+                _seen = 0f;
+                return;
+            }
+
+            if (IsCue(s, SignalKind.SequenceEnded, FinalCues.GirlStall))
+            {
+                _watching = false;
+                return;
+            }
+
+            if (!_watching || _armed || s.Kind != SignalKind.GazeSample || s.TargetId != FinalCues.GirlTarget) return;
+            _seen += s.Value;
+            if (_seen < WitnessSeconds) return;
+            _armed = true;
             Book.ArmReverseReport(InspectionCatalog.ReverseReportItem);
+        }
+
+        internal override void ResetEpisode()
+        {
+            _watching = false;
+            _seen = 0f;
         }
     }
 

@@ -351,7 +351,7 @@ namespace NightDuty.Tests
             int dayEnded = 0;
             EventBus.DayEnded += s => dayEnded++;
             NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day,
-                new[] { new InspectionAssignment(InspectionCatalog.Find("H-4"), true, Band.Band1, false) },
+                new[] { new InspectionAssignment(InspectionCatalog.Find("S-1"), true, Band.Band1, false) },
                 SpaceId.None, string.Empty);
 
             NightRun.BeginNight(1, () => _clock);

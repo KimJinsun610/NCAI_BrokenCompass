@@ -229,8 +229,8 @@ public sealed class RoomDarkness : MonoBehaviour
         // HDR(BC6H)을 그대로 담는 부동소수 형식. 복사본은 GPU에만 있다(CPU 읽기 없음).
         // (DX11에서 B10G11R11은 Texture2D 샘플이 안 된다 — 둘 다 되는 형식만.)
         GraphicsFormat format = GraphicsFormat.B10G11R11_UFloatPack32;
-        if (!SystemInfo.IsFormatSupported(format, FormatUsage.Render) || !SystemInfo.IsFormatSupported(format, FormatUsage.Sample)) format = GraphicsFormat.R16G16B16A16_SFloat;
-        if (!SystemInfo.IsFormatSupported(format, FormatUsage.Render) || !SystemInfo.IsFormatSupported(format, FormatUsage.Sample)) return null;
+        if (!SystemInfo.IsFormatSupported(format, GraphicsFormatUsage.Render) || !SystemInfo.IsFormatSupported(format, GraphicsFormatUsage.Sample)) format = GraphicsFormat.R16G16B16A16_SFloat;
+        if (!SystemInfo.IsFormatSupported(format, GraphicsFormatUsage.Render) || !SystemInfo.IsFormatSupported(format, GraphicsFormatUsage.Sample)) return null;
         RenderTexture rt = new RenderTexture(source.width, source.height, 0, format);
         rt.Create();
         Graphics.Blit(source, rt, blit);

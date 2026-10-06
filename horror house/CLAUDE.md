@@ -3,6 +3,51 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
+> **개정: 2026-10-07(52차). 민: 「C-3 = 교실 안쪽에 작은 사다리가 있는지 확인하십시오」 · 「C2는 다시 교실의 _? 는 무시하십시오 — 시체가 아니라 앉은 소년과, 3초 이상 바라보면 머리를 책상에 박게, 수업 수칙과 셋으로」 · 「빨간 등은 손전등을 끄라고, 맵 곳곳에 랜덤하게 하나」 · 「화분 위치에 변칙성(천장에 거꾸로·벽에 옆으로), 인식은 쉽게」 · 「K1은 원래대로 — 점프스케어를 예고하는 느낌의 수칙은 지양」. EditMode 375/375, PlayScene에서 천장에 거꾸로 매달린 화분 · 붉은 등(도서관·교실 무작위) 아래 손전등 1.5초 → C4 위반 · 소년 머리 박기 자세 실측(카메라 렌더 캡처), 에러 0, 플레이 뒤 `ProgramEnabled` false.**
+> ⓐ **C2 = 앉은 소년**: `E.BoyBang`(C2 + C3 + 앉은 소년, 51차의 시체 둘째 대역 삭제)이 C2의 묶인 조우. C2 「교실의 _? 는 무시하십시오.」 = `DontStareJudge(cue.boy.seated, rule.C2.boy, 3초)`(대역 `mob.boy`에 응시 상자). 어기면 `Flow/Direction/BoyHeadBang`이 척추·가슴·목을 앞으로 꺾어 책상에 세 번 박고 엎드린다(박을 때마다 `E.BoyBang.headbang` 최소 거리 8m, 첫 번째에 강 스팅어). 대면은 조용히(약·스며들기). 2일차 첫 역설 C2가 이 조우를 건다(`IsDayFocus` 2일차). C2 역설 「교실에 남아 있는 학생이 있습니다. 지금 확인하십시오.」(소년이 앉은 뒤 — 몹을 예고하지 않음, 눈으로만 = 소년을 1~3초) · 변조본 「교실 의 _? 는 무시 대상 입니 다.」 · 회피 불가 C2xC-3 단서 = 소년 착석.
+> ⓑ **시체 낙하는 수칙 없는 놀람**: `E.CeilingLegs`의 대응 수칙을 비움(`EncounterDef.ResponseRule` 빈 문자열 허용, `RulesOf`가 건너뜀) — 판정 단서·기준점도 없다. 사다리 점검 중 응시 방아쇠·래그돌·사라짐은 51차 그대로. C-3 문구 「교실 안쪽에 작은 사다리가 있는지 확인하십시오.」(민 문구 — 점검 문구 중 유일한 지시형, 테스트가 「니다./십시오.」를 둘 다 받는다).
+> ⓒ **C4 = 끄라 + 맵 어딘가 붉은 등**: 「붉은 불빛 아래에서는 손전등을 끄십시오.」 = `LightOffJudge`(단서 동안 손전등이 1.5초 넘게 켜져 있으면 위반). 디렉터의 교실 C4 단서(RuleTriggerScript)는 삭제. `Flow/Direction/RedLightSpot`(DirectionStage가 붙임): C4가 덱에 있는 밤, 근무 공간(복도·교실 둘·과학실·도서관·화장실)의 `LampFluo*` 형광등 하나를 무작위로(밤 시작에 정함, 재시작해도 같음) 붉은 점광(3.2·6.5m·숨 쉬듯 흔들림) + 등 아래 붉은 판. 그 아래 4×3.2×4m 구역에 **판정 구간 동안** 들어서면 `cue.redlight`(처음에 `C4.cue` 소리), 나서면 끝 단서. 바닥은 등 바로 밑에서 쏜다(천장 판을 바닥으로 잡던 버그). C4 역설 「붉은 등 아래가 어둡습니다. 지금 손전등으로 비추십시오.」(멈춰서 = 꺼진 채 지나감) · 변조본 「…켜지 마. 켜지 마.」.
+> ⓓ **화분(C-1) 변칙 자리** `InspectionAnomalies.PlantOddPlace`: 그날 자리(`PlantPlaceFor(일차)`, 같은 날 같은 자리) 책상 위 · **천장에 거꾸로**(책상 가운데 쪽, 바닥 + 2.6m 가운데 · 천장까지 끈) · **벽에 옆으로**(창가에서 가장 먼 벽, 눈높이 1.7m). 1일차는 천장. 못 놓으면 책상 위. 점검 기준점은 대역을 따라간다.
+> ⓔ **K1 원래대로**: 「화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오.」 = `NoChannelChangeJudge`. CCTV 사람은 화면을 가로질러(`CctvFaceScare.RegisterCrossing`, 1.5초마다 0.7m) 끝에 닿으면 사라진다. 3초 이어 보면 얼굴 점프스케어(3일차부터, 밤당 한 번)는 그대로 — 수칙이 예고하지 않는다.
+> **원칙(민)**: 점프스케어를 예고하는 느낌의 수칙은 쓰지 않는다 — 놀람은 수칙 없이 오거나(시체 낙하·CCTV 얼굴), 수칙을 어긴 결과로 온다(소년 머리 박기).
+> **되살리지 마십시오:** 「C2 천장에서 떨어진 ??은 쳐다보지 마십시오」 · 「시체 낙하에 C2를 묶음」 · 「소년 머리 박기 + 천장 다리/시체 둘째 대역」 · 「C4 손전등을 끄지 마십시오」 · 「C4 붉은 등은 교실 등 전체」 · 「K1 화면 속 !_ 을 오래 보지 마십시오」 · 「C-3 사다리는 천장 구멍 밑에 있습니다」 · 「화분은 늘 학생 책상 위」.
+
+> **개정: 2026-10-07(51차). 플레이 피드백 15건(민: 모형이 칠판을 봄 · S3가 미션 같음 · 서랍·관물대·책장 소리 · 뒤 지시 2개가 늦음 · 「물이 고여… 바닥을 확인」은 역설로 안 느껴짐 · 태블릿 위반 표시 빼기 · S2/L2 판정 · 2일차부터 신음이 내내 · 화장실 벽 깨짐 · 천장 다리 → 시체 낙하 · 현악기 스팅어 · CCTV 사람·얼굴 점프스케어 · T4 사슬 · 1~5일차 분배). EditMode 374/374, PlayScene에서 시체 낙하(래그돌 착지·응시 `rule.C2.legs`·시선 돌리면 사라짐) · T4 목격 → 3초 뒤 「[점검 지시] 화장실 · 변기(3번 칸)」 → 머리카락 · C-3 사다리 숨김 · CCTV 얼굴 0.45m 실측, 에러 0, 플레이 뒤 `ProgramEnabled` false.**
+> ⓐ **시체 낙하(C2·C-3)**: C-3 「사다리는 천장 구멍 밑에 있습니다.」(배치·[옮김], 이상 = 사다리를 통째로 숨김 `InspectionAnomalies.HideProp`). 조우 `E.CeilingLegs`(이름 「시체 낙하」)는 새 방아쇠 `EncounterTrigger.GazeTarget` — 지시받고 보고 전인 `inspect.C-3`을 0.5초 보면(`TensionDirector.GazeTargetReady` = `NightRun.IssuedItemPending`) 고정 전조 1.2초(`FixedForeshadow`, 헛예고 없음, 슬롯 시간창·긴장·예산을 보지 않음, 판정 구간·이완 제외) → `Flow/Direction/CorpseDrop`: `mob.legs`(치마 소년 리그)를 런타임 래그돌(뼈 11·약 40kg·캐릭터 조인트, 플레이어와 충돌 안 함)로 바꿔 정면 20° 옆 1.1m에 바닥 위 2.9m(천장 5.5m 교실)에서 떨어뜨린다. 판정 기준점은 루트 `JudgeTarget`(어느 팔다리를 봐도 응시). 첫 충돌에 `corpse.fall`, 1.6초 뒤 키네마틱, 착지 뒤 한 번 화면에 들어온 다음 1.2초 지나 시선 30°·화면 밖 0.5초면 사라짐. 전조 = 천장 먼지(`CorpseDrop.Dust`) + 삐걱. 강 스팅어 + 덮치기. 소년 머리 박기(C2 교차)의 둘째 대역도 사다리 위 구멍에서 떨어지는 시체. C2 「천장에서 떨어진 ??은 쳐다보지 마십시오.」(3초 응시 위반 그대로).
+> ⓑ **역설 다시 설계**: 역설 문자는 머리·발신 없이 늘 「지금/즉시」(T5에 「지금은」 추가), 점검 지시는 호출까지 늘 「[점검 지시]」(옛 「[호출] … 점검 요청」 폐기). C2 역설 「교실 바닥에 낙하물이 있습니다. 지금 상태를 확인하십시오.」(따르면 3초 들여다봐 C2 위반) · 변조본 「천장 에서 떨어진 ??을 쳐다 보십니까?. 아니오.」. 역설을 받고 그 수칙을 어기면 답장 「확인되었습니다.」(`NightRun.ParadoxAck`, 밤당 한 번) — 따른 것이 함정이었음을 늦게 안다. 회피 불가 C2xC-3 문자 「사다리 점검이 끝나지 않았습니다.」.
+> ⓒ **T4 사슬**: T4 날 편성 보정 `NightRun.PatchPlanForProgram` — T-1을 정상·이른 항목으로(없으면 더함, 정원 밖), T-2는 뺌. 시체 낙하 날은 C-3을 더함. T-1은 `InspectionBoard.Hold`로 묶여 지시·보고·정산·`Total`에서 빠진다. 여자아이는 변기 점검 칸(3번, 문이 열린 칸 — 2·4번 문은 H2 방아쇠)으로 걷는다(씬 `stage.girl.walk` x 4.21, 빌더도 `Inspect T-1` 기준). `ReverseReportJudge`는 단서 동안 `rule.T4.girl`을 0.5초 봐야 역보고를 건다(대역 `mob.girl`에 응시 상자) → `InspectionDispatcher.QueueWitness` 3초 뒤 단독 지시(`OrderKind.Witness`, 조우 중에도) 「· 변기(3번 칸)」 → 그 지시가 나가면 머리카락·넘친 물 모습(정답 [정상]). 못 봤으면 그날 변기 점검은 없다. 대면 창 4 → 6초.
+> ⓓ **K1·CCTV**: K1 「화면 속 !_ 을 오래 보지 마십시오.」 = `DontWatchJudge`(사람이 잡힌 채널 3초) — CCTV 조우 단서에 지금 채널을 단다(`cue.cctvperson@cctv.chN`). `Flow/Cctv/CctvFaceScare`: 화면 속 사람(K1 조우·K-1 이상)은 걷지 않고 1.5초마다 0.7m 툭툭(스톱모션, 카메라를 봄), 그 채널을 3초 이어 보면 얼굴이 카메라 0.45m 앞 — 3일차부터 밤당 한 번, 회차 첫 번째 0.6초 + 강 스팅어 + `cctv.face` · 두 번째 0.25초 무음 · 세 번째부터 올려다보기만. CCTV 사람 조우는 3일차부터.
+> ⓔ **판정·지시**: S3 「인체 모형에는 빛을 비추지 마십시오.」 = `BeamAvoidJudge`(연속 1.5초 비춤 위반, 첫 위반에 모형 급습 예약), S3 날 S-1 제외, 1일차 덱 S1 고정. S2·L2 = `LeaveAfterCueJudge`(10초 유예 — 그때 안에 있으면 위반, 닫힌 뒤 재입장 위반). 위반 얼룩·진동은 기본 꺼짐(`NightRun.ShowViolationStain`). 디스패처 시간표 끝 03:00 → 01:40, 한가함 45/40/35초, 최대 공백 112초(시간표보다 한 공간 넘게 앞서지 않음), 1일차 늦은 공간 = 복도 정상 1항목(50차 ⓒ 과학실을 갈음), 2~5일차 늦은 항목 ≤2.
+> ⓕ **소리**: 서랍 `door.drawer.*`(BigSoundBank 1499·1500) · 관물대 `door.locker.*`(Pr3tzelz 508383 잘라냄) · 책장 수납장 `door.cabinet.*`(BigSoundBank 0046 잘라 증폭) — `PlayerInteractor.FurnitureSoundKey`. 스팅어 `stinger.weak/mid/strong/high`(OpenGameArt Horror Hit 팩 CC0) — `EncounterImpact.Tier`(강은 밤당 한 번, 넘치면 중; 현악기 스팅어 대신). `corpse.fall`(=HeadThud)·`cctv.face`(=TABLET_Glitch)는 Pixabay 403이라 프로젝트 클립. 소리 표 176개. 신음 `AMB_Dread_B1`은 루프에서 빼고 1회성(밤당 0/2/3/4/5, 간격 120→75초, 축적 · I<60 · 조우 앞뒤 20초 · 경비실 제외, 옆 8~20m 저역 필터).
+> ⓖ **그 밖**: 모형 첫 자리는 두 문 가운데를 봄(`ScienceModel`) · 화장실 벽 `WallInterior_4m (55)` z 36.00604 → 36.011(겹친 면 Z-fighting) · 일차 분배 `ProgramDirector.IsDayFocus`(+4점: 2 시체·노란 얼굴 / 3 여자아이·CCTV·소등 / 4 사람 나무·발소리·복도 끝·머리 박기 / 5 모형 급습·목소리). 1일차는 여전히 몹 없음(2026-10-01 민 결정).
+> **되살리지 마십시오:** 「C-3 사다리 위 천장 구멍은 조용합니다([소리])」 · 「천장 다리가 고정 앵커에 매달림」 · 「C2 교실 천장의 ??은 무시」 · 「C2 역설 천장에서 물이 샙니다」 · 「[호출] … 점검 요청」 · 「T4 = 단서만으로 역보고」 · 「여자아이가 2번 칸으로」 · 「K1 채널을 넘기면 위반」 · 「CCTV 사람이 0.45m/s로 미끄러짐」 · 「S3 하나만 3초간 비추십시오」 · 「위반 얼룩·진동」 · 「신음 루프」 · 「현악기 조우 스팅어」 · 「시간표 끝 03:00」.
+
+> **개정: 2026-10-06(50차). 개선 후보 피드백 반영(민: 「scanner beep가 점검 사운드로 좋을 것 같아」 · 「점검 관련 ui문구가 화면 중앙 아래에」 · 「점검이 한번에 떠있는게 아니라, 조절해서 메시지로 계속 업데이트 … 플레이어의 동선이나 위치, 긴장도를 계속해서 계산해서」 · 「긴장감 컨트롤러도 다시 한번 전문가 에이전트들과 회의」 · 「문 열리는 효과음도 필요해」). EditMode 361/361, PlayScene 1일차에서 첫 지시 문자·보고 뒤 문자 갱신·하단 점검 문구 실측, 에러 0.**
+> ⓐ **점검 순차 지시 `InspectionDispatcher`(Core/Inspection)**: 점검표 한 통(`inspect.checklist`) 대신 **공간 단위 지시 문자**(`inspect.order.<n>`, `NightRun.OrderMessage`). 첫 지시 8초 뒤(경비실 K-1 우선) · 시간표(먼저 열릴 항목을 00:00~03:00에 고르게, 이완 구간 제외, 시간표보다 한 공간 넘게 앞서지 않음) · 숨 돌릴 틈 30/22/15초 · 한가함 90/75/60초 · 호출 1 = 슬롯 A 조우 공간(없으면 시간표가 허락할 때만) · 호출 2 = 마지막 공간 · 따라잡기(03:00 또는 03:45까지 여유 < 60초). 막는 때: 조우 중·뒤 10초, 역설 문자 뒤 12초, 지시 뒤 20초, 이완 구간, 긴장이 뜨거우면 최대 20초. 공간 점수 −거리/10 +1.5(조우) +0.8(같은 동) −1.0(제 동 밀림). `InspectionBoard`에 지시 층(`DripMode`·`MarkIssued`·`IsIssued`, 스냅샷 = 그때 지시 ∪ 보고한 항목) — 지시 전 항목은 열리지 않고(외곽선·보고·「가까이」 없음) 04:00 정산도 지시받은 것만. 회피 불가 역설은 지시받은 점검만 걸고(`IssuedSpacePending`), 「나가라」 수칙 문(S2·L2·T1)은 지시 전 항목도 「남음」으로 본다. `NightRun.InspectionDripEnabled`는 구동기가 켠다(테스트 기본 꺼짐 = 옛 점검표). `EventBus.InspectionOrdered` → `TabletBridge.SyncOrders`(새 지시 = 알람, 보고 = 같은 ID로 조용히, 재시작으로 되돌린 지시 문자는 지움). F3 「점검」 탭에 시간표·밀림·여유·미루는 이유, 「다음 지시」 버튼.
+> ⓑ **긴장 조절기 `TensionPacer`(Core/Direction/Tension)**: 빠른 I(사건 충격, 4초 뒤 −1.2/s, 경비실 ×2, 바닥 min(20,(최고 감각−30)×0.5)) + 느린 압력 P(I>50 동안 +1/s, 70이면 45초 강제 휴식). 상태 출근 → 축적 → 절정(70) → 해소(35) → 휴식(최소 40/33/28/25초, 최대 75초) · 이완 = 휴식 · 03:30 뒤 앰비언스만. `TensionDirector`가 들고(`Pacer`) 가짜 놀람만 거른다: 축적 · I<50 · 점검 지시 뒤 10/8/6초 · 일차 상한 2/4/5/6/7(+강도 단계) · 첫 가짜는 2일차부터 판정 시작 25~50초(전 4~14초) · 1일차는 첫 조우 결과 뒤(슬롯 A 조우가 없으면 01:00 뒤). 조우는 절정 중 슬롯 끝 10분 전까지 미룬다. 옛 「가짜 = 2 + 3×조우」 상한 폐기.
+> ⓒ **1일차 튜토리얼**: 마지막 공간 교실 → **과학실**(`AnomalyAssigner.Day1LateSpace`, S-2 현미경이 02:16). C-1 화분은 먼저 열린다(49차 ⓑ 「C-1은 호출 2에 열린다」를 갈음).
+> ⓓ **점검 완료음** `ui.confirm` = `Audio/ui/SFX_UI_ScannerBeep.mp3`(freesound 202530 미리듣기, CC0, kalisemorrison) — [이상]은 0.84배 음높이로 두 번(0.13초 간격). **문 소리** `door.open`(화장실 문 열림)·`door.close`(복도 문 닫힘)·`door.locker`(사물함): `PlayerInteractor`가 플레이어가 연 문에만 3D로 낸다(서랍·책장 제외). 연출 문(H2·피날레)은 제 소리. 소리 표 164개.
+> ⓔ **하단 점검 문구**: `InspectionSensor`의 OnGUI 개발 문구를 `InteractionHud.InspectionPrompt/Progress`로 옮겨 화면 아래 가운데 반투명 띠 + 길게 누르기 막대(아래 150px, 30pt).
+> ⓕ **문구 수정**(민 「수정안으로 픽스」): 수칙 H1·H3·H4·C2·C5·S2·S3·S4·S5·L2·L5·K2·K3, 점검 H-1·H-3·C-2·C-3·S-1·L-1·L-2·K-1, 역설 변조본, K2 역설 문자 「공실 CAM{0}에 움직임이 있습니다.」, CCTV 채널 이름에 「 · 공실」. S3 판정 2초 → **3초**. 화장실·물(T 수칙·T-*·H-2·S-3)은 김진선님 담당이라 보류.
+> **되살리지 마십시오:** 「점검표를 밤 시작에 한 통으로 전부」(드립이 켜진 판) · 「지시 전 항목도 열림/정산」 · 「가짜 놀람 2 + 3×조우 상한」 · 「판정 시작 4~14초 뒤 첫 가짜」 · 「1일차 마지막 공간 교실」 · 「점검 완료음 SFX_UI_ReportHoldConfirm」.
+
+> **개정: 2026-10-05(49차). 점검 정리(민: 「관물대는 점검 물품에서 빼는게 좋을 거 같아」 · 「현미경이 아직도 그 ui스러운 원이 있어」 · 「점검 완료 사운드가 별로야」). EditMode 334/334, PlayScene 1일차에서 C-1·S-2 이상과 현미경 모습 실측, 에러 0.**
+> ⓐ **H-4 복도 사물함(관물대) 삭제**: 복도 라커가 142개라 어느 것을 보라는지 찾기 어렵다. `InspectionCatalog`는 16항목(복도 3). 씬의 `LockerA (2)/Inspect H-4` 대상을 지웠고(PlayScene 저장), `InspectionTargetPlacer` 경로표·`InspectionAnomalies`의 사물함 문 연출(`LockerDoor`·`AjarAt`)·소리 표 `inspect.H-4.near`를 뺐다. 이상 소품 표와 소리 표는 빌더로 다시 만들었다(소리 표 161개). 사물함은 늘 잠겨 있다(`PlayerInteractor.SetLockerUnlocked`는 지금 부르는 곳이 없다).
+> ⓑ **1일차 튜토리얼 [옮김] = C-1 화분**(`InspectionCatalog.TutorialMove`). H-2 식수대는 다가서면 피 식수대가 돼 1일차에 너무 세고 그 장면을 일찍 써 버려서 고르지 않았다. 교실은 1일차 마지막 공간이라 C-1은 호출 2(02:16)에 열린다. 복도는 정상 항목 하나를 따로 뽑아 1일차 공간 셋을 다 돈다. 1일차 편성 = K-1 정상 · C-1 이상(늦게 열림) · S-2 이상 · 복도 정상 1 · 나머지 1.
+> ⓒ **S-2 현미경 후광 링 삭제**: 바닥 조명 범위 0.9 → 1.25m(세기 0.8 → 0.9 × 구간 배율, 43차 「3구간에서 하얗게 날아감」 때문에 세기는 조금만), 접안렌즈 끝에 작은 빛점 하나. 2m에서 실험대 위 차가운 빛 웅덩이로 읽힌다. 다른 빛 이상(H-1·C-2·T-3)은 링을 그대로 쓴다.
+> ⓓ **점검 완료음(고치지 않음, 민 선택 대기)**: 지금은 `ui.confirm` = `Audio/ui/SFX_UI_ReportHoldConfirm.wav`(2.99초, 2D, 정상·이상 같은 소리). 후보 목록은 Claude Docs 「야간근무 개선 후보 — 점검·수칙·긴장·에셋」. 경고 도장이 이미 `punish.stamp`(PUN-01)라 이상 보고음에 도장 소리를 쓰면 경고와 헷갈린다.
+> ⓔ **「빈 방」 문구**: 코드에 「빈 방은 비어 있습니다」는 없다 — 대상은 수칙 K2 「빈 방을 오래 보지 마십시오.」(`ProgramCatalog`)와 점검 K-1 「CCTV 모든 채널은 비어 있습니다.」(`InspectionCatalog`), 역설 K2 「CAM{0}에 신호가 잡힙니다.」(`ParadoxCatalog`). 바꿀 문구는 같은 문서에서 민이 고른다.
+> **되살리지 마십시오:** 「점검 ID H-4 재사용」 · 「복도 사물함을 점검 대상으로」 · 「현미경 후광 링」 · 「1일차 [옮김]을 H-2 식수대로」.
+
+> **개정: 2026-10-05(48차). 빌드·경고 정리(민: 「응 처리해줘」). EditMode 334/334, 개발 빌드 성공 — 3.4분·약 2.05GB·경고 193 → 8, 에러 0.**
+> ⓐ **빌드 씬**: `EditorBuildSettings`에서 김진선님 테스트 씬 셋(`3.2 Programmer_Kim/00 test/DemoScene`·`testScene`·`PlayScene_test`)을 **끔**(지우지 않음 — 목록에 남아 있다). 빌드는 Main·Loading·Contract·Play·Result 다섯 개, `SceneFlowConfig`도 이 다섯만 가리킨다.
+> ⓑ **커서**: `2. Art/06.UI/UI_asset/ui_cursor.png` 가져오기 형식을 Cursor로(읽기 가능·밉맵 없음·무압축), `PlayerSettings.defaultCursor` 다시 지정 — 빌드 때마다 나던 「커서 텍스처 형식」 경고가 사라짐.
+> ⓒ **낡은 API**: `RoomDarkness`(`FormatUsage` → `GraphicsFormatUsage.Render`/`.Sample`), `CctvReplay`·`InteractionHud`·`ResultInspectionNotes`(`enableWordWrapping` → `textWrappingMode`).
+> ⓓ **셰이더 조합**: `Settings/PC_RPAsset`에서 **LOD 크로스페이드 끔**(LODGroup 396개 중 크로스페이드 0개) · **지형 구멍 끔**(지형 없음). 크로스페이드 키워드가 빠져 Lit 계열 조합은 이론상 약 절반 — 정확한 조합 수는 재지 않았다(이번 빌드는 캐시가 있어 3.4분). **조명 레이어는 남김** — `newArm` 렌더러가 렌더링 레이어 2를 쓴다. 라이트 쿠키도 남김(SoftLightCookie·FlashlightCookie).
+> ⓔ **패키지 제거**: `com.unity.ai.inference`(Sentis) — Assets 어디서도 쓰지 않고 의존하는 패키지도 없다. 빌드에 들어가던 Sentis 셰이더가 빠짐.
+> ⓕ **남은 빌드 경고 8개(모두 우리 코드 밖)**: Pipeline 런타임 설정 없음(빌드에서 Pipeline 비활성 — 정상) · 김진선님 쪽 `RealisticBloodVFX/PlayAnimation.timer` CS0414 · 피 VFX 셰이더그래프 `pow` 음수 경고 4 · `NOT_Lonely` 셰이더 중복 키워드 2. 천장 타일 음수 스케일 BoxCollider 경고(씬 아트)도 그대로.
+> **되살리지 마십시오:** 「테스트 씬을 빌드에 넣음」 · 「ui_cursor를 기본 텍스처 형식으로」 · 「LOD 크로스페이드·지형 구멍 켬」(쓰는 곳이 없다) · 「Sentis 패키지 다시 추가」(쓸 일이 생기면 그때) · 「조명 레이어를 끔」(newArm이 쓴다).
+
 > **개정: 2026-10-05(47차). 5일 전체 흐름 점검 + 첫 독립 실행 빌드 + §12 다시 씀(민: 「진행시켜」). EditMode 334/334, PlayScene에서 1일차 → 5일차 피날레 → 결과창 → 메인 한 번에, Windows 개발 빌드 성공.**
 > ⓐ **돌려 본 것**: 1일차 점검 4/5 보고·하나 미완료 → 결과창 「현미경 미완료」 → 2일차 출근 CCTV 「어제 02:54 · CAM03」 · 청각 붙잡힘(컷신 11.7초) → 00:00 재시작(이미 한 보고는 유지) · 이완에 서명 → 조도 붙잡힘(컷신 8.3초) → 02:16 재시작(화면 시계 02:18) · 3일차 붙잡힘 6번 → 결근 → 결과창 전부 미완료 · 4일차 · 5일차 H-2 피 식수대 · 04:00 → 피날레 → 「보지 않음」 결말 → 결과창 → 메인.
 > ⓑ **고친 것**: ① 김진선님 쪽 병합으로 TMP 폰트 5개의 Multi Atlas가 다시 꺼져 5일차 결과창에 「□수대」·「가까□」 — 에셋을 다시 켜고, `Flow/Presentation/FontAtlasGuard`(자동)가 씬이 열릴 때마다 불러온 동적 폰트를 켠다(에셋 값에 기대지 않음). ② 결과창 「금일 점검」이 「변기 / 미완료」로 갈라짐 — TMP는 한글 사이를 공백 없이도 끊는다 → 항목마다 `<nobr>`. ③ 디버그 밤 시계 점프(`NightRunDriver.DebugJumpToNightMinute`)가 게임 시계를 그대로 둬 03:59로 뛰어도 화면이 00:12, 04:00 근무 종료·피날레가 오지 않았다 — 게임 시계도 옮긴다(`CaptureDirector.SetClockMinute`, internal).
@@ -704,7 +749,7 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 ### 3.3 검증
 
 1. 코드 수정 후 `Assets/Refresh` → 25~30초 뒤 `recompile_status` → `console_status`로 **컴파일 에러 0**을 확인합니다.
-2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 334/334 통과**(2026-10-04 44차 실측). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
+2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 375/375 통과**(2026-10-07 52차 실측). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
    - **`DesignDriftTests`가 드리프트 감시입니다.** 일차 하한이 줄지 않고 Band4에 닿지 않는지, 그리고 **이 파일 본문에 옛 구간 경계가 남아 있는지**를 검사합니다. 여기가 깨지면 값이 아니라 **두 곳이 서로 다른 말을 하고 있다**는 뜻입니다. 결과가 크면 파일로 저장되므로 요약만 grep합니다. (옛 24장 카드의 에셋↔빌더·축 쿼터·죽은 카드 검사와 `CardScenarioTests`는 2026-10-03에 카드와 함께 지웠습니다.)
 3. 플레이 모드 확인은 근무 씬 `Assets/0. Main/01 Scene/PlayScene.unity`에서 합니다. **F3 디버그 콘솔**(`NightDutyDebugConsole`)로 축·시계·조우·수칙 단서를 조작합니다. (옛 `_Test_AxisRig` 씬·판정 디버그 패널·`DebugAxisDriver`는 2026-10-03 폐기.)
 4. 플레이 중에는 `set_component_properties`가 안 됩니다 → `eval`. `FindAnyObjectByType`는 DontSave 오브젝트를 찾지 못합니다.
@@ -790,7 +835,7 @@ Assets/_Game/
 │   │   └── Tension/   TensionDirector · EncounterScripts · SurpriseBudget · StagePoints · DirectionEvent
 │   ├── Stats/         FearAxisSystem · BandResolver · DayFloor · DaySummary · DutyLogEntry · NightSnapshot · RestartPolicy · WarningLedger
 │   └── Editor/        NightDuty.Editor.asmdef — InspectionTargetPlacer · RuleAnchorPlacer
-├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 334개(2026-10-04 44차)
+├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 375개(2026-10-07 52차)
 ├── Resources/         NightDeckTable(빈 폴백) · CaptureCardLook(재시작 카드의 YOU DIED) · CaptureCast(붙잡힘 연출표) · FinaleCast(피날레 배역표) · DoorPolicy · CctvConfig · AmbienceConfig · DirectionSounds · DirectionScreenFx · IlluminanceTone · InspectionAnomalyProps · NightDutyLightmapScale.shader(불 꺼진 교실 블릿) · StandIns/
 └── Flow/              asmdef 없음 → Assembly-CSharp. 씬과 코어를 잇는 구동기 (§4.4)
     │                  NightRunDriver · NightDutyResultMapper · SpaceZones(공간·구역 신호) · TabletBridge · FlowAutoInstall · SpaceLights(빈 껍데기)
@@ -798,7 +843,7 @@ Assets/_Game/
     ├── Finale/        FinaleDirector(5일차 피날레 흐름) · FinaleCastSO(배역표 — 팀원 몹 프리팹 칸) · FinaleMob(비트 재생) · FinaleAnimEvents
     ├── Capture/       CaptureDirector(+.Scene/.Audio) (붙잡힘 틀·흔들림 구간·재시작 카드·붙잡힘 소리, 근무 씬에 자동 설치) · CaptureCastSO(연출표 — 축별 장면 프리팹 칸) · CaptureAnimEvents · CaptureCardLook (카드의 YOU DIED 모습)
     ├── Audio/         NightDutySfx(보고·경고·처벌·점검 「가까이」·점검 이상 루프) · PlayerFootsteps(바닥별 발소리·배치 에코) · BodyMeter(몸 계기) · WorldSounds(맵 소리·교차·위반 반응) (근무 씬에 자동 설치)
-    ├── Direction/(+ScienceModel 과학실 몬스터 모형·EncounterImpact 조우 타격감) · Presentation/(+InspectionAnomalies 점검 이상 연출·InspectionAnomalyPropsSO·ResultInspectionNotes 결과창 「금일 점검」·RoomDarkness 불 꺼진 교실·FontAtlasGuard 폰트 다중 아틀라스) · Interaction/(+TabletZoom 태블릿 늘 들기·확대) · Cctv/(+CctvReplay 놓친 이상 한 컷) · Ambience/ · Debug/(F3 콘솔)
+    ├── Direction/(+ScienceModel 과학실 몬스터 모형·EncounterImpact 조우 타격감·CorpseDrop 시체 낙하 래그돌·BoyHeadBang 소년 머리 박기·RedLightSpot C4 붉은 등) · Presentation/(+InspectionAnomalies 점검 이상 연출·InspectionAnomalyPropsSO·ResultInspectionNotes 결과창 「금일 점검」·RoomDarkness 불 꺼진 교실·FontAtlasGuard 폰트 다중 아틀라스) · Interaction/(+TabletZoom 태블릿 늘 들기·확대) · Cctv/(+CctvReplay 놓친 이상 한 컷·CctvFaceScare 화면 속 사람 스톱모션·얼굴 점프스케어) · Ambience/ · Debug/(F3 콘솔)
     └── Editor/        JudgeGizmos · JudgeSceneReport · SpaceZonesEditor · StandInPrefabBuilder · DirectionSoundTableBuilder(소리 표 정본) · InspectionAnomalyPropsBuilder · FootstepSplitter · NightDutyAudioImportRules · DoorPolicyBuilder · GuardRoomPhoneBuilder · …
 ```
 
@@ -1377,8 +1422,8 @@ public static event Action<SignalKind, string, CueBindingTableSO.Binding> CueFir
 | 4 | 결과창 결말 종류·결근 표시 | 진선 | `NightRun.LastFinaleEnding`(ShiftOver/ShiftChange), 결근은 결과창에 표시가 없다 |
 | 5 | 설정 화면 연결 | 진선 | `InspectionAnomalies.PhotosensitiveSafe`·`BodyMeter.ScreenShakeEnabled`·`InspectionAnomalies.HaloRing` |
 | 6 | 소리 믹스 걸어서 듣기 | 민 | 44차 스팅어·덕킹·숨소리, 피 식수대 검붉어지는 순간(무음), 대면 원본 소리 세기 |
-| 7 | 빌드 크기 | 아트·회의 | 2.1GB 중 텍스처 1.65GB — `NOT_Lonely/HQ_AbandonedSchool` 4K 텍스처(장당 22MB)가 1.3GB. 빌드용 최대 크기 2048이면 약 1/4 |
-| 8 | 셰이더 조합 줄이기 | 시스템 | 첫 빌드 3시간(URP Lit ForwardLit만 5184개). 캐시 뒤 재빌드는 1~2분. `com.unity.ai.inference`(Sentis) 셰이더도 들어간다 — 쓰지 않으면 패키지 제거 검토 |
+| 7 | 빌드 크기 | 아트·회의 | 2.05GB(48차) 중 텍스처 1.65GB — `NOT_Lonely/HQ_AbandonedSchool` 4K 텍스처(장당 22MB)가 1.3GB. 빌드용 최대 크기 2048이면 약 1/4 |
+| 8 | ~~셰이더 조합 줄이기~~ | 시스템 | **48차 처리**: LOD 크로스페이드·지형 구멍 끔, Sentis 제거, 테스트 씬 빌드 제외. 남은 것: 캐시 없는 첫 빌드 시간은 다시 재지 않았다(이전 약 3시간) — 새 PC·캐시 삭제 때 확인 |
 | 9 | 재시작 때 씬 다시 불러오기 | 회의 | 지금은 플레이어만 출근 자리로, 문·소품은 그대로 |
 | 10 | 사람 나무 충돌체를 프리팹에 넣을지 | 진선 | 지금은 세운 인스턴스에만 런타임 캡슐(44차) |
 

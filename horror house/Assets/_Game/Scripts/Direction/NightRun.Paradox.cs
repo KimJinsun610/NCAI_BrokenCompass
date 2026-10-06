@@ -61,6 +61,7 @@ namespace NightDuty
             Band trust = _bands.Shown.GetBand(FearAxis.Trust);
             ParadoxPlan plan = _paradoxPlanner.Plan(Day, trust, _program.Deck, s => SpaceHasAnomaly(inspections, s), _plannedUnavoidable, _emptyRoomChannel);
             _paradox = new ParadoxRun(plan);
+            _paradoxAcked = false;
             BeginUnavoidable(plan);
             if (plan.Tampered != null)
             {
@@ -70,8 +71,14 @@ namespace NightDuty
             Debug.Log("[NightRun] 역설 편성 — " + plan.Report);
         }
 
+        /// <summary>역설 문자를 따라 그 수칙을 어겼을 때 오는 답장(51차).</summary>
+        public const string ParadoxAck = "확인되었습니다.";
+
+        private static bool _paradoxAcked;
+
         private static void DisposeParadox()
         {
+            _paradoxAcked = false;
             _paradox = new ParadoxRun(ParadoxPlan.None);
             _reveals.Clear();
             DisposeUnavoidable();
@@ -98,6 +105,13 @@ namespace NightDuty
             UnavoidableSettled(result);
             if (result.Outcome == FinalOutcome.Violated)
             {
+                // 51차: 역설 문자를 따라 수칙을 어기면 짧은 답장 하나 — 「따르면 어기게 되는 문자」였다는 것을 늦게 깨닫게(위반 표시는 하지 않는다).
+                if (_paradox.Sent && result.RuleId == _paradox.RuleId && !_paradoxAcked)
+                {
+                    _paradoxAcked = true;
+                    EventBus.RaiseMessageSent(new ParadoxMessage("paradox.ack." + result.RuleId, result.RuleId, _paradox.Space, ParadoxAck, CurrentMinute()));
+                }
+
                 RefreshRuleCards();   // 위반 얼룩
                 EventBus.RaiseTabletTextChanged();
                 return;
@@ -131,6 +145,7 @@ namespace NightDuty
 
                     Debug.Log("[NightRun] 역설 문자 " + id + " (" + _paradox.Pattern + "): " + _paradox.Message);
                     EventBus.RaiseMessageSent(new ParadoxMessage("paradox." + id, id, _paradox.Space, _paradox.Message, CurrentMinute()));
+            OrdersNoteMessage();
                     break;
 
                 case ParadoxStep.SafeRead:

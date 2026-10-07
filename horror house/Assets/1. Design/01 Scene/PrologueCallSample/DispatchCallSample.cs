@@ -10,15 +10,17 @@ namespace NightDuty.PrologueSample
     {
         public const string ContractPath = "Assets/1. Design/01 Scene/ContractScene_hyun.unity";
         public static readonly string[] Lines = {
-            "안녕하세요. 시설관리팀 파견 담당자입니다.",
-            "갑자기 연락드려 죄송합니다. 야간 근무 자리가 하나 비어서요.",
-            "현장은 철거를 앞둔 학교입니다.",
-            "아직 반출하지 않은 비품이 남아 있어 철거 전까지는 사람이 필요합니다.",
-            "원래 근무하던 분이 어젯밤 인수인계 없이 나가셨다고 해서요.",
-            "남은 닷새만 대신 맡아 주시면 됩니다.",
-            "자정부터 여섯 시까지 1층을 순찰하고, 시설 상태와 외부인 출입 흔적을 확인하는 일입니다.",
-            "근무 조건과 수당을 보내드릴게요.",
-            "보시고 결정하시면 됩니다."
+            "안녕하세요. 현장관리팀 파견 담당자입니다.",
+            "지원하신 야간 근무 건으로 연락드렸습니다.",
+            "이번 현장은 철거를 닷새 앞둔 폐교입니다.",
+            "사전에 안내드린 대로, 철거 전 시설 점검이 필요한 장소입니다.",
+            "철거 전까지 야간에 건물 상태를 점검하고 기록할 인원이 필요합니다.",
+            "이전 근무자는 개인 사정으로 근무를 이어 가지 못하게 되어서요.",
+            "자정부터 네 시까지 1층을 순찰하고, 지정된 대상을 점검해 태블릿으로 보고해 주시면 됩니다.",
+            "근무 중에는 태블릿으로 점검표와 문자가 전달됩니다.",
+            "계약서를 보내드리겠습니다.",
+            "단순 점검 업무라 어려운 일은 없으실 겁니다.",
+            "그럼 첫날 밤, 잘 부탁드립니다."
         };
 
         [SerializeField] private GameObject titlePanel, callPanel;
@@ -69,7 +71,7 @@ namespace NightDuty.PrologueSample
             callGroup.alpha = 1;
             stateText.text = "수신 전화";
             subtitle.text = "......";
-            counter.text = "시설관리팀 · 파견 담당자";
+            counter.text = "현장관리팀 · 파견 담당자";
             actionButton.gameObject.SetActive(false);
             skipButton.gameObject.SetActive(false);
             yield return Fade(0, .6f);
@@ -89,12 +91,13 @@ namespace NightDuty.PrologueSample
                 CurrentLine = i;
                 subtitle.text = Lines[i];
                 subtitle.maxVisibleCharacters = 0;
-                counter.text = "시설관리팀 · 파견 담당자";
+                counter.text = "현장관리팀 · 파견 담당자";
                 voice.clip = i < voiceClips.Length ? voiceClips[i] : null;
                 if (voice.clip != null) voice.Play();
-                float duration = voice.clip != null ? voice.clip.length : Mathf.Max(3, Lines[i].Length * .12f);
+                // Line timing follows the clip length (divided by pitch, since UncannyVoiceFX lowers it).
+                float duration = voice.clip != null ? voice.clip.length / Mathf.Max(.1f, Mathf.Abs(voice.pitch)) : Mathf.Max(3, Lines[i].Length * .12f);
                 float elapsed = 0;
-                while (elapsed < duration + 1.1f)
+                while (elapsed < duration + 1.1f || (voice.isPlaying && elapsed < duration + 3f))
                 {
                     elapsed += Time.unscaledDeltaTime;
                     subtitle.maxVisibleCharacters = Mathf.CeilToInt(elapsed * 28);
@@ -121,7 +124,7 @@ namespace NightDuty.PrologueSample
             Stage = "Document";
             effects.PlayOneShot(message);
             stateText.text = "문서가 도착했습니다";
-            counter.text = "발신 · 시설관리팀";
+            counter.text = "발신 · 현장관리팀";
             subtitle.maxVisibleCharacters = int.MaxValue;
             subtitle.text = "파견근무 계약서가 도착했습니다.";
             actionButton.gameObject.SetActive(false);

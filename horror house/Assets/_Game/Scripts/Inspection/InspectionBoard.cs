@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NightDuty
@@ -34,9 +34,6 @@ namespace NightDuty
         /// <summary>정상을 [이상] — 오보, 그 항목의 축 +7.</summary>
         FalseReport = 4,
 
-        /// <summary>환청이 얹힌 정상 항목을 [이상] — 공통 수칙 G2 위반, 청각 +6(오보 +7은 없음).</summary>
-        HallucinationRecorded = 5,
-
         /// <summary>T4가 걸린 T-1을 [정상] — 역보고 준수, 신뢰 +3(놓침 없음).</summary>
         ReverseKept = 6,
 
@@ -63,7 +60,10 @@ namespace NightDuty
         NotOpenYet = 4,
 
         /// <summary>붙잡힌 뒤다.</summary>
-        Captured = 5
+        Captured = 5,
+
+        /// <summary>회피 불가 역설로 그 공간이 당일 재입실 불가다(10단계).</summary>
+        SpaceClosed = 6
     }
 
     /// <summary>보고 한 건의 결과. 태블릿·연출·근무일지가 읽는다(수치는 화면에 내지 않는다).</summary>
@@ -143,7 +143,7 @@ namespace NightDuty
     /// <item>「가까이」(0.8m 들여다보기·뒤로 돌아가기·건드리기)는 항목마다 한 번 그 축 +6(<see cref="Startle"/>).</item>
     /// <item>04:00 정산(<see cref="Settle"/>): 미완료마다 경고 1, 이상이 있던 항목은 그 축 +8.</item>
     /// </list>
-    /// 재시작 때 되돌리는 것(<see cref="ISnapshotable"/>): 한도 사용량·「가까이」 기록·환청 표시·역보고 표시. 이미 한 보고는 되돌리지 않는다.
+    /// 재시작 때 되돌리는 것(<see cref="ISnapshotable"/>): 한도 사용량·「가까이」 기록·역보고 표시. 이미 한 보고는 되돌리지 않는다.
     /// </summary>
     public sealed class InspectionBoard : ISnapshotable
     {
@@ -156,7 +156,6 @@ namespace NightDuty
         private readonly Dictionary<string, InspectionState> _states = new Dictionary<string, InspectionState>(StringComparer.Ordinal);
         private readonly int[] _reliefUsed = new int[SensoryAxes];
         private readonly HashSet<string> _startled = new HashSet<string>(StringComparer.Ordinal);
-        private readonly HashSet<string> _hallucinated = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _reverse = new HashSet<string>(StringComparer.Ordinal);
 
         /// <inheritdoc/>
@@ -210,7 +209,6 @@ namespace NightDuty
 
             Array.Clear(_reliefUsed, 0, _reliefUsed.Length);
             _startled.Clear();
-            _hallucinated.Clear();
             _reverse.Clear();
         }
 
@@ -262,18 +260,6 @@ namespace NightDuty
             return itemId != null && _reverse.Contains(itemId);
         }
 
-        /// <summary>환청이 이 항목 근처에서 났다고 적는다. 그 뒤 [이상] 보고는 오보(+7)가 아니라 G2 위반(청각 +6)이다.</summary>
-        public void MarkHallucination(string itemId)
-        {
-            if (!string.IsNullOrEmpty(itemId)) _hallucinated.Add(itemId);
-        }
-
-        /// <summary>환청이 얹혔는지.</summary>
-        public bool WasHallucinated(string itemId)
-        {
-            return itemId != null && _hallucinated.Contains(itemId);
-        }
-
         /// <summary>그 항목의 「가까이」를 이미 어겼는지.</summary>
         public bool WasStartled(string itemId)
         {
@@ -296,8 +282,7 @@ namespace NightDuty
                 return saysAnomaly ? ReportOutcome.CorrectAnomaly : ReportOutcome.Missed;
             }
 
-            if (!saysAnomaly) return ReportOutcome.CorrectNormal;
-            return WasHallucinated(itemId) ? ReportOutcome.HallucinationRecorded : ReportOutcome.FalseReport;
+            return saysAnomaly ? ReportOutcome.FalseReport : ReportOutcome.CorrectNormal;
         }
 
         /// <summary>
@@ -333,10 +318,6 @@ namespace NightDuty
                     break;
                 case ReportOutcome.FalseReport:
                     change = Raise(axes, axis, Deltas.FalseReport, source, space);
-                    break;
-                case ReportOutcome.HallucinationRecorded:
-                    axis = FearAxis.Auditory;
-                    change = Raise(axes, axis, Deltas.HallucinationRecorded, "G2:" + source, space);
                     break;
                 case ReportOutcome.ReverseKept:
                     axis = FearAxis.Trust;
@@ -398,7 +379,6 @@ namespace NightDuty
             {
                 ReliefUsed = (int[])_reliefUsed.Clone(),
                 Startled = new List<string>(_startled),
-                Hallucinated = new List<string>(_hallucinated),
                 Reverse = new List<string>(_reverse)
             };
         }
@@ -412,8 +392,6 @@ namespace NightDuty
             Array.Copy(s.ReliefUsed, _reliefUsed, Math.Min(s.ReliefUsed.Length, _reliefUsed.Length));
             _startled.Clear();
             _startled.UnionWith(s.Startled);
-            _hallucinated.Clear();
-            _hallucinated.UnionWith(s.Hallucinated);
             _reverse.Clear();
             _reverse.UnionWith(s.Reverse);
         }
@@ -454,7 +432,6 @@ namespace NightDuty
         {
             public int[] ReliefUsed;
             public List<string> Startled;
-            public List<string> Hallucinated;
             public List<string> Reverse;
         }
     }

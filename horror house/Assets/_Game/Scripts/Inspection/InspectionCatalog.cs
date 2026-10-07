@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NightDuty
@@ -17,7 +17,7 @@ namespace NightDuty
         /// <summary>[빛] 꺼져 있어야 할 빛이 있다.</summary>
         Light = 2,
 
-        /// <summary>[소리] 대상 위치의 3D 음. 다가가면 커진다 — 환청(머리 안 2D 음)과 가르는 단서.</summary>
+        /// <summary>[소리] 대상 위치의 3D 음. 다가가면 커진다.</summary>
         Sound = 3
     }
 

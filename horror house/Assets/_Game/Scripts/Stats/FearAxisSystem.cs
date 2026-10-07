@@ -33,13 +33,12 @@ namespace NightDuty
     }
 
     /// <summary>
-    /// 4축 누적 값의 유일한 소유자. <see cref="IFearAxisReader"/>의 실제 공급원이다
-    /// (<c>DebugAxisDriver</c>와 같은 포트에 꽂힌다).
+    /// 4축 누적 값의 유일한 소유자. <see cref="IFearAxisReader"/>의 실제 공급원이다.
     /// <list type="bullet">
     /// <item>값은 0~100 누적(<b>생존 수치</b>). 감쇠·상시 증가 없음. 새 값 = min(100, 기존 + 델타).
     /// 감소는 <see cref="Lower"/>(정확한 보고)와 <see cref="Restore"/>(밤 재시작)로만 일어나고 신뢰는 줄지 않는다(2026-09-30 새 기획서).
     /// 연출 구간은 이 값이 아니라 <see cref="BandResolver"/>가 정한다.</item>
-    /// <item><b>청각·조도·배치</b> 중 하나가 100에 도달하면 <b>종료 잠금</b>. 최초 원인 1개를 기록하고 <see cref="EventBus.AxisCritical"/>을 <b>한 번만</b> 보낸다.</item>
+    /// <item><b>청각·조도·배치</b> 중 하나가 100에 도달하면 <b>종료 잠금</b>. 최초 원인 1개를 기록하고 붙잡힘(<see cref="EventBus.Captured"/>, 구독자가 없으면 옛 <see cref="EventBus.AxisCritical"/>)을 <b>한 번만</b> 보낸다.</item>
     /// <item><b>한 프레임(한 신호)에 두 축이 100</b>이 되면 초과량이 큰 축 하나로 붙잡힌다(동점은 청각 &gt; 조도 &gt; 배치) —
     /// <see cref="BeginFrame"/>/<see cref="EndFrame"/> 사이에서는 잠금 판단을 미룬다(최종 기획서 「경계 사례」).</item>
     /// <item><see cref="SoftCap"/>이 걸려 있으면 감각 축은 그 값에서 멈추고 붙잡히지 않는다 —
@@ -241,7 +240,7 @@ namespace NightDuty
             if (lockNow)
             {
                 RaiseTerminated(_cause);
-                EventBus.RaiseAxisCritical(axis);
+                EventBus.RaiseCapturedOrCritical(axis);
             }
 
             return true;
@@ -310,7 +309,7 @@ namespace NightDuty
             IsLocked = true;
             _cause = cause;
             RaiseTerminated(_cause);
-            EventBus.RaiseAxisCritical(cause.Axis);
+            EventBus.RaiseCapturedOrCritical(cause.Axis);
         }
 
         private static int Clamp(int value)

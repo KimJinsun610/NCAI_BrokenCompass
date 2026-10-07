@@ -274,8 +274,8 @@ MonoBehaviour:
   unseenBoxSize: {x: 0.6, y: 1.8, z: 0.6}
   maxWaitSeconds: 8
   lockPlayer: 0
-  useDebugKey: 1
-  debugKey: 50
+  useDebugKey: 0
+  debugKey: 0
 --- !u!1001 &6582580768729847771
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace NightDuty
 {
@@ -73,7 +73,7 @@ namespace NightDuty
                 case "C5": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
                 case "S1": return new NoPassageJudge(FinalCues.S1Center);
                 case "S2": return new ExitWithinJudge(FinalCues.Glass, 10f, true);
-                case "S3": return new BeamLimitJudge(FinalCues.ModelTarget, FinalCues.TapeZone, 2f, ProgramCatalog.ModelRush);
+                case "S3": return new LitGazeJudge(FinalCues.ModelTarget, 2f, ProgramCatalog.ModelRush);   // 2026-10-04 민: 「인체 모형을 빛으로 확인하십시오.」
                 case "S4": return new LightKeepJudge(FinalCues.ScienceBlackout, FinalCues.ScienceDarkZone, 1f, false);
                 case "S5": return new WaitInDarkJudge(FinalCues.HallEnd, 3f);
                 case "T1": return new ExitWithinJudge(FinalCues.Flush, 8f, false);
@@ -90,7 +90,6 @@ namespace NightDuty
                 case "K2": return new DontWatchJudge(FinalCues.EmptyRoom, 3f);
                 case "K3": return new DwellSpaceJudge(SpaceId.SecurityRoom, 45f);
                 case "G1": return new NoRunningJudge(1f);
-                case "G2": return new RecordOnlyJudge();
                 case "G3": return new RecordOnlyJudge();
                 case "K4": return new RecordOnlyJudge();
             }
@@ -251,15 +250,10 @@ namespace NightDuty
 
         internal override void Observe(in JudgeSignal s, FinalWorld w)
         {
-            float d;
-            if (s.Kind == SignalKind.ProximitySample && s.TargetId == _anchor) d = s.Value;
-            else if (s.Kind == SignalKind.PlayerPose)
-            {
-                Vector3? a = Book.AnchorOf(_anchor);
-                if (!a.HasValue) return;
-                d = SensingRules.HorizontalDistance(s.Point, a.Value);
-            }
-            else return;
+            if (s.Kind != SignalKind.PlayerPose) return;
+            Vector3? a = Book.AnchorOf(_anchor);
+            if (!a.HasValue) return;
+            float d = SensingRules.HorizontalDistance(s.Point, a.Value);
 
             if (d < _radius * 3f) Trigger();
             if (d < _radius) Violate(_anchor + " 반경 " + _radius + "m 진입");
@@ -285,16 +279,11 @@ namespace NightDuty
 
         internal override void Observe(in JudgeSignal s, FinalWorld w)
         {
-            if (s.Kind == SignalKind.PlayerPose || (s.Kind == SignalKind.ProximitySample && s.TargetId == _anchor))
+            if (s.Kind == SignalKind.PlayerPose)
             {
-                float d;
-                if (s.Kind == SignalKind.ProximitySample) d = s.Value;
-                else
-                {
-                    Vector3? a = Book.AnchorOf(_anchor);
-                    if (!a.HasValue) return;
-                    d = SensingRules.HorizontalDistance(s.Point, a.Value);
-                }
+                Vector3? a = Book.AnchorOf(_anchor);
+                if (!a.HasValue) return;
+                float d = SensingRules.HorizontalDistance(s.Point, a.Value);
 
                 if (d < _radius * 2f) Trigger();
                 _inside = d < _radius;
@@ -403,7 +392,7 @@ namespace NightDuty
                 return;
             }
 
-            if (_endMs >= 0 && w.NowMs - _endMs >= ConditionState.ToMs(_after))
+            if (_endMs >= 0 && w.NowMs - _endMs >= FinalWorld.ToMs(_after))
             {
                 Pass("발소리 대피");
             }
@@ -522,7 +511,7 @@ namespace NightDuty
                 return;
             }
 
-            if (s.Kind == SignalKind.Tick && _endMs >= 0 && w.NowMs - _endMs > ConditionState.ToMs(_grace))
+            if (s.Kind == SignalKind.Tick && _endMs >= 0 && w.NowMs - _endMs > FinalWorld.ToMs(_grace))
             {
                 Active = false;
             }
@@ -878,46 +867,52 @@ namespace NightDuty
         }
     }
 
-    /// <summary>S3: 테이프 구역 밖에서 대상을 연속으로 오래 비추면 위반. 위반하면 다음 밤 조우를 예약한다.</summary>
-    public sealed class BeamLimitJudge : FinalJudge
+    /// <summary>
+    /// S3(2026-10-04 민 수정 — 「인체 모형을 빛으로 확인하십시오.」): 대상을 <b>비추지 않은 채</b> 연속으로 오래 바라보면 위반.
+    /// 비추는 동안(마지막 비춤 샘플에서 <see cref="LitWindowMs"/> 안)의 응시는 괜찮다. 위반하면 다음 밤 조우(모형 급습)를 예약한다.
+    /// 과학실에는 점검용 인체 모형(S-1)과 몬스터 모형이 함께 있어 「무엇을 비춰 확인해야 하는지」가 헷갈리게 둔다(의도).
+    /// </summary>
+    public sealed class LitGazeJudge : FinalJudge
     {
+        /// <summary>비춤이 응시를 덮어 주는 시간(ms) — 비춤 샘플 사이 틈.</summary>
+        public const int LitWindowMs = 300;
+
         private readonly string _target;
-        private readonly string _zone;
         private readonly float _limit;
         private readonly string _reserve;
-        private bool _inZone;
+        private int _lastLitMs = int.MinValue / 2;
         private SampleStreak _streak;
 
         /// <summary>만든다.</summary>
-        public BeamLimitJudge(string target, string allowedZone, float limitSeconds, string reserveOnViolation)
+        public LitGazeJudge(string target, float limitSeconds, string reserveOnViolation)
         {
             _target = target;
-            _zone = allowedZone;
             _limit = limitSeconds;
             _reserve = reserveOnViolation;
         }
 
         internal override void Observe(in JudgeSignal s, FinalWorld w)
         {
-            if ((s.Kind == SignalKind.ZoneEntered || s.Kind == SignalKind.ZoneExited) && s.TargetId == _zone)
-            {
-                _inZone = s.Kind == SignalKind.ZoneEntered;
-                return;
-            }
-
             if (s.Kind == SignalKind.SpaceEntered && Def != null && SpaceIds.Canonical(s.Space) == Def.Space)
             {
                 Trigger();
                 return;
             }
 
-            if (s.Kind != SignalKind.BeamSample) return;
-            bool hit = s.TargetId == _target && !_inZone;
+            if (s.Kind == SignalKind.BeamSample)
+            {
+                if (s.TargetId == _target) _lastLitMs = w.NowMs;
+                return;
+            }
+
+            if (s.Kind != SignalKind.GazeSample) return;
+            bool lit = w.NowMs - _lastLitMs <= LitWindowMs;
+            bool hit = s.TargetId == _target && !lit;
             if (_streak.Feed(hit, s.Value, SensingRules.GazeGapSeconds) >= _limit)
             {
                 _streak.Clear();
                 bool first = !Violated;
-                Violate("테이프 밖에서 모형을 비춤");
+                Violate("빛 없이 모형을 봄");
                 if (first && !string.IsNullOrEmpty(_reserve)) Book.RequestEncounter(_reserve);
             }
         }
@@ -925,7 +920,7 @@ namespace NightDuty
         internal override void ResetEpisode()
         {
             _streak.Clear();
-            _inZone = false;
+            _lastLitMs = int.MinValue / 2;
         }
     }
 
@@ -984,7 +979,7 @@ namespace NightDuty
                 return;
             }
 
-            if (w.NowMs - _lastLitMs > ConditionState.ToMs(_gap)) FailAndReserve("빛이 떨어짐");
+            if (w.NowMs - _lastLitMs > FinalWorld.ToMs(_gap)) FailAndReserve("빛이 떨어짐");
         }
     }
 
@@ -1181,7 +1176,7 @@ namespace NightDuty
         }
     }
 
-    /// <summary>G2·G3·K4: 판정 조건 없이 기록만(G2는 점검판, K4는 결말, G3은 역설 단계).</summary>
+    /// <summary>G3·K4: 판정 조건 없이 기록만(K4는 결말, G3은 피날레 표시).</summary>
     public sealed class RecordOnlyJudge : FinalJudge
     {
         internal override void Observe(in JudgeSignal s, FinalWorld w)

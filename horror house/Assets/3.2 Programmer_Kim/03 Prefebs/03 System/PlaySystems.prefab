@@ -125,12 +125,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cb5935b6d59585445b552199e20a57e8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameTime
-  startHour: 2
+  startHour: 0
   startMinute: 0
-  endHour: 5
+  endHour: 4
   endMinute: 0
   timeMultiplier: 30
-  use12HourFormat: 1
+  use12HourFormat: 0
 --- !u!114 &2461339111152588588
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -274,8 +274,8 @@ RectTransform:
   m_GameObject: {fileID: 6697226839907887440}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1188600033620571887}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -382,7 +382,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 100
@@ -633,7 +633,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2

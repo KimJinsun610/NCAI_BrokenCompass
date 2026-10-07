@@ -7,9 +7,8 @@ namespace NightDuty
     /// <summary>
     /// 씬 대상 등록부. 씬에 놓인 <see cref="JudgeTarget"/>가 켜질 때 자기 ID를 올리고 꺼질 때 내린다.
     /// <para>
-    /// <see cref="NightRun.BeginNight"/>은 <see cref="NightRun.RegisteredTargets"/>가 비어 있고(null)
-    /// 이 등록부에 ID가 하나라도 있으면 <b>이 등록부의 스냅숏</b>으로 카드 참조를 검사한다.
-    /// 등록된 ID가 하나도 없으면(테스트 씬 등) 검사를 건너뛴다.
+    /// 새 수칙 판정기는 기준점 위치를(<c>FinalRuleBook.Anchor</c>), 응시·점검 센서는 대상 ID를 여기서 찾는다.
+    /// (옛 판정 책의 「밤 시작 때 카드 참조 검사」는 2026-10-03에 폐기했다.)
     /// </para>
     /// <para>
     /// 같은 ID를 여러 오브젝트가 올릴 수 있다(예: 구역 하나를 콜라이더 여럿으로 만든 경우). 개수를 세어

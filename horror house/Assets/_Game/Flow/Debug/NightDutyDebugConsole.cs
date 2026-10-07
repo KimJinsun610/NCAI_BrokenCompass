@@ -1,4 +1,4 @@
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+﻿#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Collections.Generic;
 using NightDuty;
@@ -13,7 +13,7 @@ using UnityEngine.InputSystem;
 /// <list type="bullet">
 /// <item><b>개요</b>: 밤 시계 구간 점프(00:16 · 슬롯 A · 이완 · 슬롯 B · 슬롯 C · 03:30) · 판정 강제 · 자동 연출 켜고 끄기 · 시계 정지 · 축 ± · 밤 종료·붙잡힘·재시작 · 손전등·달리기 신호.</item>
 /// <item><b>수칙</b>: 오늘 덱의 상태(방아쇠·위반·진행 중)와 수칙마다 [이동] [단서] [끝] [조우], 31장 중 아무 수칙이나 [덱에 추가].</item>
-/// <item><b>조우</b>: 오늘 슬롯의 진행 상태, 조우 15개 각각 [이동+실행]·[여기서 실행], [다음 단계], [무대 정리].</item>
+/// <item><b>조우</b>: 오늘 슬롯의 진행 상태, 조우 15개 각각 [이동+실행]·[여기서 실행], [다음 단계], [무대 정리], 피날레 몹 두 배역(창밖 정장 남자 · 내 자리 무언가) [세우기/치우기]·비트 버튼(배역표 FinaleCast).</item>
 /// <item><b>점검</b>: 오늘 점검표, 항목마다 [이동](항목 앞 1.6m에서 바라봄) · [정상] · [이상] 보고.</item>
 /// <item><b>로그</b>: 연출 알림 · 수칙 정산 · 점검 보고 · 재시작.</item>
 /// </list>
@@ -38,6 +38,7 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
     private int _tab;
     private Vector2 _scroll;
     private Rect _window = new Rect(20f, 20f, 600f, 700f);
+    private bool _dockRight = true;   // 기본은 화면 오른쪽에 붙는다. 끌어 옮기면 그 자리를 지킨다.
     private bool _clockHeld;
     private bool _running;
     private bool _cursorWasVisible;
@@ -85,7 +86,7 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         // ① 에디터가 초점을 잃어도 플레이 루프가 멈추지 않게(알트탭 한 번에 게임이 얼던 문제). 런타임 값만 — 프로젝트 설정은 그대로.
         // ② 열쇠 연출이 아직 없어 잠긴 문 12개가 회차를 막는다 — 개발 빌드에서는 잠금을 무시한다(콘솔에서 끌 수 있음).
         Application.runInBackground = true;
-        PlayerInteractor.IgnoreLocks = true;
+        PlayerInteractor.IgnoreLocks = false;   // 동선의 문은 시작할 때 풀린다(PlayerInteractor). 쓰지 않는 문은 잠긴 채 — 실제 게임과 같게. 개요 탭 버튼으로 켤 수 있다.
     }
 
     private void OnEnable()
@@ -251,8 +252,18 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         }
 
         _window.height = Mathf.Min(Screen.height - 40f, 760f);
+        if (_dockRight)
+        {
+            _window.x = Mathf.Max(0f, Screen.width - _window.width - 20f);
+            _window.y = 20f;
+        }
+
         GUI.depth = -100;
+        Vector2 before = _window.position;
         _window = GUILayout.Window(0x4E44, _window, DrawWindow, "야간근무 디버그 콘솔 (F3)", _windowStyle);
+        if ((_window.position - before).sqrMagnitude > 0.25f) _dockRight = false;   // 사용자가 끌었다.
+        _window.x = Mathf.Clamp(_window.x, 0f, Mathf.Max(0f, Screen.width - _window.width));
+        _window.y = Mathf.Clamp(_window.y, 0f, Mathf.Max(0f, Screen.height - 40f));
     }
 
     private void DrawWindow(int id)
@@ -368,6 +379,48 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         if (GUILayout.Button("밤 종료 요청(04:00 정산)")) Later(() => NightRun.RequestEndNight());
         if (GUILayout.Button("붙잡힘(청각)")) Later(() => NightRun.DebugForceCapture(FearAxis.Auditory));
         if (GUILayout.Button("재시작")) Later(() => NightRun.RestartAfterCapture());
+        GUILayout.EndHorizontal();
+
+        // 피날레(11단계) — 5일차 04:00에 구동기가 여는 것을 여기서 바로 연다.
+        FinaleDirector fd = FinaleDirector.Active;
+        FinaleWatch fw = NightRun.Finale;
+        GUILayout.Label("<b>피날레(5일차)</b>  " + (fd != null && fd.IsRunning ? fd.Phase + " · 시도 " + fw.Attempt + " · 봤다 " + (fw.Seen ? "예" : "아니오") + " · CCTV " + fw.ChannelsSeen + "채널" : "대기") + (NightRun.LastFinaleEnding != FinaleEnding.None ? " · 지난 결말 " + NightRun.LastFinaleEnding : string.Empty), _rich);
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("5일차로 다시 열기")) Later(() =>
+        {
+            if (NightRunDriver.Current != null) NightRunDriver.Current.DebugRestartAsDay(FinaleWatch.Day);
+            Log("5일차로 다시 열었습니다(태블릿에 K4·G3)");
+        });
+        if (GUILayout.Button("피날레 시작")) Later(() => Log(fd != null && fd.Begin() ? "피날레 시작" : "피날레를 열 수 없음(5일차 밤이 아님·진행 중)"));
+        if (GUILayout.Button("CCTV 건너뛰기")) Later(() =>
+        {
+            if (fd != null) fd.DebugSkipCctv();
+        });
+        if (GUILayout.Button("창을 봤다(비춤)")) Later(() => NightRun.Send(JudgeSignal.Beam(FinaleWatch.WindowTarget, 0.1f)));
+        GUILayout.EndHorizontal();
+
+        // 역설·변조(10단계).
+        ParadoxRun pr = NightRun.Paradox;
+        string prState = pr.RuleId == null ? "없음" : pr.RuleId + " " + pr.Pattern + (pr.Plan.WillSend ? "" : " (보류)") + " · " + (pr.SafeRead ? "안전한 읽기 완료" : pr.Sent ? "보냄 " + Mathf.RoundToInt(pr.Progress * 100f) + "%" : "대기");
+        GUILayout.Label("<b>역설·변조(10단계)</b>  " + Escape(prState) + "  <color=#999>" + Escape(pr.Plan.Report) + "</color>", _rich);
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("문자 보내기:", GUILayout.ExpandWidth(false));
+        IReadOnlyList<RuleDef> deck = NightRun.Program.Deck;
+        for (int i = 0; i < deck.Count; i++)
+        {
+            ParadoxEntry e = ParadoxCatalog.Find(deck[i].Id);
+            if (e == null || !e.HasMessage) continue;
+            string rid = deck[i].Id;
+            if (GUILayout.Button(rid, GUILayout.ExpandWidth(false))) Later(() => Log(NightRun.DebugSendParadox(rid) ? "역설 문자 " + rid : "보낼 수 없음(" + rid + ")"));
+        }
+
+        if (GUILayout.Button("안전한 읽기 완료", GUILayout.ExpandWidth(false))) Later(() => Log(NightRun.DebugSafeRead() ? "안전한 읽기 완료" : "보낸 문자가 없음"));
+        GUILayout.EndHorizontal();
+
+        UnavoidableRun ur = NightRun.Unavoidable;
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("<b>회피 불가</b>  " + Escape(ur.Status) + (NightRun.EmptyRoomChannel >= 0 ? "  <color=#999>빈 방 채널 CAM0" + (NightRun.EmptyRoomChannel + 1) + "</color>" : string.Empty), _rich);
+        if (GUILayout.Button("지금 걸기", GUILayout.ExpandWidth(false))) Later(() => Log(NightRun.DebugStageUnavoidable() ? "회피 불가 역설을 걸었습니다" : "오늘 회피 불가 역설이 없거나 이미 걸림"));
         GUILayout.EndHorizontal();
 
         TensionDirector t = NightRun.Tension;
@@ -510,6 +563,17 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         });
         GUILayout.EndHorizontal();
 
+        DrawFinaleMobs();
+
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("가짜 놀람(여기서, 예산 안 씀):", _small, GUILayout.Width(170f));
+        foreach (string fake in TensionDirector.FakeScares)
+        {
+            string id = fake;
+            if (GUILayout.Button(FakeName(id))) Later(() => Log(NightRun.DebugForceFake(id) ? "가짜 놀람: " + FakeName(id) : "가짜 놀람 실패: " + id));
+        }
+        GUILayout.EndHorizontal();
+
         GUILayout.Space(6f);
         GUILayout.Label("<b>조우 15개</b>  [이동+실행] = 그 공간으로 옮긴 뒤 전조 2초 → 대면", _rich);
         foreach (EncounterDef e in ProgramCatalog.AllEncounters)
@@ -548,7 +612,10 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         }
 
         // 옮긴 뒤 센서가 새 자리·공간을 한두 번 샘플할 때까지 기다린다(0.1초 샘플) — 바로 실행하면 옛 자리로 판정한다.
-        TeleportToSpace(s.Space);
+        SpaceId room = s.ExactSpace != SpaceId.None ? s.ExactSpace : s.Space;
+        StageAnchor fixedAt = StageAnchor.Find(s.StageAnchor);
+        if (fixedAt != null) TeleportToView(fixedAt, room);   // 고정 자리 몹은 그 자리가 보이는 곳으로.
+        else TeleportToSpace(room);
         _afterSettle = run;
         _settleAt = Time.unscaledTime + 0.35f;
         _settleFrame = Time.frameCount;
@@ -635,7 +702,7 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
             return;
         }
 
-        TeleportNear(t.AnchorPosition, space, 1.6f);
+        TeleportNear(t.AnchorPosition, space, 1.2f);   // 보고 가능 거리(2m) 안 — 1.6m는 책상에 막히면 2m 밖에 섰다(42차)
     }
 
     private void TeleportToSpace(SpaceId space)
@@ -658,6 +725,138 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
 
         Teleport(spot, null);
         Log("이동 → " + SpaceName(space));
+    }
+
+    /// <summary>고정 연출 자리가 보이는 곳(자리 앞 <see cref="StageAnchor.DebugViewDistance"/>m)으로 옮기고 그쪽을 보게 한다.</summary>
+    // ── 피날레 몹(배역표 FinaleCast) ─────────────────────────
+
+    /// <summary>피날레 배역마다 [세우기/치우기]와 비트 버튼. 팀원 프리팹을 배역표에 넣고 여기서 바로 틀어 본다.</summary>
+    private void DrawFinaleMobs()
+    {
+        // 붙잡힘 장면(연출표 CaptureCast) — 재시작·카드 없이 장면만.
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("붙잡힘 장면 미리 보기(" + _captureRepeat + "회차):", _small, GUILayout.Width(220f));
+        foreach (FearAxis axis in new[] { FearAxis.Auditory, FearAxis.Illuminance, FearAxis.Layout })
+        {
+            FearAxis a = axis;
+            CaptureCastSO.Entry e = CaptureCastSO.Load().Get(a);
+            if (GUILayout.Button(CaptureCastSO.Label(a) + (e.prefab != null ? "" : "(기본)"))) Later(() =>
+            {
+                CaptureDirector cd = CaptureDirector.Active;
+                if (cd == null || !cd.Preview(a, _captureRepeat))
+                {
+                    Log("붙잡힘 장면 미리 보기 실패(연출기 없음 또는 진행 중)");
+                    return;
+                }
+
+                StartCoroutine(LogWhenDone(cd));
+            });
+        }
+
+        if (GUILayout.Button("회차 바꾸기")) _captureRepeat = _captureRepeat % 3 + 1;
+        GUILayout.EndHorizontal();
+
+        DirectionStage stage = DirectionStage.Active;
+        foreach (FinaleRole role in new[] { FinaleRole.WindowMan, FinaleRole.SeatFigure })
+        {
+            FinaleRole r = role;
+            FinaleMob mob = stage != null ? stage.FinaleOf(r) : null;
+            string state = mob == null ? "없음" : (mob.HasArt ? "아트" : "대역") + " · " + FinaleBeats.Label(mob.CurrentBeat) + (mob.IsBusy ? "…" : string.Empty);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("피날레 " + FinaleBeats.Label(r) + " (" + state + "):", _small, GUILayout.Width(220f));
+            if (GUILayout.Button(mob == null ? "세우기" : "치우기")) Later(() => ToggleFinale(r));
+            foreach (FinaleBeat beat in FinaleBeats.For(r))
+            {
+                FinaleBeat b = beat;
+                if (GUILayout.Button(FinaleBeats.Label(b))) Later(() => PlayFinale(r, b));
+            }
+
+            GUILayout.EndHorizontal();
+        }
+    }
+
+    private int _captureRepeat = 1;
+
+    private System.Collections.IEnumerator LogWhenDone(CaptureDirector cd)
+    {
+        yield return null;
+        while (cd != null && cd.IsPlaying) yield return null;
+        if (cd != null) Log("붙잡힘 장면: " + cd.LastScene);
+    }
+
+    private FinaleMob EnsureFinale(FinaleRole r, bool teleport)
+    {
+        DirectionStage stage = DirectionStage.Active;
+        if (stage == null) return null;
+        FinaleMob mob = stage.FinaleOf(r);
+        if (mob != null) return mob;
+
+        mob = stage.StageFinale(r);
+        if (mob == null)
+        {
+            Log("피날레 " + FinaleBeats.Label(r) + ": 씬에 자리가 없습니다");
+            return null;
+        }
+
+        mob.BeatFinished += (m, b) => Log("피날레 " + m.LastLog);
+        mob.Cued += (m, cue) => Log("피날레 " + FinaleBeats.Label(m.Role) + " 신호: " + cue);
+        if (teleport)
+        {
+            StageAnchor a = StageAnchor.Find(FinaleCastSO.Load().Get(r).anchorId);
+            if (a != null) TeleportToView(a, SpaceId.SecurityRoom);
+        }
+
+        Log("피날레 " + FinaleBeats.Label(r) + " 세움 — " + mob.LastLog);
+        return mob;
+    }
+
+    private void ToggleFinale(FinaleRole r)
+    {
+        DirectionStage stage = DirectionStage.Active;
+        if (stage == null) return;
+        if (stage.FinaleOf(r) != null)
+        {
+            stage.ClearFinale(r);
+            Log("피날레 " + FinaleBeats.Label(r) + " 치움");
+            return;
+        }
+
+        EnsureFinale(r, true);
+    }
+
+    private void PlayFinale(FinaleRole r, FinaleBeat b)
+    {
+        FinaleMob mob = EnsureFinale(r, false);
+        if (mob == null) return;
+        if (!mob.Supports(b)) Log("피날레 " + FinaleBeats.Label(r) + " · " + FinaleBeats.Label(b) + ": Animator에 없음 — 건너뜀");
+        mob.Play(b);
+    }
+
+    private void TeleportToView(StageAnchor anchor, SpaceId space)
+    {
+        SpaceZones zones = FindAnyObjectByType<SpaceZones>();
+        Bounds box;
+        if (zones == null || !zones.TryGetSpaceBox(space, out box))
+        {
+            TeleportToSpace(space);
+            return;
+        }
+
+        Vector3 f = anchor.transform.forward;
+        f.y = 0f;
+        if (f.sqrMagnitude < 0.01f) f = Vector3.forward;
+        Vector3 want = anchor.transform.position + f.normalized * anchor.DebugViewDistance;
+        Vector3 spot;
+        if (!FreeSpot(want, box, 0f, out spot))
+        {
+            TeleportToSpace(space);
+            return;
+        }
+
+        Vector3 look = anchor.transform.position - spot;
+        look.y = 0f;
+        Teleport(spot, Mathf.Atan2(look.x, look.z) * Mathf.Rad2Deg);
+        Log("이동 → " + SpaceName(space) + " (" + anchor.AnchorId + " 앞)");
     }
 
     private void TeleportNear(Vector3 target, SpaceId space, float distance)
@@ -763,6 +962,18 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
     }
 
     // ── 도구 ───────────────────────────────────────────────
+
+    private static string FakeName(string id)
+    {
+        switch (id)
+        {
+            case "fake.locker.rattle": return "덜컹이는 사물함";
+            case "fake.locker.row": return "열려 있는 사물함";
+            case "fake.flashlight.flicker": return "손전등 깜빡임";
+            case TensionDirector.FakeBugs: return "벌레 떼";
+            default: return id;
+        }
+    }
 
     private static string SpaceName(SpaceId s)
     {

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = System.Random;
@@ -122,6 +122,12 @@ namespace NightDuty
         /// <summary>가짜 놀람 간격 최대(초).</summary>
         public const float FakeGapMax = 150f;
 
+        /// <summary>판정이 열린(00:16) 뒤 첫 가짜 놀람까지 최소(초).</summary>
+        public const float FirstFakeMin = 4f;
+
+        /// <summary>판정이 열린 뒤 첫 가짜 놀람까지 최대(초).</summary>
+        public const float FirstFakeMax = 14f;
+
         /// <summary>같은 가짜 놀람의 밤당 상한.</summary>
         public const int FakePerId = 2;
 
@@ -132,7 +138,16 @@ namespace NightDuty
         public const float ForcedPresenceSeconds = 60f;
 
         /// <summary>가짜 놀람 목록.</summary>
-        public static readonly string[] FakeScares = { "fake.locker.rattle", "fake.locker.row", "fake.flashlight.flicker" };
+        public static readonly string[] FakeScares = { "fake.locker.rattle", "fake.locker.row", "fake.flashlight.flicker", FakeBugs };
+
+        /// <summary>벌레 떼(김진선님 BugSwarm, 2026-10-02 민 추가) — 천장에서 쏟아진다. <see cref="BugSpaces"/>에서만.</summary>
+        public const string FakeBugs = "fake.bugs";
+
+        /// <summary>벌레 떼가 떨어질 수 있는 방(정규화 전): 1-3 교실(뒤 창고 포함) · 화장실 · 도서관.</summary>
+        public static readonly SpaceId[] BugSpaces = { SpaceId.Classroom_1_3, SpaceId.Toilet, SpaceId.Library };
+
+        /// <summary>그 방에 이만큼(초) 머문 뒤에만 벌레 떼를 건다 — 들어서자마자 쏟아지지 않게.</summary>
+        public const float BugDwellSeconds = 6f;
 
         private readonly NightProgram _program;
         private readonly int _day;
@@ -149,6 +164,7 @@ namespace NightDuty
         private int _restarts;
         private float _minute;
         private SpaceId _space = SpaceId.None;
+        private SpaceId _exact = SpaceId.None;   // 정규화 전 방(1-1/1-3 교실 구분). 고정 자리 조우의 방아쇠용.
         private float _spaceSince;
         private bool _hasPose;
         private Vector3 _feet;
@@ -162,6 +178,8 @@ namespace NightDuty
         private int _fakesUsed;
         private int _encountersDone;
         private string _lastNote = string.Empty;
+        private readonly HashSet<string> _held = new HashSet<string>(StringComparer.Ordinal);
+        private string _gateRule = string.Empty;
 
         /// <summary>그날 편성으로 만든다.</summary>
         public TensionDirector(NightProgram program, int day, int restarts = 0, Random rng = null)
@@ -186,11 +204,69 @@ namespace NightDuty
                 _rules.Add(new RuleTriggerRun { Script = script, NeedDwell = Range(script.DwellMin, script.DwellMax) });
             }
 
-            _nextFake = Range(FakeGapMin * 0.5f, FakeGapMax * 0.5f);
+            // 44차: 출근(00:00~00:16, 실시간 1분)은 조용히 두되, 판정이 열리면 곧 첫 가짜 놀람 — 전에는 첫 것이 30~75초 뒤로 잡혀 출근 뒤 한참 비었다.
+            _nextFake = NightClock.RealSecondsAt(NightClock.JudgingStart) + Range(FirstFakeMin, FirstFakeMax);
         }
 
         /// <summary>연출 알림(대역·소등·소리·로그).</summary>
         public event Action<DirectionEvent> Emitted;
+
+        // ── 10단계: 점검과 맞물린 단서 · 회피 불가 역설 ──────────────────
+
+        /// <summary>「나가라」 신호형 수칙(S2·L2·T1) — 평소에는 그 공간 점검을 끝냈거나 그날 그 공간 점검이 없을 때만 울린다(최종 기획서 「밤중 발동」).</summary>
+        public static readonly string[] ExitSignalRules = { "S2", "L2", "T1" };
+
+        /// <summary>그 공간에 아직 보고하지 않은 점검이 있는지(NightRun이 넣는다). null이면 「나가라」 문을 걸지 않는다(옛 동작·시험).</summary>
+        public Func<SpaceId, bool> InspectionPendingIn { get; set; }
+
+        /// <summary>그날의 빈 방 채널(<c>cctv.chN</c>) — K2 단서가 늘 이 채널을 가리킨다. 비면 지금 보지 않는 채널 하나를 고른다(옛 동작).</summary>
+        public string EmptyRoomChannel { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 그날 회피 불가 역설을 건다(밤 시작에 한 번). 쌍의 「나가라」 수칙은 점검이 남아도 울리고(문을 연다),
+        /// 둘째 조우(<see cref="UnavoidableDef.ChainEncounter"/>)는 제 슬롯에서 따로 걸지 않는다 — <see cref="ChainEncounter"/>로만.
+        /// </summary>
+        public void SetUnavoidable(UnavoidableDef def)
+        {
+            _held.Clear();
+            _gateRule = string.Empty;
+            if (def == null) return;
+            if (!string.IsNullOrEmpty(def.ChainEncounter)) _held.Add(def.ChainEncounter);
+            if (!string.IsNullOrEmpty(def.GateRule)) _gateRule = def.GateRule;
+            Note(def.Id, "회피 불가 역설 편성(" + (def.Real ? "진짜" : "가짜") + ")");
+        }
+
+        /// <summary>
+        /// 그 조우를 지금 곧장 대면으로 건다(회피 불가 역설의 둘째 조우). 전조·헛예고·예산 없이, <b>진행 중인 다른 조우를 끊지 않는다</b>.
+        /// 대본이 없으면 false.
+        /// </summary>
+        public bool ChainEncounter(string encounterId)
+        {
+            EncounterScript script = EncounterScripts.Find(encounterId);
+            EncounterDef def = ProgramCatalog.Encounter(encounterId);
+            if (script == null || def == null) return false;
+
+            for (int i = 0; i < _runs.Count; i++)
+            {
+                EncounterRun held = _runs[i];
+                if (held.Def.Id == encounterId && held.State == EncounterRunState.Waiting) held.State = EncounterRunState.Done;   // 제 슬롯 몫은 이것으로 갈음
+            }
+
+            EncounterRun run = new EncounterRun { Slot = EncounterSlot.A, Def = def, Script = script, Forced = true };
+            _runs.Add(run);
+            _held.Remove(encounterId);
+            Note(encounterId, "회피 불가 역설 — 겹쳐 건다");
+            run.Point = PointFor(script);
+            Confront(run);
+            return true;
+        }
+
+        private bool ExitGateBlocks(RuleTriggerScript s)
+        {
+            if (InspectionPendingIn == null || Array.IndexOf(ExitSignalRules, s.RuleId) < 0) return false;
+            if (s.RuleId == _gateRule) return false;   // 회피 불가 밤: 점검이 남아도 울린다
+            return InspectionPendingIn(s.Space);
+        }
 
         /// <summary>디렉터 시각(실제 초, Tick의 누적).</summary>
         public float Now { get; private set; }
@@ -220,6 +296,12 @@ namespace NightDuty
         public SpaceId Space
         {
             get { return _space; }
+        }
+
+        /// <summary>정규화 전 방(1-1/1-3 교실 구분).</summary>
+        public SpaceId ExactSpace
+        {
+            get { return _exact; }
         }
 
         /// <summary>쓴 가짜 놀람 수.</summary>
@@ -286,6 +368,7 @@ namespace NightDuty
             {
                 case SignalKind.SpaceEntered:
                     _space = SpaceIds.Canonical(s.Space);
+                    _exact = s.Space;
                     _spaceSince = Now;
                     _walk = 0f;
                     break;
@@ -294,6 +377,7 @@ namespace NightDuty
                     if (_space == left)
                     {
                         _space = SpaceId.None;
+                        _exact = SpaceId.None;
                         _spaceSince = Now;
                     }
 
@@ -370,9 +454,9 @@ namespace NightDuty
             switch (s.Trigger)
             {
                 case EncounterTrigger.EnterSpace:
-                    return _space == s.Space;
+                    return InScriptSpace(s);
                 case EncounterTrigger.DwellInSpace:
-                    return _space == s.Space && (lastCall || Now - _spaceSince >= s.Dwell);
+                    return InScriptSpace(s) && (lastCall || Now - _spaceSince >= s.Dwell);
                 case EncounterTrigger.CorridorWalk:
                     return _space == SpaceId.Corridor && (lastCall || _walk >= s.Dwell);
                 case EncounterTrigger.ViewingCctv:
@@ -393,6 +477,12 @@ namespace NightDuty
             {
                 EncounterRun r = _runs[i];
                 if (r.State != EncounterRunState.Waiting || Now < r.RetryAt || !SlotOpen(r, minute)) continue;
+                if (_held.Contains(r.Def.Id))
+                {
+                    r.Waiting = "회피 불가 역설의 둘째 조우 — 겹칠 때만";
+                    continue;
+                }
+
 
                 if (!Triggered(r, minute))
                 {
@@ -425,7 +515,8 @@ namespace NightDuty
             }
 
             float scale = DirectorMoods.ForeshadowScale(Mood);
-            if (!r.Forced)
+            // 헛예고는 조우마다 한 번까지 — 한 번 속인 뒤에는 진짜가 온다(43차 시뮬: 같은 조우의 헛예고가 26초 사이로 두 번 연달아 나와 김이 샜다).
+            if (!r.Forced && r.FalseCount == 0)
             {
                 float pFalse = (auditoryShown >= Band.Band3 ? 0.4f : 0.3f) * DirectorMoods.FalseScale(Mood);
                 if (_rng.NextDouble() < pFalse)
@@ -537,8 +628,17 @@ namespace NightDuty
             return minute >= to;
         }
 
+        /// <summary>대본의 방에 있는가. <see cref="EncounterScript.ExactSpace"/>가 있으면 그 방(정규화 전)이어야 한다.</summary>
+        private bool InScriptSpace(EncounterScript s)
+        {
+            if (_space != s.Space) return false;
+            return s.ExactSpace == SpaceId.None || _exact == s.ExactSpace;
+        }
+
         private Vector3 PointFor(EncounterScript s)
         {
+            Vector3 fixedPoint;
+            if (s.StageAnchor.Length > 0 && StagePoints.TryGet(s.StageAnchor, out fixedPoint)) return fixedPoint;   // 씬이 정한 고정 자리.
             if (!_hasPose) return Vector3.zero;
             float rad = _yaw * Mathf.Deg2Rad;
             Vector3 fwd = new Vector3(Mathf.Sin(rad), 0f, Mathf.Cos(rad));
@@ -574,7 +674,12 @@ namespace NightDuty
         private bool RuleReady(RuleTriggerRun r)
         {
             RuleTriggerScript s = r.Script;
-            if (s.WhileViewingCctv) return ViewingCctv && Now - _cctvSince >= r.NeedDwell;
+            if (ExitGateBlocks(s)) return false;
+            if (s.WhileViewingCctv)
+            {
+                if (EmptyRoomChannel.Length > 0 && _channel == EmptyRoomChannel) return false;   // 빈 방 채널을 보는 중에는 그 채널을 가리키지 않는다
+                return ViewingCctv && Now - _cctvSince >= r.NeedDwell;
+            }
 
             if (s.Zone.Length > 0)
             {
@@ -589,7 +694,7 @@ namespace NightDuty
         {
             RuleTriggerScript s = r.Script;
             string target = s.Target;
-            if (target == "cctv") target = OtherChannel();
+            if (target == "cctv") target = EmptyRoomChannel.Length > 0 ? EmptyRoomChannel : OtherChannel();
             string cue = target.Length > 0 ? s.Cue + "@" + target : s.Cue;
 
             r.SentCue = cue;
@@ -659,6 +764,7 @@ namespace NightDuty
             List<string> open = new List<string>();
             foreach (string id in FakeScares)
             {
+                if (!FakeAllowedHere(id)) continue;
                 int n;
                 _fakeCount.TryGetValue(id, out n);
                 if (n < FakePerId) open.Add(id);
@@ -673,6 +779,24 @@ namespace NightDuty
             _fakeCount[pick] = used + 1;
             _fakesUsed++;
             Emit(DirectionEventKind.FakeScare, DirectionPhase.None, pick, string.Empty, _space, 0, _feet, 0f, string.Empty);
+        }
+
+        /// <summary>
+        /// 이 가짜 놀람을 지금 자리에서 걸 수 있는가. 벌레 떼만 조건이 있다: <see cref="BugSpaces"/>의 방에 <see cref="BugDwellSeconds"/>초 이상 있고,
+        /// 그 방에 조우(존재형 포함)가 서 있지 않을 것 — 천장 다리·소녀·노란 얼굴 옆에 벌레가 쏟아져 시선을 끌면 응시 판정이 억울해진다.
+        /// </summary>
+        private bool FakeAllowedHere(string id)
+        {
+            if (id != FakeBugs) return true;
+            if (Array.IndexOf(BugSpaces, _exact) < 0 || Now - _spaceSince < BugDwellSeconds) return false;
+            for (int i = 0; i < _runs.Count; i++)
+            {
+                EncounterRun r = _runs[i];
+                if (r.State == EncounterRunState.Waiting || r.State == EncounterRunState.Done || r.State == EncounterRunState.Missed) continue;
+                if (SpaceIds.Canonical(r.Script.Space) == _space) return false;
+            }
+
+            return true;
         }
 
         // ── 중단·재시작·디버그 ─────────────────────────────────
@@ -746,6 +870,7 @@ namespace NightDuty
             _lastRuleCue = float.NegativeInfinity;
             _nextFake = Now + Range(FakeGapMin * 0.5f, FakeGapMax * 0.5f);
             _space = SpaceId.None;
+            _exact = SpaceId.None;
             _zones.Clear();
             _walk = 0f;
             _hasPose = false;
@@ -766,6 +891,15 @@ namespace NightDuty
             _runs.Add(run);
             Note(encounterId, "디버그 강제 실행");
             Begin(run, Band.Band0);
+            return true;
+        }
+
+        /// <summary>디버그: 그 가짜 놀람을 지금 건다(예산·간격·방 조건을 건너뜀, 쓴 횟수에도 넣지 않음). 목록에 없으면 false.</summary>
+        public bool ForceFake(string fakeId)
+        {
+            if (Array.IndexOf(FakeScares, fakeId) < 0) return false;
+            Note(fakeId, "디버그 강제 실행");
+            Emit(DirectionEventKind.FakeScare, DirectionPhase.None, fakeId, string.Empty, _space, 0, _feet, 0f, string.Empty);
             return true;
         }
 

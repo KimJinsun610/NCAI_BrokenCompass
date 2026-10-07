@@ -11,7 +11,7 @@ using UnityEngine.SceneManagement;
 /// <b>2m 안에서 1초 응시</b>하면 보고 가능으로 켠다(0.2초 이내 끊김은 연속, 켜진 뒤에는 2m 안에 있는 동안 유지).
 /// 켜지는 순간 <see cref="ReadyTicked"/>(틱 소리용)를 낸다.</item>
 /// <item>보고 가능한 항목 중 가장 가까운 것이 <see cref="Focus"/>다. 태블릿을 올리면 그 항목에 바로 포커스가 간다(태블릿 UI가 읽는다).</item>
-/// <item>[정상]/[이상]은 0.5초 길게 눌러 확정한다. 태블릿을 올리지 않고 쓰는 전용 키(기본 Z = 정상, X = 이상)를 여기서 받는다.
+/// <item>[정상]/[이상]은 0.5초 길게 눌러 확정한다. 60차: 보고한 항목도 다시 겨누면(2m·1초 응시) 다른 판정 키로 바꿀 수 있다(<see cref="NightRun.ReviseInspection"/>) — 보고 전 항목이 포커스에서 먼저다. 태블릿을 올리지 않고 쓰는 전용 키(기본 Z = 정상, X = 이상)를 여기서 받는다.
 /// 태블릿 UI는 <see cref="TryReportFocused"/>를 부르면 된다(길게 누르기는 UI가 잰다).</item>
 /// <item>점검 수칙 「가까이」: 0.8m 안에서 0.3초 들여다보면 <see cref="NightRun.InspectionStartle"/>(항목마다 한 번, 판정 시간창 안에서만).
 /// 「건드리기」·「뒤로 돌아가기」는 항목별 연출 단계에서 더한다.</item>
@@ -186,13 +186,16 @@ public sealed class InspectionSensor : MonoBehaviour
 
         string best = string.Empty;
         float bestDistance = float.MaxValue;
+        string bestReported = string.Empty;   // 60차: 보고한 항목도 다시 겨누면 정정할 수 있다 — 보고 전 항목이 먼저
+        float bestReportedDistance = float.MaxValue;
 
         IReadOnlyList<InspectionAssignment> rows = board.Plan.Assignments;
         for (int i = 0; i < rows.Count; i++)
         {
             InspectionAssignment row = rows[i];
             string id = row.Id;
-            if (board.StateOf(id) != InspectionState.Pending) continue;
+            bool reported = board.StateOf(id) != InspectionState.Pending;
+            if (reported && board.IsReverse(id)) continue;   // T4 역보고가 걸린 변기는 판정이 이미 났다
 
             JudgeTarget target;
             if (!JudgeTargetRegistry.TryGet(row.Item.TargetId, out target) || target == null) continue;
@@ -215,10 +218,21 @@ public sealed class InspectionSensor : MonoBehaviour
                 NightRun.InspectionStartle(id);
             }
 
-            bool open = board.IsOpen(id, minute);
-            if (changed && r.Ready && open)
+            bool open = reported ? board.CanRevise(id, minute) : board.IsOpen(id, minute);
+            if (changed && r.Ready && open && !reported)
             {
                 Raise(ReadyTicked, id);
+            }
+
+            if (reported)
+            {
+                if (r.Ready && open && distance < bestReportedDistance)
+                {
+                    bestReported = id;
+                    bestReportedDistance = distance;
+                }
+
+                continue;
             }
 
             if (r.Ready && open && distance < bestDistance)
@@ -228,7 +242,7 @@ public sealed class InspectionSensor : MonoBehaviour
             }
         }
 
-        SetFocus(best);
+        SetFocus(best.Length > 0 ? best : bestReported);
     }
 
     // ── 전용 키 ─────────────────────────────────────────────
@@ -257,6 +271,14 @@ public sealed class InspectionSensor : MonoBehaviour
             _hold = 0f;   // 키를 바꿔 잡았으면 처음부터.
         }
 
+        // 60차: 보고한 항목은 지금과 다른 판정 키만 받는다(같은 키는 할 일이 없다).
+        InspectionState focusState = NightRun.Inspections != null ? NightRun.Inspections.StateOf(_focus) : InspectionState.Pending;
+        if (focusState != InspectionState.Pending && (focusState == InspectionState.ReportedAnomaly) == anomaly)
+        {
+            _hold = 0f;
+            return;
+        }
+
         _holdAnomaly = anomaly;
         _hold += Time.unscaledDeltaTime;
         if (_hold >= SensingRules.ReportHoldSeconds)
@@ -267,7 +289,7 @@ public sealed class InspectionSensor : MonoBehaviour
     }
 
     /// <summary>점검 대상 외곽선을 옅게 그리는 거리(m, 수평). 벽 너머는 깊이 검사로 가려진다.</summary>
-    public const float OutlineRange = 9f;
+    public const float OutlineRange = 2.6f;   // 53차 민: 「충분히 점검 물품에 접근해야 외곽선이」 — 9m → 2.6m(보고 거리 2m 바로 바깥)
 
     /// <summary>아직 보고 가능하지 않은 점검 대상 외곽선의 진하기(보고 가능한 포커스는 1).</summary>
     public const float HintOutline = 0.65f;
@@ -304,12 +326,19 @@ public sealed class InspectionSensor : MonoBehaviour
     private InspectionReport Report(bool anomaly)
     {
         string id = _focus;
-        InspectionReport report = NightRun.ReportInspection(id, anomaly);
+        InspectionBoard board = NightRun.Inspections;
+        bool revising = board != null && board.StateOf(id) != InspectionState.Pending;
+        if (revising && (board.StateOf(id) == InspectionState.ReportedAnomaly) == anomaly)
+        {
+            return InspectionReport.Reject(id, anomaly, ReportRejection.CannotRevise);
+        }
+
+        InspectionReport report = revising ? NightRun.ReviseInspection(id, anomaly) : NightRun.ReportInspection(id, anomaly);
         if (report.Accepted)
         {
             _readiness.Remove(id);
             SetFocus(string.Empty);
-            _lastResult = (anomaly ? "[이상]" : "[정상]") + " 보고함";
+            _lastResult = (anomaly ? "[이상]" : "[정상]") + (revising ? "으로 바꿈" : " 보고함");
             _lastResultUntil = Time.unscaledTime + 1.5f;
         }
 
@@ -347,7 +376,10 @@ public sealed class InspectionSensor : MonoBehaviour
             {
                 InspectionItem item = InspectionCatalog.Find(_focus);
                 string name = item != null ? item.Name : _focus;
-                text = name + "    [" + normalKey + "] 정상   [" + anomalyKey + "] 이상";
+                InspectionState st = NightRun.Inspections != null ? NightRun.Inspections.StateOf(_focus) : InspectionState.Pending;
+                if (st == InspectionState.Pending) text = name + "    [" + normalKey + "] 정상   [" + anomalyKey + "] 이상";
+                else if (st == InspectionState.ReportedAnomaly) text = name + " — [이상] 보고함    [" + normalKey + "] 정상으로 바꾸기";   // 60차 정정
+                else text = name + " — [정상] 보고함    [" + anomalyKey + "] 이상으로 바꾸기";
                 progress = _hold > 0f ? HoldProgress : 0f;
             }
             else if (Time.unscaledTime < _lastResultUntil)

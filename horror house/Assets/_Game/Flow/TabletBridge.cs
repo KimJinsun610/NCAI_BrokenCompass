@@ -61,6 +61,7 @@ public sealed class TabletBridge : MonoBehaviour
     private string _checklistText;
     private InspectionDispatcher _ordersFor;
     private readonly Dictionary<string, string> _orderTexts = new Dictionary<string, string>();
+    private readonly Dictionary<string, string> _dutyMessages = new Dictionary<string, string>();   // 문자 ID → 지시 ID(W1~W6)
     private AudioSource _tickSource;
 
     [Tooltip("비워 두면 씬에서 자동으로 찾는다.")]
@@ -135,6 +136,7 @@ public sealed class TabletBridge : MonoBehaviour
     private void OnEnable()
     {
         EventBus.MessageSent += OnMessageSent;
+        EventBus.DutySent += OnDutySent;
         EventBus.SafeReadConfirmed += OnSafeReadConfirmed;
         EventBus.InspectionReported += OnInspectionReported;
         EventBus.InspectionOrdered += OnInspectionOrdered;
@@ -146,6 +148,7 @@ public sealed class TabletBridge : MonoBehaviour
     private void OnDisable()
     {
         EventBus.MessageSent -= OnMessageSent;
+        EventBus.DutySent -= OnDutySent;
         EventBus.SafeReadConfirmed -= OnSafeReadConfirmed;
         EventBus.InspectionReported -= OnInspectionReported;
         EventBus.InspectionOrdered -= OnInspectionOrdered;
@@ -202,7 +205,28 @@ public sealed class TabletBridge : MonoBehaviour
     {
         SyncChecklist(false);
         SyncOrders();
+        RemoveRewoundDuties();
         ReloadDocuments();
+    }
+
+    /// <summary>
+    /// 54차 QA: 재시작이 되돌린 [근무 지시] 문자를 지운다 — 되돌린 스냅샷에서 끝나지 않은 지시의 지시·답장(<see cref="NightRun.DutyRecordStands"/>).
+    /// 점검 지시 문자를 되돌리는 것(<see cref="RemoveOrders"/>)과 같다. 역설 문자는 받은 채로 남는다(코어 설계).
+    /// </summary>
+    private void RemoveRewoundDuties()
+    {
+        if (messages == null || _dutyMessages.Count == 0) return;
+        List<string> drop = new List<string>();
+        foreach (KeyValuePair<string, string> kv in _dutyMessages)
+        {
+            if (!NightRun.DutyRecordStands(kv.Value)) drop.Add(kv.Key);
+        }
+
+        for (int i = 0; i < drop.Count; i++)
+        {
+            messages.Remove(drop[i]);
+            _dutyMessages.Remove(drop[i]);
+        }
     }
 
     /// <summary>수칙 얼룩·재입실 불가 등 태블릿 글이 바뀌었다 — 다시 읽는다.</summary>
@@ -410,6 +434,19 @@ public sealed class TabletBridge : MonoBehaviour
     /// 역설 문자 한 통. 태블릿은 이것이 무슨 카드의 짝인지 알 필요가 없다 — 본문만 받는다.
     /// <para><b>카드 ID를 화면에 적지 않는다</b>(설계 금기 2.8). 제작자용 ID는 로그에만 남긴다.</para>
     /// </summary>
+    /// <summary>
+    /// 54차 [근무 지시] 문자 — 지시·완료 답장·미완료 답장. 역설 문자와 달리 글리치 없이(회사의 정식 업무 문자라 깨지지 않는다) 문자함에 싣는다.
+    /// </summary>
+    private void OnDutySent(ParadoxMessage message)
+    {
+        if (!Bind() || messages == null) return;
+        if (string.IsNullOrEmpty(message.Text)) return;
+        _messageSerial++;
+        string id = message.ParadoxId + "." + _messageSerial;
+        messages.Add(id, message.Text);
+        _dutyMessages[id] = message.CardId;
+    }
+
     private void OnMessageSent(ParadoxMessage message)
     {
         if (!Bind() || messages == null) return;

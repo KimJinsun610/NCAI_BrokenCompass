@@ -1,4 +1,4 @@
-using NightDuty;
+﻿using NightDuty;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -48,6 +48,12 @@ public sealed class FlashlightRelay : MonoBehaviour
     public bool IsOn
     {
         get { return _isOn; }
+    }
+
+    /// <summary>켜고 끄는 손전등 오브젝트(없으면 null). 56차 배터리가 빛 세기와 다 닳은 손전등의 헛빛에 쓴다.</summary>
+    public GameObject Root
+    {
+        get { return flashlightRoot; }
     }
 
     /// <summary>씬에 하나뿐인 발신기(있으면). 다른 코드가 상태를 읽을 때 쓴다.</summary>
@@ -182,9 +188,30 @@ public sealed class FlashlightRelay : MonoBehaviour
         }
     }
 
-    /// <summary>손전등을 뒤집는다(플레이어 조작과 같은 경로).</summary>
+    /// <summary>
+    /// 켜려 했지만 켜지지 않았다(56차 배터리 — 다 닳았거나 갈아 끼우는 중). 딱깍 소리·희미한 빛 한 번은 <see cref="FlashlightPower"/>가 낸다.
+    /// </summary>
+    public static event System.Action DryClicked;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetDryClick()
+    {
+        DryClicked = null;
+    }
+
+    /// <summary>
+    /// 손전등을 뒤집는다(플레이어 조작과 같은 경로). 56차: 배터리가 다 닳았거나 갈아 끼우는 중이면 켜지지 않는다 —
+    /// 연출이 <see cref="SetOn"/>으로 켜는 것(붙잡힘 장면 등)은 막지 않는다.
+    /// </summary>
     public void Toggle()
     {
+        if (!_isOn && !FlashlightPower.CanTurnOn)
+        {
+            System.Action dry = DryClicked;
+            if (dry != null) dry();
+            return;
+        }
+
         SetOn(!_isOn);
     }
 

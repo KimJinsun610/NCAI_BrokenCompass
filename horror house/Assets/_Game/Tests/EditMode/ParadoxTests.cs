@@ -672,6 +672,50 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void 끝내_오지_않은_조우의_수칙은_태블릿에서_거두고_재시작하면_돌아온다()
+        {
+            // 57차(민: 「조우가 등장하지 않으면, 관련 수칙이 안 나오게 해줘」).
+            _clock = 30;
+            TestKit.BeginProgramNight(2, () => _clock);
+            EncounterRun run = null;
+            foreach (EncounterRun r in NightRun.Tension.Runs)
+            {
+                if (r.Slot == EncounterSlot.C || r.Def.ResponseRule.Length == 0 || r.Script.Trigger == EncounterTrigger.GazeTarget) continue;
+                run = r;
+                break;
+            }
+
+            Assert.IsNotNull(run, "2일차에는 슬롯 A·B 조우가 있다");
+            string rule = run.Def.ResponseRule;
+            Assert.IsFalse(string.IsNullOrEmpty(CardText(rule)), rule + "는 밤 시작에 보인다");
+
+            _clock = (int)NightClock.JudgingEnd - 1;
+            NightRun.Tick(0.1f);
+            Assert.AreEqual(EncounterRunState.Waiting, run.State, "슬롯이 끝나도 03:30까지는 기다린다");
+            Assert.IsFalse(string.IsNullOrEmpty(CardText(rule)));
+
+            _clock = (int)NightClock.JudgingEnd;
+            NightRun.Tick(0.1f);
+            Assert.AreEqual(EncounterRunState.Missed, run.State);
+            CollectionAssert.Contains(new List<string>(NightRun.VoidedRules), rule);
+            Assert.AreEqual(string.Empty, CardText(rule), "오지 않은 조우의 수칙은 거둔다");
+
+            NightRun.DebugForceCapture(FearAxis.Auditory);
+            NightRun.RestartAfterCapture();
+            Assert.IsFalse(string.IsNullOrEmpty(CardText(rule)), "재시작한 밤에는 다시 보인다");
+        }
+
+        private static string CardText(string ruleId)
+        {
+            foreach (RuleSO card in NightRun.TodayDeck)
+            {
+                if (card.CardId == ruleId) return card.PlayerText;
+            }
+
+            return null;
+        }
+
+        [Test]
         public void 근무일지_표시는_불가피가_지시를_따름보다_앞선다()
         {
             DutyLogEntry e = new DutyLogEntry(1, "S2", SpaceId.ScienceRoom, "x", RuleVerdict.Violated, true, string.Empty, true);

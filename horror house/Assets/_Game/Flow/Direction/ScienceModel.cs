@@ -6,11 +6,11 @@ using UnityEngine.SceneManagement;
 /// 과학실의 몬스터 인체 모형(2026-10-04 42차, 민: 「첫날부터 정지한 모습으로 과학실에 있다가, 점점 움직이다가 복도에서 급습」).
 /// 근무 내내 과학실에 서 있는 모형 하나(<c>mob.dummy.stand</c>)를 세우고, 밤마다·과학실을 나갈 때마다 한 칸씩 자리를 옮긴다.
 /// <list type="bullet">
-/// <item>자리 0 테이프 안, 두 문 사이(복도 쪽)를 보고 선 정지(1일차 — 「모형의 정상 위치 학습」) → 1 테이프 안에서 플레이어가 들어온 문을 봄 →
+/// <item>자리 0 서쪽 문 바로 옆 북서 구석에서 교실 안을 보고 선 정지(1일차 — 「모형의 정상 위치 학습」, 57차 민 스크린샷) → 1 테이프 안에서 플레이어가 들어온 문을 봄 →
 /// 2 테이프 밖 동쪽 문 안쪽 구석, 문을 봄 → 3 과학실 앞 복도 끝(동쪽 끝)에서 복도를 봄.</item>
-/// <item>자리 진행 규칙은 Core <see cref="ModelProgress"/>. 그 밤의 시작 자리 = max(일차 자리 1일 0·2일 1·3일~ 2, 구간 자리 조도·배치 중 큰 쪽이 1이면 1, 2 이상이면 2).
+/// <item>자리 진행 규칙은 Core <see cref="ModelProgress"/>. 그 밤의 시작 자리 = max(일차 자리 1일 0·2일 1·3일~ 2, 배치 구간이 1이면 1, 2 이상이면 2 — 56차부터 배치만).
 /// 1일차는 움직이지 않는다. 2일차부터 플레이어가 과학실을 <b>나갈 때마다</b>(보지 않을 때) 한 칸씩, 그 밤 최대 자리까지 옮긴다.</item>
-/// <item>최대 자리는 평소 2(과학실 안). <b>모형 급습이 가능한 밤</b>(조도 3 + 배치 2 — 최종 기획서 「배치 3: 모형이 복도로 나올 수 있음」, 또는 그 밤 편성에 모형 급습)만 3(복도).</item>
+/// <item>최대 자리는 평소 2(과학실 안). <b>복도까지 나오는 밤</b>(배치 3 — 최종 기획서 「배치 3: 모형이 복도로 나올 수 있음」, 또는 그 밤 편성에 모형 급습)만 3(복도).</item>
 /// <item>모형 급습(<see cref="ProgramCatalog.ModelRush"/>)이 대면하면 이 모형은 사라지고(급습 대역이 대신 나온다) 그 밤에는 돌아오지 않는다.
 /// 복도 끝에 선 자(<see cref="ProgramCatalog.HallEndFigure"/>)가 나와 있는 동안에도 숨는다.</item>
 /// <item>S3 「인체 모형을 빛으로 확인하십시오」의 대상 <c>rule.S3.model</c>은 이 모형의 조준점이다 — 몸을 감싸는 단단한 응시 상자를 붙여 응시 원뿔이 잡는다.
@@ -32,6 +32,9 @@ public sealed class ScienceModel : MonoBehaviour
     private static readonly Vector3 TapeFallback = new Vector3(46.03f, 0f, 41.04f);
     private static readonly Vector3 AisleSpot = new Vector3(51.6f, 0f, 41.3f);
     private static readonly Vector3 HallSpot = new Vector3(53.3f, 0f, 46.4f);
+
+    // 57차(민: 「인체 모형은 과학실의 이 공간에 처음 위치하게」 — 서쪽 문 바로 왼쪽 구석). 벽(x 42.25 · z 43.75)에서 0.5m, 반지름 0.3 캡슐이 아무것과도 겹치지 않는 자리.
+    private static readonly Vector3 CornerSpot = new Vector3(42.75f, 0f, 43.25f);
 
     // 과학실 문(복도 쪽 벽 z = 44). 플레이어가 들어온 문을 본다.
     private static readonly Vector3 WestDoor = new Vector3(44f, 0f, 44f);
@@ -178,10 +181,9 @@ public sealed class ScienceModel : MonoBehaviour
 
     private void NewNight()
     {
-        Band i = NightRun.Shown != null ? NightRun.Shown.GetBand(FearAxis.Illuminance) : Band.Band0;
-        Band l = NightRun.Shown != null ? NightRun.Shown.GetBand(FearAxis.Layout) : Band.Band0;
+        Band l = NightRun.Shown != null ? NightRun.Shown.GetBand(FearAxis.Layout) : Band.Band0;   // 56차: 배치만(자리가 바뀌는 것은 배치의 언어)
         bool rush = NightRun.Program != null && NightRun.Program.HasEncounter(ProgramCatalog.ModelRush);
-        ModelProgress.Spots(_day, i, l, rush, out _base, out _max);
+        ModelProgress.Spots(_day, l, rush, out _base, out _max);
         _spot = _base;
         _rushed = false;
         _lastSpace = SpaceId.None;
@@ -260,8 +262,9 @@ public sealed class ScienceModel : MonoBehaviour
         switch (spot)
         {
             case 0:
-                p = tape;
-                face = (WestDoor + EastDoor) * 0.5f - tape;   // 51차(민: 「처음 등장할 때 칠판을 향해 뒤돌아 있다」): 남쪽 벽은 칠판이었다 — 문 두 개 쪽(북)을 본다
+                // 57차: 첫 자리는 북서 구석 — 교실 안(테이프 쪽)을 본다. 51차 「칠판을 향해 뒤돌아 있다」는 다시 생기지 않는다(남쪽 칠판은 등 뒤가 아니다).
+                p = CornerSpot;
+                face = tape - CornerSpot;
                 break;
             case 1:
                 p = tape;

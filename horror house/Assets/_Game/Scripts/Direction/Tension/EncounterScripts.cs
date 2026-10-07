@@ -268,7 +268,7 @@ namespace NightDuty
                 {
                     Id = ProgramCatalog.CctvPerson, Trigger = EncounterTrigger.ViewingCctv, Space = SpaceId.SecurityRoom, Dwell = 2f,
                     Cue = FinalCues.CctvPerson, Window = 10f,
-                    Note = "K1(51차): 화면 속 사람을 3초 이어서 보면 위반 + 얼굴 점프스케어. 걷지 않고 툭툭 다가온다. 화면에만 보인다(CctvOnlyVisible)."
+                    Note = "K1(52차 원래대로): 지나갈 때까지 채널을 넘기지 않는다. 걷지 않고 툭툭 화면을 가로지른다(CctvFaceScare). 3초 이어 보면 얼굴 점프스케어(3일차부터, 밤당 한 번 — 수칙이 예고하지 않음). 화면에만 보인다(CctvOnlyVisible)."
                 }
             };
 

@@ -180,12 +180,12 @@ namespace NightDuty.Tests
             string why;
             Assert.IsTrue(b.CanStart(3, false, 0f, out why));
             b.Commit(3, 0f);
-            Assert.IsFalse(b.CanStart(3, false, 89f, out why));
+            Assert.IsFalse(b.CanStart(3, false, 59f, out why));   // 59차: 밤 10분 — 간격 90 → 60, 120 → 80
             Assert.IsTrue(b.CanStart(2, false, 10f, out why), "강도 2는 간격에 걸리지 않는다");
-            Assert.IsTrue(b.CanStart(3, false, 91f, out why));
+            Assert.IsTrue(b.CanStart(3, false, 61f, out why));
             b.Commit(4, 100f);
-            Assert.IsFalse(b.CanStart(3, false, 210f, out why), "강도 4 뒤 120초");
-            Assert.IsTrue(b.CanStart(3, false, 221f, out why));
+            Assert.IsFalse(b.CanStart(3, false, 170f, out why), "강도 4 뒤 80초");
+            Assert.IsTrue(b.CanStart(3, false, 181f, out why));
             b.EndEncounter(230f, 60f);
             Assert.IsFalse(b.CanStart(1, false, 280f, out why), "조우 뒤 휴지는 강도와 무관");
             Assert.IsTrue(b.CanStart(1, false, 291f, out why));
@@ -281,14 +281,41 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 슬롯이_끝날_때까지_방아쇠가_없으면_놓침()
+        public void 슬롯이_끝날_때까지_방아쇠가_없으면_판정_끝까지_넘기고_그래도_없으면_놓침()
         {
+            // 57차(민: 2일차 수칙은 나왔는데 조우를 못 만났다): 슬롯 A·B에서 못 걸린 조우는 03:30까지 넘기고, 끝내 없으면 Missed를 알린다(수칙을 거두는 신호).
             DirectorFixture f = new DirectorFixture(1, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
+            List<string> missed = new List<string>();
+            f.Director.Missed += missed.Add;
             f.Minute = 70f;
             f.Enter(SpaceId.Library).Wait(1f);
             f.Minute = NightClock.RelaxStart;
             f.Wait(0.1f);
-            Assert.AreEqual(EncounterRunState.Missed, f.Run(ProgramCatalog.ToiletGirl).State);
+            EncounterRun run = f.Run(ProgramCatalog.ToiletGirl);
+            Assert.AreEqual(EncounterRunState.Waiting, run.State, "슬롯 A가 끝나도 아직 기다린다");
+            Assert.IsTrue(run.CarriedOver);
+            Assert.AreEqual(0, missed.Count);
+
+            f.Minute = NightClock.JudgingEnd;
+            f.Wait(0.1f);
+            Assert.AreEqual(EncounterRunState.Missed, run.State);
+            CollectionAssert.AreEqual(new[] { ProgramCatalog.ToiletGirl }, missed);
+        }
+
+        [Test]
+        public void 넘긴_조우는_다른_슬롯_시간에도_그_공간에_들어가면_헛예고_없이_시작한다()
+        {
+            DirectorFixture f = new DirectorFixture(1, 0.0, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletBlackout));
+            f.Minute = 70f;
+            f.Enter(SpaceId.Library).Wait(1f);
+            f.Minute = NightClock.RelaxStart + 1f;
+            f.Wait(0.1f);
+            Assert.IsTrue(f.Run(ProgramCatalog.ToiletBlackout).CarriedOver);
+
+            f.Minute = NightClock.Call2 + 5f;
+            f.Exit(SpaceId.Library).Enter(SpaceId.Toilet).Wait(0.5f);
+            Assert.IsFalse(f.HasPhase(ProgramCatalog.ToiletBlackout, DirectionPhase.FalseForeshadow), "넘긴 조우는 헛예고로 기회를 쓰지 않는다(rng 0이어도)");
+            Assert.IsTrue(f.HasPhase(ProgramCatalog.ToiletBlackout, DirectionPhase.Foreshadow), "들어가기만 해도(머무름 없이) 시작");
         }
 
         [Test]
@@ -510,9 +537,9 @@ namespace NightDuty.Tests
         [Test]
         public void 긴장_조절기가_뜨거우면_가짜_놀람을_쉰다()
         {
-            DirectorFixture f = new DirectorFixture(2, 0.0, null);   // 첫 가짜는 60 + 25 = 85초
+            DirectorFixture f = new DirectorFixture(2, 0.0, null);   // 첫 가짜는 40 + 17 = 57초부터(59차: 밤 10분)
             f.Minute = 30f;
-            f.Wait(59f);
+            f.Wait(56f);
             Assert.AreEqual(0, f.Director.FakesUsed);
             f.Director.Pacer.Impulse(PacerImpulse.Startle);
             f.Director.Pacer.Impulse(PacerImpulse.Startle);
@@ -522,10 +549,10 @@ namespace NightDuty.Tests
             Assert.AreEqual(75f, f.Director.Pacer.Intensity, 0.01f);
             f.Wait(5f);
             Assert.AreEqual(PacerState.Peak, f.Director.Pacer.State);
-            f.Wait(40f);   // 104초 — 첫 가짜 차례(85초)가 지났지만 해소·휴식 중
+            f.Wait(40f);   // 101초 — 첫 가짜 차례(57초)가 지났지만 해소·휴식 중
             Assert.AreEqual(0, f.Director.FakesUsed, "절정 → 해소 → 휴식 동안은 없다");
             f.Wait(60f);   // 휴식 최소 33초 + 긴장도 25 아래 → 축적
-            Assert.AreEqual(1, f.Director.FakesUsed, "휴식이 끝나면 미뤄 둔 가짜 놀람");
+            Assert.GreaterOrEqual(f.Director.FakesUsed, 1, "휴식이 끝나면 미뤄 둔 가짜 놀람(59차: 간격 30~75초라 60초 안에 둘째가 올 수도 있다)");
         }
 
         [Test]

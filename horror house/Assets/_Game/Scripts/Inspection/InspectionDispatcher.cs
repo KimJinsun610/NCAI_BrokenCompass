@@ -114,7 +114,7 @@ namespace NightDuty
         public const float OpeningDelay = 8f;
 
         /// <summary>지시 사이 최소 간격(초).</summary>
-        public const float MinGap = 20f;
+        public const float MinGap = 14f;   // 57차: 20 → 14
 
         /// <summary>조우가 끝난 뒤 지시를 쉬는 초.</summary>
         public const float AfterBusy = 10f;
@@ -135,7 +135,7 @@ namespace NightDuty
         public const float GuardRoomIdle = 10f;
 
         /// <summary>잔잔할 때 연속 지시 — 지난 지시 뒤 최소 초.</summary>
-        public const float LullGap = 60f;
+        public const float LullGap = 27f;   // 57차: 60 → 40 · 59차(밤 10분): 40 → 27
 
         /// <summary>잔잔할 때 연속 지시 — 다음 공간까지 최대 거리(m).</summary>
         public const float LullRange = 20f;
@@ -144,7 +144,13 @@ namespace NightDuty
         public const int EarlyDeadline = 100;
 
         /// <summary>남은 지시가 있으면 지난 지시 뒤 이 시간(실제 초, 게임 30분) 안에 다음 지시를 낸다(밀린 지시 1 이하일 때).</summary>
-        public const float MaxQuiet = 112f;
+        public const float MaxQuiet = 47f;   // 57차: 112 → 70 · 59차(밤 10분): 70 → 47(게임 약 19분)
+
+        /// <summary>
+        /// 받은 지시를 다 보고하면 이만큼 뒤 다음 지시(53차 민: 「점검을 기다리는 과정이 루즈하다 — 한번 점검하면 몇 초 뒤에 바로 다음」).
+        /// 시간표·지시 간격·긴장 미룸을 보지 않는다(호출 1 몫·늦은 공간·이완 구간·조우 중·문자 직후는 그대로 지킨다).
+        /// </summary>
+        public const float NextAfterReport = 4f;
 
         /// <summary>여유를 재는 끝(03:45) — 04:00 전에 다 끝낼 수 있어야 한다.</summary>
         public const int WorkDeadline = 225;
@@ -168,7 +174,8 @@ namespace NightDuty
         private readonly int _day;
         private readonly List<KeyValuePair<EncounterSlot, SpaceId>> _encounters = new List<KeyValuePair<EncounterSlot, SpaceId>>();
         private readonly List<InspectionOrder> _orders = new List<InspectionOrder>();
-        private readonly SpaceId _reserved;
+        private SpaceId _reserved;
+        private readonly List<KeyValuePair<SpaceId, float>> _later = new List<KeyValuePair<SpaceId, float>>();
 
         private readonly List<KeyValuePair<string, float>> _witness = new List<KeyValuePair<string, float>>();
         private bool _call1Done;
@@ -198,11 +205,24 @@ namespace NightDuty
                 foreach (KeyValuePair<EncounterSlot, SpaceId> kv in encounters) _encounters.Add(new KeyValuePair<EncounterSlot, SpaceId>(kv.Key, SpaceIds.Canonical(kv.Value)));
             }
 
-            _reserved = PickReserved();
+            bool fallback;
+            _reserved = PickReserved(out fallback);
+            PickLater();
+            KeepOneEarlySpace(fallback);
         }
 
         /// <summary>지시기 시각(누적 실제 초).</summary>
         public float Now { get; private set; }
+
+        /// <summary>마지막 지시·보고 뒤 흐른 실제 초(둘 다 없으면 밤 시작부터) — [근무 지시]의 공백 규칙(54차).</summary>
+        public float SinceActivity
+        {
+            get
+            {
+                float last = Math.Max(_lastReport, _lastIssue);
+                return Now - (float.IsNegativeInfinity(last) ? _begunAt : last);
+            }
+        }
 
         /// <summary>낸 지시(순서대로).</summary>
         public IReadOnlyList<InspectionOrder> Orders
@@ -214,6 +234,21 @@ namespace NightDuty
         public SpaceId Reserved
         {
             get { return _reserved; }
+        }
+
+        /// <summary>
+        /// 슬롯 B·C 조우가 걸린 방이 풀리는 밤 분(없으면 -1). 53차 플레이 점검: 보고 뒤 바로 다음 지시가 오자 B·C 조우 방의 점검이 00:10쯤 끝나
+        /// 조우 시간대(02:16~ · 03:08~)에 아무도 그 방에 가지 않았다 — 그 방은 슬롯이 열릴 때까지 아껴 둔다(호출 1 몫과 같은 생각).
+        /// </summary>
+        public float ReleaseOf(SpaceId space)
+        {
+            space = SpaceIds.Canonical(space);
+            for (int i = 0; i < _later.Count; i++)
+            {
+                if (_later[i].Key == space) return _later[i].Value;
+            }
+
+            return -1f;
         }
 
         /// <summary>마지막으로 지시를 미룬 이유(디버그 콘솔).</summary>
@@ -378,7 +413,7 @@ namespace NightDuty
                 // 빠듯하면 호출 1이 따라잡기를 겸한다(문자 두 통이 잇달아 오지 않게).
                 if (call.Count > 0 && (minute >= EarlyDeadline || Slack(minute, input.Banned) < SlackMin))
                 {
-                    foreach (string id in EarlyUnissued(input.Banned, true))
+                    foreach (string id in EarlyUnissued(minute, input.Banned, true))
                     {
                         if (!call.Contains(id)) call.Add(id);
                     }
@@ -401,7 +436,7 @@ namespace NightDuty
 
             // 4) 따라잡기 — 03:00이 지났거나 03:45까지 빠듯하다(이완 구간에는 걸지 않는다).
             bool relax = known && minute >= NightClock.RelaxStart && minute < NightClock.Call2;
-            if (known && !relax && HasEarlyUnissued(input.Banned, true))
+            if (known && !relax && HasEarlyUnissued(minute, input.Banned, true))
             {
                 bool deadline = minute >= EarlyDeadline;
                 bool tight = Slack(minute, input.Banned) < SlackMin;
@@ -409,7 +444,7 @@ namespace NightDuty
                 {
                     if (!ForcedReady(input.DirectorBusy)) return Hold("따라잡기 — 조우 끝을 기다림");
                     if (!_call1Done && minute >= NightClock.Call1) _call1Done = true;
-                    List<string> rest = EarlyUnissued(input.Banned, true);
+                    List<string> rest = EarlyUnissued(minute, input.Banned, true);
                     return Issue(OrderKind.CatchUp, whole, rest);
                 }
             }
@@ -440,8 +475,9 @@ namespace NightDuty
             if (input.DirectorBusy) return Hold("조우 중");
             if (Now - _busyEndedAt < AfterBusy) return Hold("조우 직후");
             if (Now - _lastMessage < AfterMessage) return Hold("문자 직후");
-            if (Now - _lastIssue < MinGap) return Hold("지시 간격");
-            if (input.Pacer != null && input.Pacer.IsHot)
+            bool quick = reason == QuickReason;   // 53차: 보고 뒤 바로 — 지시 간격·긴장 미룸을 건너뛴다
+            if (!quick && Now - _lastIssue < MinGap) return Hold("지시 간격");
+            if (!quick && input.Pacer != null && input.Pacer.IsHot)
             {
                 if (_hotSince < 0f) _hotSince = Now;
                 if (Now - _hotSince < HotHoldMax) return Hold("긴장 " + input.Pacer.State);
@@ -497,27 +533,114 @@ namespace NightDuty
 
         // ── 무엇을 낼까 ─────────────────────────────────────────
 
-        /// <summary>호출 1에 아껴 둘 공간: 슬롯 A 조우가 걸린 공간 중 먼저 열릴 항목이 있는 곳(경비실 제외).</summary>
-        private SpaceId PickReserved()
+        /// <summary>호출 1에 아껴 둘 공간: 슬롯 A 조우가 걸린 공간 중 먼저 열릴 항목이 있는 곳(복도 제외 — 53차부터 경비실 CCTV 조우도 아낀다). 없으면 편성의 호출 1 항목 공간(53차).</summary>
+        private SpaceId PickReserved(out bool fallback)
         {
+            fallback = false;
             for (int i = 0; i < _encounters.Count; i++)
             {
                 if (_encounters[i].Key != EncounterSlot.A) continue;
                 SpaceId s = _encounters[i].Value;
-                if (s == SpaceId.SecurityRoom || s == SpaceId.None) continue;
+                if (s == SpaceId.None) continue;
                 if (s == SpaceId.Corridor) continue;   // 복도는 늘 지나다니므로 아낄 까닭이 없다
+                // 53차: 경비실 조우(CCTV에만 보이는 사람)는 CCTV를 볼 때 열린다 — K-1을 첫 지시로 써 버리면 조우 시간대에 아무도 CCTV를 보지 않았다.
                 foreach (InspectionAssignment a in _board.Plan.Assignments)
                 {
                     if (!a.IsLate && SpaceIds.Canonical(a.Item.Space) == s) return s;
                 }
             }
 
+            // 53차: 슬롯 A 조우가 없으면(1일차) 편성이 정한 호출 1 항목의 공간을 아낀다 — 보고 뒤 바로 다음 지시가 와서
+            // 먼저 열릴 공간이 00:15쯤 바닥나면 01:00 호출이 빈 채로 지나가고 02:16까지 실제 7분 넘게 아무것도 오지 않았다.
+            string callItem = _board.Plan.Call1ItemId;
+            InspectionAssignment call = string.IsNullOrEmpty(callItem) ? null : _board.Plan.Find(callItem);
+            if (call != null && !call.IsLate)
+            {
+                SpaceId cs = SpaceIds.Canonical(call.Item.Space);
+                if (cs != SpaceId.SecurityRoom && cs != SpaceId.Corridor && cs != SpaceId.None)
+                {
+                    fallback = true;
+                    return cs;
+                }
+            }
+
             return SpaceId.None;
+        }
+
+        /// <summary>슬롯 B·C 조우 방(복도·호출 1 몫 제외, 먼저 열릴 항목이 있는 곳 — 경비실 CCTV 조우 포함) → 그 슬롯이 열리는 분.</summary>
+        private void PickLater()
+        {
+            for (int i = 0; i < _encounters.Count; i++)
+            {
+                EncounterSlot slot = _encounters[i].Key;
+                SpaceId s = _encounters[i].Value;
+                if (slot == EncounterSlot.A || s == SpaceId.None || s == SpaceId.Corridor || s == _reserved) continue;
+                bool early = false;
+                foreach (InspectionAssignment a in _board.Plan.Assignments)
+                {
+                    if (!a.IsLate && SpaceIds.Canonical(a.Item.Space) == s) early = true;
+                }
+
+                if (!early) continue;
+                float from, to;
+                TensionDirector.SlotWindow(slot, out from, out to);
+                int at = _later.FindIndex(kv => kv.Key == s);
+                if (at < 0) _later.Add(new KeyValuePair<SpaceId, float>(s, from));
+                else if (from < _later[at].Value) _later[at] = new KeyValuePair<SpaceId, float>(s, from);
+            }
+        }
+
+        /// <summary>
+        /// 먼저 열릴 공간을 모두 아끼면 출근부터 01:00까지 점검이 하나도 없다(54차 4일차 실측 — 화장실 = 호출 1 몫, 과학실 = 슬롯 B, 교실 = 슬롯 C).
+        /// 하나는 남도록 덜 중요한 것부터 푼다: 조우 없는 밤의 호출 1 몫 → 슬롯 C 방 → 슬롯 B 방.
+        /// </summary>
+        private void KeepOneEarlySpace(bool fallback)
+        {
+            for (int guard = 0; guard < 8 && FreeEarlySpaces() == 0; guard++)
+            {
+                if (fallback && _reserved != SpaceId.None)
+                {
+                    _reserved = SpaceId.None;
+                    fallback = false;
+                    continue;
+                }
+
+                if (_later.Count == 0) break;
+                int last = 0;
+                for (int i = 1; i < _later.Count; i++)
+                {
+                    if (_later[i].Value > _later[last].Value) last = i;
+                }
+
+                _later.RemoveAt(last);
+            }
+        }
+
+        private int FreeEarlySpaces()
+        {
+            List<SpaceId> free = new List<SpaceId>();
+            foreach (InspectionAssignment a in _board.Plan.Assignments)
+            {
+                if (a.IsLate || _board.IsHeld(a.Id)) continue;
+                SpaceId s = SpaceIds.Canonical(a.Item.Space);
+                if (s == _reserved || ReleaseOf(s) >= 0f || free.Contains(s)) continue;
+                free.Add(s);
+            }
+
+            return free.Count;
+        }
+
+        /// <summary>그 방이 아직 슬롯을 기다리는지(밤 시계를 모르면 기다리지 않는다).</summary>
+        private bool Waits(SpaceId space, float minute)
+        {
+            if (minute < 0f) return false;
+            float at = ReleaseOf(space);
+            return at >= 0f && minute < at;
         }
 
         private List<string> OpeningBatch(float minute, SpaceId banned)
         {
-            List<string> guard = UnissuedIn(SpaceId.SecurityRoom, banned);
+            List<string> guard = _reserved == SpaceId.SecurityRoom || Waits(SpaceId.SecurityRoom, minute) ? new List<string>() : UnissuedIn(SpaceId.SecurityRoom, banned);
             if (guard.Count > 0) return guard;
             string unused;
             SpaceId s = BestSpace(minute, banned, true, out unused);
@@ -557,7 +680,7 @@ namespace NightDuty
             SpaceId best = SpaceId.None;
             float bestScore = float.NegativeInfinity;
             why = string.Empty;
-            foreach (SpaceId s in CandidateSpaces(banned, keepReserved))
+            foreach (SpaceId s in CandidateSpaces(minute, banned, keepReserved))
             {
                 float score = Score(s, minute);
                 if (score > bestScore)
@@ -570,7 +693,7 @@ namespace NightDuty
             return best;
         }
 
-        private List<SpaceId> CandidateSpaces(SpaceId banned, bool keepReserved)
+        private List<SpaceId> CandidateSpaces(float minute, SpaceId banned, bool keepReserved)
         {
             List<SpaceId> list = new List<SpaceId>();
             foreach (InspectionAssignment a in _board.Plan.Assignments)
@@ -578,6 +701,7 @@ namespace NightDuty
                 if (a.IsLate || !Eligible(a, banned)) continue;
                 SpaceId s = SpaceIds.Canonical(a.Item.Space);
                 if (keepReserved && s == _reserved) continue;
+                if (Waits(s, minute)) continue;   // 53차: 슬롯 B·C 조우 방은 그 슬롯이 열릴 때까지
                 if (!list.Contains(s)) list.Add(s);
             }
 
@@ -667,6 +791,8 @@ namespace NightDuty
             }
         }
 
+        private const string QuickReason = "보고 뒤 바로";
+
         /// <summary>평소 지시를 낼 까닭(없으면 빈 문자열).</summary>
         private string DueReason(float minute, SpaceId pick, bool beforeCall1, DispatchInput input)
         {
@@ -674,6 +800,9 @@ namespace NightDuty
             float since = Math.Max(_lastReport, _lastIssue);
             int issued = EarlyIssued();
             int allowed = minute < 0f ? int.MaxValue / 2 : Allowed(minute);
+
+            // 53차: 받은 지시를 다 보고했으면 몇 초 뒤 바로 다음 공간(시간표를 보지 않는다).
+            if (backlog == 0 && _lastReport >= _lastIssue && _lastReport > float.NegativeInfinity && Now - _lastReport >= NextAfterReport) return QuickReason;
 
             if (backlog == 0)
             {
@@ -761,22 +890,23 @@ namespace NightDuty
             return ids;
         }
 
-        private List<string> EarlyUnissued(SpaceId banned, bool includeReserved)
+        private List<string> EarlyUnissued(float minute, SpaceId banned, bool includeReserved)
         {
             List<string> ids = new List<string>();
             foreach (InspectionAssignment a in _board.Plan.Assignments)
             {
                 if (a.IsLate || !Eligible(a, banned)) continue;
                 if (!includeReserved && SpaceIds.Canonical(a.Item.Space) == _reserved) continue;
+                if (Waits(SpaceIds.Canonical(a.Item.Space), minute)) continue;
                 ids.Add(a.Id);
             }
 
             return ids;
         }
 
-        private bool HasEarlyUnissued(SpaceId banned, bool includeReserved)
+        private bool HasEarlyUnissued(float minute, SpaceId banned, bool includeReserved)
         {
-            return EarlyUnissued(banned, includeReserved).Count > 0;
+            return EarlyUnissued(minute, banned, includeReserved).Count > 0;
         }
 
         private bool AllIssuedOrReported()

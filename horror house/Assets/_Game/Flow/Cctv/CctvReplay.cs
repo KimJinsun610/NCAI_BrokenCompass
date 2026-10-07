@@ -124,6 +124,7 @@ public sealed class CctvReplay : MonoBehaviour
 
     private void OnReported(InspectionReport report)
     {
+        s_tonight.RemoveAll(m => m.ItemId == report.ItemId && !m.Unfinished);   // 60차: 판정을 바꾸면(정정) 지난 놓침은 지운다
         if (report.Outcome != ReportOutcome.Missed) return;
         InspectionItem item = InspectionCatalog.Find(report.ItemId);
         InspectionAssignment row = NightRun.Inspections != null && NightRun.Inspections.Plan != null ? NightRun.Inspections.Plan.Find(report.ItemId) : null;

@@ -1334,11 +1334,13 @@ namespace NightDuty
     /// <summary>
     /// T4: 여자아이가 칸에 들어가는 것을 <b>봤으면</b>(단서 동안 <see cref="FinalCues.GirlTarget"/>을 0.5초) 역보고(T-1)를 건다. 델타는 점검판이 준다.
     /// 51차(민: 「수칙·조우·점검 셋이 이어지게」): 보지 못했으면 걸지 않는다 — 그날 변기 점검도 나오지 않는다.
+    /// 57차(민: 「빨간 여자아이를 봤는데 변기가 더러워지지 않고 점검 지시도 안 왔다」): 그 아이는 칸막이 뒤로 2초 남짓만 보여 0.5초 정중앙 응시가 모이지 않았다 —
+    /// 응시가 한 번이라도 닿으면 목격, 닿지 않았어도 단서가 끝날 때 화장실 안에 있었으면 목격으로 친다.
     /// </summary>
     public sealed class ReverseReportJudge : FinalJudge
     {
         /// <summary>목격으로 치는 응시(초).</summary>
-        public const float WitnessSeconds = 0.5f;
+        public const float WitnessSeconds = 0.1f;
 
         private bool _watching;
         private bool _armed;
@@ -1356,6 +1358,12 @@ namespace NightDuty
 
             if (IsCue(s, SignalKind.SequenceEnded, FinalCues.GirlStall))
             {
+                if (_watching && !_armed && SpaceIds.Canonical(w.Space) == SpaceId.Toilet)
+                {
+                    _armed = true;
+                    Book.ArmReverseReport(InspectionCatalog.ReverseReportItem);
+                }
+
                 _watching = false;
                 return;
             }

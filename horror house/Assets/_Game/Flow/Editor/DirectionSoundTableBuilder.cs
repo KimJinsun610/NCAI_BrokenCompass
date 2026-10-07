@@ -59,9 +59,9 @@ public static class DirectionSoundTableBuilder
         { "E.CctvPerson.confront", "Assets/_Game/Resources/Cctv/cctv_static.wav", "0.6" },
 
         // 소리 수칙 신호
-        { "H2.cue", Au + "hall/SFX_HALL_DoorOpenSlow.wav", "0.9" },
+        { "H2.cue", Au + "door/SFX_HALL_DoorUnlatchCreak.wav", "0.9" },   // 60차(민: 「H2 문이 열릴 때 소리가 닫히는 소리에 가깝다」 — 옛 DoorOpenSlow는 2.3초에 쾅): BigSoundBank 1702 손잡이 딸깍 → 느린 열림
         // 50차: 플레이어가 [E]로 여닫는 문(PlayerInteractor.PlayDoorSound). H2 단서(DoorOpenSlow)와 다른 소리여야 한다.
-        { "door.open", Au + "toilet/SFX_TOILET_DoorOpen.wav", "0.75" },
+        { "door.open", Au + "door/SFX_DOOR_Open.wav", "0.7" },   // 60차: 나무 문 삐걱 열림(BigSoundBank 3205 앞 1.7초) — 옛 TOILET_DoorOpen(쇳소리 끽)은 관물대로
         { "door.close", Au + "hall/SFX_HALL_DoorClose.wav", "0.7" },
         { "door.locker", Au + "hall/SFX_HALL_LockerDoorSwing_*", "0.7" },
         // 51차(민: 「서랍·관물대·책장 아래 여닫이에도 문 소리가 난다」) — 민이 고른 소리(furniture/LICENSE.txt).
@@ -69,13 +69,14 @@ public static class DirectionSoundTableBuilder
         { "door.drawer.close", Au + "furniture/SFX_FURN_DrawerClose.mp3", "0.7" },
         { "door.cabinet.open", Au + "furniture/SFX_FURN_CabinetOpen.wav", "0.55" },
         { "door.cabinet.close", Au + "furniture/SFX_FURN_CabinetClose.wav", "0.55" },
-        { "door.locker.open", Au + "furniture/SFX_FURN_LockerOpen.wav", "0.6" },
+        { "door.locker.open", Au + "toilet/SFX_TOILET_DoorOpen.wav", "1" },   // 60차(민: 「지금 문 여는 소리가 관물대 여는 소리에 더 가깝다」) — 쇳소리 끽(원본이 -19dB라 크게)
         { "door.locker.close", Au + "furniture/SFX_FURN_LockerClose.wav", "0.6" },
         // 51차 점프스케어(민: 「현악기 효과음이 짜친다」) — OpenGameArt Horror Hit Soundpack 1(CC0). 약·중·강, 얼굴용 고음 겹.
         { "stinger.weak", Au + "stinger/SFX_STING_Weak_*", "0.8" },
         { "stinger.mid", Au + "stinger/SFX_STING_Mid_*", "0.95" },
         { "stinger.strong", Au + "stinger/SFX_STING_Strong_*", "1" },
         { "stinger.high", Au + "stinger/SFX_STING_High_*", "0.75" },
+        { "stinger.corpse", Au + "stinger/SFX_STING_Corpse.mp3", "1" },   // 60차: 민 제공 시체 점프스케어
         { "corpse.fall", Au + "class/SFX_CLASS_HeadThud.wav", "1" },
         { "cctv.face", Au + "ui/SFX_TABLET_Glitch.wav", "0.9" },
         { "C1.cue", Au + "class/SFX_CLASS_ChalkStroke.wav", "1" },
@@ -94,7 +95,7 @@ public static class DirectionSoundTableBuilder
         { "fake.bugs+", Au + "creature/SFX_ROACH_Drop.wav", "0.6" },
 
         // 5일차 피날레
-        { "finale.letmein", Au + "voice/VO_LetMeIn.wav", "0.9" },
+        { "finale.letmein", Kim + "SFX_MosterBreath.wav", "0.85" },   // 57차(민: 「들어가게 해줘 오디오가 너무 구리다 — 비명이나 숨소리로」): 목소리 → 창 너머 거친 숨
         { "finale.letmein+", Au + "guard/SFX_GUARD_DoorHandle_*", "0.8" },
         { "finale.smile", Au + "capture/varco/END-FIN-02_*", "0.9" },
         { "finale.crtoff", Au + "capture/END_FIN_01_CRT_PowerOff.wav", "1" },
@@ -143,8 +144,7 @@ public static class DirectionSoundTableBuilder
         { "capture.return", Au + "capture/RST_03_GuardFadeIn.wav", "0.7" },
         { "capture.wake", Au + "capture/varco/RST-04_*", "0.7" },
 
-        // 긴장 — 강도 3 이상 조우의 대면에 작게 까는 떨리는 현(NightDutySfx)
-        { "tension.confront", Au + "climax/CLX-29_1.wav", "0.4" },
+        // 58차: 조우 대면에 깔던 떨리는 현 tension.confront(CLX-29)는 뺐다 — 되살리지 말 것(민: 「현악기 효과음」).
 
         // 몸 계기(BodyMeter) — 청각 심박·귀 먹먹함·이명, 조도 거친 호흡, 경계 신호, 회복 한숨
         { "body.heart.62", Au + "body/SFX_BODY_Heartbeat_62.wav", "0.3" },

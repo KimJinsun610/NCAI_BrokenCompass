@@ -30,6 +30,82 @@ namespace NightDuty
             _tension = new TensionDirector(_program, Day, RestartsTonight);
             _tension.Emitted += OnDirectionEmitted;
             _tension.GazeTargetReady = GazeTargetReady;   // 51차: 사다리(C-3)를 「점검 중」일 때만 시체가 떨어진다
+            // 60차: 시체가 떨어지는 곳 반반 — 교실 입구에서 사다리를 볼 때(거리 무관) / 사다리 방 안에 들어와서(사다리 2.8m 안).
+            _tension.GazeTargetPosition = TargetPosition;
+            _tension.GazeTargetNearRadius = s_corpseRoll.NextDouble() < 0.5 ? CorpseLadderRoomRadius : 0f;
+            if (_program.HasEncounter(ProgramCatalog.CeilingLegs)) Debug.Log("[NightRun] 시체 낙하 — " + (_tension.GazeTargetNearRadius > 0f ? "사다리 방 안에서" : "교실 입구에서 사다리를 볼 때"));
+            _tension.Missed += VoidEncounterRules;          // 57차: 끝내 오지 않은 조우의 수칙은 태블릿에서 거둔다
+            _tension.FakeBlocked = FakeBlockedAt;            // 57차: 점검 대상 가까이에서는 가짜 놀람을 미룬다
+            _voidRules.Clear();
+        }
+
+        /// <summary>60차: 「사다리 방 안」으로 보는 사다리(C-3)와의 거리(m, 수평).</summary>
+        public const float CorpseLadderRoomRadius = 2.8f;
+
+        private static readonly System.Random s_corpseRoll = new System.Random();
+
+        private static Vector3? TargetPosition(string targetId)
+        {
+            JudgeTarget t;
+            if (string.IsNullOrEmpty(targetId) || !JudgeTargetRegistry.TryGet(targetId, out t) || t == null) return null;
+            return t.AnchorPosition;
+        }
+
+        /// <summary>가짜 놀람을 미룰 거리(m) — 지시받은 점검 대상에서 이만큼 안이면(57차).</summary>
+        public const float FakeQuietRadius = 2.5f;
+
+        private static readonly System.Collections.Generic.HashSet<string> _voidRules = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+
+        /// <summary>끝내 조우가 오지 않아 태블릿에서 거둔 수칙(57차, 민: 「조우가 등장하지 않으면 관련 수칙이 안 나오게」). 재시작하면 다시 보인다.</summary>
+        public static System.Collections.Generic.IEnumerable<string> VoidedRules
+        {
+            get { return _voidRules; }
+        }
+
+        private static void VoidEncounterRules(string encounterId)
+        {
+            EncounterDef e = ProgramCatalog.Encounter(encounterId);
+            if (e == null) return;
+            bool changed = false;
+            foreach (string id in new[] { e.ResponseRule, e.SecondRule })
+            {
+                if (string.IsNullOrEmpty(id) || RuleUsedByLiveEncounter(id, encounterId)) continue;
+                changed |= _voidRules.Add(id);
+            }
+
+            if (!changed) return;
+            Debug.Log("[NightRun] 조우 " + encounterId + "가 오지 않아 태블릿에서 수칙을 거둠 — " + string.Join(" · ", _voidRules));
+            RefreshRuleCards();
+            EventBus.RaiseTabletTextChanged();
+        }
+
+        /// <summary>그 수칙을 쓰는 다른 조우가 아직 남아 있는지(놓치지 않은).</summary>
+        private static bool RuleUsedByLiveEncounter(string ruleId, string exceptEncounter)
+        {
+            if (_tension == null) return false;
+            foreach (EncounterRun r in _tension.Runs)
+            {
+                if (r.Def.Id == exceptEncounter || r.State == EncounterRunState.Missed) continue;
+                if (r.Def.ResponseRule == ruleId || r.Def.SecondRule == ruleId) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>발밑이 지시받은 점검 대상 가까이인지(57차).</summary>
+        private static bool FakeBlockedAt(Vector3 feet)
+        {
+            InspectionPlan plan = Board.Plan;
+            if (plan == null) return false;
+            foreach (InspectionAssignment a in plan.Assignments)
+            {
+                if (!IssuedItemPending(a.Id)) continue;
+                JudgeTarget t;
+                if (!JudgeTargetRegistry.TryGet(InspectionCatalog.TargetPrefix + a.Id, out t) || t == null) continue;
+                if (SensingRules.HorizontalDistance(feet, t.AnchorPosition) <= FakeQuietRadius) return true;
+            }
+
+            return false;
         }
 
         /// <summary>응시 방아쇠 대상(<c>inspect.&lt;항목&gt;</c>)이 지시받았고 아직 보고 전인지. 순차 지시가 꺼져 있으면 편성에 있고 보고 전이면 참.</summary>
@@ -107,6 +183,10 @@ namespace NightDuty
         {
             if (_tension == null) return;
             _tension.ResetToRest(restarts, startMinute);
+            if (_voidRules.Count == 0) return;
+            _voidRules.Clear();   // 놓친 조우가 다시 기다리므로 수칙도 다시 보인다
+            RefreshRuleCards();
+            EventBus.RaiseTabletTextChanged();
         }
 
         // ── 디버그 ─────────────────────────────────────────────

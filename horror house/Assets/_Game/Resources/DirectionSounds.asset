@@ -216,17 +216,17 @@ MonoBehaviour:
     hits:
     - 2.0716043
   - key: H2.cue
-    clip: {fileID: 8300000, guid: 53506d48aeba30346990e50092db5eba, type: 3}
+    clip: {fileID: 8300000, guid: 3bb0d15108f70954f9d1c2758df36236, type: 3}
     more: []
     volume: 0.9
     hits:
-    - 2.458
+    - 0.62897915
   - key: door.open
-    clip: {fileID: 8300000, guid: a00f1117fad2c7f46b87d3239bc478fb, type: 3}
+    clip: {fileID: 8300000, guid: e872f113f83bf624e99634a4fae48038, type: 3}
     more: []
-    volume: 0.75
+    volume: 0.7
     hits:
-    - 1.1923542
+    - 0.19916667
   - key: door.close
     clip: {fileID: 8300000, guid: d457bc946db921e4fac83d8f6256e944, type: 3}
     more: []
@@ -268,11 +268,11 @@ MonoBehaviour:
     hits:
     - 1.26839
   - key: door.locker.open
-    clip: {fileID: 8300000, guid: 6e40589a48f61c44ebe970fb08595e42, type: 3}
+    clip: {fileID: 8300000, guid: a00f1117fad2c7f46b87d3239bc478fb, type: 3}
     more: []
-    volume: 0.6
+    volume: 1
     hits:
-    - 0.6531973
+    - 1.1923542
   - key: door.locker.close
     clip: {fileID: 8300000, guid: 112f1428a350de243afa312a2643ecfb, type: 3}
     more: []
@@ -317,6 +317,12 @@ MonoBehaviour:
     hits:
     - 0.6673696
     - 0.64666665
+  - key: stinger.corpse
+    clip: {fileID: 8300000, guid: 96a0dad7ec973e543bdd267870f5a261, type: 3}
+    more: []
+    volume: 1
+    hits:
+    - 0
   - key: corpse.fall
     clip: {fileID: 8300000, guid: 6a87b5f535621284d9f4dc27272e6504, type: 3}
     more: []
@@ -418,11 +424,11 @@ MonoBehaviour:
     hits:
     - 0.8396875
   - key: finale.letmein
-    clip: {fileID: 8300000, guid: d7f5c950196480b4a81a442b78c3e4f8, type: 3}
+    clip: {fileID: 8300000, guid: e4fdd2b2f64d35648981dad4f56d136e, type: 3}
     more: []
-    volume: 0.9
+    volume: 0.85
     hits:
-    - 0.70741665
+    - 3.854771
   - key: finale.letmein+
     clip: {fileID: 8300000, guid: 385df89879cb51a4c8d40a64bdbf2a44, type: 3}
     more:
@@ -681,12 +687,6 @@ MonoBehaviour:
     - 3.9558125
     - 0.79041666
     - 5.157583
-  - key: tension.confront
-    clip: {fileID: 8300000, guid: e22e0e5cafe33a14aaa4db766500bbdf, type: 3}
-    more: []
-    volume: 0.4
-    hits:
-    - 0.225875
   - key: body.heart.62
     clip: {fileID: 8300000, guid: 5c026cdccba948a43bdcaaceca3a44c0, type: 3}
     more: []

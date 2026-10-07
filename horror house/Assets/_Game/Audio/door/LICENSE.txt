@@ -1,0 +1,3 @@
+60차(2026-10-07): BigSoundBank (Joseph SARDIN) CC0 — https://bigsoundbank.com
+SFX_DOOR_Open.wav: 3205 「Creaking Door #2」(문이 열리는 삐걱) 0.12~1.78초만 잘라 끝 0.2초 페이드, 정규화 — 플레이어가 [E]로 여는 문
+SFX_HALL_DoorUnlatchCreak.wav: 1702 「Apartment Door, Opening #1」(손잡이 딸깍 → 느리게 갈리는 열림) 끝 페이드, 정규화 — H2 문이 저절로 열림

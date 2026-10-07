@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 /// 소리는 전부 연출 소리 표(<see cref="DirectionSoundTableSO"/>)의 정확한 키로 찾고, 없으면 조용히 넘어간다. <b>판정과 무관하다</b> — 어떤 신호도 보내지 않는다.
 /// <list type="bullet">
 /// <item>보고: 보고 가능으로 켜질 때 <c>ui.ready</c>, 보고가 받아들여질 때 <c>ui.confirm</c>(2D).</item>
-/// <item>긴장: 강도 3 이상 조우의 대면에 떨리는 현(<c>tension.confront</c>)을 작게 깐다.</item>
+/// <item>58차(민: 「조우 효과음이 아직도 현악기」): 강도 3 이상 조우의 대면에 깔던 떨리는 현(<c>tension.confront</c>, CLX-29 8초)을 뺐다 — 51차에 스팅어만 바꾸고 이 겹을 남겨 두었다. 조우 소리는 <see cref="EncounterImpact"/>의 점프스케어 스팅어뿐.</item>
 /// <item>경고·처벌: 경고 도장이 늘면 <c>punish.stamp</c>, 세 번째 도장으로 처벌이 대기에 들어가면 <c>tablet.buzz</c>.
 /// 처벌이 나오면 축별 <c>punish.auditory</c>(속삭임이 귀를 스침) · <c>punish.illuminance</c>(차단기 툭·딸깍) · <c>punish.layout</c>(가지가 어깨를 스침) + <c>punish.hit</c> + 「뚝」 끊김(<c>punish.cut</c>).</item>
 /// <item>점검 「가까이」: 항목 자리에서 <c>inspect.&lt;항목&gt;.near</c>(3D, <c>+</c>는 0.6초 뒤 이어서) + 공용 충격음 <c>inspect.near</c>(2D).</item>
@@ -22,9 +22,6 @@ public sealed class NightDutySfx : MonoBehaviour
     private const float LoopMinDistance = 1.2f;
     private const float LoopMaxDistance = 14f;
     private const float FollowUpSeconds = 0.6f;
-
-    /// <summary>대면 긴장음을 까는 조우 강도(이상).</summary>
-    public const int TensionIntensity = 3;
 
     private sealed class Loop
     {
@@ -82,7 +79,6 @@ public sealed class NightDutySfx : MonoBehaviour
         EventBus.InspectionStartled += OnStartled;
         EventBus.WarningsChanged += OnWarningsChanged;
         EventBus.Punished += OnPunished;
-        EventBus.DirectionEmitted += OnDirection;
     }
 
     private void OnDisable()
@@ -92,7 +88,6 @@ public sealed class NightDutySfx : MonoBehaviour
         EventBus.InspectionStartled -= OnStartled;
         EventBus.WarningsChanged -= OnWarningsChanged;
         EventBus.Punished -= OnPunished;
-        EventBus.DirectionEmitted -= OnDirection;
         StopLoops();
         if (Active == this) Active = null;
     }
@@ -175,15 +170,6 @@ public sealed class NightDutySfx : MonoBehaviour
         Play2D("punish." + CaptureDirector.AxisKey(axis));
         Play2D("punish.hit");
         Play2D("punish.cut");
-    }
-
-    // ── 긴장 ─────────────────────────────────────────────────
-
-    /// <summary>강도 3 이상 조우의 대면 — 떨리는 현을 작게 깐다(긴장 클라이맥스, CLX-29).</summary>
-    private void OnDirection(DirectionEvent e)
-    {
-        if (e.Kind != DirectionEventKind.Encounter || e.Phase != DirectionPhase.Confront || e.Intensity < TensionIntensity) return;
-        Play2D("tension.confront");
     }
 
     // ── 점검 이상 루프 ───────────────────────────────────────

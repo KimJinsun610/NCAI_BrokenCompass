@@ -1,25 +1,25 @@
-using System;
+﻿using System;
 
 namespace NightDuty
 {
     /// <summary>
-    /// 놀람 예산(최종 기획서 「놀람 예산」). 한 밤에 강도별로 몇 번까지, 강도 3↑ 사이 90초·강도 4↑ 뒤 120초,
-    /// 조우가 끝난 뒤 60~90초는 위협을 걸지 않는다. 시간은 디렉터의 실제 초다.
+    /// 놀람 예산(최종 기획서 「놀람 예산」). 한 밤에 강도별로 몇 번까지, 강도 3↑ 사이 60초·강도 4↑ 뒤 80초,
+    /// 조우가 끝난 뒤 40~60초는 위협을 걸지 않는다(59차: 밤이 15분 → 10분이라 실제 초를 2/3로). 시간은 디렉터의 실제 초다.
     /// <para>「가까이」 놀람·가짜 놀람·신뢰 연출은 세지 않는다.</para>
     /// </summary>
     public sealed class SurpriseBudget
     {
         /// <summary>강도 3↑ 시작 사이 최소 간격(초).</summary>
-        public const float GapAfter3 = 90f;
+        public const float GapAfter3 = 60f;   // 59차(밤 15분 → 10분): 90 → 60
 
         /// <summary>강도 4↑ 시작 뒤 최소 간격(초).</summary>
-        public const float GapAfter4 = 120f;
+        public const float GapAfter4 = 80f;   // 59차: 120 → 80
 
         /// <summary>조우가 끝난 뒤 위협을 걸지 않는 시간(초) 최소.</summary>
-        public const float QuietMin = 60f;
+        public const float QuietMin = 40f;   // 59차: 60~90 → 40~60
 
         /// <summary>최대.</summary>
-        public const float QuietMax = 90f;
+        public const float QuietMax = 60f;
 
         private readonly int _day;
         private int _used3;

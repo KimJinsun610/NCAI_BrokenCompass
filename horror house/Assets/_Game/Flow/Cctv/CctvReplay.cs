@@ -317,7 +317,7 @@ public sealed class CctvReplay : MonoBehaviour
         tmp.text = "<color=#E04A3A>●</color> " + text;
         tmp.alignment = TextAlignmentOptions.Center;
         tmp.color = new Color(0.86f, 0.9f, 0.86f, 0.92f);
-        tmp.enableWordWrapping = false;
+        tmp.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         tmp.rectTransform.sizeDelta = new Vector2(size.x, size.y * 0.2f);
 
         // 글자 크기는 재서 맞춘다 — 화면 가로의 80% 또는 세로의 11% 중 먼저 닿는 쪽.

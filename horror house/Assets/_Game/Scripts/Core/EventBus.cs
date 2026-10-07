@@ -93,6 +93,9 @@ namespace NightDuty
         /// <summary>점검 보고가 판정됐다(받지 않은 보고는 보내지 않는다). 점검표 UI·근무일지가 구독한다. 수치는 화면에 내지 않는다.</summary>
         public static event Action<InspectionReport> InspectionReported;
 
+        /// <summary>점검 지시 한 통이 나갔다(50차 순차 지시). TabletBridge가 태블릿 메시지로 넣는다(알람 한 번).</summary>
+        public static event Action<InspectionOrder> InspectionOrdered;
+
         /// <summary>새 수칙 한 건이 정산됐다(위반·위협 성공·밤 종료 준수·기록). 위반 피드백·근무일지가 구독한다. 수치는 화면에 내지 않는다.</summary>
         public static event Action<FinalRuleResult> FinalRuleSettled;
 
@@ -204,6 +207,12 @@ namespace NightDuty
             Invoke(InspectionReported, report);
         }
 
+        /// <summary><see cref="InspectionOrdered"/>를 발생시킨다.</summary>
+        public static void RaiseInspectionOrdered(InspectionOrder order)
+        {
+            Invoke(InspectionOrdered, order);
+        }
+
         /// <summary><see cref="FinalRuleSettled"/>를 발생시킨다.</summary>
         public static void RaiseFinalRuleSettled(FinalRuleResult result)
         {
@@ -262,6 +271,7 @@ namespace NightDuty
             NightRestarted = null;
             InspectionPlanned = null;
             InspectionReported = null;
+            InspectionOrdered = null;
             FinalRuleSettled = null;
             DirectionEmitted = null;
             InspectionStartled = null;

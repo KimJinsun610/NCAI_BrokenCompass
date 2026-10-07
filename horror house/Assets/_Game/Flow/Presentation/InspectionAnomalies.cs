@@ -11,11 +11,11 @@ using Object = UnityEngine.Object;
 /// 이상인 항목마다 [옮김]·[켬]·[빛] 연출을 그 밤 내내 세워 두고, 편성이 바뀌면(다음 날·새 밤) 모두 되돌린다. 재시작은 편성을 바꾸지 않으므로 그대로 둔다.
 /// 강도는 <see cref="InspectionAssignment.Intensity"/>(구간 1~4)이고 수치는 <see cref="AnomalyLook"/>. <b>판정과 무관하다</b> — 판정은 보고가 한다.
 /// <list type="bullet">
-/// <item>[옮김] H-4 사물함 문이 열림(그 사물함만 잠금이 풀려 [E]로 여닫힌다 — 43차) · S-1 인체 모형이 돌아섬 · C-1 화분이 창가 반대편 책상 위로 · L-1 의자 하나가 빠져 출입구를 향함.
+/// <item>[옮김] S-1 인체 모형이 돌아섬 · C-1 화분이 창가 반대편 책상 위로 · L-1 의자 하나가 빠져 출입구를 향함.
 /// 정적 배칭으로 묶인 소품(C-1·L-1)은 원본을 숨기고 같은 프리팹을 옮긴 자리에 세운다(<see cref="InspectionAnomalyPropsSO"/>). 점검 기준점은 소품을 따라간다(42차).</item>
 /// <item>[켬] H-2 식수대 앞 물(웅덩이 → 줄기 → 침수) · T-1 변기에 검은 머리카락, 넘친 물 · K-1 한 채널에 CCTV에만 보이는 사람이 천천히 지나감.</item>
 /// <item>[빛] H-1 압력계 · C-2 책상 램프 · S-2 현미경 불 · T-3 거울 위 형광등 깜빡임(<see cref="PhotosensitiveSafe"/>면 2Hz 아래의 느린 맥동) · L-2 블라인드 하나가 올라가 달빛.
-/// 빛 이상은 색과 함께 대상 둘레의 후광 링(정적인 모양 단서)을 같이 쓴다(<see cref="HaloRing"/>).</item>
+/// 빛 이상은 색과 함께 대상 둘레의 후광 링(정적인 모양 단서)을 같이 쓴다(<see cref="HaloRing"/>). 단 S-2 현미경은 링 없이 바닥 조명과 접안렌즈 빛점으로만 보인다(49차 민: 「UI스러운 원」).</item>
 /// </list>
 /// 「가까이」 연출과 [소리] 틀은 여기서 다루지 않는다. 근무 씬에 자동으로 선다.
 /// </summary>
@@ -61,6 +61,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
         public float Wait;
         public float At;
         public bool Forward = true;
+        public float NextStep;
     }
 
     /// <summary>카메라를 보는 카드. 벽에 붙은 대상에서 링이 벽에 잘리지 않게 카메라 쪽으로 조금 띄운다.</summary>
@@ -229,6 +230,19 @@ public sealed class InspectionAnomalies : MonoBehaviour
             }
         }
 
+        // 51차 T4: 여자아이가 들어간 칸의 변기 — 목격 뒤 지시가 나가면 머리카락이 쌓여 있다(정답은 [정상] = 역보고).
+        if (plan != null && NightRun.Inspections != null)
+        {
+            string t1 = InspectionCatalog.ReverseReportItem;
+            InspectionBoard board = NightRun.Inspections;
+            if (board.IsReverse(t1) && board.IsIssued(t1) && FindLook(t1) == null)
+            {
+                InspectionAssignment row = plan.Find(t1);
+                Look look = row != null ? Build(t1, Band.Band2) : null;
+                if (look != null) _looks.Add(look);
+            }
+        }
+
         for (int i = 0; i < _looks.Count; i++)
         {
             Look look = _looks[i];
@@ -358,9 +372,11 @@ public sealed class InspectionAnomalies : MonoBehaviour
             }
             case "S-2":
             {
+                // 49차: 후광 링을 뺐다(민: 「UI스러운 원」) — 바닥 조명이 실험대를 조금 더 넓게 비추고, 접안렌즈 끝에 작은 빛점 하나.
+                Color cold = new Color(0.82f, 0.9f, 1f);
                 Vector3 at = new Vector3(b.center.x, b.min.y + 0.1f, b.center.z);
-                Glow(look, at, new Color(0.82f, 0.9f, 1f), 0.9f, 0.8f * glow, 0.04f);   // 43차: 3구간에서 하얗게 날아갔다
-                Halo(look, b, new Color(0.8f, 0.9f, 1f));
+                Glow(look, at, cold, 1.25f, 0.9f * glow, 0.04f);   // 43차: 3구간에서 하얗게 날아갔다 — 세기는 그대로 두고 범위만 넓힌다
+                Card(look, "접안렌즈 빛", Dot(), new Vector3(b.center.x, b.max.y - 0.02f, b.center.z), new Vector2(0.025f, 0.025f), new Color(cold.r, cold.g, cold.b, 0.85f), 0.02f);
                 break;
             }
             case "T-3":
@@ -368,9 +384,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 break;
             case "L-2":
                 Blind(look, prop, jt.transform, b, glow);
-                break;
-            case "H-4":
-                ok = LockerDoor(look, prop, band);
                 break;
             case "S-1":
             {
@@ -384,17 +397,21 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 break;
             }
             case "C-1":
-                ok = PlantToDesk(look, prop, jt.transform, b, band);
+                ok = PlantOddPlace(look, prop, jt.transform, b, band);   // 52차: 책상 위 · 천장에 거꾸로 · 벽에 옆으로
                 break;
             case "L-1":
                 ok = ChairOut(look, prop, jt.transform, band);
                 break;
             case "H-2":
-                Water(look, prop, b, band, Flat(prop.forward), new Color(0.015f, 0.02f, 0.025f, 0.8f), 0.25f, false);
+                // 44차: 김진선님 「피 식수대」(HorrorEvent_BloodyFountain) — 물이 고이고 떨어지다가, 앞에 다가서면 8초에 걸쳐 검붉게 변한다. 없으면 옛 절차 물.
+                if (!FountainEvent(look, prop, b, band)) Water(look, prop, b, band, Flat(prop.forward), new Color(0.015f, 0.02f, 0.025f, 0.8f), 0.25f, false);
                 break;
             case "T-1":
                 Water(look, prop, b, band, Flat(prop.forward), new Color(0.03f, 0.028f, 0.02f, 0.82f), 0.3f, true);
                 Hair(look, prop, b, band);
+                break;
+            case "C-3":
+                ok = HideProp(look, prop, jt.transform);   // 51차: 사다리가 없다(점검 기준점만 남는다)
                 break;
             default:
                 ok = false;
@@ -408,6 +425,32 @@ public sealed class InspectionAnomalies : MonoBehaviour
         }
 
         return look;
+    }
+
+    /// <summary>[옮김·없음] 소품을 통째로 감춘다 — 렌더러·콜라이더를 끄고(점검 기준점 아래는 남김) 거둘 때 되돌린다.</summary>
+    private static bool HideProp(Look look, Transform prop, Transform keep)
+    {
+        List<Renderer> rs = new List<Renderer>();
+        foreach (Renderer r in prop.GetComponentsInChildren<Renderer>(true))
+        {
+            if (r.enabled && !r.transform.IsChildOf(keep)) rs.Add(r);
+        }
+
+        List<Collider> cs = new List<Collider>();
+        foreach (Collider c in prop.GetComponentsInChildren<Collider>(true))
+        {
+            if (c.enabled && !c.transform.IsChildOf(keep)) cs.Add(c);
+        }
+
+        if (rs.Count == 0) return false;
+        for (int i = 0; i < rs.Count; i++) rs[i].enabled = false;
+        for (int i = 0; i < cs.Count; i++) cs[i].enabled = false;
+        look.Undo.Add(() =>
+        {
+            for (int i = 0; i < rs.Count; i++) if (rs[i] != null) rs[i].enabled = true;
+            for (int i = 0; i < cs.Count; i++) if (cs[i] != null) cs[i].enabled = true;
+        });
+        return true;
     }
 
     // ── [빛] ─────────────────────────────────────────────────
@@ -523,70 +566,138 @@ public sealed class InspectionAnomalies : MonoBehaviour
 
     // ── [옮김] ───────────────────────────────────────────────
 
-    private static bool LockerDoor(Look look, Transform prop, Band band)
+    /// <summary>화분 변칙 자리(52차 민: 「천장에 거꾸로 매달려 있다던지 벽에 옆으로 달려 있다던지 — 다만 인식은 쉽게」). 0 책상 위 · 1 천장에 거꾸로 · 2 벽에 옆으로.</summary>
+    public enum PlantPlace
     {
-        // 사물함은 평소 잠겨 있다 — 이상인 날 이 사물함만 풀리고 문이 조금 열린 채 서 있다(43차 민: 「여닫히면 [이상]」).
-        DoorHandle handle = DoorHandle.Of(prop);
-        if (handle.IsValid)
+        Desk = 0,
+        Ceiling = 1,
+        Wall = 2
+    }
+
+    private static readonly Dictionary<int, PlantPlace> s_plantPlace = new Dictionary<int, PlantPlace>();
+
+    /// <summary>그날 화분 자리(같은 날은 늘 같은 자리 — 다음 날 CCTV 한 컷도 같다). 1일차는 가장 알아보기 쉬운 천장.</summary>
+    public static PlantPlace PlantPlaceFor(int day)
+    {
+        PlantPlace p;
+        if (s_plantPlace.TryGetValue(day, out p)) return p;
+        p = day <= 1 ? PlantPlace.Ceiling : (PlantPlace)UnityEngine.Random.Range(0, 3);
+        s_plantPlace[day] = p;
+        return p;
+    }
+
+    private bool PlantOddPlace(Look look, Transform prop, Transform judge, Bounds b, Band band)
+    {
+        switch (PlantPlaceFor(NightRun.Day))
         {
-            Component owner = handle.Owner;
-            PlayerInteractor.SetLockerUnlocked(owner, true);
-            look.Undo.Add(() => PlayerInteractor.SetLockerUnlocked(owner, false));
-            // 벤더 열림 애니메이션의 그 각도 지점에 세운다 — [E]로 열면 거기서 마저 열린다.
-            // 애니메이션이 처음에 빨리 열리므로(0.21 = 79°) 비율이 아니라 문짝 각도를 재서 찾는다.
-            Transform leaf = prop.Find("LockerDoor");
-            if (leaf != null && AjarAt(handle, leaf, AnomalyLook.DoorDegrees(band)))
+            case PlantPlace.Ceiling:
+                if (PlantOnCeiling(look, prop, judge, b)) return true;
+                break;
+            case PlantPlace.Wall:
+                if (PlantOnWall(look, prop, judge, b)) return true;
+                break;
+        }
+
+        return PlantToDesk(look, prop, judge, b, band);
+    }
+
+    /// <summary>교실 책상들의 가운데(바닥 높이). 책상이 없으면 소품 자리.</summary>
+    private static Vector3 RoomMiddle(Transform prop)
+    {
+        Transform room = prop.parent;
+        Vector3 sum = Vector3.zero;
+        int n = 0;
+        if (room != null)
+        {
+            foreach (Transform t in room)
             {
-                look.Undo.Add(() =>
-                {
-                    DoorHandle back = DoorHandle.Of(prop);
-                    if (back.IsValid) back.SnapClosed();
-                });
-                return true;
+                if (!t.name.StartsWith("StudentDesk")) continue;
+                sum += t.position;
+                n++;
             }
         }
 
-        Transform door = prop.Find("LockerDoor");
-        if (door == null)
+        return n > 0 ? sum / n : prop.position;
+    }
+
+    /// <summary>원래 피벗과 바닥 가운데의 차를 새 회전에 맞춰 옮긴 피벗 자리.</summary>
+    private static Vector3 PivotFor(Transform prop, Bounds b, Quaternion rot, Vector3 baseCenter)
+    {
+        Vector3 pivotOffset = prop.position - new Vector3(b.center.x, b.min.y, b.center.z);
+        Quaternion delta = rot * Quaternion.Inverse(prop.rotation);
+        return baseCenter + delta * pivotOffset;
+    }
+
+    private bool PlantOnCeiling(Look look, Transform prop, Transform judge, Bounds b)
+    {
+        // 책상 가운데와 원래 자리의 중간 위 — 문에서 들어서면 시야에 걸리는 높이(바닥 + 2.6m 가운데).
+        Vector3 mid = Vector3.Lerp(prop.position, RoomMiddle(prop), 0.6f);
+        Vector3 floor = FloorUnder(mid + Vector3.up * 0.5f);
+        float ceilingY = float.MaxValue;
+        foreach (RaycastHit h in Physics.RaycastAll(floor + Vector3.up * 0.3f, Vector3.up, 6f, ~0, QueryTriggerInteraction.Ignore))
         {
-            foreach (Transform c in prop)
-            {
-                if (c.name.Contains("Door"))
-                {
-                    door = c;
-                    break;
-                }
-            }
+            if (h.collider.transform.IsChildOf(prop) || h.point.y < floor.y + 2.2f) continue;   // 책상·사람 위는 건너뛴다
+            ceilingY = Mathf.Min(ceilingY, h.point.y);
         }
 
-        if (door == null) return false;
-        Quaternion orig = door.localRotation;
-        door.localRotation = orig * Quaternion.Euler(0f, -AnomalyLook.DoorDegrees(band), 0f);   // 경첩(피벗)을 축으로 바깥쪽으로
-        look.Undo.Add(() =>
-        {
-            if (door != null) door.localRotation = orig;
-        });
+        if (ceilingY == float.MaxValue) ceilingY = floor.y + 3f;
+
+        float h0 = b.size.y;
+        float top = Mathf.Min(ceilingY - 0.3f, floor.y + 2.6f + h0 * 0.5f);
+        Quaternion rot = Quaternion.AngleAxis(180f, Flat(prop.right).sqrMagnitude > 0.0001f ? Flat(prop.right) : Vector3.right) * prop.rotation;
+        Vector3 baseCenter = new Vector3(mid.x, top, mid.z);
+        if (!MoveProp(look, prop, judge, PivotFor(prop, b, rot, baseCenter), rot)) return false;
+
+        // 화분 밑바닥에서 천장까지 끈.
+        float len = Mathf.Max(0.05f, ceilingY - top);
+        GameObject rope = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        rope.name = "이상 C-1 끈";
+        Collider rc = rope.GetComponent<Collider>();
+        if (rc != null) Destroy(rc);
+        rope.transform.position = new Vector3(mid.x, top + len * 0.5f, mid.z);
+        rope.transform.localScale = new Vector3(0.012f, len * 0.5f, 0.012f);
+        Renderer rr = rope.GetComponent<Renderer>();
+        Shader sh = Shader.Find("Universal Render Pipeline/Lit");
+        Material m = new Material(sh != null ? sh : Shader.Find("Standard"));
+        if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", new Color(0.12f, 0.1f, 0.08f));
+        rr.sharedMaterial = m;
+        look.Objects.Add(rope);
         return true;
     }
 
-    /// <summary>문짝이 닫힌 자세에서 <paramref name="degrees"/>만큼 돌아간 애니메이션 지점을 찾아(이분 탐색) 거기에 세운다.</summary>
-    private static bool AjarAt(DoorHandle handle, Transform leaf, float degrees)
+    private bool PlantOnWall(Look look, Transform prop, Transform judge, Bounds b)
     {
-        Quaternion closed = leaf.localRotation;
-        if (!handle.SetAjar(1f)) return false;
-        float max = Quaternion.Angle(closed, leaf.localRotation);
-        if (max < 1f) return false;
-        float lo = 0f;
-        float hi = 1f;
-        for (int i = 0; i < 14; i++)
+        // 책상 가운데에서 네 방향으로 벽을 찾아 원래 자리(창가)에서 가장 먼 벽 — 눈높이에 옆으로 박혀 있다.
+        Vector3 mid = RoomMiddle(prop);
+        Vector3 floor = FloorUnder(mid + Vector3.up * 0.5f);
+        Vector3 eye = new Vector3(mid.x, floor.y + 1.7f, mid.z);
+        Vector3[] dirs = { Vector3.forward, Vector3.back, Vector3.left, Vector3.right };
+        bool found = false;
+        RaycastHit best = default(RaycastHit);
+        float bestScore = float.NegativeInfinity;
+        foreach (Vector3 d in dirs)
         {
-            float mid = (lo + hi) * 0.5f;
-            handle.SetAjar(mid);
-            if (Quaternion.Angle(closed, leaf.localRotation) < degrees) lo = mid;
-            else hi = mid;
+            foreach (RaycastHit h in Physics.RaycastAll(eye, d, 12f, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (h.collider.transform.IsChildOf(prop) || Mathf.Abs(h.normal.y) > 0.2f) continue;
+                if (h.collider.GetComponentInParent<Rigidbody>() != null) continue;   // 플레이어
+                float score = Flat(h.point - prop.position).magnitude;
+                if (h.distance > 1.2f && score > bestScore)
+                {
+                    bestScore = score;
+                    best = h;
+                    found = true;
+                }
+
+                break;
+            }
         }
 
-        return handle.SetAjar((lo + hi) * 0.5f);
+        if (!found) return false;
+        Vector3 n = Flat(best.normal);
+        Quaternion rot = Quaternion.FromToRotation(prop.up, n) * prop.rotation;
+        Vector3 baseCenter = new Vector3(best.point.x, floor.y + 1.7f, best.point.z) + n * 0.01f;
+        return MoveProp(look, prop, judge, PivotFor(prop, b, rot, baseCenter), rot);
     }
 
     private bool PlantToDesk(Look look, Transform prop, Transform judge, Bounds b, Band band)
@@ -709,6 +820,92 @@ public sealed class InspectionAnomalies : MonoBehaviour
         look.Objects.Add(go);
     }
 
+    /// <summary>
+    /// H-2 피 식수대(44차, 김진선님 HorrorEvent_BloodyFountain). 그 연출 프리팹을 씬 식수대와 같은 자리·방향에 세우고(프리팹 속 식수대 모형은 끔 — 씬 것이 있다),
+    /// 바닥 물웅덩이(물·검붉은 판 둘 다)를 구간 길이(<see cref="AnomalyLook.SpreadMeters"/> 0.6/1.4/2.2/3.4m)만큼 앞으로 늘이고 높이를 실제 바닥에 맞춘다.
+    /// 앞 1m 안으로 다가서면(프리팹의 HorrorTriggerZone) 물이 검붉게 변한다 — 「가까이」 연출. 김진선님 프리팹·스크립트는 고치지 않는다.
+    /// </summary>
+    private bool FountainEvent(Look look, Transform prop, Bounds b, Band band)
+    {
+        if (_props == null) _props = Resources.Load<InspectionAnomalyPropsSO>(InspectionAnomalyPropsSO.ResourcePath);
+        GameObject prefab = _props != null ? _props.FindEvent(look.ItemId) : null;
+        if (prefab == null) return false;
+
+        GameObject inst = Instantiate(prefab, prop.position, prop.rotation);
+        inst.name = "이상 " + look.ItemId + " 피 식수대";
+        look.Objects.Add(inst);
+        Transform model = inst.transform.Find("DrinkingFountain");
+        if (model != null) model.gameObject.SetActive(false);
+        WatchSceneModel(inst, prop);
+        // 다가섬 구역(트리거)이 식수대 앞에 있어 응시·조준 레이를 막지 않게 Ignore Raycast 층으로(트리거 판정은 그대로).
+        Transform zone = inst.transform.Find("Trigger");
+        if (zone != null) zone.gameObject.layer = 2;
+
+        Vector3 fwd = Flat(prop.forward);
+        float floorY = FloorY(prop.position + fwd * 0.6f, b.min.y);
+        float len = Mathf.Max(0.45f, AnomalyLook.SpreadMeters(band));
+        float wid = Mathf.Max(0.55f, SpreadWidthByBand[Mathf.Clamp((int)band, 0, 4)]);
+        string[] puddles = { "Idle_Water/Decal_FloorPuddle", "Near_DarkRed/Decal_FloorPuddleDarkRed" };
+        for (int i = 0; i < puddles.Length; i++)
+        {
+            Transform t = inst.transform.Find(puddles[i]);
+            UnityEngine.Rendering.Universal.DecalProjector d = t != null ? t.GetComponent<UnityEngine.Rendering.Universal.DecalProjector>() : null;
+            if (d == null) continue;
+            // 판은 x 90°로 눕혀 아래로 비춘다 — 판의 y가 식수대 앞쪽(+z). 식수대 바로 앞(0.13m)에서 시작해 len만큼.
+            Vector3 lp = t.localPosition;
+            float startZ = lp.z - d.size.y * 0.5f;
+            d.size = new Vector3(wid, len, d.size.z);
+            lp.z = startZ + len * 0.5f;
+            lp.y = floorY - prop.position.y;
+            t.localPosition = lp;
+        }
+
+        // 천장 얼룩·천장 물방울(김진선님 갱신본)은 프리팹 기준 천장 3.14m — 실제 천장 바로 아래로 맞춘다.
+        RaycastHit up;
+        if (Physics.Raycast(new Vector3(prop.position.x, floorY + 1.2f, prop.position.z) + fwd * 0.44f, Vector3.up, out up, 6f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            Transform red = inst.transform.Find("Near_DarkRed");
+            if (red != null)
+            {
+                foreach (Transform c in red)
+                {
+                    if (c.localPosition.y < 2f) continue;   // 천장에 붙은 것만(얼룩·천장 물방울)
+                    Vector3 lp = c.localPosition;
+                    lp.y = up.point.y - prop.position.y - (c.name.StartsWith("PS_") ? 0.06f : 0f);
+                    c.localPosition = lp;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 김진선님 <c>HorrorUnseenReset</c>(연출이 끝난 뒤 안 보는 사이 처음 물로 되돌림)이 지켜볼 모델을 씬 식수대로 바꾼다.
+    /// 프리팹 속 모형은 꺼 두므로 그대로면 늘 「안 본다」가 되고, 씬 식수대의 점검 기준점 상자가 시선 선을 막아도 「안 본다」가 된다 —
+    /// 씬 식수대(기준점이 그 자식)를 보게 하면 둘 다 풀린다. 김진선님 코드는 고치지 않고 이 인스턴스의 필드만 반사로 바꾼다. 못 바꾸면 그 컴포넌트를 끈다.
+    /// </summary>
+    private static void WatchSceneModel(GameObject inst, Transform sceneModel)
+    {
+        foreach (MonoBehaviour mb in inst.GetComponents<MonoBehaviour>())
+        {
+            if (mb == null || mb.GetType().Name != "HorrorUnseenReset") continue;
+            const System.Reflection.BindingFlags F = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            System.Reflection.FieldInfo watched = mb.GetType().GetField("watchedModel", F);
+            System.Reflection.FieldInfo list = mb.GetType().GetField("renderers", F);
+            List<Renderer> renderers = list != null ? list.GetValue(mb) as List<Renderer> : null;
+            if (watched == null || renderers == null)
+            {
+                mb.enabled = false;
+                continue;
+            }
+
+            watched.SetValue(mb, sceneModel);
+            renderers.Clear();
+            sceneModel.GetComponentsInChildren(true, renderers);
+        }
+    }
+
     private void Hair(Look look, Transform prop, Bounds b, Band band)
     {
         Vector3 fwd = Flat(prop.forward);
@@ -778,6 +975,14 @@ public sealed class InspectionAnomalies : MonoBehaviour
             look.Objects.Add(w.Go);
             w.At = 0f;
             w.Wait = 0f;
+            w.NextStep = Time.time + CctvFaceScare.StepSeconds;
+            Walker owner = w;
+            // 51차: 3초 이어서 보면 얼굴 점프스케어(3일차부터, 밤당 한 번) — 끝나면 잠시 화면에서 사라진다.
+            CctvFaceScare.Register(w.Go, w.Channel, false, () =>
+            {
+                owner.Wait = 12f;
+                if (owner.Only != null) owner.Only.enabled = false;
+            });
         }
 
         if (w.Wait > 0f)
@@ -787,13 +992,18 @@ public sealed class InspectionAnomalies : MonoBehaviour
             return;
         }
 
+        // 51차(민: 「걷는 애니 없이 서성거려 이상하다」): 걷지 않는다 — 1.5초마다 0.7m씩 툭툭(스톱모션), 늘 카메라 쪽을 본다.
+        if (Time.time < w.NextStep) return;
+        w.NextStep = Time.time + CctvFaceScare.StepSeconds;
         float span = Mathf.Max(0.5f, Vector3.Distance(w.A, w.B));
-        w.At += Time.deltaTime * w.Speed / span;
+        w.At += CctvFaceScare.StepMeters / span;
         Vector3 from = w.Forward ? w.A : w.B;
         Vector3 to = w.Forward ? w.B : w.A;
-        Vector3 dir = Flat(to - from);
         w.Go.transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(w.At));
+        Camera eyeCam = cctv.ChannelCamera(w.Channel);
+        Vector3 dir = eyeCam != null ? Flat(eyeCam.transform.position - w.Go.transform.position) : Flat(to - from);
         if (dir.sqrMagnitude > 0.0001f) w.Go.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+        cctv.ForceRenderFor(0.15f);
         if (w.At >= 1f)
         {
             // 다 지나가면 화면에서 사라졌다가 잠시 뒤 반대로.

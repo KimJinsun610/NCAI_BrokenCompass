@@ -258,6 +258,7 @@ namespace NightDuty
             _lastCaptureSources = new List<string>();
             ClearRaised();
             ResetExtensions(false);
+            ResetOrders();
             ViolationMinutesToday.Clear();
             _lastSummary = default;
         }
@@ -302,10 +303,24 @@ namespace NightDuty
 
                 // 점검 편성도 밤 시작에 확정한다 — 이상의 축은 연출 구간(하한 적용 뒤)을 본다.
                 plannedToday = BuildInspectionPlan(Day);
-                Board.Begin(plannedToday);
+                Board.Begin(plannedToday, DripFor(plannedToday));
 
                 // 밤 편성(조우 슬롯 + 새 수칙 덱)은 점검 편성을 본다(소년 착석 = 교실 점검 등).
                 OnNightPlanned(plannedToday);
+
+                // 51차: 편성된 조우·수칙이 요구하는 점검을 맞춘다(시체 낙하 = 사다리 C-3, T4 = 변기 T-1 목격 전까지 묶음).
+                InspectionPlan patched = PatchPlanForProgram(plannedToday, _program);
+                if (!ReferenceEquals(patched, plannedToday))
+                {
+                    plannedToday = patched;
+                    Board.Begin(plannedToday, DripFor(plannedToday));
+                    Debug.Log("[NightRun] 점검 편성 보정 — " + plannedToday);
+                }
+
+                HoldForProgram(plannedToday, _program);
+
+                // 50차: 점검 순차 지시기 — 조우 슬롯을 보고 호출 1에 아낄 공간을 정한다.
+                BeginOrders(plannedToday);
             }
 
             // 재시작한 밤은 덱·점검을 다시 뽑지 않는다 — 이상 배정·덱·조우·역설 편성은 밤 시작에 확정된다(2026-09-30 최종 기획서).
@@ -350,7 +365,10 @@ namespace NightDuty
 
         private static ISnapshotable[] SnapshotParts()
         {
-            return _finalBook != null ? new ISnapshotable[] { Board, _finalBook } : new ISnapshotable[] { Board };
+            List<ISnapshotable> parts = new List<ISnapshotable> { Board };
+            if (_finalBook != null) parts.Add(_finalBook);
+            if (_orders != null) parts.Add(_orders);
+            return parts.ToArray();
         }
 
         /// <summary>
@@ -370,6 +388,9 @@ namespace NightDuty
             {
                 return;
             }
+
+            // 점검 지시도 판정 정지 구간에 흐른다(출근 직후 첫 지시, 호출 2는 이완이 끝나는 순간).
+            OrdersTick(judgeSeconds);
 
             if (!IsJudgingNow)
             {
@@ -418,6 +439,7 @@ namespace NightDuty
             try
             {
                 TrackSpace(signal);
+                OrdersObserve(signal);
                 FinaleObserve(signal);
 
                 // 새 수칙은 모든 신호로 상태(공간·자세·손전등)를 갱신하고, 판정 구간에만 판정한다.
@@ -492,6 +514,7 @@ namespace NightDuty
 
             if (report.Accepted)
             {
+                OrdersNoteReport();
                 OnFinalInspectionReported(report);
                 EventBus.RaiseInspectionReported(report);
             }
@@ -509,8 +532,10 @@ namespace NightDuty
             if (!_nightOpen || IsCaptured || !IsJudgingNow) return false;
 
             InspectionItem item = InspectionCatalog.FindByTarget(itemId);
-            if (item == null || !Board.Startle(item.Id, _axes, _currentSpace)) return false;
+            if (item == null || !Board.IsIssued(item.Id)) return false;   // 50차: 지시받지 않은 물품은 아직 점검 대상이 아니다
+            if (!Board.Startle(item.Id, _axes, _currentSpace)) return false;
 
+            if (_tension != null) _tension.Pacer.Impulse(PacerImpulse.Startle);
             EventBus.RaiseInspectionStartled(item.Id, item.Axis);
             CloseIfCaptured();
             return true;
@@ -890,6 +915,7 @@ namespace NightDuty
             string name = DisplaySource(sourceId);
             if (string.IsNullOrEmpty(name) || name == "debug" || name == "처벌") return;
             if (!RaisedThisAttempt[i].Contains(name)) RaisedThisAttempt[i].Add(name);
+            if (amount > 0 && _tension != null) _tension.Pacer.Impulse(PacerImpulse.Violation);
         }
 
         /// <summary>
@@ -949,6 +975,8 @@ namespace NightDuty
             _lastCaptureSources = new List<string>();
             ClearRaised();
             ResetExtensions(true);
+            ResetOrders();
+            InspectionDripEnabled = false;
             ViolationMinutesToday.Clear();
             Board.Begin(InspectionPlan.Empty(0));
             _assigner = null;

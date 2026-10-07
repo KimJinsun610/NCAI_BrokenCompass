@@ -67,9 +67,10 @@ namespace NightDuty
     }
 
     /// <summary>
-    /// 점검 항목 17개(복도 4 · 교실 3 · 과학실 3 · 화장실 3 · 도서관 3 · 경비실 1). <b>점검 항목의 구현값 정본</b>이다 —
+    /// 점검 항목 16개(복도 3 · 교실 3 · 과학실 3 · 화장실 3 · 도서관 3 · 경비실 1). <b>점검 항목의 구현값 정본</b>이다 —
     /// 기획 정본은 최종 기획서 「공간별 설계」이고, 거기서 문구·축·틀이 바뀌면 여기를 고친다.
     /// 「가까이」 연출 내용과 이상의 모습은 연출 단계(7단계)의 몫이라 여기 적지 않는다.
+    /// 2026-10-05(49차 민): H-4 복도 사물함(관물대)을 뺐다 — 복도 라커가 142개라 어느 것을 보라는지 찾기 어렵다. ID H-4는 다시 쓰지 않는다.
     /// </summary>
     public static class InspectionCatalog
     {
@@ -82,8 +83,8 @@ namespace NightDuty
         /// <summary>1일차 튜토리얼 이상 — 과학실 현미경 불(빛).</summary>
         public const string TutorialLight = "S-2";
 
-        /// <summary>1일차 튜토리얼 이상 — 복도 사물함(옮김).</summary>
-        public const string TutorialMove = "H-4";
+        /// <summary>1일차 튜토리얼 이상 — 교실 화분(옮김). 교실은 1일차 마지막 점검 공간이라 호출 2(02:16)에 열린다.</summary>
+        public const string TutorialMove = "C-1";
 
         /// <summary>회차 첫 점검. 반드시 정상이다.</summary>
         public const string FirstInspection = "K-1";
@@ -93,16 +94,15 @@ namespace NightDuty
 
         private static readonly InspectionItem[] Items =
         {
-            new InspectionItem("H-1", "소화기", SpaceId.Corridor, FearAxis.Illuminance, AnomalyTemplate.Light, "소화기 압력계는 어둡습니다."),
+            new InspectionItem("H-1", "소화기", SpaceId.Corridor, FearAxis.Illuminance, AnomalyTemplate.Light, "소화기 압력계에는 불이 들어오지 않습니다."),
             new InspectionItem("H-2", "식수대", SpaceId.Corridor, FearAxis.Layout, AnomalyTemplate.Switch, "식수대 바닥은 말라 있습니다."),
-            new InspectionItem("H-3", "알림종", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Sound, "알림종은 울리지 않습니다."),
-            new InspectionItem("H-4", "사물함", SpaceId.Corridor, FearAxis.Layout, AnomalyTemplate.Move, "사물함은 모두 잠겨 있습니다."),
+            new InspectionItem("H-3", "알림종", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Sound, "알림종은 수업 종이 칠 때만 울립니다."),
 
             new InspectionItem("C-1", "화분", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "화분은 창가에 있습니다."),
-            new InspectionItem("C-2", "책상 램프", SpaceId.Classroom, FearAxis.Illuminance, AnomalyTemplate.Light, "교실에는 전기가 들어오지 않습니다."),
-            new InspectionItem("C-3", "사다리", SpaceId.Classroom, FearAxis.Auditory, AnomalyTemplate.Sound, "천장 구멍은 조용합니다."),
+            new InspectionItem("C-2", "책상 램프", SpaceId.Classroom, FearAxis.Illuminance, AnomalyTemplate.Light, "책상 램프는 꺼져 있습니다."),
+            new InspectionItem("C-3", "사다리", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교실 안쪽에 작은 사다리가 있는지 확인하십시오."),   // 52차 민 문구(이상 = 사다리 없음)
 
-            new InspectionItem("S-1", "인체 모형", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Move, "모형은 테이프 안에 있습니다."),
+            new InspectionItem("S-1", "인체 모형", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Move, "모형은 테이프 안에 그대로 서 있습니다."),
             new InspectionItem("S-2", "현미경", SpaceId.ScienceRoom, FearAxis.Illuminance, AnomalyTemplate.Light, "현미경은 꺼져 있습니다."),
             new InspectionItem("S-3", "개수대", SpaceId.ScienceRoom, FearAxis.Auditory, AnomalyTemplate.Sound, "수도는 잠겨 있습니다."),
 
@@ -110,11 +110,11 @@ namespace NightDuty
             new InspectionItem("T-2", "칸 문", SpaceId.Toilet, FearAxis.Auditory, AnomalyTemplate.Sound, "빈 칸의 문은 열려 있습니다."),
             new InspectionItem("T-3", "거울", SpaceId.Toilet, FearAxis.Illuminance, AnomalyTemplate.Light, "거울 위 조명은 깜빡이지 않습니다."),
 
-            new InspectionItem("L-1", "열람석", SpaceId.Library, FearAxis.Layout, AnomalyTemplate.Move, "의자는 모두 넣어져 있습니다."),
-            new InspectionItem("L-2", "블라인드", SpaceId.Library, FearAxis.Illuminance, AnomalyTemplate.Light, "블라인드는 내려져 있습니다."),
+            new InspectionItem("L-1", "열람석", SpaceId.Library, FearAxis.Layout, AnomalyTemplate.Move, "열람석 의자는 모두 책상 안에 들어가 있습니다."),
+            new InspectionItem("L-2", "블라인드", SpaceId.Library, FearAxis.Illuminance, AnomalyTemplate.Light, "블라인드는 모두 내려져 있습니다."),
             new InspectionItem("L-3", "반납 상자", SpaceId.Library, FearAxis.Auditory, AnomalyTemplate.Sound, "반납 상자는 조용합니다."),
 
-            new InspectionItem("K-1", "CCTV 전 채널", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Switch, "CCTV 모든 채널은 비어 있습니다.")
+            new InspectionItem("K-1", "CCTV 전 채널", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Switch, "CCTV 화면에는 사람이 없습니다.")
         };
 
         private static readonly Dictionary<string, InspectionItem> ById = BuildIndex();

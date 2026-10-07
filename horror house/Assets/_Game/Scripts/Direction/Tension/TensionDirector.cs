@@ -103,7 +103,7 @@ namespace NightDuty
     /// <item>조우 = 방아쇠(<see cref="EncounterScript.Trigger"/>) → 전조(강도 3↑만 1~8초, 헛예고 30% / 청각 구간 3↑ 40%) → 대면(대응 수칙의 단서를 판정 책에) → 대응 창 → 끝 단서 → 결과.</item>
     /// <item><see cref="SurpriseBudget"/>이 강도별 횟수·간격·조우 뒤 휴지를 막는다.</item>
     /// <item>조우에 묶이지 않은 수칙(<see cref="RuleTriggers"/>)의 단서를 그 공간에 머물 때 밤마다 한 번 울린다(조우 중엔 쉼, 20초 간격).</item>
-    /// <item>가짜 놀람: 진짜 1에 3까지, 같은 것은 밤에 2번, 60~150초 간격.</item>
+    /// <item>가짜 놀람: 긴장 조절기(<see cref="TensionPacer"/>, 50차)가 거른다 — 일차 상한 2/4/5/6/7, 같은 것은 밤에 2번, 60~150초 간격, 1일차는 첫 조우 결과 뒤.</item>
     /// </list>
     /// 코어 안에서 돌고(엔진 객체를 모름), 판정 단서는 <see cref="TryDequeue"/>로 내보낸다 — <c>NightRun</c>이 꺼내 판정 책에 넣는다.
     /// 보이고 들리는 일은 <see cref="Emitted"/>를 받은 연출 쪽이 한다.
@@ -122,11 +122,11 @@ namespace NightDuty
         /// <summary>가짜 놀람 간격 최대(초).</summary>
         public const float FakeGapMax = 150f;
 
-        /// <summary>판정이 열린(00:16) 뒤 첫 가짜 놀람까지 최소(초).</summary>
-        public const float FirstFakeMin = 4f;
+        /// <summary>판정이 열린(00:16) 뒤 첫 가짜 놀람까지 최소(초, 2일차부터). 50차: 4~14초 → 25~50초(「첫날부터 도배」).</summary>
+        public const float FirstFakeMin = 25f;
 
         /// <summary>판정이 열린 뒤 첫 가짜 놀람까지 최대(초).</summary>
-        public const float FirstFakeMax = 14f;
+        public const float FirstFakeMax = 50f;
 
         /// <summary>같은 가짜 놀람의 밤당 상한.</summary>
         public const int FakePerId = 2;
@@ -161,6 +161,7 @@ namespace NightDuty
         private readonly HashSet<string> _seenHigh = new HashSet<string>(StringComparer.Ordinal);
 
         private SurpriseBudget _budget;
+        private readonly TensionPacer _pacer;
         private int _restarts;
         private float _minute;
         private SpaceId _space = SpaceId.None;
@@ -180,6 +181,13 @@ namespace NightDuty
         private string _lastNote = string.Empty;
         private readonly HashSet<string> _held = new HashSet<string>(StringComparer.Ordinal);
         private string _gateRule = string.Empty;
+        private string _gazeId = string.Empty;
+        private float _gazeRun;
+
+        /// <summary>
+        /// 응시 방아쇠(<see cref="EncounterTrigger.GazeTarget"/>)의 대상이 지금 「점검 중」인지 — 지시받았고 아직 보고 전(NightRun이 넣는다). null이면 늘 참.
+        /// </summary>
+        public Func<string, bool> GazeTargetReady { get; set; }
 
         /// <summary>그날 편성으로 만든다.</summary>
         public TensionDirector(NightProgram program, int day, int restarts = 0, Random rng = null)
@@ -189,6 +197,7 @@ namespace NightDuty
             _restarts = restarts;
             _rng = rng ?? new Random();
             _budget = new SurpriseBudget(_day);
+            _pacer = new TensionPacer(_day);
 
             foreach (SlotEncounter s in _program.Slots)
             {
@@ -204,7 +213,7 @@ namespace NightDuty
                 _rules.Add(new RuleTriggerRun { Script = script, NeedDwell = Range(script.DwellMin, script.DwellMax) });
             }
 
-            // 44차: 출근(00:00~00:16, 실시간 1분)은 조용히 두되, 판정이 열리면 곧 첫 가짜 놀람 — 전에는 첫 것이 30~75초 뒤로 잡혀 출근 뒤 한참 비었다.
+            // 44차: 출근(00:00~00:16, 실시간 1분)은 조용히 둔다. 50차: 판정이 열린 뒤 25~50초(2일차부터) — 1일차는 첫 조우 결과 뒤(TryFakeScare).
             _nextFake = NightClock.RealSecondsAt(NightClock.JudgingStart) + Range(FirstFakeMin, FirstFakeMax);
         }
 
@@ -273,6 +282,18 @@ namespace NightDuty
 
         /// <summary>지금 강도 단계.</summary>
         public DirectorMood Mood { get; private set; } = DirectorMood.Normal;
+
+        /// <summary>긴장 조절기(50차) — 가짜 놀람을 거르고 점검 지시가 읽는다.</summary>
+        public TensionPacer Pacer
+        {
+            get { return _pacer; }
+        }
+
+        /// <summary>결과까지 간 조우 수(이번 시도).</summary>
+        public int EncountersDone
+        {
+            get { return _encountersDone; }
+        }
 
         /// <summary>놀람 예산.</summary>
         public SurpriseBudget Budget
@@ -403,6 +424,16 @@ namespace NightDuty
                 case SignalKind.CctvChannel:
                     _channel = s.TargetId;
                     break;
+                case SignalKind.GazeSample:
+                    string id = s.TargetId ?? string.Empty;
+                    if (id.Length > 0 && id == _gazeId) _gazeRun += s.Value;
+                    else
+                    {
+                        _gazeId = id;
+                        _gazeRun = id.Length > 0 ? s.Value : 0f;
+                    }
+
+                    break;
             }
         }
 
@@ -415,6 +446,7 @@ namespace NightDuty
             if (dt > 0f) Now += dt;
             _minute = minute;
             Mood = DirectorMoods.Of(highestSensory, _restarts);
+            _pacer.Tick(minute, dt > 0f ? dt : 0f, _space == SpaceId.SecurityRoom, highestSensory);
 
             if (captured)
             {
@@ -435,6 +467,13 @@ namespace NightDuty
         private bool SlotOpen(EncounterRun r, float minute)
         {
             if (r.Forced) return true;
+
+            // 51차: 응시 방아쇠(사다리 점검 중 시체 낙하)는 그 점검이 지시받은 때를 따른다 — 슬롯 시간창을 보지 않는다(판정 구간, 이완 구간 제외).
+            if (r.Script.Trigger == EncounterTrigger.GazeTarget)
+            {
+                return NightClock.IsJudging(minute) && !(minute >= NightClock.RelaxStart && minute < NightClock.Call2);
+            }
+
             if (!NightClock.CanStartEncounter(minute)) return false;
             if (!NightProgram.SlotActive(r.Slot, _restarts)) return false;
             if (r.Slot == EncounterSlot.C && Mood == DirectorMood.Danger) return false;
@@ -461,6 +500,8 @@ namespace NightDuty
                     return _space == SpaceId.Corridor && (lastCall || _walk >= s.Dwell);
                 case EncounterTrigger.ViewingCctv:
                     return ViewingCctv && Now - _cctvSince >= s.Dwell;
+                case EncounterTrigger.GazeTarget:
+                    return _gazeId == s.GazeTargetId && _gazeRun >= s.Dwell && (GazeTargetReady == null || GazeTargetReady(s.GazeTargetId));
             }
 
             return false;
@@ -490,6 +531,22 @@ namespace NightDuty
                     continue;
                 }
 
+                // 51차: 응시 방아쇠는 플레이어가 그것을 보는 그 순간뿐이다 — 긴장·예산으로 미루면 영영 오지 않는다.
+                if (r.Script.Trigger == EncounterTrigger.GazeTarget)
+                {
+                    Begin(r, auditoryShown);
+                    return;
+                }
+
+                // 50차: 긴장 절정 중에는 조우를 미룬다 — 단 슬롯 끝 10분 전부터는 그대로 건다(조우는 수칙과 묶여 있다).
+                float slotFrom, slotTo;
+                SlotWindow(r.Slot, out slotFrom, out slotTo);
+                if (!r.Forced && _pacer.State == PacerState.Peak && minute < slotTo - LastCallMinutes)
+                {
+                    r.Waiting = "긴장 절정 — 잠시 미룸";
+                    continue;
+                }
+
                 string why;
                 if (!_budget.CanStart(r.Def.Intensity, r.Def.IsCross, Now, out why))
                 {
@@ -508,13 +565,22 @@ namespace NightDuty
             r.Waiting = string.Empty;
             r.Point = PointFor(r.Script);
 
-            if (r.Def.Intensity < 3)
+            if (r.Def.Intensity < 3 && r.Script.FixedForeshadow <= 0f)
             {
                 Confront(r);
                 return;
             }
 
             float scale = DirectorMoods.ForeshadowScale(Mood);
+            if (r.Script.FixedForeshadow > 0f)
+            {
+                r.State = EncounterRunState.Foreshadow;
+                r.PhaseEnds = Now + r.Script.FixedForeshadow;
+                _pacer.Impulse(PacerImpulse.Foreshadow);
+                Emit(DirectionEventKind.Encounter, DirectionPhase.Foreshadow, r.Def.Id, string.Empty, r.Script.Space, r.Def.Intensity, r.Point, r.Script.FixedForeshadow, string.Empty);
+                return;
+            }
+
             // 헛예고는 조우마다 한 번까지 — 한 번 속인 뒤에는 진짜가 온다(43차 시뮬: 같은 조우의 헛예고가 26초 사이로 두 번 연달아 나와 김이 샜다).
             if (!r.Forced && r.FalseCount == 0)
             {
@@ -524,6 +590,7 @@ namespace NightDuty
                     float d = Range(1f, 8f) * scale;
                     r.FalseCount++;
                     r.RetryAt = Now + d + FalseRetry;
+                    _pacer.Impulse(PacerImpulse.FalseForeshadow);
                     Emit(DirectionEventKind.Encounter, DirectionPhase.FalseForeshadow, r.Def.Id, string.Empty, r.Script.Space, r.Def.Intensity, r.Point, d, "헛예고");
                     return;
                 }
@@ -533,6 +600,7 @@ namespace NightDuty
             if (_restarts > 0 && r.Def.Intensity >= 4 && _seenHigh.Contains(r.Def.Id)) length *= 0.5f;   // 이미 본 강도 4↑의 전조는 절반.
             r.State = EncounterRunState.Foreshadow;
             r.PhaseEnds = Now + length;
+            _pacer.Impulse(PacerImpulse.Foreshadow);
             Emit(DirectionEventKind.Encounter, DirectionPhase.Foreshadow, r.Def.Id, string.Empty, r.Script.Space, r.Def.Intensity, r.Point, length, string.Empty);
         }
 
@@ -562,10 +630,13 @@ namespace NightDuty
             r.State = EncounterRunState.Active;
             r.PhaseEnds = Now + window;
             r.ConfrontMinute = _minute;
+            _pacer.Impulse(PacerImpulse.Confront, r.Def.Intensity);
             if (s.Placement != CuePlacement.None && r.Point == Vector3.zero) r.Point = PointFor(s);
 
             Emit(DirectionEventKind.Encounter, DirectionPhase.Confront, r.Def.Id, s.Cue, s.Space, r.Def.Intensity, r.Point, window, string.Empty);
-            if (s.Cue.Length > 0) _out.Enqueue(JudgeSignal.Cue(s.Cue, r.Point));
+            // 51차 K1: CCTV를 보다 걸린 조우의 단서는 지금 채널을 단다(「그 채널을 오래 보면」 판정).
+            string cue = s.Trigger == EncounterTrigger.ViewingCctv && s.Cue.Length > 0 && !string.IsNullOrEmpty(_channel) ? s.Cue + "@" + _channel : s.Cue;
+            if (s.Cue.Length > 0) _out.Enqueue(JudgeSignal.Cue(cue, r.Point));
             if (s.ExtraCue.Length > 0) _out.Enqueue(JudgeSignal.Cue(s.ExtraCue, r.Point));
         }
 
@@ -623,6 +694,7 @@ namespace NightDuty
 
         private static bool PastSlot(EncounterRun r, float minute)
         {
+            if (r.Script.Trigger == EncounterTrigger.GazeTarget) return minute >= NightClock.JudgingEnd;
             float from, to;
             SlotWindow(r.Slot, out from, out to);
             return minute >= to;
@@ -700,6 +772,7 @@ namespace NightDuty
             r.SentCue = cue;
             r.FiredMinute = _minute;
             _lastRuleCue = Now;
+            _pacer.Impulse(PacerImpulse.RuleCue);
             _out.Enqueue(JudgeSignal.Cue(cue, _feet));
             Emit(DirectionEventKind.RuleCue, DirectionPhase.None, s.RuleId, cue, s.Space, 0, _feet, s.Duration, string.Empty);
 
@@ -754,12 +827,21 @@ namespace NightDuty
         {
             if (!NightClock.IsJudging(minute) || Now < _nextFake) return;
 
-            int cap = 2 + 3 * _encountersDone + DirectorMoods.ExtraFakes(Mood);
+            // 50차(민: 「첫날부터 도배된 느낌」): 1일차는 첫 조우의 결과를 본 뒤(또는 호출 2 뒤)에만.
+            // 슬롯 A에 조우가 없는 1일차(지금 편성)는 호출 1(01:00) 뒤부터.
+            if (_day <= 1 && _encountersDone == 0 && minute < (HasSlotA() ? NightClock.Call2 : NightClock.Call1)) return;
+
+            // 일차 상한 2/4/5/6/7(+강도 단계). 옛 「진짜 1에 가짜 3」은 조절기 상한으로 갈음했다(되살리지 말 것).
+            int cap = TensionPacer.FakeCap(_day) + DirectorMoods.ExtraFakes(Mood);
             if (_fakesUsed >= cap)
             {
                 _nextFake = Now + FakeGapMin;
                 return;
             }
+
+            // 조절기: 축적 상태 · 긴장도 50 미만 · 점검 지시 직후가 아닐 때만. 아니면 다음 틱에 다시 본다.
+            string why;
+            if (!_pacer.AllowsFake(out why)) return;
 
             List<string> open = new List<string>();
             foreach (string id in FakeScares)
@@ -778,7 +860,18 @@ namespace NightDuty
             _fakeCount.TryGetValue(pick, out used);
             _fakeCount[pick] = used + 1;
             _fakesUsed++;
+            _pacer.Impulse(PacerImpulse.Fake);
             Emit(DirectionEventKind.FakeScare, DirectionPhase.None, pick, string.Empty, _space, 0, _feet, 0f, string.Empty);
+        }
+
+        private bool HasSlotA()
+        {
+            for (int i = 0; i < _runs.Count; i++)
+            {
+                if (_runs[i].Slot == EncounterSlot.A && !_runs[i].Forced) return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -834,6 +927,7 @@ namespace NightDuty
             AbortAll("재시작");
             _restarts = restarts;
             _budget = new SurpriseBudget(_day);
+            _pacer.Reset();
 
             for (int i = 0; i < _runs.Count; i++)
             {

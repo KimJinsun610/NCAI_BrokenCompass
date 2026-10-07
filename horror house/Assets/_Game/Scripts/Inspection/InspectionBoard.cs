@@ -143,7 +143,8 @@ namespace NightDuty
     /// <item>「가까이」(0.8m 들여다보기·뒤로 돌아가기·건드리기)는 항목마다 한 번 그 축 +6(<see cref="Startle"/>).</item>
     /// <item>04:00 정산(<see cref="Settle"/>): 미완료마다 경고 1, 이상이 있던 항목은 그 축 +8.</item>
     /// </list>
-    /// 재시작 때 되돌리는 것(<see cref="ISnapshotable"/>): 한도 사용량·「가까이」 기록·역보고 표시. 이미 한 보고는 되돌리지 않는다.
+    /// 재시작 때 되돌리는 것(<see cref="ISnapshotable"/>): 한도 사용량·「가까이」 기록·역보고 표시·지시(보고한 항목은 지시받은 채로). 이미 한 보고는 되돌리지 않는다.
+    /// <para>50차 순차 지시(<see cref="DripMode"/>): 항목은 지시를 받아야 열리고, 정산은 지시받은 항목만 센다.</para>
     /// </summary>
     public sealed class InspectionBoard : ISnapshotable
     {
@@ -157,6 +158,8 @@ namespace NightDuty
         private readonly int[] _reliefUsed = new int[SensoryAxes];
         private readonly HashSet<string> _startled = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _reverse = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> _issued = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> _held = new HashSet<string>(StringComparer.Ordinal);
 
         /// <inheritdoc/>
         public string SnapshotKey
@@ -170,10 +173,31 @@ namespace NightDuty
             get { return _plan; }
         }
 
-        /// <summary>점검 항목 수.</summary>
+        /// <summary>점검 항목 수(묶어 둔 항목 제외 — 51차 T4 목격 전 변기).</summary>
         public int Total
         {
-            get { return _plan.Count; }
+            get { return _plan.Count - _held.Count; }
+        }
+
+        /// <summary>
+        /// 항목을 묶어 둔다(51차) — 지시도 정산도 하지 않고 <see cref="Total"/>에서 뺀다. T4 날 변기(T-1)는 여자아이가 칸에 들어가는 것을 본 뒤에 풀린다.
+        /// </summary>
+        public bool Hold(string itemId)
+        {
+            if (itemId == null || _plan.Find(itemId) == null || _issued.Contains(itemId)) return false;
+            return _held.Add(itemId);
+        }
+
+        /// <summary>묶어 둔 항목을 푼다. 풀었으면 true.</summary>
+        public bool Release(string itemId)
+        {
+            return itemId != null && _held.Remove(itemId);
+        }
+
+        /// <summary>묶여 있는지.</summary>
+        public bool IsHeld(string itemId)
+        {
+            return itemId != null && _held.Contains(itemId);
         }
 
         /// <summary>보고한 항목 수.</summary>
@@ -197,10 +221,43 @@ namespace NightDuty
             get { return Total - ReportedCount; }
         }
 
-        /// <summary>새 밤의 편성으로 시작한다. 보고 상태·한도·표시를 모두 비운다.</summary>
-        public void Begin(InspectionPlan plan)
+        /// <summary>
+        /// 순차 지시(50차) — 켜져 있으면 항목은 <see cref="MarkIssued"/>로 지시를 받은 뒤에만 열린다(<see cref="IsOpen"/>),
+        /// 04:00 정산도 지시받은 항목만 센다. 꺼져 있으면(테스트·옛 동작) 늦은 공간만 호출 2에 열린다.
+        /// </summary>
+        public bool DripMode { get; private set; }
+
+        /// <summary>지시받은 항목 수(순차 지시가 꺼져 있으면 전체).</summary>
+        public int IssuedCount
+        {
+            get { return DripMode ? _issued.Count : Total; }
+        }
+
+        /// <summary>지시받았고 아직 보고하지 않은 항목 수.</summary>
+        public int IssuedPendingCount
+        {
+            get
+            {
+                int n = 0;
+                for (int i = 0; i < _plan.Assignments.Count; i++)
+                {
+                    string id = _plan.Assignments[i].Id;
+                    if (IsIssued(id) && StateOf(id) == InspectionState.Pending) n++;
+                }
+
+                return n;
+            }
+        }
+
+        /// <summary>새 밤의 편성으로 시작한다. 보고 상태·한도·표시·지시를 모두 비운다.</summary>
+        /// <param name="plan">그날 편성.</param>
+        /// <param name="drip">순차 지시를 쓸지(<see cref="DripMode"/>).</param>
+        public void Begin(InspectionPlan plan, bool drip = false)
         {
             _plan = plan ?? InspectionPlan.Empty(0);
+            DripMode = drip;
+            _issued.Clear();
+            _held.Clear();
             _states.Clear();
             for (int i = 0; i < _plan.Assignments.Count; i++)
             {
@@ -229,11 +286,30 @@ namespace NightDuty
             return Check(itemId, minute) == ReportRejection.None;
         }
 
-        /// <summary>항목이 열렸는지. 그날 마지막 점검 공간은 호출 2(02:16)부터.</summary>
+        /// <summary>
+        /// 항목이 열렸는지. 순차 지시면 지시를 받은 항목만(지시기가 늦은 공간은 호출 2 뒤에 낸다).
+        /// 아니면 그날 마지막 점검 공간은 호출 2(02:16)부터.
+        /// </summary>
         public bool IsOpen(string itemId, int minute)
         {
             InspectionAssignment a = _plan.Find(itemId);
-            return a != null && (!a.IsLate || minute < 0 || minute >= NightClock.Call2);
+            if (a == null) return false;
+            if (DripMode) return itemId != null && _issued.Contains(itemId);
+            return !a.IsLate || minute < 0 || minute >= NightClock.Call2;
+        }
+
+        /// <summary>지시를 받았는지. 순차 지시가 꺼져 있으면 편성의 모든 항목이 지시받은 것으로 본다.</summary>
+        public bool IsIssued(string itemId)
+        {
+            if (itemId == null || _plan.Find(itemId) == null) return false;
+            return !DripMode || _issued.Contains(itemId);
+        }
+
+        /// <summary>지시를 낸다(<see cref="InspectionDispatcher"/>). 편성에 없거나 이미 냈으면 false.</summary>
+        public bool MarkIssued(string itemId)
+        {
+            if (itemId == null || _plan.Find(itemId) == null) return false;
+            return _issued.Add(itemId);
         }
 
         /// <summary>그 감각 축에서 이번 밤 정확 보고로 뺀 양(0~10).</summary>
@@ -358,6 +434,8 @@ namespace NightDuty
             {
                 InspectionAssignment a = _plan.Assignments[i];
                 if (StateOf(a.Id) != InspectionState.Pending) continue;
+                if (!IsIssued(a.Id)) continue;   // 순차 지시: 지시받지 못한 항목은 미완료로 세지 않는다
+                if (IsHeld(a.Id)) continue;      // 51차: 묶인 채 끝난 항목(목격하지 못한 T4 변기)도 세지 않는다
 
                 unfinished++;
                 if (!a.IsAnomaly) continue;
@@ -379,7 +457,9 @@ namespace NightDuty
             {
                 ReliefUsed = (int[])_reliefUsed.Clone(),
                 Startled = new List<string>(_startled),
-                Reverse = new List<string>(_reverse)
+                Reverse = new List<string>(_reverse),
+                Issued = new List<string>(_issued),
+                Held = new List<string>(_held)
             };
         }
 
@@ -394,11 +474,22 @@ namespace NightDuty
             _startled.UnionWith(s.Startled);
             _reverse.Clear();
             _reverse.UnionWith(s.Reverse);
+
+            // 지시는 스냅샷으로 돌아가되, 이미 보고한 항목은 지시받은 채로 남는다(보고는 되돌리지 않는다).
+            _issued.Clear();
+            if (s.Issued != null) _issued.UnionWith(s.Issued);
+            _held.Clear();
+            if (s.Held != null) _held.UnionWith(s.Held);
+            foreach (KeyValuePair<string, InspectionState> kv in _states)
+            {
+                if (kv.Value != InspectionState.Pending) _issued.Add(kv.Key);
+            }
         }
 
         private ReportRejection Check(string itemId, int minute)
         {
             if (_plan.Find(itemId) == null) return ReportRejection.NotInPlan;
+            if (IsHeld(itemId)) return ReportRejection.NotOpenYet;
             if (StateOf(itemId) != InspectionState.Pending) return ReportRejection.AlreadyReported;
             if (!IsOpen(itemId, minute)) return ReportRejection.NotOpenYet;
             return ReportRejection.None;
@@ -433,6 +524,8 @@ namespace NightDuty
             public int[] ReliefUsed;
             public List<string> Startled;
             public List<string> Reverse;
+            public List<string> Issued;
+            public List<string> Held;
         }
     }
 }

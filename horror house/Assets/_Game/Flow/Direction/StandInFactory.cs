@@ -120,7 +120,7 @@ public static class StandInFactory
     /// <summary>대역에 단단한 응시 콜라이더가 필요한지(C2 천장 다리 · L5 창밖 남자).</summary>
     public static bool NeedsGazeCollider(string id)
     {
-        return id == "mob.legs" || id == "mob.windowman" || id == "mob.finale" || id == "mob.glitchman";
+        return id == "mob.legs" || id == "mob.windowman" || id == "mob.finale" || id == "mob.glitchman" || id == "mob.girl" || id == "mob.boy";   // 51차: 여자아이 목격(T4) 응시 · 52차: 앉은 소년(C2) 응시
     }
 
     private static GameObject Build(string id)

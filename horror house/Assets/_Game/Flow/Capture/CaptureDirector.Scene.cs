@@ -101,6 +101,15 @@ public sealed partial class CaptureDirector
     /// <summary>정적·암전 → 장면 → 암전. 끝나면 화면은 검고, 손전등은 붙잡히기 전으로 돌아가 있다.</summary>
     private IEnumerator PlayScene(FearAxis axis, int count, FPController player)
     {
+        // 46차: 김진선님 축 사망 컷신(청각·조도)이 있으면 그것을 튼다 — 자기 빌드업·소리·카메라를 다 가진 Timeline이라 공용 정적·얼굴 장면은 건너뛴다.
+        DeathCutscene cutscene = CutscenePrefab(axis);
+        if (cutscene != null)
+        {
+            bool played = false;
+            yield return PlayCutscene(cutscene, axis, count, player, ok => played = ok);
+            if (played) yield break;
+        }
+
         CaptureCastSO.Entry e = CaptureCastSO.Load().Get(axis);
         bool skippable = count >= 3;
         Camera cam = Camera.main;
@@ -206,6 +215,72 @@ public sealed partial class CaptureDirector
         if (scene != null) Destroy(scene);
         if (lamp != null) Destroy(lamp);
         if (flashlight != null) flashlight.SetOn(flashlightWasOn);
+    }
+
+    // ── 김진선님 사망 컷신 ─────────────────────────────────────
+
+    /// <summary>
+    /// 그 축의 김진선님 사망 컷신 프리팹(<c>Resources/DeathCutscene_Auditory</c> · <c>DeathCutscene_Illuminance</c>). 배치 축은 아직 없다 — null이면 연출표 장면.
+    /// </summary>
+    public static DeathCutscene CutscenePrefab(FearAxis axis)
+    {
+        string name = axis == FearAxis.Auditory ? DeathCutscene.ResourceName
+            : axis == FearAxis.Illuminance ? DeathCutscene.ResourceNameIlluminance
+            : null;
+        return name != null ? Resources.Load<DeathCutscene>(name) : null;
+    }
+
+    /// <summary>
+    /// 컷신을 플레이어 자리에서 튼다. 끝나는 그 순간(같은 호출 안) 화면을 검게 덮는다 — 컷신은 끝나면 카메라·조작·손전등·화면 효과를 원래대로 돌리는데,
+    /// 그 한 프레임이 보이지 않게. 되돌리며 켜진 조작은 다시 끈다(재시작이 다시 켠다). 같은 축 세 번째부터 아무 키로 건너뛴다.
+    /// 틀지 못하면(다른 컷신 재생 중 등) <paramref name="done"/>(false) — 연출표 장면으로 넘어간다.
+    /// </summary>
+    private IEnumerator PlayCutscene(DeathCutscene prefab, FearAxis axis, int count, FPController player, Action<bool> done)
+    {
+        DeathCutscene cs = Instantiate(prefab);
+        cs.name = prefab.name;
+        bool finished = false;
+        cs.Finished += () =>
+        {
+            finished = true;
+            SetBlack(1f);
+        };
+
+        if (!cs.Play(true))
+        {
+            Destroy(cs.gameObject);
+            done(false);
+            yield break;
+        }
+
+        LastScene = CaptureCastSO.Label(axis) + " · 컷신 " + prefab.name;
+        bool skippable = count >= 3;
+        float t = 0f;
+        while (!finished && t < 30f)
+        {
+            t += Time.unscaledDeltaTime;
+            if (skippable && t > 0.3f && Input.anyKeyDown)
+            {
+                SetBlack(1f);
+                cs.StopAndRestore();
+                LastScene += " → 건너뜀";
+                break;
+            }
+
+            yield return null;
+        }
+
+        if (!finished && cs.IsPlaying)
+        {
+            SetBlack(1f);
+            cs.StopAndRestore();
+        }
+
+        SetBlack(1f);
+        if (player != null) player.enabled = false;
+        LastScene += " → " + t.ToString("0.00") + "초";
+        Destroy(cs.gameObject);
+        done(true);
     }
 
     // ── 프리팹 장면 ───────────────────────────────────────────

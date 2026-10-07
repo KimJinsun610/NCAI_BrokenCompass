@@ -4939,6 +4939,12 @@ MonoBehaviour:
   returnAudio:
   - {fileID: 2794008699940444043}
   - {fileID: 6571438315826238171}
+  controlFlashlight: 0
+  flashlightLevel: 1
+  blackout: 0
+  blackoutImage: {fileID: 0}
+  fieldOfView: 0
+  nearClip: 0
   aimPoint: {fileID: 4462143412893424538}
   aimHeightOffset: 0.09
   designedYaw: 146
@@ -4946,6 +4952,7 @@ MonoBehaviour:
   blendInSeconds: 0.35
   cutAllSound: 1
   hideViewmodel: 1
+  useDebugKey: 0
   debugKey: 289
 --- !u!1 &8740807377386965080
 GameObject:

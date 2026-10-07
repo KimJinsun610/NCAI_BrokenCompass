@@ -165,12 +165,29 @@ public sealed class CorpseDrop : MonoBehaviour
         new Part { Bone = "RightLowerLeg", Tip = "RightFoot", Parent = "RightUpperLeg", Radius = 0.05f, Mass = 0.06f, Low = -80f, High = 0f, Swing = 0f },
     };
 
+    /// <summary>옛 휴머노이드 뼈 이름 ↔ 새 몹 리그 뼈 이름(58차).</summary>
+    private static readonly string[,] NewRigNames =
+    {
+        { "Hips", "Pelvis" },
+        { "LeftUpperArm", "UpperArm.L" }, { "LeftLowerArm", "Forearm.L" }, { "LeftHand", "Hand.L" },
+        { "RightUpperArm", "UpperArm.R" }, { "RightLowerArm", "Forearm.R" }, { "RightHand", "Hand.R" },
+        { "LeftUpperLeg", "Thigh.L" }, { "LeftLowerLeg", "Shin.L" }, { "LeftFoot", "Foot.L" },
+        { "RightUpperLeg", "Thigh.R" }, { "RightLowerLeg", "Shin.R" }, { "RightFoot", "Foot.R" }
+    };
+
     private void Build()
     {
         Dictionary<string, Transform> bones = new Dictionary<string, Transform>();
         foreach (Transform t in GetComponentsInChildren<Transform>(true))
         {
             if (!bones.ContainsKey(t.name)) bones[t.name] = t;
+        }
+
+        // 58차: 새 몹 리그(Pelvis · UpperArm.L · Thigh.L …)도 옛 이름(Hips · LeftUpperArm · LeftUpperLeg …)으로 찾는다.
+        for (int i = 0; i < NewRigNames.GetLength(0); i++)
+        {
+            Transform t;
+            if (!bones.ContainsKey(NewRigNames[i, 0]) && bones.TryGetValue(NewRigNames[i, 1], out t)) bones[NewRigNames[i, 0]] = t;
         }
 
         // 기존 콜라이더(대역 몸통)는 끈다 — 래그돌 콜라이더만 남긴다.

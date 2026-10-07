@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NightDuty
 {
@@ -31,7 +31,7 @@ namespace NightDuty
     }
 
     /// <summary>
-    /// 밤 시계 표 — <b>실시간 15분 = 게임 00:00~04:00</b>(실시간 1분 = 게임 16분).
+    /// 밤 시계 표 — <b>실시간 10분 = 게임 00:00~04:00</b>(실시간 1분 = 게임 24분). 59차(민: 「하룻밤이 너무 길다 — 2/3 정도로」): 15분 → 10분.
     /// 시각은 모두 <b>근무 시작(00:00)부터의 게임 분</b>이다. 시각 숫자는 여기 한 곳에만 둔다.
     /// <para>
     /// 판정 시간창은 00:16~03:30이고 이완 구간(01:52~02:16)에는 멈춘다. 퇴실 여부와는 무관하다 —
@@ -41,13 +41,13 @@ namespace NightDuty
     /// </summary>
     public static class NightClock
     {
-        /// <summary>하룻밤의 실시간 길이(초). 15분.</summary>
-        public const float RealSecondsPerNight = 900f;
+        /// <summary>하룻밤의 실시간 길이(초). 10분(59차, 전에는 15분).</summary>
+        public const float RealSecondsPerNight = 600f;
 
         /// <summary>하룻밤의 게임 길이(분). 00:00~04:00.</summary>
         public const int NightMinutes = 240;
 
-        /// <summary>실시간 1초에 흐르는 게임 초. 240분 × 60 / 900초 = 16.</summary>
+        /// <summary>실시간 1초에 흐르는 게임 초. 240분 × 60 / 600초 = 24.</summary>
         public const float GameSecondsPerRealSecond = NightMinutes * 60f / RealSecondsPerNight;
 
         /// <summary>출근이 끝나고 수칙 판정이 시작되는 시각(00:16).</summary>

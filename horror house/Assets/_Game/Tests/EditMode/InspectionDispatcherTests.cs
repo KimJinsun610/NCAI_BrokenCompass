@@ -122,7 +122,7 @@ namespace NightDuty.Tests
         [Test]
         public void 일차_상한과_휴식_길이()
         {
-            CollectionAssert.AreEqual(new[] { 2, 4, 5, 6, 7 }, new[] { TensionPacer.FakeCap(1), TensionPacer.FakeCap(2), TensionPacer.FakeCap(3), TensionPacer.FakeCap(4), TensionPacer.FakeCap(5) });
+            CollectionAssert.AreEqual(new[] { 3, 5, 6, 7, 8 }, new[] { TensionPacer.FakeCap(1), TensionPacer.FakeCap(2), TensionPacer.FakeCap(3), TensionPacer.FakeCap(4), TensionPacer.FakeCap(5) });
             Assert.AreEqual(40f, TensionPacer.RelaxMin(1));
             Assert.AreEqual(25f, TensionPacer.RelaxMin(5));
         }
@@ -143,8 +143,13 @@ namespace NightDuty.Tests
             public bool AutoReport;
 
             public Rig(int day, IEnumerable<KeyValuePair<EncounterSlot, SpaceId>> encounters, params InspectionAssignment[] rows)
+                : this(day, string.Empty, encounters, rows)
             {
-                Board.Begin(new InspectionPlan(day, rows, SpaceId.None, string.Empty), true);
+            }
+
+            public Rig(int day, string call1ItemId, IEnumerable<KeyValuePair<EncounterSlot, SpaceId>> encounters, params InspectionAssignment[] rows)
+            {
+                Board.Begin(new InspectionPlan(day, rows, SpaceId.None, call1ItemId), true);
                 D = new InspectionDispatcher(Board, day, encounters);
                 At(SpaceId.SecurityRoom, 34f, 46f);
             }
@@ -207,15 +212,15 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 보고하고_경비실에서_기다리면_가까운_공간을_다음으로()
+        public void 보고하면_몇_초_뒤_가까운_공간을_다음으로()
         {
             Rig r = new Rig(2, null, Row("K-1"), Row("H-1"), Row("S-1"), Row("L-1", true));
-            r.Minute = 55f;   // 시간표가 둘째 지시를 허락하는 때
+            r.Minute = 20f;   // 53차: 시간표가 아직 허락하지 않아도 보고 뒤 바로
             r.Wait(8.2f);
             r.Report("K-1");
-            r.Wait(19.5f);
-            Assert.AreEqual(1, r.Orders.Count, "지시 사이 20초");
-            r.Wait(3f);
+            r.Wait(InspectionDispatcher.NextAfterReport - 0.5f);
+            Assert.AreEqual(1, r.Orders.Count, "보고 직후에는 아직");
+            r.Wait(1f);
             Assert.AreEqual(2, r.Orders.Count);
             Assert.AreEqual(OrderKind.Regular, r.Orders[1].Kind);
             Assert.AreEqual(SpaceId.Corridor, r.Orders[1].Space, "경비실에서 가장 가까운 곳");
@@ -227,7 +232,7 @@ namespace NightDuty.Tests
             Rig r = new Rig(2, null, Row("K-1"), Row("S-1"), Row("T-1"), Row("L-1", true));
             r.At(SpaceId.Corridor, 28f, 44f);
             r.Minute = 20f;
-            r.Wait(50f);
+            r.Wait(InspectionDispatcher.LullGap - 5f);   // 57차: 잔잔함 간격 60 → 40초
             Assert.AreEqual(1, r.Orders.Count, "K-1을 보고하지 않았고 다음 공간은 20m 밖");
         }
 
@@ -254,6 +259,98 @@ namespace NightDuty.Tests
         [Test]
         public void 긴장이_뜨거우면_최대_20초_미룬다()
         {
+            // 53차: 보고 뒤 바로 오는 지시는 긴장을 보지 않으므로, 보고하지 않은 채 「시간표보다 늦음」으로 나오는 지시로 잰다.
+            Rig r = new Rig(2, null, Row("K-1"), Row("H-1"), Row("S-1"), Row("C-2"), Row("L-1"), Row("T-1"));
+            r.Pacer = new TensionPacer(2);
+            r.Minute = 55f;
+            r.Wait(8.2f);
+            Assert.AreEqual(1, r.Orders.Count);
+            r.Wait(InspectionDispatcher.LullGap - 0.5f);
+            for (int i = 0; i < 5; i++) r.Pacer.Impulse(PacerImpulse.Startle);
+            Assert.IsTrue(r.Pacer.IsHot);
+            r.Wait(InspectionDispatcher.HotHoldMax - 0.5f);
+            Assert.AreEqual(1, r.Orders.Count, "뜨거운 동안");
+            r.Wait(2f);
+            Assert.AreEqual(2, r.Orders.Count, "20초를 넘기면 그래도 낸다");
+        }
+
+        [Test]
+        public void 조우가_없는_밤은_편성의_호출_1_항목_공간을_01시까지_아낀다()
+        {
+            // 53차 플레이 점검: 1일차(조우 없음)에 보고 뒤 바로 다음 지시가 오자 00:15에 다 끝나고 01:00 호출이 비었다.
+            Rig r = new Rig(1, "S-1", null, Row("K-1"), Row("C-1"), Row("S-1"), Row("S-2"), Row("H-3", true));
+            Assert.AreEqual(SpaceId.ScienceRoom, r.D.Reserved);
+            r.AutoReport = true;
+            r.Minute = 20f;
+            r.Wait(300f);
+            Assert.IsFalse(r.Board.IsIssued("S-1"), "과학실은 호출 1 몫");
+            Assert.IsTrue(r.Board.IsIssued("C-1"));
+
+            r.Minute = 60f;
+            r.Wait(10f);
+            InspectionOrder last = r.Orders[r.Orders.Count - 1];
+            Assert.AreEqual(OrderKind.Call1, last.Kind);
+            Assert.AreEqual(SpaceId.ScienceRoom, last.Space);
+            Assert.IsFalse(r.Board.IsIssued("H-3"), "늦은 공간은 호출 2");
+        }
+
+        [Test]
+        public void 슬롯_C_조우_방은_그_슬롯이_열릴_때까지_아낀다()
+        {
+            // 53차 플레이 점검: 보고 뒤 바로 다음 지시가 오자 B·C 조우 방이 00:10쯤 끝나 조우 시간대에 아무도 그 방에 가지 않았다.
+            Rig r = new Rig(3, new[] { Enc(EncounterSlot.C, SpaceId.Library) }, Row("K-1"), Row("S-1"), Row("L-1"), Row("T-1", true));
+            float from, to;
+            TensionDirector.SlotWindow(EncounterSlot.C, out from, out to);
+            Assert.AreEqual(from, r.D.ReleaseOf(SpaceId.Library));
+            r.AutoReport = true;
+            r.Minute = 20f;
+            r.Wait(200f);
+            Assert.IsFalse(r.Board.IsIssued("L-1"), "슬롯 C 전");
+            r.Minute = 110f;   // 01:40 따라잡기도 아껴 둔 방은 건드리지 않는다
+            r.Wait(60f);
+            Assert.IsFalse(r.Board.IsIssued("L-1"), "따라잡기에도 남는다");
+            r.Minute = from + 0.5f;
+            r.Wait(10f);
+            Assert.IsTrue(r.Board.IsIssued("L-1"), "슬롯 C가 열리면 바로");
+        }
+
+        [Test]
+        public void 경비실_CCTV_조우_날은_첫_지시를_다른_공간으로_하고_CCTV는_슬롯까지_아낀다()
+        {
+            // 53차 플레이 점검: K-1을 첫 지시로 써 버려 CCTV에만 보이는 사람(슬롯 B) 시간대에 아무도 CCTV를 보지 않았다.
+            Rig r = new Rig(3, new[] { Enc(EncounterSlot.B, SpaceId.SecurityRoom) }, Row("K-1"), Row("H-1"), Row("T-1", true));
+            r.AutoReport = true;
+            r.Minute = 2f;
+            r.Wait(9f);
+            Assert.AreEqual(1, r.Orders.Count);
+            Assert.AreEqual(OrderKind.Opening, r.Orders[0].Kind);
+            Assert.AreEqual(SpaceId.Corridor, r.Orders[0].Space, "경비실은 슬롯 B까지");
+            r.Wait(120f);
+            Assert.IsFalse(r.Board.IsIssued("K-1"));
+            float from, to;
+            TensionDirector.SlotWindow(EncounterSlot.B, out from, out to);
+            r.Minute = from + 0.5f;
+            r.Wait(20f);
+            Assert.IsTrue(r.Board.IsIssued("K-1"), "슬롯 B가 열리면 CCTV 점검");
+        }
+
+        [Test]
+        public void 먼저_열릴_공간을_모두_아끼게_되면_하나는_남겨_첫_지시를_낸다()
+        {
+            // 54차 4일차 실측: 화장실(호출 1 몫) · 과학실(슬롯 B) · 교실(슬롯 C)을 모두 아껴 00:00~01:00에 점검이 하나도 없었다.
+            Rig r = new Rig(4, "T-1", new[] { Enc(EncounterSlot.A, SpaceId.Corridor), Enc(EncounterSlot.B, SpaceId.ScienceRoom), Enc(EncounterSlot.C, SpaceId.Classroom) },
+                Row("C-3"), Row("T-3"), Row("T-1"), Row("S-1"), Row("L-2", true), Row("C-2"));
+            Assert.AreEqual(SpaceId.None, r.D.Reserved, "조우 없는 호출 1 몫부터 푼다");
+            Assert.Greater(r.D.ReleaseOf(SpaceId.ScienceRoom), 0f, "슬롯 B 방은 그대로 아낀다");
+            r.Minute = 2f;
+            r.Wait(9f);
+            Assert.AreEqual(1, r.Orders.Count);
+            Assert.AreEqual(SpaceId.Toilet, r.Orders[0].Space);
+        }
+
+        [Test]
+        public void 보고_뒤_바로_오는_지시는_긴장으로_미루지_않는다()
+        {
             Rig r = new Rig(2, null, Row("K-1"), Row("H-1"), Row("S-1"));
             r.Pacer = new TensionPacer(2);
             r.Minute = 55f;
@@ -261,10 +358,8 @@ namespace NightDuty.Tests
             r.Report("K-1");
             for (int i = 0; i < 5; i++) r.Pacer.Impulse(PacerImpulse.Startle);
             Assert.IsTrue(r.Pacer.IsHot);
-            r.Wait(20f + InspectionDispatcher.HotHoldMax - 1f);
-            Assert.AreEqual(1, r.Orders.Count, "뜨거운 동안");
-            r.Wait(2f);
-            Assert.AreEqual(2, r.Orders.Count, "20초를 넘기면 그래도 낸다");
+            r.Wait(InspectionDispatcher.NextAfterReport + 0.5f);
+            Assert.AreEqual(2, r.Orders.Count, "53차 민: 한번 점검하면 몇 초 뒤 바로 다음");
         }
 
         [Test]
@@ -296,14 +391,14 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 빨리_끝내도_시간표를_한_공간_넘게_앞서지_않는다()
+        public void 빨리_끝내면_먼저_열릴_공간이_잇달아_오지만_늦은_공간은_호출_2까지_남는다()
         {
             Rig r = new Rig(3, null, Row("K-1"), Row("H-1"), Row("S-1"), Row("C-2"), Row("T-1", true));
             r.AutoReport = true;
             r.Minute = 20f;
             r.Wait(300f);
-            Assert.LessOrEqual(r.Board.IssuedCount, r.D.Allowed(20f) + 2, "첫 지시(경비실) + 한가함 한 공간");
-            Assert.Less(r.Board.IssuedCount, 4, "한 번에 다 나가지 않는다");
+            Assert.AreEqual(4, r.Board.IssuedCount, "53차: 보고하면 다음 — 먼저 열릴 네 공간이 다 나왔다");
+            Assert.AreEqual(4, r.Orders.Count, "한 공간씩 따로따로");
 
             r.Minute = 150f;
             r.Wait(300f);
@@ -488,7 +583,7 @@ namespace NightDuty.Tests
             StringAssert.Contains(NightRun.InspectionHowTo, text, "첫 지시에만 조작 안내");
 
             Assert.IsTrue(NightRun.ReportInspection("K-1", false).Accepted);
-            StringAssert.Contains(" · 보고함", NightRun.OrderMessage(sent[0]));
+            StringAssert.Contains(" 보고함", NightRun.OrderMessage(sent[0]));   // 60차: 「· [정상] 보고함」처럼 판정이 붙는다
         }
 
         [Test]

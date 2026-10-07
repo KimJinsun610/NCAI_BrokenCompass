@@ -63,6 +63,18 @@ namespace NightDuty
         /// <summary>대면을 시작한 밤 분(재시작 되감기에 쓴다).</summary>
         public float ConfrontMinute = -1f;
 
+        /// <summary>57차: 헛예고 뒤 — 그 방에 있기만 하면 곧 진짜가 온다(머무름을 다시 세지 않는다).</summary>
+        public bool Rearmed;
+
+        /// <summary>57차: 제 슬롯에 방아쇠가 오지 않아 판정 끝(03:30)까지 넘어온 실행.</summary>
+        public bool CarriedOver;
+
+        /// <summary>
+        /// 59차 겹침 조우(<see cref="NightProgram.Extras"/> — 시체 낙하): 슬롯 조우가 진행 중이어도 시작하고, 진행 중에도 슬롯 조우를 막지 않으며,
+        /// 놀람 예산(횟수·간격·조우 뒤 휴지)에 넣지 않는다(민: 「소년이 앉아 있어도 시체가 나오고, 시체를 맞이해도 소년이 머리를 박도록」).
+        /// </summary>
+        public bool Overlay;
+
         /// <inheritdoc/>
         public override string ToString()
         {
@@ -117,16 +129,16 @@ namespace NightDuty
         public const float RuleGap = 20f;
 
         /// <summary>가짜 놀람 간격 최소~최대(초).</summary>
-        public const float FakeGapMin = 60f;
+        public const float FakeGapMin = 30f;   // 57차: 60~150 → 45~110 · 59차(밤 15분 → 10분): × 2/3 → 30~75
 
         /// <summary>가짜 놀람 간격 최대(초).</summary>
-        public const float FakeGapMax = 150f;
+        public const float FakeGapMax = 75f;
 
         /// <summary>판정이 열린(00:16) 뒤 첫 가짜 놀람까지 최소(초, 2일차부터). 50차: 4~14초 → 25~50초(「첫날부터 도배」).</summary>
-        public const float FirstFakeMin = 25f;
+        public const float FirstFakeMin = 17f;   // 59차: 25~50 → 17~34(밤 10분)
 
         /// <summary>판정이 열린 뒤 첫 가짜 놀람까지 최대(초).</summary>
-        public const float FirstFakeMax = 50f;
+        public const float FirstFakeMax = 34f;
 
         /// <summary>같은 가짜 놀람의 밤당 상한.</summary>
         public const int FakePerId = 2;
@@ -138,7 +150,13 @@ namespace NightDuty
         public const float ForcedPresenceSeconds = 60f;
 
         /// <summary>가짜 놀람 목록.</summary>
-        public static readonly string[] FakeScares = { "fake.locker.rattle", "fake.locker.row", "fake.flashlight.flicker", FakeBugs };
+        public static readonly string[] FakeScares = { "fake.locker.rattle", "fake.locker.row", "fake.flashlight.flicker", FakeBugs, FakeGlimpse };
+
+        /// <summary>
+        /// 57차(민: 「몹을 살짝씩 멀리서 등장시킨다던가」): 멀리(12~22m) 몹 하나가 잠깐 서 있다가 바라보거나 몇 초 지나면 사라진다. 수칙·판정 없음, 2일차부터.
+        /// 자리·모습은 연출 쪽(<c>DistantGlimpse</c>)이 고른다.
+        /// </summary>
+        public const string FakeGlimpse = "fake.glimpse";
 
         /// <summary>벌레 떼(김진선님 BugSwarm, 2026-10-02 민 추가) — 천장에서 쏟아진다. <see cref="BugSpaces"/>에서만.</summary>
         public const string FakeBugs = "fake.bugs";
@@ -189,6 +207,25 @@ namespace NightDuty
         /// </summary>
         public Func<string, bool> GazeTargetReady { get; set; }
 
+        /// <summary>
+        /// 60차(민: 「교실 들어설 때 바로 떨어지는 것도, 원래 기획대로 사다리 방 안에서도 — 랜덤으로」): 0보다 크면 응시 방아쇠를 그 대상에서 이 거리(m, 수평) 안에서만 받는다
+        /// (사다리 방 안). 0이면 거리 무관(교실 입구에서 사다리를 봐도). 대상 자리는 <see cref="GazeTargetPosition"/>이 준다.
+        /// </summary>
+        public float GazeTargetNearRadius { get; set; }
+
+        /// <summary>응시 방아쇠 대상의 자리(없으면 null — 거리 조건을 보지 않는다).</summary>
+        public Func<string, Vector3?> GazeTargetPosition { get; set; }
+
+        private bool GazeTargetNear(string targetId)
+        {
+            if (GazeTargetNearRadius <= 0f || GazeTargetPosition == null) return true;
+            Vector3? at = GazeTargetPosition(targetId);
+            if (!at.HasValue || !_hasPose) return true;
+            Vector3 d = at.Value - _feet;
+            d.y = 0f;
+            return d.magnitude <= GazeTargetNearRadius;
+        }
+
         /// <summary>그날 편성으로 만든다.</summary>
         public TensionDirector(NightProgram program, int day, int restarts = 0, Random rng = null)
         {
@@ -206,6 +243,13 @@ namespace NightDuty
                 _runs.Add(new EncounterRun { Slot = s.Slot, Def = s.Encounter, Script = script });
             }
 
+            foreach (EncounterDef extra in _program.Extras)
+            {
+                EncounterScript script = EncounterScripts.Find(extra.Id);
+                if (script == null) continue;
+                _runs.Add(new EncounterRun { Slot = EncounterSlot.A, Def = extra, Script = script, Overlay = true });
+            }
+
             foreach (RuleDef r in _program.Deck)
             {
                 RuleTriggerScript script = RuleTriggers.Find(r.Id);
@@ -219,6 +263,12 @@ namespace NightDuty
 
         /// <summary>연출 알림(대역·소등·소리·로그).</summary>
         public event Action<DirectionEvent> Emitted;
+
+        /// <summary>57차: 편성된 조우가 끝내 오지 않았다(판정 끝까지 이월해도). 인자: 조우 ID — NightRun이 그 조우의 수칙을 태블릿에서 거둔다.</summary>
+        public event Action<string> Missed;
+
+        /// <summary>57차(민: 「반납 상자를 확인하는데 쾅 — 헷갈려 오보」): 참이면 가짜 놀람을 미룬다(점검 대상 가까이·보고 직전). NightRun이 넣는다.</summary>
+        public Func<Vector3, bool> FakeBlocked { get; set; }
 
         // ── 10단계: 점검과 맞물린 단서 · 회피 불가 역설 ──────────────────
 
@@ -331,20 +381,24 @@ namespace NightDuty
             get { return _fakesUsed; }
         }
 
-        /// <summary>조우가 전조·대면·마무리 중인지(존재형의 머무름은 세지 않는다).</summary>
+        /// <summary>조우가 전조·대면·마무리 중인지(존재형의 머무름은 세지 않는다). 겹침 조우도 센다 — 가짜 놀람·수칙 단서·점검 지시는 그동안 쉰다.</summary>
         public bool Busy
         {
-            get
-            {
-                for (int i = 0; i < _runs.Count; i++)
-                {
-                    EncounterRun r = _runs[i];
-                    if (r.State == EncounterRunState.Foreshadow || r.State == EncounterRunState.Releasing) return true;
-                    if (r.State == EncounterRunState.Active && !r.Script.IsPresence) return true;
-                }
+            get { return BusyOf(false) || BusyOf(true); }
+        }
 
-                return false;
+        /// <summary>겹침 조우(<paramref name="overlay"/>) 또는 슬롯 조우가 진행 중인지.</summary>
+        private bool BusyOf(bool overlay)
+        {
+            for (int i = 0; i < _runs.Count; i++)
+            {
+                EncounterRun r = _runs[i];
+                if (r.Overlay != overlay) continue;
+                if (r.State == EncounterRunState.Foreshadow || r.State == EncounterRunState.Releasing) return true;
+                if (r.State == EncounterRunState.Active && !r.Script.IsPresence) return true;
             }
+
+            return false;
         }
 
         /// <summary>판정 단서 하나를 꺼낸다(NightRun이 판정 책에 넣는다).</summary>
@@ -457,7 +511,8 @@ namespace NightDuty
             AdvanceRuns(minute);
             AdvanceRules();
 
-            if (!Busy) TryStartEncounter(minute, auditoryShown);
+            // 59차: 슬롯 조우와 겹침 조우(시체 낙하)는 서로를 막지 않는다 — 각자 자기 쪽이 비었을 때만 새로 시작한다.
+            TryStartEncounter(minute, auditoryShown, BusyOf(false), BusyOf(true));
             if (!Busy) TryRuleTriggers(minute);
             if (!Busy) TryFakeScare(minute);
         }
@@ -479,16 +534,28 @@ namespace NightDuty
             if (r.Slot == EncounterSlot.C && Mood == DirectorMood.Danger) return false;
 
             float from, to;
-            SlotWindow(r.Slot, out from, out to);
+            RunWindow(r, out from, out to);
             return minute >= from && minute < to;
+        }
+
+        /// <summary>그 실행의 시간창 — 이월된 실행은 제 슬롯 끝부터 판정 끝(03:30)까지(57차).</summary>
+        private static void RunWindow(EncounterRun r, out float from, out float to)
+        {
+            SlotWindow(r.Slot, out from, out to);
+            if (!r.CarriedOver) return;
+            from = to;
+            to = NightClock.JudgingEnd;
         }
 
         private bool Triggered(EncounterRun r, float minute)
         {
             EncounterScript s = r.Script;
             float from, to;
-            SlotWindow(r.Slot, out from, out to);
+            RunWindow(r, out from, out to);
             bool lastCall = minute >= to - LastCallMinutes;
+
+            // 57차(민: 2일차 교실·수업 수칙이 나왔는데 소년을 못 봄 — 헛예고가 하나뿐인 방문을 써 버렸다): 헛예고 뒤에는 그 방에 있기만 하면 된다.
+            if (r.Rearmed && (s.Trigger == EncounterTrigger.DwellInSpace || s.Trigger == EncounterTrigger.EnterSpace)) return InScriptSpace(s);
 
             switch (s.Trigger)
             {
@@ -501,7 +568,7 @@ namespace NightDuty
                 case EncounterTrigger.ViewingCctv:
                     return ViewingCctv && Now - _cctvSince >= s.Dwell;
                 case EncounterTrigger.GazeTarget:
-                    return _gazeId == s.GazeTargetId && _gazeRun >= s.Dwell && (GazeTargetReady == null || GazeTargetReady(s.GazeTargetId));
+                    return _gazeId == s.GazeTargetId && _gazeRun >= s.Dwell && (GazeTargetReady == null || GazeTargetReady(s.GazeTargetId)) && GazeTargetNear(s.GazeTargetId);
             }
 
             return false;
@@ -512,11 +579,12 @@ namespace NightDuty
             get { return _cctvSince >= 0f && Now - _lastCctvView <= 0.5f; }
         }
 
-        private void TryStartEncounter(float minute, Band auditoryShown)
+        private void TryStartEncounter(float minute, Band auditoryShown, bool slotBusy, bool overlayBusy)
         {
             for (int i = 0; i < _runs.Count; i++)
             {
                 EncounterRun r = _runs[i];
+                if (r.Overlay ? overlayBusy : slotBusy) continue;
                 if (r.State != EncounterRunState.Waiting || Now < r.RetryAt || !SlotOpen(r, minute)) continue;
                 if (_held.Contains(r.Def.Id))
                 {
@@ -540,7 +608,7 @@ namespace NightDuty
 
                 // 50차: 긴장 절정 중에는 조우를 미룬다 — 단 슬롯 끝 10분 전부터는 그대로 건다(조우는 수칙과 묶여 있다).
                 float slotFrom, slotTo;
-                SlotWindow(r.Slot, out slotFrom, out slotTo);
+                RunWindow(r, out slotFrom, out slotTo);
                 if (!r.Forced && _pacer.State == PacerState.Peak && minute < slotTo - LastCallMinutes)
                 {
                     r.Waiting = "긴장 절정 — 잠시 미룸";
@@ -582,7 +650,10 @@ namespace NightDuty
             }
 
             // 헛예고는 조우마다 한 번까지 — 한 번 속인 뒤에는 진짜가 온다(43차 시뮬: 같은 조우의 헛예고가 26초 사이로 두 번 연달아 나와 김이 샜다).
-            if (!r.Forced && r.FalseCount == 0)
+            float winFrom, winTo;
+            RunWindow(r, out winFrom, out winTo);
+            // 57차: 슬롯이 얼마 안 남았거나 이월된 실행은 헛예고로 속이지 않는다(진짜를 놓치게 된다).
+            if (!r.Forced && r.FalseCount == 0 && !r.CarriedOver && _minute < winTo - LastCallMinutes * 2f)
             {
                 float pFalse = (auditoryShown >= Band.Band3 ? 0.4f : 0.3f) * DirectorMoods.FalseScale(Mood);
                 if (_rng.NextDouble() < pFalse)
@@ -590,6 +661,7 @@ namespace NightDuty
                     float d = Range(1f, 8f) * scale;
                     r.FalseCount++;
                     r.RetryAt = Now + d + FalseRetry;
+                    r.Rearmed = true;   // 57차: 다시 시도할 때는 그 방에 있기만 하면
                     _pacer.Impulse(PacerImpulse.FalseForeshadow);
                     Emit(DirectionEventKind.Encounter, DirectionPhase.FalseForeshadow, r.Def.Id, string.Empty, r.Script.Space, r.Def.Intensity, r.Point, d, "헛예고");
                     return;
@@ -607,7 +679,7 @@ namespace NightDuty
         private void Confront(EncounterRun r)
         {
             EncounterScript s = r.Script;
-            if (!r.Forced) _budget.Commit(r.Def.Intensity, Now);
+            if (!r.Forced && !r.Overlay) _budget.Commit(r.Def.Intensity, Now);
             if (r.Def.Intensity >= 4) _seenHigh.Add(r.Def.Id);
 
             float window;
@@ -617,7 +689,7 @@ namespace NightDuty
                 else
                 {
                     float from, to;
-                    SlotWindow(r.Slot, out from, out to);
+                    RunWindow(r, out from, out to);
                     window = NightClock.RealSecondsAt(to) - NightClock.RealSecondsAt(_minute);
                     if (window < 1f) window = 1f;
                 }
@@ -660,7 +732,7 @@ namespace NightDuty
         {
             r.State = EncounterRunState.Done;
             _encountersDone++;
-            if (!r.Forced) _budget.EndEncounter(Now, Range(SurpriseBudget.QuietMin, SurpriseBudget.QuietMax));
+            if (!r.Forced && !r.Overlay) _budget.EndEncounter(Now, Range(SurpriseBudget.QuietMin, SurpriseBudget.QuietMax));
             Emit(DirectionEventKind.Encounter, DirectionPhase.Result, r.Def.Id, r.Script.Cue, r.Script.Space, r.Def.Intensity, r.Point, 0f, string.Empty);
         }
 
@@ -683,8 +755,19 @@ namespace NightDuty
                     case EncounterRunState.Waiting:
                         if (!r.Forced && PastSlot(r, minute))
                         {
+                            // 57차: 슬롯 A·B에서 못 걸린 조우는 판정 끝(03:30)까지 넘긴다 — 그 수칙이 이미 태블릿에 있다.
+                            if (!r.CarriedOver && r.Slot != EncounterSlot.C && r.Script.Trigger != EncounterTrigger.GazeTarget && minute < NightClock.JudgingEnd)
+                            {
+                                r.CarriedOver = true;
+                                r.Rearmed = true;
+                                Note(r.Def.Id, "슬롯 " + r.Slot + "에 방아쇠가 오지 않음(" + r.Waiting + ") — 03:30까지 넘김");
+                                break;
+                            }
+
                             r.State = EncounterRunState.Missed;
-                            Note(r.Def.Id, "슬롯 " + r.Slot + "이 끝날 때까지 방아쇠가 오지 않음(" + r.Waiting + ")");
+                            Note(r.Def.Id, "방아쇠가 끝내 오지 않음(" + r.Waiting + ") — 그 수칙을 거둔다");
+                            Action<string> missed = Missed;
+                            if (missed != null) missed(r.Def.Id);
                         }
 
                         break;
@@ -696,7 +779,7 @@ namespace NightDuty
         {
             if (r.Script.Trigger == EncounterTrigger.GazeTarget) return minute >= NightClock.JudgingEnd;
             float from, to;
-            SlotWindow(r.Slot, out from, out to);
+            RunWindow(r, out from, out to);
             return minute >= to;
         }
 
@@ -843,6 +926,9 @@ namespace NightDuty
             string why;
             if (!_pacer.AllowsFake(out why)) return;
 
+            // 57차: 점검 대상 가까이·보고 직전에는 미룬다(놀람을 이상 소리로 착각해 오보). 예산을 쓰지 않고 다음 틱에 다시 본다.
+            if (FakeBlocked != null && FakeBlocked(_feet)) return;
+
             List<string> open = new List<string>();
             foreach (string id in FakeScares)
             {
@@ -880,6 +966,7 @@ namespace NightDuty
         /// </summary>
         private bool FakeAllowedHere(string id)
         {
+            if (id == FakeGlimpse) return _day >= 2 && !Busy;
             if (id != FakeBugs) return true;
             if (Array.IndexOf(BugSpaces, _exact) < 0 || Now - _spaceSince < BugDwellSeconds) return false;
             for (int i = 0; i < _runs.Count; i++)
@@ -936,13 +1023,15 @@ namespace NightDuty
                 if (before && !r.Forced)
                 {
                     r.State = EncounterRunState.Done;
-                    _budget.Commit(r.Def.Intensity, float.NegativeInfinity);
+                    if (!r.Overlay) _budget.Commit(r.Def.Intensity, float.NegativeInfinity);
                     continue;
                 }
 
                 if (r.Forced) continue;
                 r.State = EncounterRunState.Waiting;
                 r.RetryAt = 0f;
+                r.Rearmed = false;
+                r.CarriedOver = false;
                 r.Waiting = string.Empty;
                 r.ConfrontMinute = -1f;
                 r.Point = Vector3.zero;

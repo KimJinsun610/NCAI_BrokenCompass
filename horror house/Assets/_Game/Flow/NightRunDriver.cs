@@ -17,7 +17,7 @@ using UnityEngine.SceneManagement;
 /// <b>밤 시계(2026-09-30 최종 기획서).</b> 코어는 「근무 시작부터의 분, 0~240(00:00~04:00)」으로 판정 시간창을 본다(<see cref="NightClock"/>).
 /// GameTime은 자정 기준 절대 분을 주고 근무 범위도 프리팹 값(현재 02:00~05:00)을 따르므로, 여기서
 /// <c>(현재 − 시작) × 240 / (종료 − 시작)</c>으로 <b>비례 환산</b>한다 — GameTime 범위가 무엇이든 구간 비율이 기획서와 같다.
-/// <see cref="MatchDesignPace"/>가 켜져 있으면 배속도 바꿔 한 밤이 실시간 15분이 되게 한다(GameTime의 공개 API <c>SetTimeMultiplier</c>).
+/// <see cref="MatchDesignPace"/>가 켜져 있으면 배속도 바꿔 한 밤이 실시간 10분(59차, 전에는 15분)이 되게 한다(GameTime의 공개 API <c>SetTimeMultiplier</c>).
 /// 태블릿의 <b>표시 시각</b>은 GameTime 몫이라 건드리지 않는다 — 00:00~04:00 표시는 김진선님과 맞출 일이다.
 /// </para>
 /// <para>
@@ -34,7 +34,7 @@ using UnityEngine.SceneManagement;
 public sealed class NightRunDriver : MonoBehaviour
 {
     /// <summary>
-    /// 켜 두면 한 밤이 실시간 15분(<see cref="NightClock.RealSecondsPerNight"/>)이 되도록 GameTime 배속을 맞춘다.
+    /// 켜 두면 한 밤이 실시간 10분(<see cref="NightClock.RealSecondsPerNight"/>)이 되도록 GameTime 배속을 맞춘다.
     /// 끄면 GameTime 프리팹의 배속을 그대로 쓴다(구간 비율은 어느 쪽이든 기획서와 같다). 자동 생성되는 구동기라 정적 설정으로 둔다.
     /// </summary>
     public static bool MatchDesignPace = true;
@@ -152,7 +152,7 @@ public sealed class NightRunDriver : MonoBehaviour
             int span = gameTime.EndMinutes - gameTime.StartMinutes;
             if (span > 0)
             {
-                // 게임 초 / 실제 초. 02:00~05:00(180분)이면 12배속 → 실시간 15분.
+                // 게임 초 / 실제 초. 02:00~05:00(180분)이면 18배속 → 실시간 10분.
                 gameTime.SetTimeMultiplier(span * 60f / NightClock.RealSecondsPerNight);
             }
         }
@@ -165,6 +165,8 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.InspectionsEnabled = true;
         NightRun.InspectionDripEnabled = true;   // 50차: 점검은 순차 지시로
         NightRun.ProgramEnabled = true;
+        NightRun.DutiesEnabled = true;           // 54차: [근무 지시]
+        NightRun.BatteryEnabled = true;          // 56차: 손전등 배터리
 
         _rewindOffset = 0f;
         _tracker.Reset(NightMinute);
@@ -204,6 +206,9 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.InspectionsEnabled = false;
         NightRun.InspectionDripEnabled = false;
         NightRun.ProgramEnabled = false;
+        NightRun.DutiesEnabled = false;
+        NightRun.BatteryEnabled = false;
+        NightRun.BatterySeed = null;
         NightRun.DirectorAutoRun = true;
     }
 

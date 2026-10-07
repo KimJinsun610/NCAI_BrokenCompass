@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace NightDuty
 {
@@ -69,7 +69,13 @@ namespace NightDuty
         /// <summary>손전등 비춤 판정(가림은 부르는 쪽이 레이로 본다).</summary>
         public static bool InBeam(Vector3 lightPos, Vector3 lightForward, Vector3 point)
         {
-            return (point - lightPos).sqrMagnitude <= BeamRange * BeamRange && InCone(lightPos, lightForward, point, BeamConeDegrees);
+            return InBeam(lightPos, lightForward, point, BeamRange);
+        }
+
+        /// <summary>손전등 비춤 판정 — 거리를 정해서(56차: 배터리가 10% 아래면 5m).</summary>
+        public static bool InBeam(Vector3 lightPos, Vector3 lightForward, Vector3 point, float range)
+        {
+            return (point - lightPos).sqrMagnitude <= range * range && InCone(lightPos, lightForward, point, BeamConeDegrees);
         }
 
         /// <summary>수평 거리(m).</summary>

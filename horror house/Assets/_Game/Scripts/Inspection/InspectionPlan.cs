@@ -156,7 +156,7 @@ namespace NightDuty
         /// <summary>점검 공간 상한(경비실 포함).</summary>
         public const int MaxSpaces = 4;
 
-        private static readonly int[] ItemsByDay = { 5, 5, 6, 6, 7 };
+        private static readonly int[] ItemsByDay = { 5, 6, 7, 7, 8 };   // 57차(민: 「점검도 빨리빨리 안 나와서 지겨웠다 — 맵이 좁으니 스피디하게」): 5·5·6·6·7 → 5·6·7·7·8
         private static readonly int[] AnomaliesByDay = { 2, 2, 3, 3, 3 };
 
         /// <summary>그날 점검 항목 수.</summary>

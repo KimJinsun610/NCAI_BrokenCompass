@@ -148,6 +148,93 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void T4_날_화장실_항목이_변기뿐이면_거울_T3을_더해_화장실로_부른다()
+        {
+            // 53차 플레이 점검: T-1이 묶이면 화장실로 부르는 지시가 없어 여자아이(화장실 입장 방아쇠)가 나오지 않았다.
+            InspectionPlan plan = new InspectionPlan(2, new[] { Row("K-1"), Row("T-1", false, true), Row("C-1") }, SpaceId.Toilet, "K-1");
+            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "T4" }, ProgramCatalog.Footsteps, ProgramCatalog.ToiletGirl));   // 여자아이 = 슬롯 B
+            InspectionAssignment t3 = patched.Find("T-3");
+            Assert.IsNotNull(t3);
+            Assert.IsFalse(t3.IsAnomaly);
+            Assert.IsTrue(t3.IsLate, "화장실이 늦은 공간이면 호출 2로(슬롯 B는 호출 2와 함께 열린다)");
+            Assert.AreEqual(plan.AnomalyCount, patched.AnomalyCount);
+
+            InspectionPlan early = NightRun.PatchPlanForProgram(new InspectionPlan(2, new[] { Row("K-1"), Row("T-1") }, SpaceId.ScienceRoom, "K-1"), ProgramWith(2, new[] { "T4" }, ProgramCatalog.ToiletGirl));
+            Assert.IsFalse(early.Find("T-3").IsLate);
+
+            InspectionPlan mirror = new InspectionPlan(2, new[] { Row("K-1"), Row("T-1"), Row("T-3", true) }, SpaceId.None, "K-1");
+            InspectionPlan kept = NightRun.PatchPlanForProgram(mirror, ProgramWith(2, new[] { "T4" }, ProgramCatalog.ToiletGirl));
+            Assert.IsTrue(kept.Find("T-3").IsAnomaly, "이미 화장실 항목이 있으면 건드리지 않는다");
+        }
+
+        [Test]
+        public void 슬롯_A_C_조우_방이_늦은_공간이면_이른_항목을_둔다()
+        {
+            // 54차 QA: 3일차 화장실 여자아이가 슬롯 A(01:00~01:52)인데 화장실이 늦은 공간이라 화장실 점검이 02:16에야 나와 조우가 열리지 않았다.
+            InspectionPlan t4 = new InspectionPlan(3, new[] { Row("K-1"), Row("T-1", false, true), Row("C-1") }, SpaceId.Toilet, "K-1");
+            InspectionPlan a = NightRun.PatchPlanForProgram(t4, ProgramWith(3, new[] { "T4" }, ProgramCatalog.ToiletGirl));
+            Assert.IsFalse(a.Find("T-3").IsLate, "T4 날은 더할 화장실 항목이 없다 — 거울을 이르게(호출 1 몫)");
+            Assert.IsFalse(a.Find("T-1").IsLate);
+            Assert.IsNull(a.Find("T-2"));
+            Assert.AreEqual(t4.AnomalyCount, a.AnomalyCount);
+
+            InspectionPlan lib = new InspectionPlan(3, new[] { Row("K-1"), Row("L-1", true, true), Row("S-1") }, SpaceId.Library, "S-1");
+            InspectionPlan c = NightRun.PatchPlanForProgram(lib, ProgramWith(3, new[] { "S1" }, ProgramCatalog.Footsteps, ProgramCatalog.ToiletGirl, ProgramCatalog.YellowFace));
+            int early = 0, late = 0;
+            foreach (InspectionAssignment row in c.Assignments)
+            {
+                if (SpaceIds.Canonical(row.Item.Space) != SpaceId.Library) continue;
+                if (row.IsLate) late++;
+                else
+                {
+                    early++;
+                    Assert.IsFalse(row.IsAnomaly, "더한 항목은 정상");
+                }
+            }
+
+            Assert.AreEqual(1, early, "슬롯 C 도서관 — 03:08까지 아껴 둘 이른 항목");
+            Assert.AreEqual(1, late, "호출 2의 늦은 항목은 그대로");
+            Assert.IsTrue(c.Find("T-3") != null || c.Find("T-1") != null || c.Find("T-2") != null, "슬롯 B 화장실 항목");
+
+            InspectionDispatcher d = new InspectionDispatcher(BoardOf(c), 3, new[]
+            {
+                new KeyValuePair<EncounterSlot, SpaceId>(EncounterSlot.C, SpaceId.Library)
+            });
+            Assert.AreEqual(NightClock.SlotCStart, d.ReleaseOf(SpaceId.Library), 0.01f, "슬롯 C까지 아껴 둔다");
+
+            InspectionPlan same = NightRun.PatchPlanForProgram(lib, ProgramWith(3, new[] { "S1" }, ProgramCatalog.Footsteps, ProgramCatalog.YellowFace));
+            Assert.AreSame(lib, same, "슬롯 B 방은 늦은 항목으로 충분하다");
+        }
+
+        private static InspectionBoard BoardOf(InspectionPlan plan)
+        {
+            InspectionBoard b = new InspectionBoard();
+            b.Begin(plan, true);
+            return b;
+        }
+
+        [Test]
+        public void 방에서_터지는_조우는_그_방에_점검_하나를_더한다()
+        {
+            // 53차 플레이 점검: 2일차 소년(교실) 날 편성에 교실 점검이 없어 아무도 교실에 가지 않았다.
+            InspectionPlan plan = new InspectionPlan(2, new[] { Row("K-1"), Row("S-1", true), Row("L-1") }, SpaceId.None, "L-1");
+            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "C2", "C3" }, ProgramCatalog.BoyBang));
+            Assert.AreNotSame(plan, patched);
+            int classroom = 0;
+            foreach (InspectionAssignment a in patched.Assignments)
+            {
+                if (SpaceIds.Canonical(a.Item.Space) == SpaceId.Classroom)
+                {
+                    classroom++;
+                    Assert.IsFalse(a.IsAnomaly);
+                }
+            }
+
+            Assert.AreEqual(1, classroom);
+            Assert.AreEqual(plan.AnomalyCount, patched.AnomalyCount);
+        }
+
+        [Test]
         public void 묶은_항목은_총량_보고_정산에서_빠진다()
         {
             InspectionBoard b = new InspectionBoard();

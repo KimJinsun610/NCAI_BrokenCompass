@@ -36,7 +36,10 @@ namespace NightDuty
         /// 51차 — 편성된 조우·수칙이 요구하는 점검을 맞춘 편성을 돌려준다(바꿀 것이 없으면 같은 객체).
         /// <list type="bullet">
         /// <item>시체 낙하(<see cref="ProgramCatalog.CeilingLegs"/>): 사다리 C-3이 없으면 정상 항목으로 더한다(사다리 점검 중에 떨어진다).</item>
-        /// <item>T4: 변기 T-1을 정상·이른 항목으로(없으면 더한다, 이상이었으면 정상으로 — 「변기는 정상입니다」), T-2는 뺀다.</item>
+        /// <item>T4: 변기 T-1을 정상·이른 항목으로(없으면 더한다, 이상이었으면 정상으로 — 「변기는 정상입니다」), T-2는 뺀다.
+        /// 다른 화장실 항목이 없으면 T-3(정상)을 더한다 — 화장실로 부르는 지시가 있어야 여자아이가 나온다(53차).</item>
+        /// <item>방에서 터지는 조우: 그 방에 점검이 없으면 정상 항목 하나를 더한다(53차). 슬롯 A·C 조우 방은 <b>이른</b> 항목이 있어야 한다 —
+        /// 늦은 항목뿐이면 이른 정상 항목을 더하고, 더할 것이 없으면 늦은 항목 하나를 이르게 한다(54차 QA).</item>
         /// </list>
         /// </summary>
         public static InspectionPlan PatchPlanForProgram(InspectionPlan plan, NightProgram program)
@@ -44,7 +47,6 @@ namespace NightDuty
             if (plan == null || program == null || plan.Count == 0) return plan;
             bool corpse = program.HasEncounter(ProgramCatalog.CeilingLegs);
             bool reverse = program.Has(ProgramCatalog.ReverseReportRule);
-            if (!corpse && !reverse) return plan;
 
             List<InspectionAssignment> rows = new List<InspectionAssignment>(plan.Assignments);
             bool changed = false;
@@ -70,6 +72,49 @@ namespace NightDuty
                 }
 
                 if (rows.RemoveAll(r => r.Id == "T-2") > 0) changed = true;
+
+                // 53차 플레이 점검: 화장실 항목이 묶인 T-1뿐이면 아무 지시도 화장실로 부르지 않아 여자아이(화장실 입장 방아쇠)가 나오지 않았다.
+                // 묶이지 않는 화장실 항목 하나(T-3 거울, 정상)를 둔다 — 화장실이 늦은 공간이면 호출 2로.
+                if (!rows.Exists(r => r.Id != t1 && SpaceIds.Canonical(r.Item.Space) == SpaceId.Toilet))
+                {
+                    rows.Add(new InspectionAssignment(InspectionCatalog.Find("T-3"), false, Band.Band0, SpaceIds.Canonical(plan.LateSpace) == SpaceId.Toilet));
+                    changed = true;
+                }
+            }
+
+            // 53차 플레이 점검: 방에서 터지는 조우(소년·노란 얼굴·모형 …)는 그 방에 점검 지시가 하나도 없으면 플레이어가 갈 까닭이 없어
+            // 조우가 열리지 않았다 — 그 방의 점검 하나(정상)를 더한다. 그 방이 늦은 공간이면 호출 2로. 복도는 늘 지나다니므로 뺀다.
+            foreach (SlotEncounter slot in program.Slots)
+            {
+                EncounterScript script = EncounterScripts.Find(slot.Encounter.Id);
+                if (script == null) continue;
+                SpaceId room = SpaceIds.Canonical(script.Space);
+                if (room == SpaceId.None || room == SpaceId.Corridor) continue;   // 경비실(CCTV 조우)은 K-1이 있어야 CCTV를 보러 온다
+
+                // 54차 QA: 슬롯 A·C 조우 방이 늦은 공간이면 그 방 점검이 호출 2(02:16)에만 나와, A(01:00~01:52)에는 아무도 그 방에 가지 않고
+                // C(03:08~)에는 이미 보고를 끝낸 뒤였다(3일차 화장실 여자아이가 슬롯 A · 화장실이 늦은 공간 — 조우가 열리지 않음).
+                // A·C 방에는 이른 항목이 하나 있어야 지시기가 호출 1·슬롯 C까지 아껴 둔다. B는 호출 2와 함께 열리므로 늦은 항목으로 충분하다.
+                bool needEarly = slot.Slot != EncounterSlot.B;
+                bool lateRoom = SpaceIds.Canonical(plan.LateSpace) == room;
+                if (rows.Exists(r => SpaceIds.Canonical(r.Item.Space) == room && !(reverse && r.Id == InspectionCatalog.ReverseReportItem) && !(needEarly && r.IsLate))) continue;
+                bool added = false;
+                foreach (InspectionItem item in InspectionCatalog.InSpace(room))
+                {
+                    if (rows.Exists(r => r.Id == item.Id) || (reverse && (item.Id == "T-2" || item.Id == InspectionCatalog.ReverseReportItem))) continue;
+                    rows.Add(new InspectionAssignment(item, false, Band.Band0, lateRoom && !needEarly));
+                    changed = true;
+                    added = true;
+                    break;
+                }
+
+                if (added || !needEarly) continue;
+
+                // 더할 항목이 없으면(T4 날 화장실 — T-1 묶음 · T-2 뺌) 그 방의 늦은 항목 하나를 이르게 한다.
+                int lateAt = rows.FindIndex(r => SpaceIds.Canonical(r.Item.Space) == room && r.IsLate && !(reverse && r.Id == InspectionCatalog.ReverseReportItem));
+                if (lateAt < 0) continue;
+                InspectionAssignment was = rows[lateAt];
+                rows[lateAt] = new InspectionAssignment(was.Item, was.IsAnomaly, was.Intensity, false);
+                changed = true;
             }
 
             return changed ? new InspectionPlan(plan.Day, rows, plan.LateSpace, plan.Call1ItemId) : plan;
@@ -144,6 +189,7 @@ namespace NightDuty
         private static void OrdersNoteMessage()
         {
             if (_orders != null) _orders.NoteMessage();
+            DutiesNoteMessage();
         }
 
         private static void ResetOrders()
@@ -179,7 +225,8 @@ namespace NightDuty
                     sb.Append("[점검 지시] ").Append(space.Length > 0 ? space : "점검");
                     break;
                 case OrderKind.CatchUp:
-                    sb.Append("[점검 지시] 남은 점검");
+                    // 53차: 한 공간뿐이면(조우 슬롯까지 아껴 둔 방이 풀린 경우) 그 공간 이름 — 「남은 점검」은 여러 공간일 때만.
+                    sb.Append("[점검 지시] ").Append(space.Length > 0 ? space : "남은 점검");
                     break;
                 default:
                     sb.Append("[점검 지시] ").Append(space.Length > 0 ? space : "점검");
@@ -206,13 +253,38 @@ namespace NightDuty
                 sb.Append("\n<color=").Append(ChecklistHowToColor).Append('>').Append(InspectionHowTo).Append("</color>");
             }
 
+            if (IsFinalOrder(order))
+            {
+                sb.Append("\n<color=").Append(ChecklistHowToColor).Append('>').Append(FinalOrderNotice).Append("</color>");
+            }
+
             return sb.ToString();
+        }
+
+        /// <summary>마지막 지시에 붙는 안내(59차, 민: 「마지막 지시가 나오면 퇴근해도 된다는 안내문」).</summary>
+        public const string FinalOrderNotice = "오늘의 마지막 지시입니다. 보고를 마치면 경비실 전화로 퇴근할 수 있습니다.";
+
+        /// <summary>
+        /// 그 지시가 그날 마지막 지시인지 — 지시기가 낸 가장 최근 지시이고, 편성의 모든 항목이 지시받았다(묶어 둔 T-1이 남았으면 아직 아니다).
+        /// </summary>
+        public static bool IsFinalOrder(InspectionOrder order)
+        {
+            if (order == null || _orders == null || _orders.Orders.Count == 0) return false;
+            if (!ReferenceEquals(_orders.Orders[_orders.Orders.Count - 1], order) && _orders.Orders[_orders.Orders.Count - 1].Index != order.Index) return false;
+            InspectionPlan plan = Board.Plan;
+            if (plan == null || plan.Count == 0) return false;
+            for (int i = 0; i < plan.Assignments.Count; i++)
+            {
+                if (!Board.IsIssued(plan.Assignments[i].Id)) return false;
+            }
+
+            return true;
         }
 
         /// <summary>항목 줄 뒤 표시: 보고함 / 재입실 불가 / 안전한 읽기 결과.</summary>
         private static string ItemStatus(InspectionAssignment a)
         {
-            if (Board.StateOf(a.Id) != InspectionState.Pending) return " · 보고함";
+            if (Board.StateOf(a.Id) != InspectionState.Pending) return Board.StateOf(a.Id) == InspectionState.ReportedAnomaly ? " · [이상] 보고함" : " · [정상] 보고함";   // 60차: 정정할 수 있으니 무엇으로 보고했는지 보인다
             if (_unavoidable.Banned != SpaceId.None && SpaceIds.Canonical(a.Item.Space) == _unavoidable.Banned) return " · 재입실 불가";
             SafeReadReveal? reveal = RevealOf(a.Item.Space);
             return reveal.HasValue ? " · " + reveal.Value.Label : string.Empty;

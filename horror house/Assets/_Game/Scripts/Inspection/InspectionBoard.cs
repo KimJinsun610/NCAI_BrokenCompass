@@ -63,7 +63,13 @@ namespace NightDuty
         Captured = 5,
 
         /// <summary>회피 불가 역설로 그 공간이 당일 재입실 불가다(10단계).</summary>
-        SpaceClosed = 6
+        SpaceClosed = 6,
+
+        /// <summary>정정: 아직 보고하지 않은 항목이다(60차).</summary>
+        NotReported = 7,
+
+        /// <summary>정정: 같은 판정이거나 바꿀 수 없는 항목(T4 역보고)이다(60차).</summary>
+        CannotRevise = 8
     }
 
     /// <summary>보고 한 건의 결과. 태블릿·연출·근무일지가 읽는다(수치는 화면에 내지 않는다).</summary>
@@ -160,6 +166,16 @@ namespace NightDuty
         private readonly HashSet<string> _reverse = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _issued = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _held = new HashSet<string>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Applied> _applied = new Dictionary<string, Applied>(StringComparer.Ordinal);
+
+        /// <summary>그 보고가 수치에 남긴 몫(60차 정정이 되돌린다).</summary>
+        private struct Applied
+        {
+            public FearAxis Axis;
+            public int Change;
+            public int ReliefSlot;
+            public int Relief;
+        }
 
         /// <inheritdoc/>
         public string SnapshotKey
@@ -267,6 +283,7 @@ namespace NightDuty
             Array.Clear(_reliefUsed, 0, _reliefUsed.Length);
             _startled.Clear();
             _reverse.Clear();
+            _applied.Clear();
         }
 
         /// <summary>항목의 보고 상태. 편성에 없으면 Pending.</summary>
@@ -383,6 +400,8 @@ namespace NightDuty
 
             string source = itemId + (saysAnomaly ? "[이상]" : "[정상]");
             FearAxis axis = a.Item.Axis;
+            int reliefSlot = (int)a.Item.Axis;
+            int reliefBefore = reliefSlot >= 0 && reliefSlot < SensoryAxes ? _reliefUsed[reliefSlot] : 0;
             int change = 0;
             switch (outcome)
             {
@@ -405,7 +424,45 @@ namespace NightDuty
                     break;
             }
 
+            int relief = reliefSlot >= 0 && reliefSlot < SensoryAxes ? _reliefUsed[reliefSlot] - reliefBefore : 0;
+            _applied[itemId] = new Applied { Axis = axis, Change = change, ReliefSlot = reliefSlot, Relief = relief };
             return new InspectionReport(itemId, saysAnomaly, outcome, ReportRejection.None, axis, change);
+        }
+
+        /// <summary>
+        /// 60차(민: 「점검을 보고한 물품들의 이상/정상 여부를 수정할 수 있게」) — 이미 보고한 항목의 판정을 바꾼다.
+        /// 지난 보고가 수치에 남긴 몫(정확 보고 −5와 그 한도, 놓침·오보 +8/+7)을 되돌린 뒤 새 판정으로 다시 보고한다.
+        /// 같은 판정·T4 역보고가 걸린 항목(수칙 판정이 이미 났다)·열리지 않은 항목은 받지 않는다. 몇 번이든 바꿀 수 있다.
+        /// </summary>
+        public InspectionReport Revise(string itemId, bool saysAnomaly, int minute, FearAxisSystem axes, SpaceId space)
+        {
+            if (axes == null) throw new ArgumentNullException(nameof(axes));
+            if (axes.IsLocked) return InspectionReport.Reject(itemId, saysAnomaly, ReportRejection.Captured);
+            InspectionAssignment a = _plan.Find(itemId);
+            if (a == null) return InspectionReport.Reject(itemId, saysAnomaly, ReportRejection.NotInPlan);
+            InspectionState state = StateOf(itemId);
+            if (state == InspectionState.Pending) return InspectionReport.Reject(itemId, saysAnomaly, ReportRejection.NotReported);
+            if ((state == InspectionState.ReportedAnomaly) == saysAnomaly || IsReverse(itemId)) return InspectionReport.Reject(itemId, saysAnomaly, ReportRejection.CannotRevise);
+            if (!IsOpen(itemId, minute)) return InspectionReport.Reject(itemId, saysAnomaly, ReportRejection.NotOpenYet);
+
+            Applied prev;
+            if (_applied.TryGetValue(itemId, out prev))
+            {
+                string undo = itemId + "(정정)";
+                if (prev.Change > 0) axes.Lower(prev.Axis, prev.Change, undo);
+                else if (prev.Change < 0) axes.Apply(prev.Axis, -prev.Change, undo, space);
+                if (prev.ReliefSlot >= 0 && prev.ReliefSlot < SensoryAxes) _reliefUsed[prev.ReliefSlot] = Math.Max(0, _reliefUsed[prev.ReliefSlot] - prev.Relief);
+                _applied.Remove(itemId);
+            }
+
+            _states[itemId] = InspectionState.Pending;
+            return Report(itemId, saysAnomaly, minute, axes, space);
+        }
+
+        /// <summary>그 항목을 정정할 수 있는지(보고했고, T4 역보고가 걸리지 않았고, 열려 있다).</summary>
+        public bool CanRevise(string itemId, int minute)
+        {
+            return _plan.Find(itemId) != null && StateOf(itemId) != InspectionState.Pending && !IsReverse(itemId) && IsOpen(itemId, minute);
         }
 
         /// <summary>
@@ -459,7 +516,8 @@ namespace NightDuty
                 Startled = new List<string>(_startled),
                 Reverse = new List<string>(_reverse),
                 Issued = new List<string>(_issued),
-                Held = new List<string>(_held)
+                Held = new List<string>(_held),
+                Applied = new Dictionary<string, Applied>(_applied, StringComparer.Ordinal)
             };
         }
 
@@ -480,6 +538,10 @@ namespace NightDuty
             if (s.Issued != null) _issued.UnionWith(s.Issued);
             _held.Clear();
             if (s.Held != null) _held.UnionWith(s.Held);
+
+            // 60차: 스냅샷 뒤의 보고는 수치가 되돌아갔으니 그 몫도 지운다(정정할 때 되돌릴 것이 없다).
+            _applied.Clear();
+            if (s.Applied != null) foreach (KeyValuePair<string, Applied> kv in s.Applied) _applied[kv.Key] = kv.Value;
             foreach (KeyValuePair<string, InspectionState> kv in _states)
             {
                 if (kv.Value != InspectionState.Pending) _issued.Add(kv.Key);
@@ -526,6 +588,7 @@ namespace NightDuty
             public List<string> Reverse;
             public List<string> Issued;
             public List<string> Held;
+            public Dictionary<string, Applied> Applied;
         }
     }
 }

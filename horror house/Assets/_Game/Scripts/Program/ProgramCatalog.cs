@@ -160,6 +160,17 @@ namespace NightDuty
         /// <summary>2일차 첫 역설이 겨누는 수칙(C2 — 소년이 앉은 뒤 「교실에 남은 학생이 있습니다. 지금 확인하십시오.」, 눈으로만).</summary>
         public const string FirstParadoxRule = "C2";
 
+        /// <summary>
+        /// 편성하지 않는 수칙(정의는 남겨 둔다 — 판정기·역설 표·시험이 참조). 60차 민: 「교실의 판서 근무 수칙은 폐기해줘. 별로인 것 같아」 → C1.
+        /// </summary>
+        public static readonly string[] Retired = { "C1" };
+
+        /// <summary>편성하지 않는 수칙인지.</summary>
+        public static bool IsRetired(string ruleId)
+        {
+            return ruleId != null && System.Array.IndexOf(Retired, ruleId) >= 0;
+        }
+
         /// <summary>5일차 경비실 고정 수칙(04:00 뒤에만 판정).</summary>
         public const string FinaleRule = "K4";
 
@@ -195,7 +206,7 @@ namespace NightDuty
             new RuleDef("H3", SpaceId.Corridor, A, true, "발소리가 들리면 가까운 방으로 대피하십시오.", isThreat: true, isWaitType: true, boundEncounter: Footsteps),
             new RuleDef("H4", SpaceId.Corridor, A, true, "뒤에서 부르면 돌아보지 마십시오.", isThreat: true, boundEncounter: CallingVoice),
 
-            new RuleDef("C1", SpaceId.Classroom, A, true, "판서가 끝난 뒤에 들어가십시오.", isWaitType: true),
+            new RuleDef("C1", SpaceId.Classroom, A, true, "교실은 판서가 끝난 뒤에 들어가십시오.", isWaitType: true),   // 57차 민: 앞에 「교실」을 밝힘
             new RuleDef("C2", SpaceId.Classroom, A, true, "교실의 _? 는 무시하십시오.", boundEncounter: BoyBang),   // 52차 민: 앉은 소년과 묶음(C2 + C3 + 소년) — 3초 바라보면 책상에 머리를 박는다
             new RuleDef("C3", SpaceId.Classroom, A, true, "수업 중에 움직이지 마십시오.", isThreat: true, isWaitType: true, boundEncounter: BoySeated),
             new RuleDef("C4", SpaceId.Classroom, I, true, "붉은 불빛 아래에서는 손전등을 끄십시오.", usesFlashlight: true),   // 52차 민: 늘 켜고 다니니 「끄라」로 — 붉은 등은 맵 어딘가 하나(RedLightSpot)

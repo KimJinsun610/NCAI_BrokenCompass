@@ -9,7 +9,7 @@ using UnityEngine;
 /// <item><b>끝내는 길은 04:00과 같다</b> — <see cref="NightRun.RequestEndNight"/> → <see cref="EventBus.DayEnded"/> → 결과창(<c>PlayResultRouter</c>).
 /// 남은 카드 정산·조우 이월이 그대로 돈다.</item>
 /// <item><b>두 번 눌러야 끝난다.</b> [E]를 누르면 3초 동안 「한 번 더」를 기다린다. 다른 곳을 보면 취소.</item>
-/// <item>겨누면 외곽선(<see cref="InteractionOutline"/>) — 끝낼 수 있으면 진하게·밝은 조준선, 점검이 남았으면 흐리게(0.35)·「남은 점검 n건」(2026-10-03 민: 전화기에도 외곽선).</item>
+/// <item>겨누면 외곽선(<see cref="InteractionOutline"/>) — 끝낼 수 있으면 진하게·밝은 조준선, 점검이 남았으면 흐리게(0.35)·「지시가 아직 끝나지 않았습니다.」(59차 민 — 전에는 「점검을 모두 마쳐야 … 남은 점검 n건」).</item>
 /// </list>
 /// 씬의 전화기 오브젝트에 붙인다(메뉴 「야간근무/경비실/전화기 놓기」). 조준·막는 조건은 <see cref="CctvSystem"/>와 같다.
 /// </summary>
@@ -19,6 +19,9 @@ public sealed class ShiftEndPhone : MonoBehaviour
     private const float Reach = 1.8f;
     private const float AimRadius = 0.06f;
     private const float ConfirmSeconds = 3f;
+
+    /// <summary>점검이 남아 끝낼 수 없을 때의 안내(59차 민: 「조기 퇴근도 『지시가 아직 끝나지 않았습니다.』 정도로」 — 남은 수는 알려 주지 않는다).</summary>
+    public const string LockedLine = "지시가 아직 끝나지 않았습니다.";
 
     /// <summary>점검이 남아 끝낼 수 없을 때의 외곽선 진하기(끝낼 수 있으면 1).</summary>
     private const float LockedOutline = 0.35f;
@@ -80,8 +83,7 @@ public sealed class ShiftEndPhone : MonoBehaviour
         {
             _armedUntil = -1f;
             InteractionOutline.Request(transform, LockedOutline);   // 겨누면 늘 보이게 — 아직 못 쓰니 흐리게.
-            int left = NightRun.Inspections.RemainingCount;
-            ClaimPrompt(left > 0 ? "점검을 모두 마쳐야 근무를 끝낼 수 있습니다 · 남은 점검 " + left + "건" : string.Empty, false);
+            ClaimPrompt(NightRun.Inspections.RemainingCount > 0 ? LockedLine : string.Empty, false);
             return;
         }
 

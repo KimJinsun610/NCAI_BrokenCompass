@@ -116,7 +116,7 @@ namespace NightDuty
         /// <summary>바닥값 상한.</summary>
         public const float FloorMax = 20f;
 
-        private static readonly int[] FakeCaps = { 2, 4, 5, 6, 7 };
+        private static readonly int[] FakeCaps = { 3, 5, 6, 7, 8 };   // 57차(민: 「3일차까지 놀람이 별로 없다」): 2/4/5/6/7 → +1, 멀리서 보이는 몹(fake.glimpse) 몫
 
         private readonly int _day;
         private float _lastImpulse = float.NegativeInfinity;

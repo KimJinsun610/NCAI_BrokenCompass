@@ -61,6 +61,11 @@ namespace NightDuty
         public static event Action<ParadoxMessage> MessageSent;
 
         /// <summary>
+        /// [근무 지시] 문자(54차) — 지시·완료 답장·미완료 답장. 역설 문자와 달리 글리치 없이 태블릿 문자함에 실린다(<c>TabletBridge</c>).
+        /// </summary>
+        public static event Action<ParadoxMessage> DutySent;
+
+        /// <summary>
         /// 역설 문자의 안전한 읽기를 마쳤다(10단계). 점검표에 그 공간의 이상 여부가 드러난다 — 태블릿이 짧게 떨고 「틱」 한 번, 태블릿을 다시 읽는다.
         /// </summary>
         public static event Action<SafeReadReveal> SafeReadConfirmed;
@@ -139,6 +144,12 @@ namespace NightDuty
         public static void RaiseMessageSent(ParadoxMessage message)
         {
             Invoke(MessageSent, message);
+        }
+
+        /// <summary><see cref="DutySent"/>를 발생시킨다.</summary>
+        public static void RaiseDutySent(ParadoxMessage message)
+        {
+            Invoke(DutySent, message);
         }
 
         /// <summary><see cref="TabletTextChanged"/>를 발생시킨다.</summary>
@@ -264,6 +275,7 @@ namespace NightDuty
             AxisCritical = null;
             Captured = null;
             MessageSent = null;
+            DutySent = null;
             SafeReadConfirmed = null;
             TabletTextChanged = null;
             WarningsChanged = null;

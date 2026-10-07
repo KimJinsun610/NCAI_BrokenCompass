@@ -262,18 +262,16 @@ MonoBehaviour:
   verticalLookLimit: {x: -85, y: 85}
   walkSpeed: 2
   runSpeed: 5
-  jumpForce: 250
   forward: 119
   backward: 115
   strafeLeft: 97
   strafeRight: 100
   run: 304
-  jump: 32
   sight: 0
   sightPrefab: {fileID: 0}
-  documentUI: {fileID: 0}
+  documentUI: {fileID: 816234059526366951, guid: 47ea803c95b51ef4d9a36f54e3b31599, type: 3}
   toggleDocumentUI: 9
-  pauseUI: {fileID: 0}
+  pauseUI: {fileID: 1992461081768549865, guid: b3262ad7989fa754b992f2244ac65e15, type: 3}
   togglePause: 27
   hideCursor: 1
 --- !u!114 &5375907100382350657
@@ -343,6 +341,10 @@ PrefabInstance:
     - target: {fileID: 4178054885020164, guid: ad26fa4b7f97bc047b3b8abb757135cc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 108413864315222540, guid: ad26fa4b7f97bc047b3b8abb757135cc, type: 3}
+      propertyPath: m_Lightmapping
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 114697143277590614, guid: ad26fa4b7f97bc047b3b8abb757135cc, type: 3}

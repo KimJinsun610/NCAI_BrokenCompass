@@ -152191,10 +152191,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 459227576635074614, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: m_Lightmapping
-      value: 4
-      objectReference: {fileID: 0}
     - target: {fileID: 2095111055016560108, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
       propertyPath: m_LocalPosition.x
       value: 33.73
@@ -152235,22 +152231,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2427022695266868855, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: m_OcclusionCulling
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 7211598377816875816, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
       propertyPath: m_Name
       value: FPController
       objectReference: {fileID: 0}
-    - target: {fileID: 8282405189132691889, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: pauseUI
-      value: 
-      objectReference: {fileID: 1992461081768549865, guid: b3262ad7989fa754b992f2244ac65e15, type: 3}
-    - target: {fileID: 8282405189132691889, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: documentUI
-      value: 
-      objectReference: {fileID: 816234059526366951, guid: 47ea803c95b51ef4d9a36f54e3b31599, type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

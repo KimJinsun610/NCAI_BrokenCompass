@@ -17,3 +17,28 @@ MonoBehaviour:
   playScene: Assets/0. Main/01 Scene/PlayScene.unity
   resultScene: Assets/0. Main/01 Scene/ResultScene.unity
   contractScene: Assets/0. Main/01 Scene/ContractScene.unity
+  mainBgm:
+    clip: {fileID: 8300000, guid: f109786ccc3f96140997bcabfda24fdc, type: 3}
+    volume: 0.6
+    loop: 1
+    fadeIn: 1.5
+    keepPrevious: 0
+  loadingBgm:
+    clip: {fileID: 0}
+    volume: 0.6
+    loop: 1
+    fadeIn: 1.5
+    keepPrevious: 1
+  contractBgm:
+    clip: {fileID: 0}
+    volume: 0.6
+    loop: 1
+    fadeIn: 1.5
+    keepPrevious: 1
+  resultBgm:
+    clip: {fileID: 8300000, guid: 4978208248f512e49b643f769531a97a, type: 3}
+    volume: 0.5
+    loop: 1
+    fadeIn: 1.5
+    keepPrevious: 0
+  bgmFadeOut: 1

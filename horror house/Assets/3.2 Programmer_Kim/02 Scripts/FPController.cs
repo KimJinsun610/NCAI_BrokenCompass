@@ -15,7 +15,6 @@ public class FPController : MonoBehaviour
     [Header("MOVEMENT")]
     public float walkSpeed = 1;
     public float runSpeed = 3;
-    public float jumpForce = 2;
     private float speed = 1;
 
     [Header("CONTROLS")]
@@ -24,7 +23,6 @@ public class FPController : MonoBehaviour
     public KeyCode strafeLeft = KeyCode.A;
     public KeyCode strafeRight = KeyCode.D;
     public KeyCode run = KeyCode.LeftShift;
-    public KeyCode jump = KeyCode.Space;
 
     [Header("SIGHT")]
     public bool sight = true;
@@ -41,8 +39,6 @@ public class FPController : MonoBehaviour
     public KeyCode togglePause = KeyCode.Escape;
 
     private GameObject pauseUIInstance;
-
-    private Rigidbody rb;
 
     public bool hideCursor = false;
 
@@ -66,7 +62,6 @@ public class FPController : MonoBehaviour
     void Start()
     {
         cam = GetComponentInChildren<Camera>();
-        rb = GetComponent<Rigidbody>();
 
         if (hideCursor)
         {
@@ -198,11 +193,6 @@ public class FPController : MonoBehaviour
         if (Input.GetKey(strafeRight))
         {
             transform.Translate(Vector3.right * speed * Time.deltaTime, Space.Self);
-        }
-
-        if (Input.GetKeyDown(jump))
-        {
-            rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
     }
 }

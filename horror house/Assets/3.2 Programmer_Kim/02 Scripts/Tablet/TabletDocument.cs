@@ -12,7 +12,7 @@ using UnityEngine.Serialization;
 ///   문서 헤더     발신 · 문서번호 · 발행시각
 ///   근무 정보 바  근무일 · 근무 시간 범위 · 순찰 지점 수
 ///   탭            근무 수칙 / 메시지(안 읽은 것이 있으면 점)
-///   본문          섹션 제목 + 항목 (세로 스크롤)
+///   본문          섹션 제목 + 항목 (세로 스크롤 · 넘치면 오른쪽에 스크롤바)
 ///   하단          항목 개수 · 조작 안내
 ///   하단바        고정 면책 문구
 /// </code>
@@ -107,6 +107,18 @@ public class TabletDocument : MonoBehaviour
     [Min(1)] public int visibleLines = 9;
     [Tooltip("태블릿을 들고 있을 때만 입력을 받는다. 비어 있으면 같은 오브젝트 위에서 찾는다.")]
     public PlayerTablet tablet;
+
+    [Header("스크롤바")]
+    [Tooltip("스크롤바 홈(배경). 본문이 넘칠 때만 보인다. 비워 두면 스크롤바를 그리지 않는다.")]
+    public Transform scrollTrack;
+    [Tooltip("스크롤바 손잡이. 길이가 보이는 분량이고, 자리가 지금 보고 있는 데다.")]
+    public Transform scrollThumb;
+    [Tooltip("스크롤바 폭(화면 단위).")]
+    [Min(0.1f)] public float scrollBarWidth = 1.6f;
+    [Tooltip("본문 글상자 오른쪽 끝에서 스크롤바까지 띄울 거리(화면 단위).")]
+    public float scrollBarGap = 1.4f;
+    [Tooltip("손잡이가 아무리 짧아도 이보다는 길게 둔다(화면 단위).")]
+    [Min(0.5f)] public float scrollThumbMinLength = 4f;
 
     [Header("나타나는 연출")]
     [Tooltip("태블릿이 올라오는 동안 글자를 서서히 띄운다. 끄면 화면이 켜지는 순간 바로 보인다.")]
@@ -241,6 +253,7 @@ public class TabletDocument : MonoBehaviour
 
         _scrollLine = next;
         ApplyScroll();
+        RenderScrollBar();
     }
 
     /// <summary>편성표에서 그날 수칙을 다시 읽어 처음부터 보여 준다.</summary>
@@ -352,6 +365,8 @@ public class TabletDocument : MonoBehaviour
 
             ApplyScroll();
         }
+
+        RenderScrollBar();
 
         if (countText != null)
         {
@@ -579,5 +594,74 @@ public class TabletDocument : MonoBehaviour
 
         bodyText.firstVisibleCharacter = firstChar;
         bodyText.maxVisibleLines = visibleLines;
+    }
+
+    /// <summary>
+    /// 본문이 글상자를 넘칠 때만 오른쪽에 스크롤바를 보인다.
+    /// 손잡이 <b>길이</b>는 전체 중 지금 보이는 분량이고, <b>자리</b>는 지금 어디쯤인지다 —
+    /// 길이도 자리도 본문 글상자를 실제로 재서 정하므로, 글상자를 옮기거나 글자 크기를 바꿔도 따라온다.
+    /// 홈·손잡이를 꽂지 않은 태블릿(옛 프리팹)에서는 아무것도 하지 않는다.
+    /// </summary>
+    private void RenderScrollBar()
+    {
+        if (scrollTrack == null && scrollThumb == null) return;
+
+        // 넘칠 내용이 없으면 스크롤바 자체를 숨긴다(조작 안내에서 「휠 : 스크롤」이 빠지는 것과 같은 조건).
+        bool canScroll = bodyText != null && _totalLines > visibleLines;
+        if (!canScroll)
+        {
+            Show(scrollTrack, false);
+            Show(scrollThumb, false);
+            return;
+        }
+
+        Rect box = bodyText.rectTransform.rect;
+        Vector2 center = bodyText.rectTransform.anchoredPosition;
+        float x = center.x + box.width * 0.5f + scrollBarGap + scrollBarWidth * 0.5f;
+        float top = center.y + box.height * 0.5f;
+
+        Show(scrollTrack, true);
+        Place(scrollTrack, x, center.y, scrollBarWidth, box.height);
+
+        if (scrollThumb == null) return;
+
+        // 보이는 분량만큼 손잡이를 길게. 글이 아주 길어도 집어서 알아볼 만한 길이는 남긴다.
+        float shown = Mathf.Clamp01((float)visibleLines / _totalLines);
+        float length = Mathf.Clamp(box.height * shown, Mathf.Min(scrollThumbMinLength, box.height), box.height);
+
+        // 맨 위면 홈 위쪽 끝, 맨 아래면 아래쪽 끝에 닿는다.
+        int maxLine = Mathf.Max(1, _totalLines - visibleLines);
+        float t = Mathf.Clamp01((float)_scrollLine / maxLine);
+        float thumbCenterY = top - length * 0.5f - (box.height - length) * t;
+
+        Show(scrollThumb, true);
+        Place(scrollThumb, x, thumbCenterY, scrollBarWidth, length);
+    }
+
+    private static void Show(Transform t, bool on)
+    {
+        if (t == null) return;
+        if (t.gameObject.activeSelf != on) t.gameObject.SetActive(on);
+    }
+
+    /// <summary>
+    /// 스크롤바 조각을 화면 좌표에 놓는다.
+    /// 쿼드(그냥 Transform)면 화면 배경과 같은 방식으로 <b>스케일</b>이 크기이고, 글상자(RectTransform)면 크기 칸을 쓴다.
+    /// </summary>
+    private static void Place(Transform t, float x, float y, float width, float height)
+    {
+        if (t == null) return;
+
+        RectTransform rect = t as RectTransform;
+        if (rect != null)
+        {
+            rect.anchoredPosition = new Vector2(x, y);
+            rect.sizeDelta = new Vector2(width, height);
+            return;
+        }
+
+        Vector3 local = t.localPosition;
+        t.localPosition = new Vector3(x, y, local.z);
+        t.localScale = new Vector3(width, height, 1f);
     }
 }

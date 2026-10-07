@@ -181,7 +181,7 @@ namespace NightDuty
     /// 이상 배정기(최종 기획서 「이상 배정」). 회차 동안 살아 있으며 공간을 처음 점검한 날을 기억한다.
     /// <list type="bullet">
     /// <item>점검 수(그중 이상): 5(2) · 5(2) · 6(3) · 6(3) · 7(3). 점검 공간은 경비실 포함 4곳 이하이고, 2일차부터는 좌·우 동에 각각 하나 이상.</item>
-    /// <item>1일차는 튜토리얼 고정: 복도·교실·과학실 + 경비실, 이상은 S-2 현미경 불(빛)과 H-4 사물함(옮김), 첫 점검 K-1은 정상.</item>
+    /// <item>1일차는 튜토리얼 고정: 복도·교실·과학실 + 경비실, 이상은 S-2 현미경 불(빛, 과학실이라 호출 2에 열림)과 C-1 화분(옮김), 첫 점검 K-1은 정상. 복도는 정상 항목 하나.</item>
     /// <item>이상의 축은 그 축의 <b>연출 구간</b>이 1 이상일 때만 고르고, 구간이 높을수록 가중치가 크다(가중치 = 구간 번호).</item>
     /// <item>공간을 처음 점검하는 날에는 그 공간에 이상을 두지 않는다(1일차 튜토리얼 제외).</item>
     /// <item>그날 마지막 점검 공간 하나는 호출 2(02:16)에 열린다(경비실 제외, 좌측 동 우선). 호출 1은 먼저 열린 항목 하나를 가리킨다.</item>
@@ -193,6 +193,12 @@ namespace NightDuty
         private const int Attempts = 40;
 
         private static readonly SpaceId[] Day1Spaces = { SpaceId.Corridor, SpaceId.Classroom, SpaceId.ScienceRoom, SpaceId.SecurityRoom };
+
+        /// <summary>1일차 마지막 점검 공간(호출 2). 50차: 교실 → 과학실. 51차: 과학실 → 복도 정상 1항목(민: 「이후 2개가 너무 늦다」 — 과학실은 01:00 전후에).</summary>
+        public const SpaceId Day1LateSpace = SpaceId.Corridor;
+
+        /// <summary>2일차부터 늦은 공간(호출 2)에 묶는 항목 수 상한. 나머지는 먼저 열린다.</summary>
+        public const int LateItemsMax = 2;
 
         private readonly Random _rng;
         private readonly HashSet<SpaceId> _seen = new HashSet<SpaceId>();
@@ -264,14 +270,14 @@ namespace NightDuty
             InspectionItem move = InspectionCatalog.Find(InspectionCatalog.TutorialMove);
             InspectionItem light = InspectionCatalog.Find(InspectionCatalog.TutorialLight);
 
+            // 51차: 1일차 호출 2(02:16)는 복도 정상 1항목(경비실 앞 재방문)만 — 과학실·교실은 앞쪽에 열려 1시대에 다 나온다.
             list.Add(new InspectionAssignment(first, false, Band.Band0, false));
-            list.Add(new InspectionAssignment(move, true, Intensity(shown, move.Axis), false));
-            list.Add(new InspectionAssignment(light, true, Intensity(shown, light.Axis), false));
+            list.Add(new InspectionAssignment(move, true, Intensity(shown, move.Axis), move.Space == Day1LateSpace));
+            list.Add(new InspectionAssignment(light, true, Intensity(shown, light.Axis), light.Space == Day1LateSpace));
 
-            // 교실은 그날 마지막 점검 공간 — 호출 2(02:16)를 1일차에 가르친다.
-            List<InspectionItem> classroom = InspectionCatalog.InSpace(SpaceId.Classroom);
-            InspectionItem classItem = Pick(classroom);
-            list.Add(new InspectionAssignment(classItem, false, Band.Band0, true));
+            // 복도는 정상 항목 하나(49차: 복도 사물함 H-4를 뺀 뒤에도 1일차 공간 셋을 다 돈다).
+            InspectionItem hall = Pick(InspectionCatalog.InSpace(SpaceId.Corridor));
+            list.Add(new InspectionAssignment(hall, false, Band.Band0, hall.Space == Day1LateSpace));
 
             List<InspectionItem> rest = new List<InspectionItem>();
             SpaceId[] tutorialSpaces = { SpaceId.Corridor, SpaceId.Classroom, SpaceId.ScienceRoom };
@@ -284,11 +290,12 @@ namespace NightDuty
                 }
             }
 
+            rest.RemoveAll(x => x.Space == Day1LateSpace);   // 늦은 항목은 하나만
             InspectionItem extra = Pick(rest);
-            list.Add(new InspectionAssignment(extra, false, Band.Band0, extra.Space == SpaceId.Classroom));
+            list.Add(new InspectionAssignment(extra, false, Band.Band0, false));
 
             string call1 = PickCall1(list, InspectionCatalog.FirstInspection);
-            return new InspectionPlan(1, list, SpaceId.Classroom, call1);
+            return new InspectionPlan(1, list, Day1LateSpace, call1);
         }
 
         // ── 2일차부터 ──────────────────────────────────────────
@@ -360,10 +367,13 @@ namespace NightDuty
             // 4) 그날 마지막 점검 공간(호출 2) — 경비실 제외, 좌측 동 우선.
             SpaceId late = PickLateSpace(spaces);
             List<InspectionAssignment> final = new List<InspectionAssignment>(list.Count);
+            int lateCount = 0;
             for (int i = 0; i < list.Count; i++)
             {
                 InspectionAssignment a = list[i];
-                final.Add(new InspectionAssignment(a.Item, a.IsAnomaly, a.Intensity, a.Item.Space == late));
+                bool isLate = a.Item.Space == late && lateCount < LateItemsMax;   // 51차: 늦은 공간은 2항목까지
+                if (isLate) lateCount++;
+                final.Add(new InspectionAssignment(a.Item, a.IsAnomaly, a.Intensity, isLate));
             }
 
             string call1 = PickCall1(final, null);

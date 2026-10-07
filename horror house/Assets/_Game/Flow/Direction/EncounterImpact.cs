@@ -40,6 +40,7 @@ public sealed class EncounterImpact : MonoBehaviour
     private static void ResetStatics()
     {
         s_active = null;
+        s_strongNight = null;
     }
 
     private void OnEnable()
@@ -53,23 +54,84 @@ public sealed class EncounterImpact : MonoBehaviour
         Restore(0.5f);
     }
 
+    /// <summary>
+    /// 점프스케어 세기(51차, 민: 「조우 효과음(현악기)이 안 놀랍고 짜친다 — 점프스케어 효과음으로」). 소리는 연출 소리 표 <c>stinger.weak/mid/strong</c>
+    /// (OpenGameArt Horror Hit Soundpack 1, CC0). 강은 밤당 한 번 — 두 번째부터는 중으로 낮춘다. 같은 클립이 잇달아 나지 않게 표가 무작위로 고른다.
+    /// </summary>
+    public enum Tier
+    {
+        None,
+        Weak,
+        Mid,
+        Strong,
+    }
+
+    private static object s_strongNight;
+
+    /// <summary>그 조우의 점프스케어 세기.</summary>
+    public static Tier TierOf(string encounterId)
+    {
+        switch (encounterId)
+        {
+            case ProgramCatalog.ModelRush:
+            case ProgramCatalog.CeilingLegs:   // 51차: 천장 다리 → 시체 낙하
+                return Tier.Strong;
+            case ProgramCatalog.HallEndFigure:
+            case ProgramCatalog.YellowFace:
+            case ProgramCatalog.ToiletGirl:
+            case ProgramCatalog.SuitMan:
+            case ProgramCatalog.PeopleTree:
+            case ProgramCatalog.ScienceBlackout:
+            case ProgramCatalog.ToiletBlackout:
+                return Tier.Mid;
+            case ProgramCatalog.BoySeated:
+            case ProgramCatalog.BoyBang:   // 52차: 조용히 앉아 있다 — 놀람은 C2를 어겼을 때의 머리 박기(BoyHeadBang)
+            case ProgramCatalog.PhantomDoor:
+            case ProgramCatalog.CctvPerson:
+                return Tier.Weak;
+            default:
+                return Tier.None;   // 발소리·목소리·창 두드림 — 그 소리 자체가 놀람
+        }
+    }
+
+    /// <summary>점프스케어 소리를 2D로 낸다(강은 밤당 한 번, 넘치면 중). 연출 소리 표에 없으면 false.</summary>
+    public static bool PlayTier(Tier tier, float volumeScale = 1f)
+    {
+        if (tier == Tier.None) return false;
+        if (tier == Tier.Strong)
+        {
+            object night = NightRun.Inspections.Plan;
+            if (ReferenceEquals(night, s_strongNight)) tier = Tier.Mid;
+            else s_strongNight = night;
+        }
+
+        string key = tier == Tier.Strong ? "stinger.strong" : tier == Tier.Mid ? "stinger.mid" : "stinger.weak";
+        float volume;
+        AudioClip clip = DirectionSoundTableSO.FindExact(key, out volume);
+        if (clip == null) return false;
+        AmbiencePlayer amb = AmbiencePlayer.Active;
+        if (amb != null && amb.PlayStingerClip(clip, volume * volumeScale)) return true;
+        AudioSource.PlayClipAtPoint(clip, Camera.main != null ? Camera.main.transform.position : Vector3.zero, volume * volumeScale);
+        return true;
+    }
+
     /// <summary>그 조우의 대면 갈래.</summary>
     public static Kind KindOf(string encounterId)
     {
         switch (encounterId)
         {
             case ProgramCatalog.ModelRush:
-            case ProgramCatalog.BoyBang:
             case ProgramCatalog.HallEndFigure:
             case ProgramCatalog.YellowFace:
             case ProgramCatalog.ToiletGirl:
             case ProgramCatalog.SuitMan:
             case ProgramCatalog.CctvPerson:
+            case ProgramCatalog.CeilingLegs:
                 return Kind.Hit;
             case ProgramCatalog.PeopleTree:
-            case ProgramCatalog.CeilingLegs:
             case ProgramCatalog.PhantomDoor:
             case ProgramCatalog.BoySeated:
+            case ProgramCatalog.BoyBang:
                 return Kind.Creep;
             case ProgramCatalog.ScienceBlackout:
             case ProgramCatalog.ToiletBlackout:
@@ -95,21 +157,13 @@ public sealed class EncounterImpact : MonoBehaviour
         switch (kind)
         {
             case Kind.Hit:
-                if (amb != null)
-                {
-                    amb.Duck(0.1f, 0.06f);
-                    amb.PlayStinger("stinger_hit", 1f);
-                }
-
+                if (amb != null) amb.Duck(0.1f, 0.06f);
+                PlayTier(TierOf(encounterId));
                 BodyMeter.Startle();
                 break;
             case Kind.Creep:
-                if (amb != null)
-                {
-                    amb.Duck(0.25f, 0.6f);
-                    amb.PlayStinger("stinger_whisper", 0.85f);
-                }
-
+                if (amb != null) amb.Duck(0.25f, 0.6f);
+                PlayTier(TierOf(encounterId), 0.85f);
                 break;
             case Kind.Dark:
                 if (amb != null)
@@ -118,6 +172,7 @@ public sealed class EncounterImpact : MonoBehaviour
                     amb.PlayStinger("stinger_breath", 0.9f);
                 }
 
+                PlayTier(TierOf(encounterId), 0.8f);
                 BodyMeter.Startle();
                 break;
             default:

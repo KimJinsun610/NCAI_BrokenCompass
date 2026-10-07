@@ -221,6 +221,114 @@ MonoBehaviour:
     volume: 0.9
     hits:
     - 2.458
+  - key: door.open
+    clip: {fileID: 8300000, guid: a00f1117fad2c7f46b87d3239bc478fb, type: 3}
+    more: []
+    volume: 0.75
+    hits:
+    - 1.1923542
+  - key: door.close
+    clip: {fileID: 8300000, guid: d457bc946db921e4fac83d8f6256e944, type: 3}
+    more: []
+    volume: 0.7
+    hits:
+    - 2.20075
+  - key: door.locker
+    clip: {fileID: 8300000, guid: 1ea4a0d368d4fe440a4473a1e0af94c8, type: 3}
+    more:
+    - {fileID: 8300000, guid: c2bddf8c2c1002943b826ce10e7488c0, type: 3}
+    - {fileID: 8300000, guid: 1f33951f9913eff49911c76f42a472bb, type: 3}
+    volume: 0.7
+    hits:
+    - 0.1566875
+    - 1.7252916
+    - 0.386375
+  - key: door.drawer.open
+    clip: {fileID: 8300000, guid: c7919efd8c8aba845b79d8db787e8797, type: 3}
+    more: []
+    volume: 0.7
+    hits:
+    - 0
+  - key: door.drawer.close
+    clip: {fileID: 8300000, guid: 9c04a845066f3f84b9bc111e129fde7e, type: 3}
+    more: []
+    volume: 0.7
+    hits:
+    - 0
+  - key: door.cabinet.open
+    clip: {fileID: 8300000, guid: 037123866b192564996262c5efd53718, type: 3}
+    more: []
+    volume: 0.55
+    hits:
+    - 0.49884355
+  - key: door.cabinet.close
+    clip: {fileID: 8300000, guid: 99576bd70b4dcc74280e0ab946d52e6c, type: 3}
+    more: []
+    volume: 0.55
+    hits:
+    - 1.26839
+  - key: door.locker.open
+    clip: {fileID: 8300000, guid: 6e40589a48f61c44ebe970fb08595e42, type: 3}
+    more: []
+    volume: 0.6
+    hits:
+    - 0.6531973
+  - key: door.locker.close
+    clip: {fileID: 8300000, guid: 112f1428a350de243afa312a2643ecfb, type: 3}
+    more: []
+    volume: 0.6
+    hits:
+    - 0.31587303
+  - key: stinger.weak
+    clip: {fileID: 8300000, guid: ef3b2e5cc6d89bf499ed78ff027119fe, type: 3}
+    more:
+    - {fileID: 8300000, guid: 709509f029f5aea42bd2478c2b0b1ce5, type: 3}
+    - {fileID: 8300000, guid: c5671173fd57e5d489a9b886f21e780b, type: 3}
+    volume: 0.8
+    hits:
+    - 0.62142855
+    - 0.3986848
+    - 0.699932
+  - key: stinger.mid
+    clip: {fileID: 8300000, guid: f8dfd5748ebdcdb4795e58fb40f7ff8f, type: 3}
+    more:
+    - {fileID: 8300000, guid: cad0fb44225e13d43b80ea74080c3d82, type: 3}
+    - {fileID: 8300000, guid: 5774947c5937b2b438d37e559d24aaa0, type: 3}
+    volume: 0.95
+    hits:
+    - 0.7654422
+    - 0.3485034
+    - 0.97882086
+  - key: stinger.strong
+    clip: {fileID: 8300000, guid: 2f5e34571edcf3843ad9c257103ddf03, type: 3}
+    more:
+    - {fileID: 8300000, guid: ceb7f7bb964d26841a496074e38f153b, type: 3}
+    - {fileID: 8300000, guid: 57e4fc8348cb96744944697e4543d20e, type: 3}
+    volume: 1
+    hits:
+    - 0.3556916
+    - 0.46748298
+    - 0.4407483
+  - key: stinger.high
+    clip: {fileID: 8300000, guid: 396f424e965aaa44fb9caa107660347e, type: 3}
+    more:
+    - {fileID: 8300000, guid: 2accbbf6cfef2f74f8a97f4debfd1d64, type: 3}
+    volume: 0.75
+    hits:
+    - 0.6673696
+    - 0.64666665
+  - key: corpse.fall
+    clip: {fileID: 8300000, guid: 6a87b5f535621284d9f4dc27272e6504, type: 3}
+    more: []
+    volume: 1
+    hits:
+    - 0.09089583
+  - key: cctv.face
+    clip: {fileID: 8300000, guid: 04fc8b26ba4bc2b459b924deb5e0b3db, type: 3}
+    more: []
+    volume: 0.9
+    hits:
+    - 3.0358126
   - key: C1.cue
     clip: {fileID: 8300000, guid: c5acaa50d4e5be249a1d42397fef4dc0, type: 3}
     more: []
@@ -954,11 +1062,11 @@ MonoBehaviour:
     hits:
     - 1.8409792
   - key: ui.confirm
-    clip: {fileID: 8300000, guid: 5ec550679b818e94aa3da25705ac8750, type: 3}
+    clip: {fileID: 8300000, guid: 70659649b0ad3354e8f40631a2b9171f, type: 3}
     more: []
-    volume: 0.7
+    volume: 0.55
     hits:
-    - 1.4133333
+    - 0
   - key: inspect.C-3.loop
     clip: {fileID: 8300000, guid: ab7a85da52b163740be8a609b5c2de26, type: 3}
     more: []
@@ -1025,16 +1133,6 @@ MonoBehaviour:
     - 0.14597917
     - 0.5588958
     - 0.67766666
-  - key: inspect.H-4.near
-    clip: {fileID: 8300000, guid: eeb298dcae6e5fa46af87a1e194d4233, type: 3}
-    more:
-    - {fileID: 8300000, guid: dcc7f64c148a04745965c25a85920d3b, type: 3}
-    - {fileID: 8300000, guid: 7f1d22228595a974ea2309e8df309cd8, type: 3}
-    volume: 1
-    hits:
-    - 0.18158333
-    - 0.067854166
-    - 2.576625
   - key: inspect.C-2.near
     clip: {fileID: 8300000, guid: b0287042dd1e0f54b9515dbb44567806, type: 3}
     more:

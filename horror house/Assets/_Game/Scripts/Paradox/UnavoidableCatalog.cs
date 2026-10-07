@@ -105,8 +105,8 @@ namespace NightDuty
                 "화면에 인원이 잡혔습니다."),
             new UnavoidableDef("K2xK-1", false, UnavoidableKind.CueOnPendingItem, new[] { "K2" }, FinalCues.EmptyRoom, SpaceId.SecurityRoom, "K-1", null, "K2",
                 "CCTV 점검 시간입니다."),
-            new UnavoidableDef("C2xC-3", false, UnavoidableKind.CueOnPendingItem, new[] { "C2" }, FinalCues.Legs, SpaceId.Classroom, "C-3", null, null,
-                "교실 천장 점검 요청이 있습니다."),
+            new UnavoidableDef("C2xC-3", false, UnavoidableKind.CueOnPendingItem, new[] { "C2" }, FinalCues.BoySeated, SpaceId.Classroom, "C-3", null, null,
+                "사다리 점검이 끝나지 않았습니다."),   // 51차: 천장 → 사다리(C-3 문구 변경)
             new UnavoidableDef("H4xT1", false, UnavoidableKind.ChainOnExit, new[] { "H4", "T1" }, FinalCues.Flush, SpaceId.Toilet, null, ProgramCatalog.CallingVoice, null,
                 "복도에 육성이 감지되었습니다.")
         };

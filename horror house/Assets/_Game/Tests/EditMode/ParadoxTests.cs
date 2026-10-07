@@ -408,7 +408,7 @@ namespace NightDuty.Tests
         public void K2_역설은_그날_빈_방_채널을_부르고_잠깐_보고_넘기면_안전한_읽기()
         {
             ParadoxRun r = new ParadoxRun(new ParadoxPlan(Band.Band1, "K2", false, true, null, null, null, null, "시험", null, 2));
-            Assert.AreEqual("CAM03에 신호가 잡힙니다. 즉시 확인하십시오.", r.Message);
+            Assert.AreEqual("공실 CAM03에 움직임이 있습니다. 즉시 확인하십시오.", r.Message);
             Assert.AreEqual(SpaceId.ScienceRoom, r.Space, "채널 2 = 과학실");
             Assert.AreEqual(ParadoxStep.Sent, r.Observe(JudgeSignal.Cue(FinalCues.EmptyRoom + "@cctv.ch2", default), SpaceId.SecurityRoom, false));
             r.Observe(JudgeSignal.CctvView("cctv.ch2", 0.3f), SpaceId.SecurityRoom, false);
@@ -666,8 +666,9 @@ namespace NightDuty.Tests
             RuleSO g1 = null;
             foreach (RuleSO card in NightRun.TodayDeck) if (card.CardId == "G1") g1 = card;
             Assert.IsNotNull(g1);
-            StringAssert.StartsWith("<mark=" + NightRun.ViolationStain + ">", g1.PlayerText);
-            StringAssert.Contains(ProgramCatalog.Rule("G1").Text, g1.PlayerText, "내용은 가리지 않는다");
+            // 51차 민: 「태블릿에 수칙 어긴 것을 표시하지 말 것」 — 기본은 얼룩 없음(스위치를 켜면 옛 표시).
+            Assert.IsFalse(NightRun.ShowViolationStain);
+            Assert.AreEqual(ProgramCatalog.Rule("G1").Text, g1.PlayerText, "위반해도 수칙 줄은 그대로");
         }
 
         [Test]
@@ -685,7 +686,7 @@ namespace NightDuty.Tests
             foreach (string id in new[] { "C3", "C5", "L2", "L5", "K1" }) Assert.IsFalse(ParadoxCatalog.Find(id).HasMessage, id);
             Assert.AreEqual(SafeReadPattern.EyesOnly, ParadoxCatalog.Find("S2").Pattern);
             Assert.IsFalse(ParadoxCatalog.Find("S3").HasVariant);
-            Assert.AreEqual("인체 모형을 빛으로 확인하십시오.", ProgramCatalog.Rule("S3").Text);
+            Assert.AreEqual("인체 모형에는 빛을 비추지 마십시오.", ProgramCatalog.Rule("S3").Text, "51차 민: 미션처럼 읽히던 「3초간 비추라」 폐기");
             Assert.AreEqual("근무 종료 후에는 경비실을 나가지 마십시오.", ProgramCatalog.Rule("K4").Text);
         }
     }

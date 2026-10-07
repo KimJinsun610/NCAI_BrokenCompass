@@ -60,6 +60,24 @@ public static class DirectionSoundTableBuilder
 
         // 소리 수칙 신호
         { "H2.cue", Au + "hall/SFX_HALL_DoorOpenSlow.wav", "0.9" },
+        // 50차: 플레이어가 [E]로 여닫는 문(PlayerInteractor.PlayDoorSound). H2 단서(DoorOpenSlow)와 다른 소리여야 한다.
+        { "door.open", Au + "toilet/SFX_TOILET_DoorOpen.wav", "0.75" },
+        { "door.close", Au + "hall/SFX_HALL_DoorClose.wav", "0.7" },
+        { "door.locker", Au + "hall/SFX_HALL_LockerDoorSwing_*", "0.7" },
+        // 51차(민: 「서랍·관물대·책장 아래 여닫이에도 문 소리가 난다」) — 민이 고른 소리(furniture/LICENSE.txt).
+        { "door.drawer.open", Au + "furniture/SFX_FURN_DrawerOpen.mp3", "0.7" },
+        { "door.drawer.close", Au + "furniture/SFX_FURN_DrawerClose.mp3", "0.7" },
+        { "door.cabinet.open", Au + "furniture/SFX_FURN_CabinetOpen.wav", "0.55" },
+        { "door.cabinet.close", Au + "furniture/SFX_FURN_CabinetClose.wav", "0.55" },
+        { "door.locker.open", Au + "furniture/SFX_FURN_LockerOpen.wav", "0.6" },
+        { "door.locker.close", Au + "furniture/SFX_FURN_LockerClose.wav", "0.6" },
+        // 51차 점프스케어(민: 「현악기 효과음이 짜친다」) — OpenGameArt Horror Hit Soundpack 1(CC0). 약·중·강, 얼굴용 고음 겹.
+        { "stinger.weak", Au + "stinger/SFX_STING_Weak_*", "0.8" },
+        { "stinger.mid", Au + "stinger/SFX_STING_Mid_*", "0.95" },
+        { "stinger.strong", Au + "stinger/SFX_STING_Strong_*", "1" },
+        { "stinger.high", Au + "stinger/SFX_STING_High_*", "0.75" },
+        { "corpse.fall", Au + "class/SFX_CLASS_HeadThud.wav", "1" },
+        { "cctv.face", Au + "ui/SFX_TABLET_Glitch.wav", "0.9" },
         { "C1.cue", Au + "class/SFX_CLASS_ChalkStroke.wav", "1" },
         { "C4.cue", Au + "class/SFX_CLASS_C4_RedHum.wav", "0.9" },
         { "S2.cue", Au + "lab/SFX_LAB_GlassBreak.wav", "1" },
@@ -190,7 +208,7 @@ public static class DirectionSoundTableBuilder
         { "tablet.buzz", Au + "capture/varco/PUN-02_*", "0.7" },
         { "tablet.corrupt", Au + "ui/SFX_TABLET_TextCorrupt_*", "0.7" },
         { "ui.ready", Au + "ui/SFX_UI_ReportReadyTick.wav", "0.6" },
-        { "ui.confirm", Au + "ui/SFX_UI_ReportHoldConfirm.wav", "0.7" },
+        { "ui.confirm", Au + "ui/SFX_UI_ScannerBeep.mp3", "0.55" },   // 50차: freesound #202530 scanner beep(kalisemorrison, CC0) 미리듣기판
 
         // 점검 이상 — 보고할 때까지 그 자리에서 루프(NightDutySfx)
         { "inspect.C-3.loop", Au + "class/SFX_CLASS_CeilingCrawl.wav", "0.8" },
@@ -205,7 +223,6 @@ public static class DirectionSoundTableBuilder
         { "inspect.H-1.near", Au + "hall/SFX_HALL_PowderPuff.wav", "1" },
         { "inspect.H-2.near", Au + "toilet/SFX_TOILET_DrainBreath.wav", "1" },
         { "inspect.H-3.near", Au + "hall/SFX_HALL_BellMountCreak_*", "1" },
-        { "inspect.H-4.near", Au + "hall/SFX_HALL_LockerSlam_*", "1" },
         { "inspect.C-2.near", Au + "class/SFX_CLASS_LampOff_*", "1" },
         { "inspect.C-2.near+", Au + "hall/SFX_HALL_ChairDrag.wav", "0.9" },
         { "inspect.L-1.near", Au + "hall/SFX_HALL_ChairDrag.wav", "0.9" },

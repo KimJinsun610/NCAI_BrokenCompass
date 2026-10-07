@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -48,15 +48,36 @@ public sealed class InteractionHud : MonoBehaviour
     /// <summary><see cref="ExternalPrompt"/>를 누르면 실제로 무슨 일이 일어나는가. 조준선을 밝힌다.</summary>
     public static bool ExternalHot { get; set; }
 
+    /// <summary>
+    /// 점검 보고 안내(50차) — <b>화면 중앙 아래</b> 패널에 뜬다(「현미경    [Z] 정상   [X] 이상」, 보고 뒤 「[이상] 보고함」). 빈 문자열이면 숨긴다.
+    /// <c>InspectionSensor</c>가 매 프레임 쓴다. 이상에 빨강을 쓰지 않는다(빨강은 위험·위반 신호에만).
+    /// </summary>
+    public static string InspectionPrompt { get; set; } = string.Empty;
+
+    /// <summary>길게 누르기 진행(0~1). 0이면 막대를 숨긴다.</summary>
+    public static float InspectionProgress { get; set; }
+
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetExternalPrompt()
     {
         ExternalPrompt = string.Empty;   // 도메인 리로드를 꺼도 지난 플레이의 안내가 남지 않게.
         ExternalHot = false;
+        InspectionPrompt = string.Empty;
+        InspectionProgress = 0f;
     }
 
     private float _reticleCool = 0.25f;
     private bool _resolved;
+
+    [Header("점검 안내(화면 중앙 아래)")]
+    [Tooltip("화면 아래 가장자리에서 띄울 거리(px, 1080 기준).")]
+    [SerializeField] private float inspectBottom = 150f;
+
+    [SerializeField] private float inspectFontSize = 30f;
+
+    private RectTransform _inspectPanel;
+    private TMP_Text _inspectText;
+    private RectTransform _inspectFill;
 
     /// <summary>
     /// 안내가 없으면 만든다. <b><see cref="PlayerInteractor"/>가 부른다</b> —
@@ -101,6 +122,8 @@ public sealed class InteractionHud : MonoBehaviour
                 prompt.text = line;
             }
         }
+
+        UpdateInspectPanel();
 
         if (reticle == null)
         {
@@ -164,6 +187,81 @@ public sealed class InteractionHud : MonoBehaviour
         {
             prompt.gameObject.SetActive(false);
         }
+
+        CreateInspectPanel();
+    }
+
+    private void UpdateInspectPanel()
+    {
+        if (_inspectPanel == null) return;
+        string line = InspectionPrompt ?? string.Empty;
+        bool show = line.Length > 0;
+        if (_inspectPanel.gameObject.activeSelf != show) _inspectPanel.gameObject.SetActive(show);
+        if (!show) return;
+        if (_inspectText.text != line)
+        {
+            _inspectText.text = line;
+            _inspectText.ForceMeshUpdate();
+            float w = Mathf.Max(220f, _inspectText.preferredWidth + 56f);
+            _inspectPanel.sizeDelta = new Vector2(w, _inspectPanel.sizeDelta.y);
+        }
+
+        float p = Mathf.Clamp01(InspectionProgress);
+        _inspectFill.gameObject.SetActive(p > 0f);
+        _inspectFill.anchorMax = new Vector2(p, _inspectFill.anchorMax.y);
+    }
+
+    /// <summary>점검 안내 패널: 검은 반투명 판 + 흰 글씨 + 아래 가장자리의 길게 누르기 막대. 글꼴은 안내 줄과 같이 빌린다.</summary>
+    private void CreateInspectPanel()
+    {
+        if (hud == null || _inspectPanel != null) return;
+        GameObject panel = new GameObject("Inspect Prompt", typeof(RectTransform));
+        panel.transform.SetParent(hud.transform, false);
+        _inspectPanel = (RectTransform)panel.transform;
+        _inspectPanel.anchorMin = new Vector2(0.5f, 0f);
+        _inspectPanel.anchorMax = new Vector2(0.5f, 0f);
+        _inspectPanel.pivot = new Vector2(0.5f, 0f);
+        _inspectPanel.sizeDelta = new Vector2(420f, inspectFontSize + 26f);
+        _inspectPanel.anchoredPosition = new Vector2(0f, inspectBottom);
+        Image bg = panel.AddComponent<Image>();
+        bg.color = new Color(0f, 0f, 0f, 0.6f);
+        bg.raycastTarget = false;
+
+        GameObject tgo = new GameObject("Text", typeof(RectTransform));
+        tgo.transform.SetParent(panel.transform, false);
+        RectTransform tr = (RectTransform)tgo.transform;
+        tr.anchorMin = Vector2.zero;
+        tr.anchorMax = Vector2.one;
+        tr.offsetMin = Vector2.zero;
+        tr.offsetMax = Vector2.zero;
+        TextMeshProUGUI text = tgo.AddComponent<TextMeshProUGUI>();
+        text.alignment = TextAlignmentOptions.Center;
+        text.fontSize = inspectFontSize;
+        text.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+        text.raycastTarget = false;
+        text.color = new Color(0.95f, 0.95f, 0.92f, 1f);
+        TMP_Text donor = FindDonorFont();
+        if (donor != null)
+        {
+            text.font = donor.font;
+            text.fontSharedMaterial = donor.fontSharedMaterial;
+        }
+
+        _inspectText = text;
+
+        GameObject fgo = new GameObject("Hold", typeof(RectTransform));
+        fgo.transform.SetParent(panel.transform, false);
+        _inspectFill = (RectTransform)fgo.transform;
+        _inspectFill.anchorMin = new Vector2(0f, 0f);
+        _inspectFill.anchorMax = new Vector2(0f, 0f);
+        _inspectFill.pivot = new Vector2(0f, 0f);
+        _inspectFill.offsetMin = Vector2.zero;
+        _inspectFill.offsetMax = new Vector2(0f, 4f);
+        Image fill = fgo.AddComponent<Image>();
+        fill.color = new Color(0.86f, 0.9f, 0.84f, 0.9f);
+        fill.raycastTarget = false;
+        fgo.SetActive(false);
+        panel.SetActive(false);
     }
 
     /// <summary>이름으로 먼저 찾고, 없으면 화면 겹침 캔버스 중 정렬 순서가 가장 낮은 것(= 본 화면)을 쓴다.</summary>
@@ -205,7 +303,7 @@ public sealed class InteractionHud : MonoBehaviour
         TextMeshProUGUI text = go.AddComponent<TextMeshProUGUI>();
         text.alignment = TextAlignmentOptions.Center;
         text.fontSize = promptFontSize;
-        text.enableWordWrapping = false;
+        text.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
         text.raycastTarget = false;
         text.color = Color.white;
 

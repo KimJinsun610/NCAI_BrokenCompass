@@ -16,7 +16,10 @@ namespace NightDuty
         CorridorWalk = 2,
 
         /// <summary>CCTV를 <see cref="EncounterScript.Dwell"/>초 보고 있을 때.</summary>
-        ViewingCctv = 3
+        ViewingCctv = 3,
+
+        /// <summary>판정 기준점 <see cref="EncounterScript.GazeTargetId"/>를 <see cref="EncounterScript.Dwell"/>초 이어서 볼 때(51차 — 사다리 점검 중 시체 낙하).</summary>
+        GazeTarget = 4
     }
 
     /// <summary>
@@ -95,6 +98,12 @@ namespace NightDuty
         /// <summary>메모(왜 이렇게 정했는지).</summary>
         public string Note = string.Empty;
 
+        /// <summary><see cref="EncounterTrigger.GazeTarget"/>의 대상(<c>inspect.C-3</c>). 그 점검이 지시받고 아직 보고 전일 때만 센다.</summary>
+        public string GazeTargetId = string.Empty;
+
+        /// <summary>0보다 크면 전조 길이를 이 값(초)으로 고정하고 헛예고를 쓰지 않는다(시체 낙하 — 먼지·삐걱 1.2초).</summary>
+        public float FixedForeshadow;
+
         /// <summary>존재형(슬롯 끝까지 머묾)인지.</summary>
         public bool IsPresence
         {
@@ -130,6 +139,9 @@ namespace NightDuty
     /// <summary>조우 15개의 대본 표. 수치는 이 파일 한 곳.</summary>
     public static class EncounterScripts
     {
+        /// <summary>시체 낙하 대역 ID(연출 쪽 <c>CorpseDrop</c>가 리지드바디 래그돌로 떨어뜨린다).</summary>
+        public const string CorpseStandIn = "mob.corpse";
+
         private static readonly Dictionary<string, EncounterScript> s_byId = Build();
 
         /// <summary>모든 대본.</summary>
@@ -161,18 +173,18 @@ namespace NightDuty
                 {
                     Id = ProgramCatalog.BoyBang, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Classroom, Dwell = 3f,
                     Cue = FinalCues.BoySeated, ReleaseCue = FinalCues.Bell, Window = 18f,
-                    Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy",
-                    ExtraStandIn = "mob.legs", ExtraAnchorId = FinalCues.LegsTarget, ExtraCue = FinalCues.Legs,
-                    StageAnchor = StageAnchors.BoySeat, ExtraStageAnchor = StageAnchors.LegsCeiling, ExactSpace = SpaceId.Classroom_1_3,
-                    Note = "교차(청각 2 + 배치 2). 소년과 천장 다리가 함께 — C2(다리 3초 응시)를 어기면 머리 박기 소리가 복도까지."
+                    Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy", AnchorId = FinalCues.BoyTarget,
+                    StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3,
+                    Note = "52차 민: C2 「교실의 _? 는 무시하십시오.」 + C3 「수업 중에 움직이지 마십시오.」 + 앉은 소년 — 셋이 하나. " +
+                           "움직이지도, 바라보지도 말아야 한다. 소년을 3초 바라보면(C2 위반) 책상에 머리를 박는다(BoyHeadBang, 소리는 복도까지)." 
                 },
                 new EncounterScript
                 {
                     Id = ProgramCatalog.ToiletGirl, Trigger = EncounterTrigger.EnterSpace, Space = SpaceId.Toilet,
-                    Cue = FinalCues.GirlStall, Window = 4f,
-                    Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.girl",
+                    Cue = FinalCues.GirlStall, Window = 6f,   // 51차: 걸음 끝까지 보이게(T-1 칸까지 약 1.8m)
+                    Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.girl", AnchorId = FinalCues.GirlTarget,
                     StageAnchor = StageAnchors.GirlWalk,
-                    Note = "칸으로 들어가는 것을 보여 주고 역보고(T-1)를 건다."
+                    Note = "변기 점검 칸(3번)으로 들어가는 것을 보여 준다. 0.5초 봤으면 역보고(T-1)를 걸고 3초 뒤 그 칸 변기 점검 지시(51차)."
                 },
                 new EncounterScript
                 {
@@ -230,11 +242,12 @@ namespace NightDuty
                 },
                 new EncounterScript
                 {
-                    Id = ProgramCatalog.CeilingLegs, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Classroom, Dwell = 2f,
-                    Cue = FinalCues.Legs, Window = -1f,
-                    Placement = CuePlacement.CeilingAhead, Distance = 3f, StandIn = "mob.legs", AnchorId = FinalCues.LegsTarget,
-                    StageAnchor = StageAnchors.LegsCeiling, ExactSpace = SpaceId.Classroom_1_3,
-                    Note = "존재형. C2: 3초 응시하면 위반."
+                    Id = ProgramCatalog.CeilingLegs, Trigger = EncounterTrigger.GazeTarget, Space = SpaceId.Classroom, Dwell = 0.5f,
+                    GazeTargetId = InspectionCatalog.TargetPrefix + "C-3", FixedForeshadow = 1.2f,
+                    Window = 9f,   // 52차: 대응 수칙 없음(C2는 소년으로) — 판정 단서도 없다
+                    Placement = CuePlacement.AheadOfPlayer, Distance = 1.1f, StandIn = CorpseStandIn,
+                    Note = "51차(민: 「천장을 확인하라는 게 노골적 — 사다리 점검 중 시체가 물리로 바로 앞에 떨어지고, 놀라 시선을 돌리면 사라지게」). " +
+                           "C-3 사다리를 0.5초 보면 먼지·삐걱 1.2초 → 바로 앞(시선 20° 옆)에 떨어짐. 52차: 수칙 없이 놀람만."
                 },
                 new EncounterScript
                 {
@@ -255,7 +268,7 @@ namespace NightDuty
                 {
                     Id = ProgramCatalog.CctvPerson, Trigger = EncounterTrigger.ViewingCctv, Space = SpaceId.SecurityRoom, Dwell = 2f,
                     Cue = FinalCues.CctvPerson, Window = 10f,
-                    Note = "K1: 지나갈 때까지 채널을 넘기지 않는다. 화면에만 보인다(CctvOnlyVisible)."
+                    Note = "K1(51차): 화면 속 사람을 3초 이어서 보면 위반 + 얼굴 점프스케어. 걷지 않고 툭툭 다가온다. 화면에만 보인다(CctvOnlyVisible)."
                 }
             };
 
@@ -327,7 +340,6 @@ namespace NightDuty
                 new RuleTriggerScript { RuleId = "H2", Cue = "cue.door.autoopen", Space = SpaceId.Corridor, DwellMin = 8f, DwellMax = 20f },
                 new RuleTriggerScript { RuleId = "C1", Cue = FinalCues.Chalk, Space = SpaceId.Corridor, Zone = "cls13.door.outside",   // 2026-10-01 1-1 미사용 → 1-3 출입구 앞에서
                  DwellMin = 0.5f, DwellMax = 1.5f, Duration = 5f },
-                new RuleTriggerScript { RuleId = "C4", Cue = FinalCues.RedLight, Space = SpaceId.Classroom, DwellMin = 5f, DwellMax = 12f, Duration = 15f },
                 new RuleTriggerScript { RuleId = "S2", Cue = FinalCues.Glass, Space = SpaceId.ScienceRoom, DwellMin = 5f, DwellMax = 12f },
                 new RuleTriggerScript { RuleId = "T1", Cue = FinalCues.Flush, Space = SpaceId.Toilet, DwellMin = 3f, DwellMax = 8f, Duration = 8f },
                 new RuleTriggerScript { RuleId = "T2", Cue = FinalCues.StallOccupied, Target = "toilet.stall.inner.inside", Space = SpaceId.Toilet, DwellMin = 1f, DwellMax = 4f, Duration = 20f },

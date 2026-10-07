@@ -61,6 +61,12 @@ namespace NightDuty.Tests
         {
             foreach (EncounterDef e in ProgramCatalog.AllEncounters)
             {
+                if (e.Id == ProgramCatalog.CeilingLegs)
+                {
+                    Assert.AreEqual(string.Empty, e.ResponseRule, "52차: 시체 낙하는 수칙 없이 놀람만");
+                    continue;
+                }
+
                 RuleDef r = ProgramCatalog.Rule(e.ResponseRule);
                 Assert.IsNotNull(r, e.Id);
                 Assert.AreEqual(e.Space, r.Space, e.Id);
@@ -190,7 +196,7 @@ namespace NightDuty.Tests
                     for (int i = 0; i < p.Slots.Count; i++)
                     {
                         EncounterDef e = p.Slots[i].Encounter;
-                        Assert.IsTrue(p.Has(e.ResponseRule), "조우의 대응 수칙이 덱에 — " + why);
+                        Assert.IsTrue(e.ResponseRule.Length == 0 || p.Has(e.ResponseRule), "조우의 대응 수칙이 덱에 — " + why);
                         if (!p.Slots[i].Reserved) Assert.IsTrue(e.Satisfied(shown), e.Id + " 발동 조건 — " + why);
                         if (i > 0) Assert.AreNotEqual(p.Slots[i - 1].Encounter.Mob, e.Mob, "직전 슬롯과 같은 몹 — " + why);
                         Assert.AreEqual((EncounterSlot)i, p.Slots[i].Slot);

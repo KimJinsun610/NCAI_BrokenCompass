@@ -5701,10 +5701,7 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: f09f08c861225ae4c843e9376f774814, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 4624604167254788, guid: 6ac1b8a64e12b514eb6f89c5f7717d58, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1585283420}
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6ac1b8a64e12b514eb6f89c5f7717d58, type: 3}
 --- !u!4 &39955066 stripped
@@ -41974,7 +41971,7 @@ Transform:
   m_GameObject: {fileID: 365639893}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.7999995, y: 0, z: -0.00000023841858}
+  m_LocalPosition: {x: 2.05151, y: 0, z: -0.00000023841858}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -50557,7 +50554,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4879921337373818, guid: fdb4f16cb66e83145923fa99e3195424, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 36.00604
+      value: 36.011
       objectReference: {fileID: 0}
     - target: {fileID: 4879921337373818, guid: fdb4f16cb66e83145923fa99e3195424, type: 3}
       propertyPath: m_LocalRotation.w
@@ -57153,7 +57150,7 @@ Transform:
   m_GameObject: {fileID: 495840585}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 3.2, y: 1.4999996, z: 32.5}
+  m_LocalPosition: {x: 4.211999, y: 1.4999996, z: 32.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -190709,74 +190706,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4235483220408152, guid: 4c383ef964103054e9fb2ccccc096459, type: 3}
   m_PrefabInstance: {fileID: 1584789462}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &1585283419
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1585283420}
-  - component: {fileID: 1585283422}
-  - component: {fileID: 1585283421}
-  m_Layer: 0
-  m_Name: Inspect H-4
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1585283420
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1585283419}
-  serializedVersion: 2
-  m_LocalRotation: {x: 9.553428e-16, y: -1, z: 0.000000021855698, w: -0.00000004371139}
-  m_LocalPosition: {x: 0, y: 0.85, z: -0.000000037154688}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 39955066}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1585283421
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1585283419}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1205b2cba6d025d47a665b32ca2aa867, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: NightDuty.Core::NightDuty.JudgeTarget
-  _ids:
-  - inspect.H-4
---- !u!65 &1585283422
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1585283419}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.38999847, y: 1.7399998, z: 0.47536376}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1001 &1585290970
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -107,8 +107,40 @@ public sealed class NightDutySfx : MonoBehaviour
     private void OnReported(InspectionReport report)
     {
         if (!report.Accepted) return;
-        Play2D("ui.confirm");
+        // 50차(민: scanner beep): 정상은 한 번, 이상은 조금 낮게 두 번(「삐삑」). 보고가 맞았는지는 소리로 알리지 않는다.
+        if (report.SaidAnomaly)
+        {
+            PlayReportBeep(AnomalyBeepPitch, 0f);
+            PlayReportBeep(AnomalyBeepPitch, AnomalyBeepGap);
+        }
+        else
+        {
+            PlayReportBeep(UnityEngine.Random.Range(0.97f, 1.03f), 0f);
+        }
+
         StopLoop(report.ItemId);
+    }
+
+    private const float AnomalyBeepPitch = 0.84f;
+    private const float AnomalyBeepGap = 0.13f;
+
+    private void PlayReportBeep(float pitch, float delay)
+    {
+        float volume;
+        AudioClip clip = DirectionSoundTableSO.FindExact("ui.confirm", out volume);
+        if (clip == null) return;
+        GameObject go = new GameObject("sfx ui.confirm");
+        go.transform.SetParent(transform, false);
+        AudioSource s = go.AddComponent<AudioSource>();
+        s.playOnAwake = false;
+        s.clip = clip;
+        s.volume = volume;
+        s.pitch = pitch;
+        s.spatialBlend = 0f;
+        s.priority = 16;
+        if (delay > 0f) s.PlayDelayed(delay);
+        else s.Play();
+        Destroy(go, delay + clip.length / Mathf.Max(0.1f, pitch) + 0.2f);
     }
 
     // ── 「가까이」 ───────────────────────────────────────────

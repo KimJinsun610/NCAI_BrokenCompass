@@ -733,6 +733,8 @@ public sealed class CctvSystem : MonoBehaviour
         _labelCooldown = 0.25f;
 
         string name = _asciiLabels ? string.Empty : ChannelLabel(_channel);
+        // 50차: 그날의 빈 방 채널(K2)에는 「공실」 표지 — 수칙 「공실 채널은 오래 보지 마십시오.」의 방아쇠가 화면에 보이게.
+        if (NightRun.EmptyRoomChannel >= 0 && NightRun.EmptyRoomChannel == _channel) name = _asciiLabels ? "VACANT" : (name.Length > 0 ? name + " · 공실" : "공실");
         string clock = ClockText();
         bool rec = Mathf.Repeat(Time.time, 1f) < 0.5f;
 

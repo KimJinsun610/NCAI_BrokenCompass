@@ -730,13 +730,17 @@ public static class StandInPrefabBuilder
             sb.AppendLine("✓ 문간의 노란 얼굴 자리 — " + libDoor.name + " 앞 " + at.ToString("F2") + " (대면 동안 문 열림)");
         }
 
-        // ⑤ 화장실 소녀 — 바깥쪽 칸(toilet.stall.outer) 앞에서 북쪽으로 걸어 칸 안으로. 입구(서쪽)에서 보면 옆으로 걷는다.
-        Bounds stall;
+        // ⑤ 화장실 소녀 — 변기 점검(T-1) 칸 앞에서 북쪽으로 걸어 칸 안으로. 입구(서쪽)에서 보면 옆으로 걷는다.
+        // 51차(민: 「T4 수칙·여자아이·변기 점검이 이어져야」): 바깥쪽 칸(2번) → 변기 점검 칸(3번, 문이 열린 칸 — 2·4번 문은 H2 방아쇠라 열지 않는다).
+        Bounds stall = default;
         SpaceZones zones = UnityEngine.Object.FindAnyObjectByType<SpaceZones>();
-        if (zones != null && zones.TryGetSignalZone("toilet.stall.outer.inside", out stall))
+        GameObject t1 = GameObject.Find("Inspect T-1");
+        if (t1 != null || (zones != null && zones.TryGetSignalZone("toilet.stall.outer.inside", out stall)))
         {
-            Vector3 start = Floor(new Vector3(stall.center.x, 1.5f, 32.5f));
-            Vector3 end = Floor(new Vector3(stall.center.x, 1.5f, stall.min.z + 0.35f));
+            float x = t1 != null ? t1.transform.position.x : stall.center.x;
+            float endZ = t1 != null ? t1.transform.position.z - 0.85f : stall.min.z + 0.35f;
+            Vector3 start = Floor(new Vector3(x, 1.5f, 32.5f));
+            Vector3 end = Floor(new Vector3(x, 1.5f, endZ));
             Transform a = Anchor(parent.transform, NightDuty.StageAnchors.GirlWalk, start, Quaternion.LookRotation(Vector3.left), null, Vector3.zero, Vector3.zero, 4f);
             Transform walkEnd = a.Find("WalkTo");
             if (walkEnd == null)
@@ -747,7 +751,7 @@ public static class StandInPrefabBuilder
 
             walkEnd.position = end;
             a.GetComponent<StageAnchor>().ConfigureExtras(null, walkEnd, 0.45f);
-            sb.AppendLine("✓ 화장실 소녀 길 — " + start.ToString("F2") + " → " + end.ToString("F2") + " (바깥쪽 칸)");
+            sb.AppendLine("✓ 화장실 소녀 길 — " + start.ToString("F2") + " → " + end.ToString("F2") + " (변기 점검 칸)");
         }
 
         // ⑥ 경비실 창밖의 검은 남자(피날레 K4 결말) — 로비에서 경비실 서쪽 창 안을 본다(민 스크린샷).

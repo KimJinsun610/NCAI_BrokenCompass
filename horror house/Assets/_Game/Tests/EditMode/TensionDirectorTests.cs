@@ -226,7 +226,7 @@ namespace NightDuty.Tests
             Assert.IsFalse(f.HasPhase(ProgramCatalog.ToiletGirl, DirectionPhase.Foreshadow));
             Assert.AreEqual(1, f.CueCount(SignalKind.CueStarted, FinalCues.GirlStall));
 
-            f.Wait(4f * 0.8f + 0.2f);   // 생존 30 = 쉬움 → 창 −20%
+            f.Wait(6f * 0.8f + 0.2f);   // 생존 30 = 쉬움 → 창 −20%(51차: 창 4 → 6초, 걸음 끝까지)
             Assert.AreEqual(1, f.CueCount(SignalKind.SequenceEnded, FinalCues.GirlStall));
             f.Wait(0.2f);
             Assert.AreEqual(EncounterRunState.Done, f.Run(ProgramCatalog.ToiletGirl).State);
@@ -332,7 +332,7 @@ namespace NightDuty.Tests
         {
             DirectorFixture f = new DirectorFixture(1, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
             f.Minute = 70f;
-            f.Enter(SpaceId.Toilet).Wait(5f);
+            f.Enter(SpaceId.Toilet).Wait(7f);
             Assert.AreEqual(EncounterRunState.Done, f.Run(ProgramCatalog.ToiletGirl).State);
 
             f.Director.ResetToRest(1, NightClock.Call2);
@@ -452,7 +452,7 @@ namespace NightDuty.Tests
         [Test]
         public void 가짜_놀람은_같은_것을_밤에_두_번까지()
         {
-            DirectorFixture f = new DirectorFixture(1, 0.0, null);
+            DirectorFixture f = new DirectorFixture(2, 0.0, null);
             f.Minute = 30f;
             f.Wait(600f);
             Dictionary<string, int> n = new Dictionary<string, int>();
@@ -466,21 +466,66 @@ namespace NightDuty.Tests
 
             Assert.Greater(n.Count, 0);
             foreach (KeyValuePair<string, int> kv in n) Assert.LessOrEqual(kv.Value, TensionDirector.FakePerId, kv.Key);
-            Assert.LessOrEqual(f.Director.FakesUsed, 2 + DirectorMoods.ExtraFakes(DirectorMood.Easy), "조우가 없으면 2(+쉬움 1)까지");
+            Assert.LessOrEqual(f.Director.FakesUsed, TensionPacer.FakeCap(2) + DirectorMoods.ExtraFakes(DirectorMood.Easy), "2일차 상한 4(+쉬움 1)까지");
         }
 
         [Test]
         public void 출근_동안은_조용하고_판정이_열리면_곧_첫_가짜_놀람()
         {
-            DirectorFixture arrival = new DirectorFixture(1, 0.5, null);
+            DirectorFixture arrival = new DirectorFixture(2, 0.5, null);
             arrival.Minute = NightClock.JudgingStart - 6f;
             arrival.Wait(200f);
             Assert.AreEqual(0, arrival.Director.FakesUsed, "출근(00:16 전)에는 가짜 놀람이 없다");
 
-            DirectorFixture open = new DirectorFixture(1, 0.99, null);
+            DirectorFixture early = new DirectorFixture(2, 0.0, null);
+            early.Minute = NightClock.JudgingStart + 1f;
+            early.Wait(NightClock.RealSecondsAt(NightClock.JudgingStart) + TensionDirector.FirstFakeMin - 1f);
+            Assert.AreEqual(0, early.Director.FakesUsed, "50차: 판정이 열리자마자 놀래지 않는다(25초 전에는 없음)");
+
+            DirectorFixture open = new DirectorFixture(2, 0.99, null);
             open.Minute = NightClock.JudgingStart + 1f;
             open.Wait(NightClock.RealSecondsAt(NightClock.JudgingStart) + TensionDirector.FirstFakeMax + 0.5f);
-            Assert.AreEqual(1, open.Director.FakesUsed, "판정이 열린 뒤 14초 안에 첫 가짜 놀람");
+            Assert.AreEqual(1, open.Director.FakesUsed, "판정이 열린 뒤 50초 안에 첫 가짜 놀람");
+        }
+
+        [Test]
+        public void 일차1은_첫_조우_결과_전에는_가짜_놀람이_없다()
+        {
+            DirectorFixture f = new DirectorFixture(1, 0.0, null);
+            f.Minute = 30f;
+            f.Wait(600f);
+            Assert.AreEqual(0, f.Director.FakesUsed, "1일차 01:00 전");
+
+            DirectorFixture a = new DirectorFixture(1, 0.0, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.BoySeated));
+            a.Minute = NightClock.Call1 + 5f;
+            a.Wait(300f);
+            Assert.AreEqual(0, a.Director.FakesUsed, "슬롯 A 조우가 있으면 그 결과(또는 호출 2) 전");
+
+            f.Minute = NightClock.Call1 + 1f;
+            f.Wait(200f);
+            Assert.Greater(f.Director.FakesUsed, 0, "슬롯 A 조우가 없는 1일차는 01:00 뒤에 낸다");
+            Assert.LessOrEqual(f.Director.FakesUsed, TensionPacer.FakeCap(1) + DirectorMoods.ExtraFakes(DirectorMood.Easy));
+        }
+
+        [Test]
+        public void 긴장_조절기가_뜨거우면_가짜_놀람을_쉰다()
+        {
+            DirectorFixture f = new DirectorFixture(2, 0.0, null);   // 첫 가짜는 60 + 25 = 85초
+            f.Minute = 30f;
+            f.Wait(59f);
+            Assert.AreEqual(0, f.Director.FakesUsed);
+            f.Director.Pacer.Impulse(PacerImpulse.Startle);
+            f.Director.Pacer.Impulse(PacerImpulse.Startle);
+            f.Director.Pacer.Impulse(PacerImpulse.Startle);
+            f.Director.Pacer.Impulse(PacerImpulse.Startle);
+            f.Director.Pacer.Impulse(PacerImpulse.Startle);
+            Assert.AreEqual(75f, f.Director.Pacer.Intensity, 0.01f);
+            f.Wait(5f);
+            Assert.AreEqual(PacerState.Peak, f.Director.Pacer.State);
+            f.Wait(40f);   // 104초 — 첫 가짜 차례(85초)가 지났지만 해소·휴식 중
+            Assert.AreEqual(0, f.Director.FakesUsed, "절정 → 해소 → 휴식 동안은 없다");
+            f.Wait(60f);   // 휴식 최소 33초 + 긴장도 25 아래 → 축적
+            Assert.AreEqual(1, f.Director.FakesUsed, "휴식이 끝나면 미뤄 둔 가짜 놀람");
         }
 
         [Test]
@@ -489,7 +534,7 @@ namespace NightDuty.Tests
             Assert.Contains(TensionDirector.FakeBugs, TensionDirector.FakeScares);
             CollectionAssert.AreEquivalent(new[] { SpaceId.Classroom_1_3, SpaceId.Toilet, SpaceId.Library }, TensionDirector.BugSpaces);
 
-            DirectorFixture outside = new DirectorFixture(1, 0.99, null);   // 0.99 = 열린 목록의 마지막(벌레 떼)을 고른다
+            DirectorFixture outside = new DirectorFixture(2, 0.99, null);   // 0.99 = 열린 목록의 마지막(벌레 떼)을 고른다
             outside.Minute = 30f;
             outside.Enter(SpaceId.Corridor).Wait(600f);
             Assert.AreEqual(0, Count(outside, TensionDirector.FakeBugs), "복도에서는 벌레 떼가 없다");
@@ -497,7 +542,7 @@ namespace NightDuty.Tests
 
             foreach (SpaceId room in TensionDirector.BugSpaces)
             {
-                DirectorFixture inside = new DirectorFixture(1, 0.99, null);
+                DirectorFixture inside = new DirectorFixture(2, 0.99, null);
                 inside.Minute = 30f;
                 inside.Enter(room).Wait(600f);
                 int bugs = Count(inside, TensionDirector.FakeBugs);
@@ -598,12 +643,17 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 머리박기_조우는_다리도_함께_세운다()
+        public void 머리박기_조우는_앉은_소년_하나로_C2_C3를_묶는다()
         {
+            // 52차 민: C2 「교실의 _? 는 무시하십시오.」 + C3 + 앉은 소년 — 둘째 대역(천장 다리·시체)은 없다.
             EncounterScript bang = EncounterScripts.Find(ProgramCatalog.BoyBang);
             Assert.IsNotNull(bang);
-            Assert.AreEqual(FinalCues.Legs, bang.ExtraCue, "C2 '천장 다리'와 묶인 조우");
-            Assert.IsFalse(string.IsNullOrEmpty(bang.ExtraStandIn));
+            Assert.AreEqual(FinalCues.BoySeated, bang.Cue);
+            Assert.AreEqual(FinalCues.BoyTarget, bang.AnchorId, "C2 응시 기준점 = 소년");
+            Assert.IsTrue(string.IsNullOrEmpty(bang.ExtraStandIn));
+            Assert.AreEqual(ProgramCatalog.BoyBang, ProgramCatalog.Rule("C2").BoundEncounter);
+            EncounterDef e = ProgramCatalog.Encounter(ProgramCatalog.BoyBang);
+            CollectionAssert.AreEquivalent(new[] { "C2", "C3" }, new[] { e.ResponseRule, e.SecondRule });
         }
 
         [Test]
@@ -656,8 +706,8 @@ namespace NightDuty.Tests
         {
             Assert.AreEqual(StageAnchors.BoySeat, EncounterScripts.Find(ProgramCatalog.BoySeated).StageAnchor);
             Assert.AreEqual(SpaceId.Classroom_1_3, EncounterScripts.Find(ProgramCatalog.BoySeated).ExactSpace, "소년 책상이 1-3 교실에 있으니 1-1에서는 걸리지 않는다");
-            Assert.AreEqual(StageAnchors.LegsCeiling, EncounterScripts.Find(ProgramCatalog.CeilingLegs).StageAnchor);
-            Assert.AreEqual(StageAnchors.LegsCeiling, EncounterScripts.Find(ProgramCatalog.BoyBang).ExtraStageAnchor);
+            Assert.AreEqual(string.Empty, EncounterScripts.Find(ProgramCatalog.CeilingLegs).StageAnchor, "51차: 시체는 플레이어 바로 앞에 떨어진다(고정 자리 없음)");
+            Assert.AreEqual(EncounterScripts.CorpseStandIn, EncounterScripts.Find(ProgramCatalog.CeilingLegs).StandIn);
             Assert.AreEqual(StageAnchors.WindowMan, EncounterScripts.Find(ProgramCatalog.SuitMan).StageAnchor);
             Assert.AreEqual("mob.windowman", EncounterScripts.Find(ProgramCatalog.SuitMan).StandIn, "창밖 남자 = DUCK 프리팹");
             Assert.AreEqual(StageAnchors.YellowDoor, EncounterScripts.Find(ProgramCatalog.YellowFace).StageAnchor, "노란 남자 둘째 연출 = 도서관 정문 앞");

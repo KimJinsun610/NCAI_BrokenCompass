@@ -292,12 +292,14 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C2_다리를_3초_응시하면_위반()
+        public void C2_앉은_소년을_3초_바라보면_위반()
         {
+            // 52차 민: 「교실의 _? 는 무시하십시오.」 — 앉은 소년(C2·C3과 한 묶음)을 3초 바라보면 위반(→ 머리 박기).
             FinalFixture f = new FinalFixture("C2");
-            f.Samples(() => JudgeSignal.Gaze(FinalCues.LegsTarget, 0.1f), 2.9f);
+            f.Cue(FinalCues.BoySeated);
+            f.Samples(() => JudgeSignal.Gaze(FinalCues.BoyTarget, 0.1f), 2.9f);
             Assert.AreEqual(0, f.Value(FearAxis.Auditory));
-            f.Samples(() => JudgeSignal.Gaze(FinalCues.LegsTarget, 0.1f), 0.2f);
+            f.Samples(() => JudgeSignal.Gaze(FinalCues.BoyTarget, 0.1f), 0.2f);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Auditory));
         }
 
@@ -326,11 +328,16 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C4_붉은빛_아래서_손전등을_끄면_위반()
+        public void C4_붉은빛_아래서_손전등을_켜_두면_위반()
         {
+            // 52차 민: 「붉은 불빛 아래에서는 손전등을 끄십시오.」 — 들어선 뒤 1.5초 안에 끄면 괜찮다.
             FinalFixture f = new FinalFixture("C4");
-            f.Enter(SpaceId.Classroom_1_1).Light(true).Cue(FinalCues.RedLight).Wait(1f).Light(false);
-            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance));
+            f.Light(true).Cue(FinalCues.RedLight).Wait(1.2f).Light(false).Wait(3f);
+            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "1.5초 안에 끔");
+            f.End(FinalCues.RedLight).Light(true).Wait(3f);
+            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "붉은 등 밖에서는 켜도 된다");
+            f.Cue(FinalCues.RedLight).Wait(1.7f);
+            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance), "켠 채 1.5초 넘게");
         }
 
         [Test]
@@ -386,20 +393,19 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void S3_빛_없이_모형을_2초_보면_위반하고_모형급습_예약()
+        public void S3_빛_없이_모형을_3초_보면_위반하고_모형급습_예약()
         {
+            // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」 — 연속 1.5초 비추면 위반(빛 없이 보는 것은 괜찮다).
             FinalFixture f = new FinalFixture("S3");
-            for (int i = 0; i < 30; i++)
-            {
-                f.Send(JudgeSignal.Beam(FinalCues.ModelTarget, 0.1f));
-                f.Samples(() => JudgeSignal.Gaze(FinalCues.ModelTarget, 0.1f), 0.1f);
-            }
-
-            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "비추며 보는 것은 괜찮다(3초)");
-            f.Samples(() => JudgeSignal.Gaze(FinalCues.ModelTarget, 0.1f), 1.9f);
-            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "빛이 꺼진 직후 0.3초는 비춘 것으로 본다 — 아직 2초가 안 됐다");
-            f.Samples(() => JudgeSignal.Gaze(FinalCues.ModelTarget, 0.1f), 0.5f);
-            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance), "빛 없이 2초");
+            f.Enter(SpaceId.ScienceRoom);
+            f.Samples(() => JudgeSignal.Gaze(FinalCues.ModelTarget, 0.1f), 5f);
+            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "빛 없이 보는 것은 괜찮다");
+            f.Samples(() => JudgeSignal.Beam(FinalCues.ModelTarget, 0.1f), 1.3f);
+            f.Samples(() => JudgeSignal.Beam("other", 0.1f), 0.5f);
+            f.Samples(() => JudgeSignal.Beam(FinalCues.ModelTarget, 0.1f), 1.3f);
+            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "잠깐 스친 빛(1.3초 두 번, 사이 0.5초 끊김)은 괜찮다");
+            f.Samples(() => JudgeSignal.Beam(FinalCues.ModelTarget, 0.1f), 0.3f);
+            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance), "연속 1.5초 비춤");
             CollectionAssert.AreEqual(new[] { ProgramCatalog.ModelRush }, f.Requested);
         }
 
@@ -471,6 +477,8 @@ namespace NightDuty.Tests
         {
             FinalFixture f = new FinalFixture("T4");
             f.Cue(FinalCues.GirlStall);
+            Assert.AreEqual(0, f.Armed.Count, "51차: 단서만으로는 걸지 않는다 — 봐야 한다");
+            f.Samples(() => JudgeSignal.Gaze(FinalCues.GirlTarget, 0.1f), 0.5f);
             CollectionAssert.AreEqual(new[] { InspectionCatalog.ReverseReportItem }, f.Armed);
             f.Book.NoteExternal("T4", false, "역보고 준수");
             Assert.AreEqual(FinalOutcome.Noted, f.Last("T4"));
@@ -538,11 +546,23 @@ namespace NightDuty.Tests
         [Test]
         public void K1_사람이_지나가기_전_채널을_넘기면_위반()
         {
+            // 52차 민: K1은 원래대로.
             FinalFixture f = new FinalFixture("K1");
             f.Send(JudgeSignal.Channel("cctv.ch1"));
             Assert.AreEqual(0, f.Value(FearAxis.Layout));
-            f.Cue(FinalCues.CctvPerson).Wait(2f).Send(JudgeSignal.Channel("cctv.ch2"));
+            f.Cue(FinalCues.CctvPerson + "@cctv.ch1").Wait(2f).Send(JudgeSignal.Channel("cctv.ch2"));
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Layout));
+        }
+
+        [Test]
+        public void T4_여자아이를_보지_못하면_역보고가_걸리지_않는다()
+        {
+            FinalFixture f = new FinalFixture("T4");
+            f.Cue(FinalCues.GirlStall);
+            f.Samples(() => JudgeSignal.Gaze("other", 0.1f), 3f);
+            f.End(FinalCues.GirlStall);
+            f.Samples(() => JudgeSignal.Gaze(FinalCues.GirlTarget, 0.1f), 1f);
+            Assert.AreEqual(0, f.Armed.Count, "단서가 끝난 뒤의 응시는 목격이 아니다");
         }
 
         [Test]

@@ -123,10 +123,12 @@ public sealed class ResultInspectionNotes : MonoBehaviour
         for (int i = 0; i < rows.Count; i++)
         {
             if (i > 0) sb.Append("  ·  ");
-            sb.Append(rows[i].Key.Name.Replace(' ', '\u00A0')).Append('\u00A0');   // 「반납 상자 미완료」가 줄 끝에서 갈라지지 않게
+            // 「반납 상자 미완료」가 줄 끝에서 갈라지지 않게 — TMP는 한글 사이를 공백 없이도 끊으므로(47차: 「변기 / 미완료」) 항목 하나를 <nobr>로 묶는다.
+            sb.Append("<nobr>").Append(rows[i].Key.Name.Replace(' ', '\u00A0')).Append('\u00A0');
             string label = InspectionLedger.Label(rows[i].Value);
             if (rows[i].Value == LedgerMark.Correct) sb.Append(label);
             else sb.Append("<color=").Append(WrongColor).Append('>').Append(label).Append("</color>");
+            sb.Append("</nobr>");
         }
 
         return sb.ToString();
@@ -181,7 +183,7 @@ public sealed class ResultInspectionNotes : MonoBehaviour
             box.anchoredPosition = new Vector2(box.anchoredPosition.x, top - (1f - box.pivot.y) * BoxHeight);
         }
 
-        _notes.enableWordWrapping = true;
+        _notes.textWrappingMode = TMPro.TextWrappingModes.Normal;
         _notes.richText = true;
         _notes.enableAutoSizing = true;
         _notes.fontSizeMin = 14f;

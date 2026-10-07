@@ -76,6 +76,12 @@ namespace NightDuty
         private static void OnReverseReportArmed(string itemId)
         {
             SetReverseReport(itemId, true);
+
+            // 51차: 목격한 칸의 변기는 그때 처음 점검에 오른다 — 순차 지시면 3초 뒤 단독 지시, 아니면 바로 푼다.
+            InspectionItem item = InspectionCatalog.FindByTarget(itemId);
+            string id = item != null ? item.Id : itemId;
+            if (!Board.IsHeld(id)) return;
+            if (_orders == null || !_orders.QueueWitness(id)) Board.Release(id);
         }
 
         /// <summary>점검판이 이미 델타를 준 결과를 새 수칙 기록에 남긴다(T4 역보고).</summary>
@@ -151,6 +157,7 @@ namespace NightDuty
             {
                 InspectionPlan plan = Board.Plan;
                 if (plan == null || plan.Assignments.Count == 0) return string.Empty;
+                if (Board.DripMode) return string.Empty;   // 50차: 순차 지시면 지시 문자(OrderMessage)가 점검표를 대신한다
 
                 System.Text.StringBuilder sb = new System.Text.StringBuilder();
                 sb.Append("[점검 지시] 오늘 확인할 항목 ").Append(plan.Assignments.Count).Append("개");

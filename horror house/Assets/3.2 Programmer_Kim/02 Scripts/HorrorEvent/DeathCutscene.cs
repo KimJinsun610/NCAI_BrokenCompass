@@ -59,6 +59,12 @@ public class DeathCutscene : MonoBehaviour
     [Tooltip("blackout 값을 그리는 화면 전체 검은 이미지(빌더가 만든 오버레이 캔버스). 비우면 암전하지 않는다.")]
     [SerializeField] private UnityEngine.UI.Image blackoutImage;
 
+    [Header("렌즈 (조도 컷신 — 광각)")]
+    [Tooltip("플레이어 카메라 세로 시야각(°). 0이면 원래 값 그대로. Timeline이 움직인다 — 가까이 + 넓은 시야각 = 얼굴이 부담스럽게 다가오는 광각 왜곡.")]
+    [SerializeField, Min(0f)] private float fieldOfView;
+    [Tooltip("컷신 동안 카메라 근평면(m). 0이면 그대로. 얼굴을 코앞까지 당기면 기본 0.1에서 코가 잘린다.")]
+    [SerializeField, Min(0f)] private float nearClip;
+
     [Header("시선 보정 — 씬마다 플레이어 눈높이가 다르다")]
     [Tooltip("돌아본 끝에 봐야 하는 지점(소년의 Head 뼈). 비우면 보정하지 않는다.")]
     [SerializeField] private Transform aimPoint;
@@ -78,6 +84,9 @@ public class DeathCutscene : MonoBehaviour
     [SerializeField] private bool hideViewmodel = true;
 
     [Header("디버그")]
+    [Tooltip("켜면 아래 디버그 키로 이 컷신을 재생할 수 있다(에디터 · 개발 빌드만). 끄면 키를 눌러도 반응하지 않는다.\n" +
+             "Resources에서 키로 불러오는 감시자(DeathCutsceneDebugSpawner)도 이 프리팹의 값을 따른다.")]
+    [SerializeField] private bool useDebugKey = false;
     [Tooltip("이 키로 컷신을 재생한다(에디터 · 개발 빌드만). 디버그 재생은 끝나면 원래대로 돌아간다.")]
     [SerializeField] private KeyCode debugKey = KeyCode.F8;
 
@@ -91,6 +100,9 @@ public class DeathCutscene : MonoBehaviour
 
     /// <summary>이 컷신의 디버그 재생 키(청각 F8 · 조도 F7).</summary>
     public KeyCode DebugKey { get { return debugKey; } }
+
+    /// <summary>디버그 키로 재생할 수 있는지.</summary>
+    public bool UseDebugKey { get { return useDebugKey; } }
 
     // 복구용
     private Transform player;
@@ -119,6 +131,10 @@ public class DeathCutscene : MonoBehaviour
     private Light[] lampLights = new Light[0];
     private float[] lampIntensity = new float[0];
     private bool[] lampEnabled = new bool[0];
+
+    // 렌즈 원래 값
+    private float camFov;
+    private float camNear;
 
     private static void HideCursor()
     {
@@ -260,7 +276,7 @@ public class DeathCutscene : MonoBehaviour
     /// </summary>
     public bool Play(bool restoreAfter)
     {
-        if (Playing != null || director == null || camTarget == null) return false;
+        if (Playing != null || LayoutDeathCutscene.Playing != null || director == null || camTarget == null) return false;
 
         FPController fp = FindAnyObjectByType<FPController>();
         if (fp == null)
@@ -281,6 +297,9 @@ public class DeathCutscene : MonoBehaviour
         playerRot = player.rotation;
         camLocalPos = playerCam.transform.localPosition;
         camLocalRot = playerCam.transform.localRotation;
+        camFov = playerCam.fieldOfView;
+        camNear = playerCam.nearClipPlane;
+        if (nearClip > 0f) playerCam.nearClipPlane = nearClip;
 
         PlaceAtPlayer(fp);
         pitchCorrection = ComputePitchCorrection();
@@ -392,6 +411,7 @@ public class DeathCutscene : MonoBehaviour
         UpdateMuffle();
         if (controlFlashlight) ApplyFlashlight();
         SetBlackout(blackout);
+        playerCam.fieldOfView = fieldOfView > 0f ? fieldOfView : camFov;
 
         // 디렉터가 다 그린 뒤(LateUpdate) 카메라를 목표에 붙인다.
         elapsed += Time.deltaTime;
@@ -434,6 +454,8 @@ public class DeathCutscene : MonoBehaviour
         {
             playerCam.transform.localPosition = camLocalPos;
             playerCam.transform.localRotation = camLocalRot;
+            playerCam.fieldOfView = camFov;
+            playerCam.nearClipPlane = camNear;
         }
         if (player != null) player.SetPositionAndRotation(playerPos, playerRot);
         if (playerController != null) playerController.enabled = true;
@@ -467,7 +489,7 @@ public class DeathCutscene : MonoBehaviour
     {
         // 디버그 감시자가 같은 키로 이 컷신을 막 불러와 재생했으면, 같은 프레임에 다시 받아 멈추지 않는다.
         if (Time.frameCount == startedFrame) return;
-        if (debugKey != KeyCode.None && Input.GetKeyDown(debugKey)) ToggleDebug();
+        if (useDebugKey && debugKey != KeyCode.None && Input.GetKeyDown(debugKey)) ToggleDebug();
     }
 
     private void ToggleDebug()
@@ -510,6 +532,34 @@ public class DeathCutsceneDebugSpawner : MonoBehaviour
         {
             if (Input.GetKeyDown(Keys[i])) Spawn(Keys[i], Prefabs[i]);
         }
+        if (Input.GetKeyDown(LayoutKey)) SpawnLayout(LayoutKey, LayoutDeathCutscene.ResourceName);
+        if (Input.GetKeyDown(LayoutKeyV2)) SpawnLayout(LayoutKeyV2, LayoutDeathCutscene.ResourceNameV2);
+        if (Input.GetKeyDown(LayoutKeyV2Human)) SpawnLayout(LayoutKeyV2Human, LayoutDeathCutscene.ResourceNameV2HumanTree);
+    }
+
+    // 배치 컷신(LayoutDeathCutscene)은 Timeline이 아니라 따로 다룬다 — F6 = ver1, F5 = ver2(피 비, Eggman), F4 = ver2 + 사람 나무
+    private const KeyCode LayoutKey = KeyCode.F6;
+    private const KeyCode LayoutKeyV2 = KeyCode.F5;
+    private const KeyCode LayoutKeyV2Human = KeyCode.F4;
+
+    private static void SpawnLayout(KeyCode key, string resourceName)
+    {
+        foreach (LayoutDeathCutscene c in FindObjectsByType<LayoutDeathCutscene>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (c.DebugKey == key) return;   // 씬 것이 직접 받는다
+        }
+        if (DeathCutscene.Playing != null || LayoutDeathCutscene.Playing != null || FindAnyObjectByType<FPController>() == null) return;
+
+        LayoutDeathCutscene prefab = Resources.Load<LayoutDeathCutscene>(resourceName);
+        if (prefab == null)
+        {
+            Debug.LogWarning("[DeathCutscene] Resources/" + resourceName + " 프리팹이 없습니다. 빌더 메뉴를 먼저 실행하십시오.");
+            return;
+        }
+        if (!prefab.UseDebugKey) return;   // 프리팹의 「디버그 키 사용」이 꺼져 있으면 부르지 않는다
+        LayoutDeathCutscene cutscene = Instantiate(prefab);
+        cutscene.name = prefab.name;
+        cutscene.Play(true);   // 못 가면(금지 반경·길 없음) 이유를 로그로 남기고 그대로 남는다 — 다음 같은 키는 그 컷신이 받는다
     }
 
     private static void Spawn(KeyCode key, string resourceName)
@@ -518,7 +568,7 @@ public class DeathCutsceneDebugSpawner : MonoBehaviour
         {
             if (c.DebugKey == key) return;   // 씬 것이 직접 받는다
         }
-        if (DeathCutscene.Playing != null) return;   // 다른 컷신이 재생 중
+        if (DeathCutscene.Playing != null || LayoutDeathCutscene.Playing != null) return;   // 다른 컷신이 재생 중
         if (FindAnyObjectByType<FPController>() == null) return;
 
         DeathCutscene prefab = Resources.Load<DeathCutscene>(resourceName);
@@ -527,6 +577,7 @@ public class DeathCutsceneDebugSpawner : MonoBehaviour
             Debug.LogWarning("[DeathCutscene] Resources/" + resourceName + " 프리팹이 없습니다. 빌더 메뉴를 먼저 실행하십시오.");
             return;
         }
+        if (!prefab.UseDebugKey) return;   // 프리팹의 「디버그 키 사용」이 꺼져 있으면 부르지 않는다
 
         DeathCutscene cutscene = Instantiate(prefab);
         cutscene.name = prefab.name;

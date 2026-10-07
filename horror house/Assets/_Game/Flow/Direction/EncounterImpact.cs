@@ -149,6 +149,37 @@ public sealed class EncounterImpact : MonoBehaviour
         _restoreAt = Time.time + (isFalse ? 6f : MaxDuckSeconds);
     }
 
+    /// <summary>
+    /// 60차(민: 「도서관 조우는 플레이어가 몹을 마주쳤을 때 효과음이 들리게」): 대면 순간이 아니라 몹이 시야에 들어온 순간 점프스케어를 내는 조우.
+    /// <see cref="DirectionStage"/>가 대역에 <see cref="SeenStinger"/>를 붙여 <see cref="Hit"/>를 부른다.
+    /// </summary>
+    public static bool HitsWhenSeen(string encounterId)
+    {
+        return encounterId == ProgramCatalog.YellowFace || encounterId == ProgramCatalog.SuitMan;
+    }
+
+    /// <summary>덮치기 점프스케어 — 엠비언트를 순간 끊고 스팅어 + 심박 급등. 시체 낙하는 민이 준 전용 소리(<c>stinger.corpse</c>, 60차).</summary>
+    public void Hit(string encounterId)
+    {
+        AmbiencePlayer amb = AmbiencePlayer.Active;
+        if (amb != null) amb.Duck(0.1f, 0.06f);
+        if (encounterId != ProgramCatalog.CeilingLegs || !PlayKey("stinger.corpse")) PlayTier(TierOf(encounterId));
+        BodyMeter.Startle();
+        _restoreAt = Time.time + MaxDuckSeconds;
+    }
+
+    /// <summary>연출 소리 표의 그 키를 2D로 낸다. 없으면 false.</summary>
+    public static bool PlayKey(string key, float volumeScale = 1f)
+    {
+        float volume;
+        AudioClip clip = DirectionSoundTableSO.FindExact(key, out volume);
+        if (clip == null) return false;
+        AmbiencePlayer amb = AmbiencePlayer.Active;
+        if (amb != null && amb.PlayStingerClip(clip, volume * volumeScale)) return true;
+        AudioSource.PlayClipAtPoint(clip, Camera.main != null ? Camera.main.transform.position : Vector3.zero, volume * volumeScale);
+        return true;
+    }
+
     /// <summary>대면 — 갈래별 스팅어·덕킹·몸 반응.</summary>
     public void Confront(string encounterId)
     {
@@ -157,9 +188,13 @@ public sealed class EncounterImpact : MonoBehaviour
         switch (kind)
         {
             case Kind.Hit:
-                if (amb != null) amb.Duck(0.1f, 0.06f);
-                PlayTier(TierOf(encounterId));
-                BodyMeter.Startle();
+                if (HitsWhenSeen(encounterId))
+                {
+                    if (amb != null) amb.Duck(0.3f, 0.4f);   // 60차: 조용해지기만 — 마주치는 순간에 Hit
+                    break;
+                }
+
+                Hit(encounterId);
                 break;
             case Kind.Creep:
                 if (amb != null) amb.Duck(0.25f, 0.6f);

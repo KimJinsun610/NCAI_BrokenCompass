@@ -51,6 +51,13 @@ public static class StandInPrefabBuilder
         public string PoseClipModel;
         public float PoseTime;
         public string LoopClipModel;
+        public string LoopClipName;   // 58차: 파일에 클립이 여럿이면 이름(없으면 첫 클립)
+        public float LoopFrom;        // 58차: 클립 한 구간만(초, 둘 다 0이면 전체)
+        public float LoopTo;
+        public string BangModel;      // 58차: 머리 박기 동작(척추·목·머리만 떼어 StandInClips에)
+        public float BangTo;
+        public bool ExitWalk;         // 58차: 결과 단계에 빠르게 걸어 나가며 사라짐(옛 businessduck 걷기를 새 리그로 옮겨 Walk 상태)
+        public string GazeFx;         // 58차: 이 프리팹의 응시 화면 효과(E_ScreenVolume)만 빌려 중첩 — 메시·흔들림은 끈다
         public string WrapPrefab;   // 다른 사람의 완성 프리팹을 그대로 감싼다(수정하지 않고 중첩)
         public bool InPlace;   // 걷기 클립의 루트 이동을 빼서 제자리 걸음으로(이동은 DirectionWalker)
         public Action<Transform> Pose;
@@ -66,22 +73,37 @@ public static class StandInPrefabBuilder
     /// <summary>천장 다리: 골반 위 이만큼(m)이 천장 면 — 몸통·팔은 천장 속에 숨는다.</summary>
     public const float HangAboveHips = 0.25f;
 
+    private const string NewBoy = "New_skirtboy/NewSkirtBoy_idle.fbx";
+    private const string NewBoyKung = "New_skirtboy/NewSkirtBoy_kung.fbx";
+    private const string NewBoyScream = "New_skirtboy/Newskirtboy_Scream.fbx";
+    private const string NewGirl = "New_redgirl/NewRedGirl_idle.fbx";
+    private const string NewGirlThriller = "New_redgirl/newredgirl_Thriller.fbx";
+    private const string NewDuck = "New_businessduck/NewBusinessDuck_idle.fbx";
+    private const string NewEgg = "New_eggman/NewEggTree_idle.fbx";
+
     private static List<Spec> Specs()
     {
         // 2026-10-01 민 지정: 원본은 NCAI_BrokenCompass/Assets/크리쳐 → 프로젝트 m_creature/m_businessduck·m_skirtboy·m_redgirl·m_eggmantree로 복사.
         // 인체모형·human tree는 프로젝트에 같은 파일이 이미 있다(m_humandummy). CCTV 사람만 크리쳐 폴더에 없어 blackman 유지(민 결정).
+        // 58차(민: 「아트분이 만든 새 몹 — eggman은 인체나무를 대체, 나머지도 대체」): NCAI_BrokenCompass/Assets/New_* → m_creature/New_*(텍스처는 FBX에서 뽑아 Textures/).
+        // 새 소년·소녀·오리 리그는 뼈 이름이 같다(Root/Pelvis/Spine/Chest/Neck/Head · UpperArm.L · Thigh.L …) — 다른 파일의 동작은 맨 위 뼈 이름만 바꿔 붙인다.
+        // BindHeight 0 = 모델의 실제 키를 재서 Height로 맞춘다.
         return new List<Spec>
         {
-            new Spec { Id = "mob.boy", Model = "m_skirtboy/Skirt_Boy.fbx", BindHeight = 1.72f, Height = 1.35f, Pose = PoseSeated, Pivot = Pivot.Seated, Note = "앉은 소년 = skirtboy, 책상에 팔을 올린 자세" },
-            new Spec { Id = "mob.legs", Model = "m_skirtboy/Skirt_Boy.fbx", BindHeight = 1.72f, Height = 1.35f, Pose = PoseHanging, Pivot = Pivot.Hanging, GazeBox = true, Note = "천장 다리 = skirtboy, 팔은 천장 속·다리만 보임" },
-            new Spec { Id = "mob.windowman", Model = "m_businessduck/Business_Duck.fbx", BindHeight = 1.78f, Height = 1.85f, GazeBox = true, HeadBox = new Vector3(0.6f, 0.55f, 0.45f), Note = "창밖 남자 = business duck" },
-            new Spec { Id = "mob.duck", Model = "m_businessduck/Business_Duck.fbx", BindHeight = 1.78f, Height = 1.85f, Note = "노란 얼굴 = business duck" },
+            new Spec { Id = "mob.boy", Model = NewBoy, Height = 1.35f, Pose = PoseSeated, Pivot = Pivot.Seated, BangModel = NewBoyKung, BangTo = 2.2f, Note = "앉은 소년 = 새 skirtboy, 책상에 팔을 올린 자세 · 머리 박기 = kung 동작의 척추·목·머리" },
+            new Spec { Id = "mob.boy.stand", Model = NewBoy, Height = 1.35f, LoopClipModel = NewBoy, ExitWalk = true, Note = "선 소년 = 새 skirtboy 숨쉬기(멀리 보이는 몹 — 59차: 사라질 때 사각지대로 달려감)" },
+            new Spec { Id = "mob.legs", Model = NewBoy, Height = 1.35f, Pose = PoseHanging, Pivot = Pivot.Hanging, GazeBox = true, Note = "천장 다리·시체 낙하 = 새 skirtboy, 팔은 천장 속·다리만 보임" },
+            new Spec { Id = "mob.windowman", Model = NewDuck, Height = 1.85f, LoopClipModel = NewDuck, ExitWalk = true, GazeBox = true, HeadBox = new Vector3(0.6f, 0.55f, 0.45f), Note = "창밖 남자 = 새 business duck(숨쉬기)" },
+            new Spec { Id = "mob.duck", Model = NewDuck, Height = 1.85f, LoopClipModel = NewDuck, ExitWalk = true, Note = "노란 얼굴 = 새 business duck(숨쉬기)" },
             new Spec { Id = "mob.dummy.stand", Model = "m_humandummy/humman dummy_default_motion.fbx", BindHeight = 1.07f, Height = 1.7f, PoseClipModel = "m_humandummy/humman dummy_default_motion.fbx", PoseTime = 0f, Note = "복도 끝에 선 자 = 인체모형(팔을 내린 선 자세)" },
             new Spec { Id = "mob.dummy", Model = "m_humandummy/humman dummy_wake_motion.fbx", BindHeight = 1.07f, Height = 1.7f, PoseClipModel = "m_humandummy/humman dummy_wake_motion.fbx", PoseTime = 6.6f, Note = "모형 급습 = 인체모형(일어선 직후 구부정한 자세)" },
-            new Spec { Id = "mob.girl", Model = "m_redgirl/redgirl_walking.fbx", BindHeight = 1.65f, Height = 1.3f, LoopClipModel = "m_redgirl/redgirl_walking.fbx", InPlace = true, Note = "화장실 소녀 = red girl, 제자리 걷기(이동은 DirectionWalker)" },
+            new Spec { Id = "mob.girl", Model = NewGirl, Height = 1.3f, LoopClipModel = NewGirlThriller, LoopClipName = "mixamo.com", LoopFrom = 6.5f, LoopTo = 10.5f, InPlace = true, Note = "화장실 소녀 = 새 red girl, Thriller 6.5~10.5초(플레이어 쪽을 보며 옆걸음) 제자리 걸음(이동은 DirectionWalker)" },
+            new Spec { Id = "mob.girl.stand", Model = NewGirl, Height = 1.3f, LoopClipModel = NewGirl, ExitWalk = true, Note = "선 소녀 = 새 red girl 숨쉬기(멀리 보이는 몹 — 59차: 사라질 때 사각지대로 달려감)" },
             new Spec { Id = "mob.finale", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, GazeBox = true, HeadBox = new Vector3(0.4f, 0.45f, 0.35f), Note = "경비실 창밖의 검은 남자(피날레 K4 결말)" },
             new Spec { Id = "mob.blackman", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, Note = "CCTV에만 보이는 사람(기존 유지)" },
-            new Spec { Id = "mob.tree", WrapPrefab = KimHumanTree, Note = "사람 나무 = 김진선님 HorrorCreature_HumanTree_Moving(흔들림 강화 + 바라보면 화면이 물듦)" }
+            new Spec { Id = "mob.blackman.glimpse", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, ExitWalk = true, Note = "멀리 보이는 검은 남자(59차) — CCTV 사람과 같은 모델에 달리기만 더함(CCTV 사람은 결과 단계에 걸어 나가지 않게 따로 둠)" },
+            new Spec { Id = "fx.corpse.roaches", WrapPrefab = KimHorror + "HorrorEvent_BugSwarm.prefab", Note = "60차: 시체 낙하 때 천장에서 쏟아지는 바퀴벌레(김진선님 벌레 떼 — 구역 트리거·숫자 키는 끔, DirectionStage가 Play)" },
+            new Spec { Id = "mob.tree", Model = NewEgg, Height = 2.8f, LoopClipModel = NewEgg, GazeFx = KimHumanTree, Note = "사람 나무 = 새 eggman tree(흔들림) + 김진선님 인간나무의 「바라보면 화면이 물듦」만 빌림" }
         };
     }
 
@@ -121,6 +143,16 @@ public static class StandInPrefabBuilder
             sb.AppendLine("✗ prop.phantomdoor: " + e.Message);
         }
 
+        try
+        {
+            sb.AppendLine(BuildCutsceneScream());
+        }
+        catch (Exception e)
+        {
+            sb.AppendLine("✗ 청각 컷신 비명: " + e.Message);
+            Debug.LogException(e);
+        }
+
         sb.AppendLine(CleanStale());
         sb.AppendLine(BuildSoundTable());
         sb.AppendLine(BuildScreenFx());
@@ -143,7 +175,9 @@ public static class StandInPrefabBuilder
             GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(asset);
             model.name = "Model";
             model.transform.SetParent(root.transform, false);
-            float scale = s.Height / s.BindHeight;
+            float bind = s.BindHeight;
+            if (bind <= 0f) bind = Mathf.Max(0.01f, BakedBounds(model).size.y);   // 58차: 새 몹은 실제 키를 잰다
+            float scale = s.Height / bind;
             model.transform.localScale = Vector3.one * scale;
 
             if (!string.IsNullOrEmpty(s.PoseClipModel))
@@ -205,7 +239,7 @@ public static class StandInPrefabBuilder
             if (!string.IsNullOrEmpty(s.LoopClipModel))
             {
                 float natural;
-                AnimatorController ctrl = LoopController(s.Id, ModelPath(s.LoopClipModel), s.InPlace, out natural);
+                AnimatorController ctrl = LoopController(s.Id, ModelPath(s.LoopClipModel), s.LoopClipName, s.LoopFrom, s.LoopTo, SkeletonRoot(model.transform), s.InPlace, out natural);
                 if (s.InPlace && natural > 0.01f)
                 {
                     DirectionWalker walker = root.AddComponent<DirectionWalker>();
@@ -230,6 +264,10 @@ public static class StandInPrefabBuilder
                 if (a != null) a.enabled = false;
             }
 
+            if (!string.IsNullOrEmpty(s.BangModel)) loopNote += BuildBang(s, root, model);
+            if (s.ExitWalk) loopNote += AddExitWalk(s, root, model, scale);
+            if (!string.IsNullOrEmpty(s.GazeFx)) loopNote += AddGazeFx(s, root, model);
+
             foreach (Collider c in model.GetComponentsInChildren<Collider>(true)) UnityEngine.Object.DestroyImmediate(c);
 
             string path = OutDir + "/" + s.Id + ".prefab";
@@ -239,6 +277,292 @@ public static class StandInPrefabBuilder
         finally
         {
             UnityEngine.Object.DestroyImmediate(root);
+        }
+    }
+
+    // ── 오리 퇴장 걷기 ───────────────────────────────────────
+
+    private const string OldDuckWalk = "m_businessduck/businessduck_walking.fbx";
+
+    private static readonly Dictionary<string, string> OldHumanoid = new Dictionary<string, string>
+    {
+        { "Hips", "Hips" }, { "Spine", "Spine" }, { "Chest", "Chest" }, { "UpperChest", "UpperChest" }, { "Neck", "Neck" }, { "Head", "Head" },
+        { "LeftShoulder", "LeftShoulder" }, { "LeftUpperArm", "LeftUpperArm" }, { "LeftLowerArm", "LeftLowerArm" }, { "LeftHand", "LeftHand" },
+        { "RightShoulder", "RightShoulder" }, { "RightUpperArm", "RightUpperArm" }, { "RightLowerArm", "RightLowerArm" }, { "RightHand", "RightHand" },
+        { "LeftUpperLeg", "LeftUpperLeg" }, { "LeftLowerLeg", "LeftLowerLeg" }, { "LeftFoot", "LeftFoot" }, { "LeftToes", "LeftToes" },
+        { "RightUpperLeg", "RightUpperLeg" }, { "RightLowerLeg", "RightLowerLeg" }, { "RightFoot", "RightFoot" }, { "RightToes", "RightToes" }
+    };
+
+    /// <summary>새 몹 리그(소년·소녀·오리 공통)의 휴머노이드 뼈.</summary>
+    private static readonly Dictionary<string, string> NewRigHumanoid = new Dictionary<string, string>
+    {
+        { "Hips", "Pelvis" }, { "Spine", "Spine" }, { "Chest", "Chest" }, { "Neck", "Neck" }, { "Head", "Head" },
+        { "LeftShoulder", "Clavicle.L" }, { "LeftUpperArm", "UpperArm.L" }, { "LeftLowerArm", "Forearm.L" }, { "LeftHand", "Hand.L" },
+        { "RightShoulder", "Clavicle.R" }, { "RightUpperArm", "UpperArm.R" }, { "RightLowerArm", "Forearm.R" }, { "RightHand", "Hand.R" },
+        { "LeftUpperLeg", "Thigh.L" }, { "LeftLowerLeg", "Shin.L" }, { "LeftFoot", "Foot.L" }, { "LeftToes", "Toe.L" },
+        { "RightUpperLeg", "Thigh.R" }, { "RightLowerLeg", "Shin.R" }, { "RightFoot", "Foot.R" }, { "RightToes", "Toe.R" }
+    };
+
+    /// <summary>검은 남자(blackman) 리그의 휴머노이드 뼈(59차, 소문자 이름).</summary>
+    private static readonly Dictionary<string, string> BlackmanHumanoid = new Dictionary<string, string>
+    {
+        { "Hips", "pelvis" }, { "Spine", "spine" }, { "Chest", "chest" }, { "Neck", "neck" }, { "Head", "head" },
+        { "LeftShoulder", "clavicle.L" }, { "LeftUpperArm", "upper_arm.L" }, { "LeftLowerArm", "forearm.L" }, { "LeftHand", "hand.L" },
+        { "RightShoulder", "clavicle.R" }, { "RightUpperArm", "upper_arm.R" }, { "RightLowerArm", "forearm.R" }, { "RightHand", "hand.R" },
+        { "LeftUpperLeg", "thigh.L" }, { "LeftLowerLeg", "shin.L" }, { "LeftFoot", "foot.L" }, { "LeftToes", "toe.L" },
+        { "RightUpperLeg", "thigh.R" }, { "RightLowerLeg", "shin.R" }, { "RightFoot", "foot.R" }, { "RightToes", "toe.R" }
+    };
+
+    private static HumanDescription Describe(GameObject root, Dictionary<string, string> map)
+    {
+        List<SkeletonBone> bones = new List<SkeletonBone>();
+        foreach (Transform t in root.GetComponentsInChildren<Transform>(true)) bones.Add(new SkeletonBone { name = t.name, position = t.localPosition, rotation = t.localRotation, scale = t.localScale });
+        List<HumanBone> human = new List<HumanBone>();
+        foreach (KeyValuePair<string, string> kv in map)
+        {
+            if (FindDeep(root.transform, kv.Value) == null) continue;
+            HumanBone h = new HumanBone { humanName = kv.Key, boneName = kv.Value };
+            h.limit.useDefaultValues = true;
+            human.Add(h);
+        }
+
+        return new HumanDescription { human = human.ToArray(), skeleton = bones.ToArray(), upperArmTwist = 0.5f, lowerArmTwist = 0.5f, upperLegTwist = 0.5f, lowerLegTwist = 0.5f, armStretch = 0.05f, legStretch = 0.05f, feetSpacing = 0f, hasTranslationDoF = false };
+    }
+
+    /// <summary>
+    /// 퇴장 걷기(58차): 옛 businessduck_walking(1.17초 한 걸음 주기, 약 1.2m/s — 빠른 걸음)을 휴머노이드 자세로 읽어 새 오리 리그에 다시 찍은 제자리 걸음 클립을 만들고,
+    /// 컨트롤러에 「Walk」 상태와 <see cref="StandInExit"/>(원래 걸음 속도)를 단다. 임포트 설정은 건드리지 않는다(아바타는 이 빌드 안에서만 만든다).
+    /// </summary>
+    private static string AddExitWalk(Spec s, GameObject root, GameObject model, float scale)
+    {
+        string srcPath = ModelPath(OldDuckWalk);
+        GameObject srcAsset = AssetDatabase.LoadAssetAtPath<GameObject>(srcPath);
+        AnimationClip src = NamedClip(srcPath, "mixamo.com");
+        Animator anim = model.GetComponent<Animator>();
+        AnimatorController ctrl = anim != null ? anim.runtimeAnimatorController as AnimatorController : null;
+        if (ctrl == null && srcAsset != null && src != null)
+        {
+            // 59차: 반복 동작이 없는 대역(검은 남자)은 빈 「Pose」 상태(굳은 자세 그대로)를 기본으로 하는 컨트롤러를 새로 만든다.
+            string ctrlPath = AnimDir + "/" + s.Id + ".controller";
+            if (AssetDatabase.LoadAssetAtPath<AnimatorController>(ctrlPath) != null) AssetDatabase.DeleteAsset(ctrlPath);
+            ctrl = AnimatorController.CreateAnimatorControllerAtPath(ctrlPath);
+            ctrl.layers[0].stateMachine.defaultState = ctrl.layers[0].stateMachine.AddState("Pose");
+            if (anim == null) anim = model.AddComponent<Animator>();
+            anim.runtimeAnimatorController = ctrl;
+            anim.applyRootMotion = false;
+            anim.enabled = true;
+        }
+
+        if (srcAsset == null || src == null || ctrl == null) return " · ✗ 퇴장 걷기(원본·컨트롤러 없음)";
+
+        // 새 리그는 바인드 자세(프리팹 모델과 같은 파일)에서 아바타를 만든다 — 프리팹 모델은 이미 크기·위치가 바뀌었으니 새로 꺼낸다.
+        GameObject dst = (GameObject)UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath(s.Model)));
+        GameObject from = (GameObject)UnityEngine.Object.Instantiate(srcAsset);
+        Avatar srcAvatar = null;
+        Avatar dstAvatar = null;
+        try
+        {
+            srcAvatar = AvatarBuilder.BuildHumanAvatar(from, Describe(from, OldHumanoid));
+            Dictionary<string, string> dstMap = FindDeep(dst.transform, "Pelvis") != null ? NewRigHumanoid : BlackmanHumanoid;   // 59차: 검은 남자 리그도
+            dstAvatar = AvatarBuilder.BuildHumanAvatar(dst, Describe(dst, dstMap));
+            if (!srcAvatar.isValid || !dstAvatar.isValid) return " · ✗ 퇴장 걷기(아바타)";
+            Transform srcHips = FindDeep(from.transform, "Hips");
+            Transform dstHips = FindDeep(dst.transform, dstMap["Hips"]);
+            float legRatio = srcHips != null && dstHips != null && srcHips.position.y > 0.01f ? dstHips.position.y / srcHips.position.y : 1f;
+            if (legRatio <= 0.05f)
+            {
+                // 59차: 축이 돌아간 리그(검은 남자 — 골반 y가 음수)는 다리 길이(골반 → 발) 비로 잰다.
+                Transform srcFoot = FindDeep(from.transform, "LeftFoot");
+                Transform dstFoot = FindDeep(dst.transform, dstMap["LeftFoot"]);
+                float srcLeg = srcHips != null && srcFoot != null ? Vector3.Distance(srcHips.position, srcFoot.position) : 0f;
+                float dstLeg = dstHips != null && dstFoot != null ? Vector3.Distance(dstHips.position, dstFoot.position) : 0f;
+                legRatio = srcLeg > 0.01f ? dstLeg / srcLeg : 1f;
+            }
+
+            List<Transform> bones = new List<Transform>();
+            List<string> paths = new List<string>();
+            foreach (Transform t in dst.GetComponentsInChildren<Transform>(true))
+            {
+                if (t == dst.transform || t.GetComponent<Renderer>() != null) continue;
+                bones.Add(t);
+                paths.Add(AnimationUtility.CalculateTransformPath(t, dst.transform));
+            }
+
+            int frames = Mathf.Max(2, Mathf.RoundToInt(src.length * 30f));
+            AnimationCurve[,] rot = new AnimationCurve[bones.Count, 4];
+            for (int i = 0; i < bones.Count; i++) for (int c = 0; c < 4; c++) rot[i, c] = new AnimationCurve();
+            AnimationCurve[] hipPos = { new AnimationCurve(), new AnimationCurve(), new AnimationCurve() };
+            HumanPoseHandler srcH = new HumanPoseHandler(srcAvatar, from.transform);
+            HumanPoseHandler dstH = new HumanPoseHandler(dstAvatar, dst.transform);
+            HumanPose pose = new HumanPose();
+            Vector3 startHips = Vector3.zero;
+            Vector3 endHips = Vector3.zero;
+            for (int f = 0; f <= frames; f++)
+            {
+                float t = src.length * f / frames;
+                src.SampleAnimation(from, t);
+                if (f == 0 && srcHips != null) startHips = srcHips.position;
+                if (f == frames && srcHips != null) endHips = srcHips.position;
+                srcH.GetHumanPose(ref pose);
+                pose.bodyPosition = new Vector3(0f, pose.bodyPosition.y, 0f);   // 제자리 걸음(이동은 StandInExit)
+                dstH.SetHumanPose(ref pose);
+                for (int i = 0; i < bones.Count; i++)
+                {
+                    Quaternion q = bones[i].localRotation;
+                    rot[i, 0].AddKey(t, q.x);
+                    rot[i, 1].AddKey(t, q.y);
+                    rot[i, 2].AddKey(t, q.z);
+                    rot[i, 3].AddKey(t, q.w);
+                }
+
+                if (dstHips != null)
+                {
+                    Vector3 lp = dstHips.localPosition;
+                    hipPos[0].AddKey(t, lp.x);
+                    hipPos[1].AddKey(t, lp.y);
+                    hipPos[2].AddKey(t, lp.z);
+                }
+            }
+
+            srcH.Dispose();
+            dstH.Dispose();
+
+            AnimationClip walk = new AnimationClip { name = s.Id + ".walk", frameRate = 30f };
+            string[] comp = { "x", "y", "z", "w" };
+            for (int i = 0; i < bones.Count; i++)
+            {
+                for (int c = 0; c < 4; c++) AnimationUtility.SetEditorCurve(walk, EditorCurveBinding.FloatCurve(paths[i], typeof(Transform), "m_LocalRotation." + comp[c]), rot[i, c]);
+            }
+
+            if (dstHips != null)
+            {
+                string hp = AnimationUtility.CalculateTransformPath(dstHips, dst.transform);
+                for (int c = 0; c < 3; c++) AnimationUtility.SetEditorCurve(walk, EditorCurveBinding.FloatCurve(hp, typeof(Transform), "m_LocalPosition." + comp[c]), hipPos[c]);
+            }
+
+            walk.EnsureQuaternionContinuity();
+            AnimationClipSettings st = AnimationUtility.GetAnimationClipSettings(walk);
+            st.loopTime = true;
+            AnimationUtility.SetAnimationClipSettings(walk, st);
+            string clipPath = AnimDir + "/" + s.Id + ".walk.anim";
+            if (AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath) != null) AssetDatabase.DeleteAsset(clipPath);
+            AssetDatabase.CreateAsset(walk, clipPath);
+
+            AnimatorState state = ctrl.layers[0].stateMachine.AddState(StandInExit.WalkState);
+            state.motion = walk;
+            Vector3 travel = endHips - startHips;
+            travel.y = 0f;
+            float natural = travel.magnitude / Mathf.Max(0.01f, src.length) * legRatio * scale;
+            StandInExit exit = root.AddComponent<StandInExit>();
+            exit.SetNaturalSpeed(natural);
+            return " · 퇴장 걷기(옛 businessduck_walking → 새 리그, 원래 " + natural.ToString("F2") + "m/s → " + StandInExit.Speed + "m/s)";
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(from);
+            UnityEngine.Object.DestroyImmediate(dst);
+            if (srcAvatar != null) UnityEngine.Object.DestroyImmediate(srcAvatar);
+            if (dstAvatar != null) UnityEngine.Object.DestroyImmediate(dstAvatar);
+        }
+    }
+
+    // ── 청각 붙잡힘 비명 ─────────────────────────────────────
+
+    private const string ScreamAssetPath = "Assets/_Game/Resources/" + CutsceneScreamSO.ResourceName + ".asset";
+
+    /// <summary>
+    /// 청각 사망 컷신(김진선님) 소년에 붙일 숨쉬기 → 비명 컨트롤러와 정점 시각을 만든다(58차). 컷신 소년은 새 skirtboy idle과 같은 구조(Boy/SkirtBoy_Rig)라
+    /// 새 「Scream」 클립의 뼈대 이름(NewSkirtBoy_Skeleton)만 SkirtBoy_Rig로 바꾼다. 정점 = 머리가 몸 앞(+Z)으로 가장 멀리 나간 순간.
+    /// </summary>
+    private static string BuildCutsceneScream()
+    {
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath(NewBoy));
+        AnimationClip idleSrc = FirstClip(ModelPath(NewBoy));
+        AnimationClip screamSrc = NamedClip(ModelPath(NewBoyScream), "mixamo.com");
+        if (asset == null || idleSrc == null || screamSrc == null) return "✗ 청각 컷신 비명: 모델·클립 없음";
+
+        GameObject model = (GameObject)PrefabUtility.InstantiatePrefab(asset);
+        try
+        {
+            string rig = SkeletonRoot(model.transform);
+            string idlePath = AnimDir + "/capture.auditory.idle.anim";
+            string screamPath = AnimDir + "/capture.auditory.scream.anim";
+            string ctrlPath = AnimDir + "/capture.auditory.controller";
+            foreach (string p in new[] { idlePath, screamPath, ctrlPath }) if (AssetDatabase.LoadMainAssetAtPath(p) != null) AssetDatabase.DeleteAsset(p);
+
+            AnimationClip idle = CopyClip(idleSrc, "capture.auditory.idle", rig, 0f, 0f, null);
+            AnimationClipSettings st = AnimationUtility.GetAnimationClipSettings(idle);
+            st.loopTime = true;
+            AnimationUtility.SetAnimationClipSettings(idle, st);
+            AssetDatabase.CreateAsset(idle, idlePath);
+
+            AnimationClip scream = CopyClip(screamSrc, "capture.auditory.scream", rig, 0f, 0f, null);
+            // 뼈대·Root 곡선은 뺀다 — 비명 파일은 뼈대가 19° 틀어져 있어 컷신 소년이 옆으로 돌아섰다(58차 확인). 자세(Pelvis 아래)만 쓴다.
+            foreach (EditorCurveBinding b in AnimationUtility.GetCurveBindings(scream))
+            {
+                int slashes = 0;
+                foreach (char ch in b.path) if (ch == '/') slashes++;
+                if (slashes <= 1) AnimationUtility.SetEditorCurve(scream, b, null);
+            }
+
+            st = AnimationUtility.GetAnimationClipSettings(scream);
+            st.loopTime = false;
+            AnimationUtility.SetAnimationClipSettings(scream, st);
+            AssetDatabase.CreateAsset(scream, screamPath);
+
+            AnimatorController ctrl = AnimatorController.CreateAnimatorControllerAtPath(ctrlPath);
+            AnimatorState idleState = ctrl.layers[0].stateMachine.AddState("Idle");
+            idleState.motion = idle;
+            AnimatorState screamState = ctrl.layers[0].stateMachine.AddState(CutsceneScreamSO.ScreamState);
+            screamState.motion = scream;
+            ctrl.layers[0].stateMachine.defaultState = idleState;
+
+            // 정점: 머리가 가장 앞으로. 그 머리를 숨쉬기 때 머리 자리로 옮기는 이동도 잰다(덮치며 몸을 낮춰 얼굴이 화면 아래로 빠지지 않게).
+            Transform head = FindDeep(model.transform, "Head");
+            float peak = 0.8f;
+            Vector3 shift = Vector3.zero;
+            float turn = 0f;
+            if (head != null)
+            {
+                float best = float.MinValue;
+                for (float t = 0f; t <= scream.length + 1e-4f; t += 1f / 30f)
+                {
+                    scream.SampleAnimation(model, t);
+                    float z = model.transform.InverseTransformPoint(head.position).z;
+                    if (z > best)
+                    {
+                        best = z;
+                        peak = t;
+                    }
+                }
+
+                // 정점에서 어깨선이 숨쉬기 때와 같은 쪽을 보게 돌릴 각 → 돌린 뒤 머리 자리 맞춤.
+                Transform la = FindDeep(model.transform, "UpperArm.L");
+                Transform ra = FindDeep(model.transform, "UpperArm.R");
+                idle.SampleAnimation(model, 0f);
+                Vector3 atRest = model.transform.InverseTransformPoint(head.position);
+                Vector3 restRight = la != null && ra != null ? Vector3.ProjectOnPlane(ra.position - la.position, Vector3.up) : Vector3.right;
+                scream.SampleAnimation(model, peak);
+                Vector3 peakRight = la != null && ra != null ? Vector3.ProjectOnPlane(ra.position - la.position, Vector3.up) : Vector3.right;
+                turn = Vector3.SignedAngle(peakRight, restRight, Vector3.up);
+                Vector3 atPeak = Quaternion.Euler(0f, turn, 0f) * model.transform.InverseTransformPoint(head.position);
+                shift = atRest - atPeak;
+            }
+
+            CutsceneScreamSO so = AssetDatabase.LoadAssetAtPath<CutsceneScreamSO>(ScreamAssetPath);
+            if (so == null)
+            {
+                so = ScriptableObject.CreateInstance<CutsceneScreamSO>();
+                AssetDatabase.CreateAsset(so, ScreamAssetPath);
+            }
+
+            so.Configure(ctrl, peak, shift, turn);
+            EditorUtility.SetDirty(so);
+            return "✓ 청각 컷신 비명 ← " + NewBoyScream + " (" + scream.length.ToString("F1") + "초, 덮쳐 오는 정점 " + peak.ToString("F2") + "초 → Hit 소리에 맞춤, 머리 자리 맞춤 " + shift.ToString("F2") + " · 돌림 " + turn.ToString("F0") + "°)";
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(model);
         }
     }
 
@@ -273,21 +597,25 @@ public static class StandInPrefabBuilder
         Point(model, "neck", "head", new Vector3(0f, 1f, 0.3f));
     }
 
-    /// <summary>옛 리그(pelvis·thigh.L)와 새 리그(Hips·LeftUpperLeg)의 뼈 이름을 함께 찾는다.</summary>
-    private static readonly Dictionary<string, string> Alias = new Dictionary<string, string>
+    /// <summary>옛 리그(pelvis·thigh.L) · 휴머노이드 리그(Hips·LeftUpperLeg) · 58차 새 몹 리그(Pelvis·Thigh.L)의 뼈 이름을 함께 찾는다.</summary>
+    private static readonly Dictionary<string, string[]> Alias = new Dictionary<string, string[]>
     {
-        { "pelvis", "Hips" }, { "spine", "Spine" }, { "chest", "Chest" }, { "neck", "Neck" }, { "head", "Head" },
-        { "thigh.L", "LeftUpperLeg" }, { "shin.L", "LeftLowerLeg" }, { "foot.L", "LeftFoot" }, { "toe.L", "LeftToes" },
-        { "thigh.R", "RightUpperLeg" }, { "shin.R", "RightLowerLeg" }, { "foot.R", "RightFoot" }, { "toe.R", "RightToes" },
-        { "upper_arm.L", "LeftUpperArm" }, { "forearm.L", "LeftLowerArm" }, { "hand.L", "LeftHand" },
-        { "upper_arm.R", "RightUpperArm" }, { "forearm.R", "RightLowerArm" }, { "hand.R", "RightHand" }
+        { "pelvis", new[] { "Hips", "Pelvis" } }, { "spine", new[] { "Spine" } }, { "chest", new[] { "Chest" } }, { "neck", new[] { "Neck" } }, { "head", new[] { "Head" } },
+        { "thigh.L", new[] { "LeftUpperLeg", "Thigh.L" } }, { "shin.L", new[] { "LeftLowerLeg", "Shin.L" } }, { "foot.L", new[] { "LeftFoot", "Foot.L" } }, { "toe.L", new[] { "LeftToes", "Toe.L" } },
+        { "thigh.R", new[] { "RightUpperLeg", "Thigh.R" } }, { "shin.R", new[] { "RightLowerLeg", "Shin.R" } }, { "foot.R", new[] { "RightFoot", "Foot.R" } }, { "toe.R", new[] { "RightToes", "Toe.R" } },
+        { "upper_arm.L", new[] { "LeftUpperArm", "UpperArm.L" } }, { "forearm.L", new[] { "LeftLowerArm", "Forearm.L" } }, { "hand.L", new[] { "LeftHand", "Hand.L" } },
+        { "upper_arm.R", new[] { "RightUpperArm", "UpperArm.R" } }, { "forearm.R", new[] { "RightLowerArm", "Forearm.R" } }, { "hand.R", new[] { "RightHand", "Hand.R" } }
     };
 
     private static Transform Bone(Transform model, string name)
     {
         Transform t = FindDeep(model, name);
-        string other;
-        if (t == null && Alias.TryGetValue(name, out other)) t = FindDeep(model, other);
+        string[] others;
+        if (t == null && Alias.TryGetValue(name, out others))
+        {
+            for (int i = 0; i < others.Length && t == null; i++) t = FindDeep(model, others[i]);
+        }
+
         return t;
     }
 
@@ -309,7 +637,7 @@ public static class StandInPrefabBuilder
         foreach (Spec s in Specs())
         {
             keep.Add(s.Id);
-            if (!string.IsNullOrEmpty(s.LoopClipModel)) loops.Add(s.Id);
+            if (!string.IsNullOrEmpty(s.LoopClipModel) || s.ExitWalk) loops.Add(s.Id);   // 59차: 달리기만 있는 대역(검은 남자)도 컨트롤러를 남긴다
         }
 
         List<string> removed = new List<string>();
@@ -330,7 +658,7 @@ public static class StandInPrefabBuilder
             if (cut < 0) cut = file.IndexOf(".controller", StringComparison.Ordinal);
             if (cut < 0) continue;
             string id = file.Substring(0, cut);
-            if (loops.Contains(id)) continue;
+            if (loops.Contains(id) || id.StartsWith("capture.", StringComparison.Ordinal)) continue;   // 58차: 청각 컷신 비명 컨트롤러는 남긴다
             AssetDatabase.DeleteAsset(path);
             removed.Add(file);
         }
@@ -350,6 +678,7 @@ public static class StandInPrefabBuilder
             inner.transform.SetParent(root.transform, false);
             inner.transform.localPosition = Vector3.zero;   // 원본 루트에 남은 씬 좌표(-32, 0, -21)를 지운다
             inner.transform.localRotation = Quaternion.identity;
+            if (s.Id.StartsWith("fx.", StringComparison.Ordinal)) SilenceKimEvent(inner.transform, true);   // 60차: 연출 이펙트는 디렉터만 건다
             foreach (SkinnedMeshRenderer smr in inner.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.updateWhenOffscreen = true;
             Bounds b = BakedBounds(inner);
             GameObject aim = new GameObject("Aim");
@@ -555,17 +884,16 @@ public static class StandInPrefabBuilder
 
     // ── 반복 클립 ───────────────────────────────────────────
 
-    private static AnimatorController LoopController(string id, string modelPath, bool inPlace, out float naturalSpeed)
+    private static AnimatorController LoopController(string id, string modelPath, string clipName, float from, float to, string targetRoot, bool inPlace, out float naturalSpeed)
     {
         naturalSpeed = 0f;
-        AnimationClip src = FirstClip(modelPath);
+        AnimationClip src = string.IsNullOrEmpty(clipName) ? FirstClip(modelPath) : NamedClip(modelPath, clipName);
         if (src == null) return null;
 
         string clipPath = AnimDir + "/" + id + ".loop.anim";
         AnimationClip copy = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
         if (copy != null) AssetDatabase.DeleteAsset(clipPath);
-        copy = UnityEngine.Object.Instantiate(src);
-        copy.name = id + ".loop";
+        copy = CopyClip(src, id + ".loop", targetRoot, from, to, null);
         AnimationClipSettings st = AnimationUtility.GetAnimationClipSettings(copy);
         st.loopTime = true;
         AnimationUtility.SetAnimationClipSettings(copy, st);
@@ -581,6 +909,194 @@ public static class StandInPrefabBuilder
         state.motion = copy;
         ctrl.layers[0].stateMachine.defaultState = state;
         return ctrl;
+    }
+
+    /// <summary>
+    /// 클립을 복사한다(58차). <paramref name="targetRoot"/>가 있으면 곡선 경로의 맨 앞(원본 파일의 뼈대 이름)을 그것으로 바꾼다 — 같은 뼈 이름의 다른 파일 동작을 붙이려고.
+    /// <paramref name="from"/>~<paramref name="to"/>(초)가 있으면 그 구간만 원래 프레임 간격으로 다시 찍는다. <paramref name="onlyBones"/>가 있으면 그 뼈의 곡선만.
+    /// </summary>
+    private static AnimationClip CopyClip(AnimationClip src, string name, string targetRoot, float from, float to, string[] onlyBones)
+    {
+        AnimationClip dst = new AnimationClip();
+        dst.name = name;
+        dst.frameRate = src.frameRate > 0f ? src.frameRate : 30f;
+        bool trim = to > from && (from > 0f || to < src.length);
+        float end = trim ? Mathf.Min(to, src.length) : src.length;
+        float step = 1f / dst.frameRate;
+        foreach (EditorCurveBinding b in AnimationUtility.GetCurveBindings(src))
+        {
+            if (onlyBones != null)
+            {
+                int cut = b.path.LastIndexOf('/');
+                string bone = cut >= 0 ? b.path.Substring(cut + 1) : b.path;
+                if (Array.IndexOf(onlyBones, bone) < 0) continue;
+            }
+
+            AnimationCurve c = AnimationUtility.GetEditorCurve(src, b);
+            if (c == null) continue;
+            AnimationCurve n = c;
+            if (trim)
+            {
+                List<Keyframe> keys = new List<Keyframe>();
+                for (float t = from; t <= end + step * 0.5f; t += step) keys.Add(new Keyframe(t - from, c.Evaluate(Mathf.Min(t, end))));
+                n = new AnimationCurve(keys.ToArray());
+                for (int i = 0; i < n.length; i++) AnimationUtility.SetKeyLeftTangentMode(n, i, AnimationUtility.TangentMode.ClampedAuto);
+                for (int i = 0; i < n.length; i++) AnimationUtility.SetKeyRightTangentMode(n, i, AnimationUtility.TangentMode.ClampedAuto);
+            }
+
+            EditorCurveBinding nb = b;
+            nb.path = RemapPath(b.path, targetRoot);
+            AnimationUtility.SetEditorCurve(dst, nb, n);
+        }
+
+        dst.EnsureQuaternionContinuity();
+        return dst;
+    }
+
+    private static string RemapPath(string path, string targetRoot)
+    {
+        if (string.IsNullOrEmpty(targetRoot) || string.IsNullOrEmpty(path)) return path;
+        int cut = path.IndexOf('/');
+        return cut < 0 ? targetRoot : targetRoot + path.Substring(cut);
+    }
+
+    /// <summary>모델 안에서 <c>Root</c> 뼈를 품은 맨 위 자식 이름(새 몹 리그의 뼈대 — SkirtBoy_Rig · RedGirl_Skeleton …). 없으면 null(경로를 바꾸지 않음).</summary>
+    private static string SkeletonRoot(Transform model)
+    {
+        Transform r = FindDeep(model, "Root");
+        if (r == null || r == model) return null;
+        Transform t = r;
+        while (t.parent != null && t.parent != model) t = t.parent;
+        return t == r ? null : t.name;
+    }
+
+    private static AnimationClip NamedClip(string path, string name)
+    {
+        foreach (UnityEngine.Object o in AssetDatabase.LoadAllAssetsAtPath(path))
+        {
+            AnimationClip c = o as AnimationClip;
+            if (c != null && c.name == name) return c;
+        }
+
+        return null;
+    }
+
+    /// <summary>머리 박기(58차): 새 skirtboy 「kung」에서 척추·가슴·목·머리 곡선만 떼어 <see cref="StandInClips"/>에 싣는다. 머리가 닿는 순간 = 척추가 가장 깊이 숙여진 순간.</summary>
+    private static string BuildBang(Spec s, GameObject root, GameObject model)
+    {
+        AnimationClip src = FirstClip(ModelPath(s.BangModel));
+        if (src == null) return " · ✗ 머리 박기 클립 없음";
+        string clipPath = AnimDir + "/" + s.Id + ".bang.anim";
+        if (AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath) != null) AssetDatabase.DeleteAsset(clipPath);
+        AnimationClip bang = CopyClip(src, s.Id + ".bang", SkeletonRoot(model.transform), 0f, s.BangTo, new[] { "Spine", "Chest", "Neck", "Head" });
+        AssetDatabase.CreateAsset(bang, clipPath);
+
+        // 머리가 닿는 순간 = 머리가 몸 앞(+Z)으로 가장 멀리 나간 순간(뼈 축 부호는 리그마다 달라 위치로 잰다 — 58차 첫 시도에서 척추 x 음수가 뒤로 젖힘이었다).
+        // 앉힌 자세를 지우지 않게 네 뼈의 회전을 적어 두었다가 되돌린다.
+        List<float> thuds = new List<float>();
+        string[] names = { "Spine", "Chest", "Neck", "Head" };
+        Transform[] bones = new Transform[names.Length];
+        Quaternion[] keep = new Quaternion[names.Length];
+        for (int i = 0; i < names.Length; i++)
+        {
+            bones[i] = FindDeep(model.transform, names[i]);
+            if (bones[i] != null) keep[i] = bones[i].localRotation;
+        }
+
+        Transform headBone = bones[3];
+        if (headBone != null)
+        {
+            float step = 1f / 30f;
+            bang.SampleAnimation(model, 0f);
+            float rest = root.transform.InverseTransformPoint(headBone.position).z;
+            bool armed = true;
+            float best = float.MinValue;
+            float bestAt = -1f;
+            for (float t = 0f; t <= bang.length + 1e-4f; t += step)
+            {
+                bang.SampleAnimation(model, t);
+                float z = root.transform.InverseTransformPoint(headBone.position).z;
+                if (armed)
+                {
+                    if (z > rest + 0.08f && z > best)
+                    {
+                        best = z;
+                        bestAt = t;
+                    }
+                    else if (bestAt >= 0f && z < best - 0.02f)
+                    {
+                        thuds.Add(bestAt);
+                        armed = false;
+                    }
+                }
+                else if (z < rest + 0.03f)
+                {
+                    armed = true;
+                    best = float.MinValue;
+                    bestAt = -1f;
+                }
+            }
+
+            if (armed && bestAt >= 0f) thuds.Add(bestAt);
+        }
+
+        for (int i = 0; i < names.Length; i++)
+        {
+            if (bones[i] != null) bones[i].localRotation = keep[i];
+        }
+
+        if (thuds.Count == 0) return " · ✗ 머리 박기 순간을 못 찾음";
+        StandInClips clips = root.AddComponent<StandInClips>();
+        clips.Configure(bang, thuds.ToArray(), model.transform);
+        StringBuilder sb = new StringBuilder(" · 머리 박기 " + thuds.Count + "번(");
+        for (int i = 0; i < thuds.Count; i++) sb.Append(i > 0 ? " " : string.Empty).Append(thuds[i].ToString("F2"));
+        return sb.Append("초)").ToString();
+    }
+
+    /// <summary>
+    /// 응시 화면 효과만 빌린다(58차): 김진선님 인간나무 프리팹을 중첩하고 그 메시·흔들림·애니메이터를 끈 뒤, 응시 판정점(LookPoint)을 새 몹의 몸 가운데로 돌린다.
+    /// 원본 프리팹은 손대지 않는다(이 프리팹 안의 덮어쓰기).
+    /// </summary>
+    private static string AddGazeFx(Spec s, GameObject root, GameObject model)
+    {
+        GameObject asset = AssetDatabase.LoadAssetAtPath<GameObject>(s.GazeFx);
+        if (asset == null) return " · ✗ 화면 효과 프리팹 없음";
+        GameObject fx = (GameObject)PrefabUtility.InstantiatePrefab(asset);
+        fx.name = "GazeFx";
+        fx.transform.SetParent(root.transform, false);
+        fx.transform.localPosition = Vector3.zero;
+        fx.transform.localRotation = Quaternion.identity;
+        foreach (Renderer r in fx.GetComponentsInChildren<Renderer>(true)) r.gameObject.SetActive(false);
+        foreach (Collider c in fx.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+        Animator ka = fx.GetComponent<Animator>();
+        if (ka != null) ka.enabled = false;
+
+        Bounds body = BakedBounds(model);
+        GameObject look = new GameObject("LookPoint");
+        look.transform.SetParent(root.transform, false);
+        look.transform.position = new Vector3(body.center.x, body.min.y + body.size.y * 0.7f, body.center.z);
+        int wired = 0;
+        foreach (MonoBehaviour mb in fx.GetComponentsInChildren<MonoBehaviour>(true))
+        {
+            if (mb == null) continue;
+            string type = mb.GetType().Name;
+            if (type == "HorrorTreeSway")
+            {
+                mb.enabled = false;
+                continue;
+            }
+
+            if (type != "HorrorGazeTrigger" && type != "HorrorGazeHold") continue;
+            SerializedObject so = new SerializedObject(mb);
+            SerializedProperty lp = so.FindProperty("lookPoint");
+            SerializedProperty lo = so.FindProperty("lookObject");
+            if (lp != null) lp.objectReferenceValue = look.transform;
+            if (lo != null) lo.objectReferenceValue = root.transform;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            wired++;
+        }
+
+        return " · 응시 화면 효과(" + Path.GetFileNameWithoutExtension(s.GazeFx) + ", 판정 " + wired + "개를 몸 " + look.transform.localPosition.y.ToString("F2") + "m로)";
     }
 
     /// <summary>m_creature 기준 상대 경로, 또는 <c>Assets/</c>로 시작하는 전체 경로.</summary>

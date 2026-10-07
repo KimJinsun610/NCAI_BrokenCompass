@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -206,6 +206,7 @@ public sealed class FinalRuleRelay : MonoBehaviour
 
         Vector3 origin = cam.transform.position;
         Vector3 forward = cam.transform.forward;
+        float range = NightRun.BeamRange;   // 56차: 배터리 10% 아래면 5m
         string best = string.Empty;
         float bestDistance = float.MaxValue;
 
@@ -215,7 +216,7 @@ public sealed class FinalRuleRelay : MonoBehaviour
             if (t == null || !t.isActiveAndEnabled) continue;
 
             Vector3 point = t.transform.position;
-            if (!SensingRules.InBeam(origin, forward, point)) continue;
+            if (!SensingRules.InBeam(origin, forward, point, range)) continue;
 
             float d = Vector3.Distance(origin, point);
             if (d >= bestDistance || !Visible(origin, point, t.transform, root)) continue;

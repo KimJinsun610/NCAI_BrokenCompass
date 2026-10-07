@@ -239,6 +239,8 @@ public sealed partial class CaptureDirector
     {
         DeathCutscene cs = Instantiate(prefab);
         cs.name = prefab.name;
+        // 58차(민: 「scream을 붙잡힘 장면으로 쓰자」): 청각 컷신의 소년이 Hit 소리에 맞춰 비명 지르며 덮쳐 온다 — 이 인스턴스의 바인딩만 바꾼다(Play 전).
+        bool scream = axis == FearAxis.Auditory && CutsceneScream.Attach(cs.gameObject);
         bool finished = false;
         cs.Finished += () =>
         {
@@ -253,7 +255,7 @@ public sealed partial class CaptureDirector
             yield break;
         }
 
-        LastScene = CaptureCastSO.Label(axis) + " · 컷신 " + prefab.name;
+        LastScene = CaptureCastSO.Label(axis) + " · 컷신 " + prefab.name + (scream ? " · 비명" : string.Empty);
         bool skippable = count >= 3;
         float t = 0f;
         while (!finished && t < 30f)

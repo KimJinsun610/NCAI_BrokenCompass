@@ -96,6 +96,7 @@ public sealed class DirectionStage : MonoBehaviour
     {
         s_active = this;
         if (GetComponent<RedLightSpot>() == null) gameObject.AddComponent<RedLightSpot>();   // 52차 C4 붉은 등
+        if (GetComponent<DutyStage>() == null) gameObject.AddComponent<DutyStage>();   // 54차 [근무 지시] 판정 지점
         EventBus.DirectionEmitted += OnDirection;
         EventBus.FinalRuleSettled += OnRuleSettled;
         EventBus.NightRestarted += OnRestarted;
@@ -171,6 +172,7 @@ public sealed class DirectionStage : MonoBehaviour
                 if (IsCorpse(e.SourceId))
                 {
                     // 51차 시체 낙하 전조: 떨어질 자리 위 천장에서 먼지 + 삐걱(대면 때 같은 자리로 떨어진다).
+                    // 60차: 어디서 떨어지든(교실 입구·사다리 방 안 — 방아쇠는 디렉터가 고른다) 늘 플레이어 바로 앞.
                     _corpseSpot = CorpseSpot(out _corpseCeiling);
                     _corpseSpotAt = Time.time;
                     CorpseDrop.Dust(new Vector3(_corpseSpot.x, _corpseCeiling, _corpseSpot.z), e.Duration);
@@ -245,6 +247,8 @@ public sealed class DirectionStage : MonoBehaviour
             CorpseDrop body = CorpseDrop.Spawn(spot, player, ceilingY, script.AnchorId);
             st.Objects.Add(body.gameObject);
             point = spot;
+            StartCoroutine(CorpseRoaches(spot, RoachDelay));   // 60차(민: 「시체 등장할 때 바닥에 바퀴벌레가 — 내가 올린 효과음과 함께」)
+            if (Verbose) Debug.Log("[Direction] 시체 낙하 — 플레이어 앞 " + spot.ToString("F1"));
         }
         else if (script.StandIn.Length > 0)
         {
@@ -254,6 +258,17 @@ public sealed class DirectionStage : MonoBehaviour
             if (cue == null) cue = go.AddComponent<DirectionCue>();
             cue.Play(new CueContext { Intensity = e.Intensity, Anchor = at, EncounterId = e.SourceId });
             st.Objects.Add(go);
+            if (EncounterImpact.HitsWhenSeen(e.SourceId))
+            {
+                // 60차: 도서관 조우(노란 얼굴·창밖 남자)는 마주치는 순간 점프스케어.
+                string hitId = e.SourceId;
+                SeenStinger.Attach(go, () =>
+                {
+                    EncounterImpact impact = Impact();
+                    if (impact != null) impact.Hit(hitId);
+                    if (Verbose) Debug.Log("[Direction] 마주침 — " + hitId);
+                });
+            }
 
             if (script.ExtraStandIn == EncounterScripts.CorpseStandIn)
             {
@@ -292,6 +307,43 @@ public sealed class DirectionStage : MonoBehaviour
     private Vector3 _corpseSpot;
     private float _corpseCeiling;
     private float _corpseSpotAt = -100f;
+    /// <summary>바퀴벌레 이펙트 대역(김진선님 벌레 떼를 감싼 것, 빌더가 만든다).</summary>
+    public const string CorpseRoachesId = "fx.corpse.roaches";
+
+    /// <summary>시체가 바닥에 닿을 즈음(초) 바퀴벌레가 기어 나온다.</summary>
+    public const float RoachDelay = 0.55f;
+
+    /// <summary>바퀴벌레가 쏟아지는 높이(m) — 바닥 바로 위.</summary>
+    public const float RoachDropHeight = 0.45f;
+
+    /// <summary>
+    /// 60차: 시체가 떨어진 바닥에서 바퀴벌레가 사방으로 기어 나온다(김진선님 BugSwarm 타임라인 — 천장이 아니라 바닥 바로 위에서 쏟아져 기어간다).
+    /// 시체 점프스케어 소리(민이 준 <c>stinger.corpse</c>)는 대면 때 이미 난다. 14초 뒤 스스로 지운다.
+    /// </summary>
+    private static IEnumerator CorpseRoaches(Vector3 floor, float delay)
+    {
+        if (delay > 0f) yield return new WaitForSeconds(delay);
+        GameObject prefab = Resources.Load<GameObject>("StandIns/" + CorpseRoachesId);
+        if (prefab == null) yield break;
+        GameObject fx = Instantiate(prefab, floor, Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f));
+        fx.name = "시체 바퀴벌레";
+        // 벌레 무리를 바닥 바로 위(0.45m)에 둔다 — 바닥에 쏟아져 닿자마자 사방으로 기어간다(기는 입자는 떨어진 벌레가 바닥에 닿을 때 생기는 하위 방출이라 떨어지는 줄기를 끌 수 없다).
+        foreach (Transform t in fx.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name == "Swarm") t.position = floor + Vector3.up * RoachDropHeight;
+        }
+
+        foreach (HorrorTriggerZone z in fx.GetComponentsInChildren<HorrorTriggerZone>(true))
+        {
+            z.enabled = false;
+            Collider c = z.GetComponent<Collider>();
+            if (c != null) c.enabled = false;
+        }
+
+        HorrorEvent he = fx.GetComponentInChildren<HorrorEvent>(true);
+        if (he != null) he.Play();   // 타임라인: 벌레 무리 켜기 + 기어가는 소리
+        Destroy(fx, 14f);
+    }
 
     private static bool IsCorpse(string encounterId)
     {
@@ -880,13 +932,29 @@ public sealed class DirectionStage : MonoBehaviour
         Camera cam = cctv != null ? cctv.ChannelCamera(cctv.CurrentChannel) : null;
         if (cam == null) return;
 
-        Vector3 fwd = cam.transform.forward;
-        fwd.y = 0f;
-        fwd = fwd.sqrMagnitude > 0.01f ? fwd.normalized : Vector3.forward;
-        Vector3 right = Vector3.Cross(Vector3.up, fwd);
-        // 52차(K1 원래 문구 「지나갈 때까지」): 화면을 가로지른다 — 안쪽 왼편에서 앞쪽 오른편으로, 걷지 않고 1.5초마다 0.7m 툭툭.
-        Vector3 from = FloorBelow(cam.transform.position + fwd * 6f - right * 2.2f);
-        Vector3 to = FloorBelow(cam.transform.position + fwd * 4.5f + right * 2.2f);
+        // 52차(K1 원래 문구 「지나갈 때까지」): 화면을 가로지른다 — 왼편에서 오른편으로, 걷지 않고 1.5초마다 0.7m 툭툭.
+        // 57차(민: 「화면 속 수칙을 마주했는데 CCTV 남자가 안 나왔다」): 카메라 높이에서 아래로 쏘면 천장 위(y 5.6~5.9)가 바닥으로 잡혔다 —
+        // 그 채널 카메라의 화면 아래쪽 격자로 레이를 쏴 실제로 보이는 바닥 두 점을 고른다.
+        Vector3 from = Vector3.zero, to = Vector3.zero;
+        bool hasFrom = false, hasTo = false;
+        float[] rows = { 0.25f, 0.35f, 0.15f, 0.45f };
+        float[] lefts = { 0.3f, 0.4f, 0.5f };
+        float[] rights = { 0.7f, 0.6f, 0.5f };
+        foreach (float vy in rows)
+        {
+            if (!hasFrom) foreach (float vx in lefts) if (CctvFloor(cam, vx, vy, out from)) { hasFrom = true; break; }
+            if (!hasTo) foreach (float vx in rights) if (CctvFloor(cam, vx, vy, out to)) { hasTo = true; break; }
+        }
+
+        if (!hasFrom && !hasTo)
+        {
+            Debug.LogWarning("[Direction] CCTV 사람: 채널 " + cctv.CurrentChannel + " 화면에 보이는 바닥을 찾지 못했다");
+            return;
+        }
+
+        if (!hasFrom) from = to;
+        if (!hasTo || (to - from).sqrMagnitude < 1f) to = from;   // 좁은 화면: 제자리에서 툭툭·올려다보기
+        if (Verbose) Debug.Log("[Direction] CCTV 사람 채널 " + cctv.CurrentChannel + " " + from.ToString("F1") + " → " + to.ToString("F1"));
         GameObject go = StandInFactory.Create("mob.blackman", from, cam.transform.position, string.Empty);
         CctvOnlyVisible only = go.AddComponent<CctvOnlyVisible>();
         only.Channel = cctv.CurrentChannel;
@@ -896,6 +964,18 @@ public sealed class DirectionStage : MonoBehaviour
         {
             if (only != null) only.enabled = false;
         });
+    }
+
+    /// <summary>CCTV 채널 카메라 화면의 한 점(뷰포트)에서 레이를 쏴 플레이어 발 높이의 바닥을 찾는다(57차).</summary>
+    private static bool CctvFloor(Camera cam, float vx, float vy, out Vector3 p)
+    {
+        p = Vector3.zero;
+        RaycastHit h;
+        if (!Physics.Raycast(cam.ViewportPointToRay(new Vector3(vx, vy, 0f)), out h, 25f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return false;
+        // 57차 플레이 점검: 플레이어 루트는 캡슐 가운데(바닥 + 0.85m)라 루트 높이와 견주면 모든 바닥이 떨어졌다 — 발밑 바닥 높이와 견준다.
+        if (h.normal.y < 0.7f || h.distance < 2.5f || Mathf.Abs(h.point.y - PlayerGroundY()) > 0.4f) return false;
+        p = h.point;
+        return true;
     }
 
     private void OnRuleCue(DirectionEvent e)
@@ -912,7 +992,7 @@ public sealed class DirectionStage : MonoBehaviour
                 SpaceId here = ClassroomHere();
                 LightGroup g = here != SpaceId.None ? ExactGroup(here) : Group(SpaceId.Classroom);
                 // 44차: 교실 등은 평소 꺼져 있다(RoomDarkness) — 어둠 속에 붉은 등이 확 들어오도록 세기 0.7 → 2.4배.
-                g.Tint(new Color(1f, 0.12f, 0.08f), 2.4f);
+                g.Tint(new Color(1f, 0.12f, 0.08f), 1.5f);   // 57차(민: 「붉은 조명 밝기 줄이기」): 2.4 → 1.5
                 st.Undo.Add(g.Untint);
                 break;
             }
@@ -991,8 +1071,26 @@ public sealed class DirectionStage : MonoBehaviour
 
     private void OnFake(DirectionEvent e)
     {
+        // 57차: 점검 대상을 보고 있으면(보고 준비) 가짜 놀람을 내지 않는다 — 놀람을 이상 소리로 착각해 오보(코어 FakeBlocked의 뒷받침).
+        if (InspectionSensor.Active != null && !string.IsNullOrEmpty(InspectionSensor.Active.Focus)) return;
+
+        if (e.SourceId == TensionDirector.FakeGlimpse)
+        {
+            DistantGlimpse.Play();
+            return;
+        }
+
+        // 57차(민: 「메탈 쾅은 굉장히 멀리서 들리는 듯이」): 사물함 쾅은 등 뒤 22m 남짓에서, 벽 너머처럼 먹먹하게 — 화면 암전도 없이.
+        if (e.SourceId == "fake.locker.rattle")
+        {
+            PlayFar(e.SourceId, 22f);
+            return;
+        }
+
         if (e.SourceId == "fake.flashlight.flicker")
         {
+            // 56차: 배터리가 반 아래면 가짜 끊김을 내지 않는다 — 배터리 탓으로 읽히면 놀라지 않는다(진짜 깜빡임은 30% 아래부터).
+            if (NightRun.Battery != null && NightRun.Battery.Charge < BatteryRules.FakeFlickerMinCharge) return;
             StartCoroutine(FlickerFlashlight());
             PlaySound(e.SourceId, PlayerFeet() + Vector3.up * 1.2f);   // 손전등 지지직(2026-10-04 사운드)
             return;
@@ -1005,7 +1103,43 @@ public sealed class DirectionStage : MonoBehaviour
             return;
         }
 
-        PlaySound(e.SourceId, PointOr(e.Point, 5f));
+        PlaySound(e.SourceId, AwayFromPlayer(9f));   // 57차: 발밑(e.Point)에서 울리면 너무 가깝다
+    }
+
+    /// <summary>플레이어 등 뒤쪽(±70°) <paramref name="dist"/>m 지점.</summary>
+    private static Vector3 AwayFromPlayer(float dist)
+    {
+        Transform root = PlayerRoot();
+        if (root == null) return Vector3.zero;
+        Vector3 back = -Vector3.ProjectOnPlane(root.forward, Vector3.up);
+        if (back.sqrMagnitude < 0.01f) back = Vector3.back;
+        Vector3 dir = Quaternion.Euler(0f, UnityEngine.Random.Range(-70f, 70f), 0f) * back.normalized;
+        return root.position + dir * dist + Vector3.up * 1.2f;
+    }
+
+    /// <summary>먼 소리(57차) — 저역만 남기고 복도 잔향을 걸어 벽 너머에서 들리게.</summary>
+    private static void PlayFar(string name, float dist)
+    {
+        float volume;
+        AudioClip clip = DirectionSoundTableSO.Find(name, out volume);
+        if (clip == null) return;
+        GameObject go = new GameObject("연출 소리(먼) " + clip.name);
+        go.transform.position = AwayFromPlayer(dist);
+        AudioSource s = go.AddComponent<AudioSource>();
+        s.playOnAwake = false;
+        s.clip = clip;
+        s.volume = volume;
+        s.spatialBlend = 1f;
+        s.rolloffMode = AudioRolloffMode.Logarithmic;
+        s.minDistance = 3f;
+        s.maxDistance = 45f;
+        s.dopplerLevel = 0f;
+        s.priority = 16;
+        go.AddComponent<AudioLowPassFilter>().cutoffFrequency = 900f;
+        go.AddComponent<AudioReverbFilter>().reverbPreset = AudioReverbPreset.Hallway;
+        s.Play();
+        Destroy(go, clip.length + 2.5f);
+        if (Verbose) Debug.Log("[Direction] 먼 소리 " + name + " ← " + clip.name + " @" + go.transform.position.ToString("F1"));
     }
 
     private IEnumerator FlickerFlashlight()
@@ -1090,6 +1224,14 @@ public sealed class DirectionStage : MonoBehaviour
                 else cue.SetPhase(phase);
             }
 
+            // 58차(민: 문·창문의 오리는 사라질 때 빠르게 걸어 나가며): 결과 단계면 걸어 나가고 스스로 지운다. 중단(붙잡힘·04:00)은 바로 지운다.
+            StandInExit exit = phase == DirectionPhase.Result ? go.GetComponent<StandInExit>() : null;
+            if (exit != null)
+            {
+                exit.Leave();
+                continue;
+            }
+
             Destroy(go);
         }
 
@@ -1161,6 +1303,18 @@ public sealed class DirectionStage : MonoBehaviour
     {
         Transform root = PlayerRoot();
         return root != null ? root.position : Vector3.zero;
+    }
+
+    /// <summary>
+    /// 플레이어가 선 바닥의 높이(57차). <see cref="PlayerFeet"/>(루트)는 캡슐 가운데라 실제 발보다 0.85m 위다 — 루트에서 아래로 쏜 첫 바닥, 없으면 루트 − 0.85.
+    /// </summary>
+    public static float PlayerGroundY()
+    {
+        Transform root = PlayerRoot();
+        if (root == null) return 0f;
+        RaycastHit hit;
+        if (Physics.Raycast(root.position + Vector3.up * 0.1f, Vector3.down, out hit, 3f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore) && hit.normal.y > 0.5f) return hit.point.y;
+        return root.position.y - 0.85f;
     }
 
     /// <summary>디렉터가 준 자리. 모르면(0) 플레이어 앞 <paramref name="ahead"/>m.</summary>

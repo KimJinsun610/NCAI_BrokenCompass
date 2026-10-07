@@ -363,6 +363,20 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         });
         GUILayout.EndHorizontal();
 
+        FlashlightBattery battery = NightRun.Battery;
+        if (battery != null)
+        {
+            // 56차: 배터리 — 충전량·예비를 바로 정해 깜빡임·5m 판정·다 닳음·갈기를 볼 수 있게.
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(battery.ToString(), GUILayout.Width(150f));
+            if (GUILayout.Button("100%")) Later(() => battery.DebugSet(1f, battery.Spare));
+            if (GUILayout.Button("25%")) Later(() => battery.DebugSet(0.25f, battery.Spare));
+            if (GUILayout.Button("8%")) Later(() => battery.DebugSet(0.08f, battery.Spare));
+            if (GUILayout.Button("0%")) Later(() => battery.DebugSet(0f, battery.Spare));
+            if (GUILayout.Button("+예비")) Later(() => battery.DebugSet(battery.Charge, battery.Spare + 1));
+            GUILayout.EndHorizontal();
+        }
+
         GUILayout.Label("<b>이동</b>", _rich);
         GUILayout.BeginHorizontal();
         for (int i = 0; i < TeleportSpaces.Length; i++)

@@ -52,6 +52,7 @@ namespace NightDuty
     {
         private readonly List<SlotEncounter> _slots;
         private readonly List<RuleDef> _deck;
+        private readonly List<EncounterDef> _extras;
 
         /// <summary>일차.</summary>
         public readonly int Day;
@@ -60,10 +61,11 @@ namespace NightDuty
         public readonly string Report;
 
         /// <summary>만든다.</summary>
-        public NightProgram(int day, IEnumerable<SlotEncounter> slots, IEnumerable<RuleDef> deck, string report)
+        public NightProgram(int day, IEnumerable<SlotEncounter> slots, IEnumerable<RuleDef> deck, string report, IEnumerable<EncounterDef> extras = null)
         {
             Day = day;
             _slots = slots != null ? new List<SlotEncounter>(slots) : new List<SlotEncounter>();
+            _extras = extras != null ? new List<EncounterDef>(extras) : new List<EncounterDef>();
             _deck = deck != null ? new List<RuleDef>(deck) : new List<RuleDef>();
             Report = report ?? string.Empty;
         }
@@ -78,6 +80,15 @@ namespace NightDuty
         public IReadOnlyList<SlotEncounter> Slots
         {
             get { return _slots; }
+        }
+
+        /// <summary>
+        /// 59차 — 슬롯 밖에서 거는 조우(겹침 조우). 지금은 시체 낙하(<see cref="ProgramCatalog.CeilingLegs"/>) 하나: 회차에 한 번, 2·3일차 중 하루(<see cref="ProgramDirector.CorpseDay"/>)
+        /// 사다리 점검(C-3) 중에 떨어진다. 슬롯·예산·같은 몹 제외를 보지 않고 다른 조우(앉은 소년 등)와 겹쳐도 된다.
+        /// </summary>
+        public IReadOnlyList<EncounterDef> Extras
+        {
+            get { return _extras; }
         }
 
         /// <summary>수칙 덱(태블릿 표시 순).</summary>
@@ -103,6 +114,11 @@ namespace NightDuty
             for (int i = 0; i < _slots.Count; i++)
             {
                 if (_slots[i].Encounter.Id == encounterId) return true;
+            }
+
+            for (int i = 0; i < _extras.Count; i++)
+            {
+                if (_extras[i].Id == encounterId) return true;
             }
 
             return false;
@@ -136,6 +152,7 @@ namespace NightDuty
                 sb.Append(_slots[i]);
             }
 
+            for (int i = 0; i < _extras.Count; i++) sb.Append(" + 겹침:").Append(_extras[i].Id);
             sb.Append("] 덱 [");
             for (int i = 0; i < _deck.Count; i++)
             {
@@ -188,11 +205,18 @@ namespace NightDuty
     /// </summary>
     public sealed class ProgramDirector
     {
+        /// <summary>하루 수칙 수(57차, 민: 「수칙은 5~6개로 고정하는 게 좋을 듯」 — 전에는 1일차 4장, 2일차부터 7~8장).</summary>
+        public const int RulesPerDay = 6;
+
+        /// <summary>1일차 수칙 후보(57차, 민: 「1~2일차 수칙이 너무 풀이 좁다」) — 조우에 묶이지 않은 수칙 중 1일차 점검 공간(복도·교실·과학실·경비실)의 것. S1·G1은 고정.</summary>
+        public static readonly string[] Day1Pool = { "H2", "C4", "S2", "K2", "K3" };   // 60차: C1(판서) 폐기
+
         private readonly Random _rng;
         private readonly HashSet<string> _seen = new HashSet<string>(StringComparer.Ordinal);
         private readonly HashSet<string> _reserved = new HashSet<string>(StringComparer.Ordinal);
         private int _reverseAssigned;
         private InspectionPlan _planForFill;
+        private int _corpseDay;
 
         private static bool PlanHas(InspectionPlan plan, string itemId)
         {
@@ -203,6 +227,26 @@ namespace NightDuty
         public ProgramDirector(Random rng = null)
         {
             _rng = rng ?? new Random();
+            _corpseDay = RollCorpseDay();
+        }
+
+        /// <summary>
+        /// 시체 낙하(겹침 조우)가 나오는 그 회차의 하루 — 2일차 또는 3일차 중 하나, 회차에 딱 한 번(59차 민: 「무서운 연출은 똑같은 게 반복되면 재미없다 — 2~3일차에 한 번만」).
+        /// </summary>
+        public int CorpseDay
+        {
+            get { return _corpseDay; }
+        }
+
+        /// <summary>시체 낙하가 나올 수 있는 날(포함).</summary>
+        public const int CorpseDayFrom = 2;
+
+        /// <summary>시체 낙하가 나올 수 있는 마지막 날(포함).</summary>
+        public const int CorpseDayTo = 3;
+
+        private int RollCorpseDay()
+        {
+            return CorpseDayFrom + _rng.Next(CorpseDayTo - CorpseDayFrom + 1);
         }
 
         /// <summary>회차에 이미 편성한 조우.</summary>
@@ -229,6 +273,7 @@ namespace NightDuty
             _seen.Clear();
             _reserved.Clear();
             _reverseAssigned = 0;
+            _corpseDay = RollCorpseDay();
         }
 
         /// <summary>
@@ -266,15 +311,36 @@ namespace NightDuty
         {
             // 2026-10-01 사용자 결정: 몹은 2일차부터 — 1일차에는 조우가 없다(긴장의 기승전결).
             // 그래서 조우에 묶인 수칙(H1 사람 나무·C3 소년)도 쓰지 않고 혼자 서는 수칙만 둔다.
-            List<RuleDef> deck = new List<RuleDef>
+            // 57차: 고정 4장(H2·C4·S1·G1) → S1·G1 고정 + 후보(Day1Pool)에서 넷, 모두 여섯 장. 한 공간 두 장까지, 경비실 한 장, 손전등 한도.
+            List<RuleDef> picked = new List<RuleDef> { ProgramCatalog.Rule("S1") };   // 51차: S3(모형을 비추지 마)는 2일차부터 — 1일차는 모형 위치를 익히는 날
+            List<string> pool = new List<string>(Day1Pool);
+            while (picked.Count < RulesPerDay - 1 && pool.Count > 0)
             {
-                ProgramCatalog.Rule("H2"),
-                ProgramCatalog.Rule("C4"),
-                ProgramCatalog.Rule("S1"),   // 51차: S3(모형을 비추지 마)는 2일차부터 — 1일차는 모형 위치를 익히는 날
-                ProgramCatalog.Rule("G1")
-            };
+                string id = pool[_rng.Next(pool.Count)];
+                pool.Remove(id);
+                RuleDef r = ProgramCatalog.Rule(id);
+                if (r == null) continue;
+                int sameSpace = 0, flash = 0;
+                for (int i = 0; i < picked.Count; i++)
+                {
+                    if (picked[i].Space == r.Space) sameSpace++;
+                    if (picked[i].UsesFlashlight) flash++;
+                }
 
-            return new NightProgram(1, new List<SlotEncounter>(), deck, "1일차 고정 덱(조우 없음)");
+                if (sameSpace >= (r.Space == SpaceId.SecurityRoom ? 1 : 2)) continue;
+                if (r.UsesFlashlight && flash >= ProgramCatalog.FlashlightPerDay) continue;
+                picked.Add(r);
+            }
+
+            List<RuleDef> deck = new List<RuleDef>();
+            for (int s = 0; s < ProgramCatalog.RuleSpaces.Length; s++)
+            {
+                for (int i = 0; i < picked.Count; i++) if (picked[i].Space == ProgramCatalog.RuleSpaces[s]) deck.Add(picked[i]);
+            }
+
+            for (int i = 0; i < picked.Count; i++) if (picked[i].Space == SpaceId.SecurityRoom) deck.Add(picked[i]);
+            deck.Add(ProgramCatalog.Rule("G1"));
+            return new NightProgram(1, new List<SlotEncounter>(), deck, "1일차 덱(조우 없음)");
         }
 
         // ── 2일차부터 ──────────────────────────────────────────
@@ -403,10 +469,46 @@ namespace NightDuty
             for (int s = 0; s < ProgramCatalog.RuleSpaces.Length; s++) deck.AddRange(d.In(ProgramCatalog.RuleSpaces[s]));
             deck.AddRange(d.In(SpaceId.SecurityRoom));
             deck.Add(ProgramCatalog.Rule("G1"));
+            TrimDeck(d, deck, LowestShown(shown));
 
             d.Slots.Sort((a, b) => a.Slot.CompareTo(b.Slot));
-            NightProgram program = new NightProgram(day, d.Slots, deck, null);
-            return new NightProgram(day, d.Slots, deck, d.Note.Length > 0 ? d.Note + program.ToString() : program.ToString());
+            List<EncounterDef> extras = new List<EncounterDef>();
+            if (day == _corpseDay) extras.Add(ProgramCatalog.Encounter(ProgramCatalog.CeilingLegs));   // 59차: 시체 낙하는 회차에 한 번 — 2·3일차 중 고른 하루(겹침 조우)
+            NightProgram program = new NightProgram(day, d.Slots, deck, null, extras);
+            return new NightProgram(day, d.Slots, deck, d.Note.Length > 0 ? d.Note + program.ToString() : program.ToString(), extras);
+        }
+
+        /// <summary>
+        /// 57차: 하루 <see cref="RulesPerDay"/>장으로 줄인다 — 그날 점검이 없는 공간의 채움 → 다른 채움 → 묶이지 않은 경비실 순으로 뺀다(G1은 남긴다).
+        /// 조우·강제 수칙(<c>Locked</c>)과 가장 낮은 축의 마지막 한 장은 빼지 않는다.
+        /// </summary>
+        private void TrimDeck(Draft d, List<RuleDef> deck, FearAxis lowest)
+        {
+            while (deck.Count > RulesPerDay)
+            {
+                RuleDef drop = null;   // G1(복도에서 뛰지 마십시오)은 매일 남긴다 — 달리기 판정·시험이 기대는 공통 수칙
+                for (int pass = 0; pass < 2 && drop == null; pass++)
+                {
+                    for (int i = deck.Count - 1; i >= 0 && drop == null; i--)
+                    {
+                        RuleDef r = deck[i];
+                        if (d.Locked.Contains(r.Id) || r.Space == SpaceId.SecurityRoom || r.Space == SpaceId.None) continue;
+                        if (r.HasAxis && r.Axis == lowest && deck.FindAll(x => x.HasAxis && x.Axis == lowest).Count <= 1) continue;
+                        if (pass == 0 && CountIn(_planForFill, r.Space) > 0) continue;   // 먼저 그날 가지 않는 공간의 수칙
+                        drop = r;
+                    }
+                }
+
+                if (drop == null)
+                {
+                    RuleDef k = deck.Find(r => r.Space == SpaceId.SecurityRoom && !d.Locked.Contains(r.Id));
+                    drop = k;
+                }
+
+                if (drop == null) break;
+                deck.Remove(drop);
+                d.Note.Append(drop.Id).Append(" 뺌(하루 ").Append(RulesPerDay).Append("장). ");
+            }
         }
 
         /// <summary>보너스 슬롯 C: 3일차부터, 밤 시작에 가장 높은 감각 축의 생존 수치가 49 이하일 때(긴장 디렉터 「잘하는 중」).</summary>
@@ -429,6 +531,7 @@ namespace NightDuty
             {
                 EncounterDef e = all[i];
                 if (Chosen(d, e.Id)) continue;
+                if (e.Id == ProgramCatalog.CeilingLegs) continue;   // 59차: 시체 낙하는 슬롯 밖 겹침 조우(Extras)로 늘 건다
                 if (!e.Satisfied(request.Shown)) continue;
                 if (!SpecialOk(e, day, request)) continue;
                 if (prev != null && prev.Encounter.Mob == e.Mob) continue;
@@ -620,6 +723,7 @@ namespace NightDuty
             {
                 RuleDef r = inSpace[i];
                 if (!r.IsStandalone || !r.HasAxis) continue;
+                if (ProgramCatalog.IsRetired(r.Id)) continue;   // 60차: 폐기한 수칙(C1 판서)
                 if (r.UsesFlashlight && flash >= ProgramCatalog.FlashlightPerDay) continue;
                 if (r.Id == "S3" && PlanHas(_planForFill, "S-1")) continue;   // 51차: 모형을 비추지 말라는 날에 모형 점검은 없다
                 if (onlyAxis.HasValue && r.Axis != onlyAxis.Value) continue;

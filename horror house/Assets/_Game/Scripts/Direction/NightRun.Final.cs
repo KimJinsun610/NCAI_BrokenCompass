@@ -71,6 +71,7 @@ namespace NightDuty
 
             EventBus.RaiseFinalRuleSettled(result);
             ParadoxSettled(result);
+            DutiesRuleSettled(result);   // 54차: 지시는 수칙 위반을 면책하지 않는다
         }
 
         private static void OnReverseReportArmed(string itemId)

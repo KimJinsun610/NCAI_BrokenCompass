@@ -151,6 +151,16 @@ public sealed class PlayerInteractor : MonoBehaviour
         }
     }
 
+    private static int s_suppressFrame = -1;
+
+    /// <summary>
+    /// 이 프레임에는 문을 다루지 않는다(56차 — 열린 서랍 안의 배터리를 겨눈 프레임에 [E]가 서랍까지 닫지 않게, <see cref="BatteryStash"/>가 먼저 부른다).
+    /// </summary>
+    public static void SuppressThisFrame()
+    {
+        s_suppressFrame = Time.frameCount;
+    }
+
     // ─────────────────────────────── 매 프레임 ───────────────────────────────
 
     private void Update()
@@ -163,7 +173,7 @@ public sealed class PlayerInteractor : MonoBehaviour
         _actionable = false;
         _kind = DoorPolicySO.Kind.Sealed;
 
-        if (!CanInteract())
+        if (!CanInteract() || s_suppressFrame == Time.frameCount)
         {
             return;
         }
@@ -334,7 +344,23 @@ public sealed class PlayerInteractor : MonoBehaviour
     {
         if (!door.IsValid || door.Owner == null) return false;
         if (!door.Owner.name.StartsWith("Locker")) return false;
+        if (IsCorridorLocker(door.Owner)) return false;   // 60차: 복도 관물대는 늘 열린다(배터리 칸)
         return !s_unlockedLockers.Contains(door.Owner);
+    }
+
+    /// <summary>
+    /// 복도의 관물대(이름이 <c>Locker</c>로 시작하고 <c>Corridors</c> 아래) — 60차(민: 「복도에 있는 관물대의 잠금들을 풀고, 배터리 수급 위치가 거기서도」)부터 잠기지 않는다.
+    /// 라커룸 사물함은 그대로 잠겨 있고 밤마다 몇 개만 풀린다(<see cref="BatteryRules.UnlockedLockers"/>).
+    /// </summary>
+    public static bool IsCorridorLocker(Component owner)
+    {
+        if (owner == null || !owner.name.StartsWith("Locker")) return false;
+        for (Transform t = owner.transform.parent; t != null; t = t.parent)
+        {
+            if (t.name == "Corridors") return true;
+        }
+
+        return false;
     }
 
     /// <summary>그 사물함(벤더 문 컴포넌트가 붙은 오브젝트)을 풀거나 다시 잠근다.</summary>

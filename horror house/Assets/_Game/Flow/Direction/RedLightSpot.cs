@@ -156,28 +156,15 @@ public sealed class RedLightSpot : MonoBehaviour
         _light = lightGo.AddComponent<Light>();
         _light.type = LightType.Point;
         _light.color = new Color(1f, 0.1f, 0.06f);
-        _light.range = 6.5f;
-        _base = 3.2f;
+        // 53차 플레이 점검: 6.5m · 3.2는 복도 한 토막을 통째로 물들여 「붉은 불빛 아래」가 어디인지 흐려졌다 — 등 밑 웅덩이로 줄인다.
+        _light.range = 4.2f;
+        _base = 0.85f;   // 57차(민: 「붉은 조명은 밝기를 좀 줄여야」): 1.5 → 0.85
         _light.intensity = _base;
         _light.shadows = LightShadows.None;
         _light.renderMode = LightRenderMode.ForcePixel;
 
-        // 등 아랫면을 붉게 덮는 얇은 판(멀리서도 「붉은 등」으로 보이게).
-        GameObject glow = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        glow.name = "붉은 등 판";
-        Collider gc = glow.GetComponent<Collider>();
-        if (gc != null) Destroy(gc);
-        glow.transform.SetParent(_root.transform, false);
-        glow.transform.localScale = new Vector3(Mathf.Max(0.2f, lb.size.x * 0.95f), 0.02f, Mathf.Max(0.2f, lb.size.z * 0.95f));
-        Shader sh = Shader.Find("Universal Render Pipeline/Unlit");
-        if (sh == null) sh = Shader.Find("Unlit/Color");
-        Material m = new Material(sh);
-        Color red = new Color(1f, 0.12f, 0.08f);
-        if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", red);
-        if (m.HasProperty("_Color")) m.SetColor("_Color", red);
-        Renderer gr = glow.GetComponent<Renderer>();
-        gr.sharedMaterial = m;
-        gr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        // 53차(민 스크린샷: 매달린 등 아래 붉은 판이 허공에 떠 있었다): 판을 따로 세우지 않고 등 자체(LOD 형제 포함)의 재질을 붉게 빛나게 바꾼다.
+        TintLamp(lamp);
 
         // 바닥: 등 바로 밑에서 아래로(천장 판을 바닥으로 잡지 않게 — 등 아래 0.3m에서 쏜다).
         float floor = under.y - 3f;
@@ -198,8 +185,58 @@ public sealed class RedLightSpot : MonoBehaviour
         Debug.Log("[RedLightSpot] 오늘 붉은 등 — " + lamp.name + " " + under.ToString("F1") + " (후보 " + lamps.Count + ")");
     }
 
+    private readonly List<KeyValuePair<Renderer, Material[]>> _tinted = new List<KeyValuePair<Renderer, Material[]>>();
+
+    private void TintLamp(Renderer lamp)
+    {
+        List<Renderer> rs = new List<Renderer>();
+        LODGroup lod = lamp.GetComponentInParent<LODGroup>();
+        if (lod != null)
+        {
+            foreach (LOD l in lod.GetLODs())
+            {
+                foreach (Renderer r in l.renderers)
+                {
+                    if (r != null && !rs.Contains(r)) rs.Add(r);
+                }
+            }
+        }
+
+        if (!rs.Contains(lamp)) rs.Add(lamp);
+        Color red = new Color(1f, 0.1f, 0.06f);
+        foreach (Renderer r in rs)
+        {
+            Material[] old = r.sharedMaterials;
+            Material[] neo = new Material[old.Length];
+            for (int i = 0; i < old.Length; i++)
+            {
+                if (old[i] == null) continue;
+                Material m = new Material(old[i]);
+                m.name = old[i].name + " (붉은 등)";
+                if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", new Color(0.35f, 0.04f, 0.03f));
+                if (m.HasProperty("_EmissionColor"))
+                {
+                    m.EnableKeyword("_EMISSION");
+                    m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                    m.SetColor("_EmissionColor", red * 1.4f);   // 57차: 3 → 1.4
+                }
+
+                neo[i] = m;
+            }
+
+            _tinted.Add(new KeyValuePair<Renderer, Material[]>(r, old));
+            r.sharedMaterials = neo;
+        }
+    }
+
     private void Clear()
     {
+        for (int i = 0; i < _tinted.Count; i++)
+        {
+            if (_tinted[i].Key != null) _tinted[i].Key.sharedMaterials = _tinted[i].Value;
+        }
+
+        _tinted.Clear();
         if (_inside) NightRun.Send(JudgeSignal.CueEnd(FinalCues.RedLight));
         _inside = false;
         if (_root != null) Destroy(_root);

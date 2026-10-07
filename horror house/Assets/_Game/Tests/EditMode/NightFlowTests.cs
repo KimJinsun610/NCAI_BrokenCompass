@@ -39,17 +39,17 @@ namespace NightDuty.Tests
         }
     }
 
-    /// <summary>밤 시계 표(실시간 15분 = 00:00~04:00).</summary>
+    /// <summary>밤 시계 표(실시간 10분 = 00:00~04:00, 59차 — 전에는 15분).</summary>
     public sealed class NightClockTests
     {
         [Test]
-        public void 실시간15분이_게임240분이다()
+        public void 실시간10분이_게임240분이다()
         {
-            Assert.AreEqual(16f, NightClock.GameSecondsPerRealSecond, 0.0001f);
-            Assert.AreEqual(900f, NightClock.RealSecondsAt(NightClock.ShiftEnd), 0.001f);
-            Assert.AreEqual(60f, NightClock.RealSecondsAt(NightClock.JudgingStart), 0.001f, "출근은 실시간 1분");
-            Assert.AreEqual(225f, NightClock.RealSecondsAt(NightClock.Call1), 0.001f, "호출 1은 실시간 3:45");
-            Assert.AreEqual(510f, NightClock.RealSecondsAt(NightClock.Call2), 0.001f, "호출 2는 실시간 8:30");
+            Assert.AreEqual(24f, NightClock.GameSecondsPerRealSecond, 0.0001f);
+            Assert.AreEqual(600f, NightClock.RealSecondsAt(NightClock.ShiftEnd), 0.001f);
+            Assert.AreEqual(40f, NightClock.RealSecondsAt(NightClock.JudgingStart), 0.001f, "출근은 실시간 40초");
+            Assert.AreEqual(150f, NightClock.RealSecondsAt(NightClock.Call1), 0.001f, "호출 1은 실시간 2:30");
+            Assert.AreEqual(340f, NightClock.RealSecondsAt(NightClock.Call2), 0.001f, "호출 2는 실시간 5:40");
         }
 
         [TestCase(0f, NightPhase.Arrival)]

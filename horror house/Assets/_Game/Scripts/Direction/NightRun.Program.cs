@@ -68,6 +68,7 @@ namespace NightDuty
             ResetFinale(clearSwitches);
             ResetParadox(clearSwitches);
             ResetUnavoidable();
+            ResetBattery(clearSwitches);
             _programDirector = new ProgramDirector();
             _program = NightProgram.Empty(0);
             DisposeFinalRules();

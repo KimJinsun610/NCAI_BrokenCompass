@@ -26,7 +26,10 @@ public sealed class InspectionAnomalies : MonoBehaviour
     public static bool PhotosensitiveSafe;
 
     /// <summary>빛 이상의 후광 링(최종 기획서 접근성: 색과 함께 정적인 모양 단서).</summary>
-    public static bool HaloRing = true;
+    public static bool HaloRing = false;   // 53차 민(C-2 램프 스크린샷): 「UI처럼 보인다」 — 빛 이상 후광 링을 모두 끈다(49차 S-2에 이어)
+
+    /// <summary>[빛] 이상의 세기 배수(53차 민: 「빛과 관련된 점검 물품들은 빛이 아주 약하게」).</summary>
+    public static float LightAnomalyScale = 0.3f;
 
     private static readonly float[] SpreadWidthByBand = { 0f, 0.6f, 0.45f, 1.2f, 2.4f };
 
@@ -334,7 +337,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
     private Look Build(string itemId, Band band)
     {
         InspectionItem item = InspectionCatalog.Find(itemId);
-        if (!AnomalyLook.HasLook(item)) return null;
+        // 57차: S-3 개수대는 [소리] 틀이지만 물줄기도 보인다(민: 「시각적으로 확인할 수 있게」) — 판정·HasLook은 그대로.
+        if (!AnomalyLook.HasLook(item) && itemId != FaucetItem) return null;
 
         Look look = new Look { ItemId = itemId, Band = band };
         if (itemId == "K-1")
@@ -359,7 +363,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
             case "H-1":
             {
                 Vector3 at = new Vector3(b.center.x, b.max.y - 0.1f, b.center.z) + Flat(prop.forward) * (b.extents.z + 0.015f);
-                Glow(look, at, new Color(0.45f, 1f, 0.55f), 0.45f, 0.5f * glow, 0.045f);
+                // 53차 플레이 점검: 범위 0.3m 점광원은 벽에 테두리가 또렷한 초록 원판을 그렸다(「UI 같은 원」) — 범위를 넓히고 세기를 1/10로 해 번지게.
+                Glow(look, at, new Color(0.45f, 1f, 0.55f), 1.4f, 0.05f * glow, 0.045f);
                 Halo(look, b, new Color(0.5f, 1f, 0.6f));
                 break;
             }
@@ -374,8 +379,9 @@ public sealed class InspectionAnomalies : MonoBehaviour
             {
                 // 49차: 후광 링을 뺐다(민: 「UI스러운 원」) — 바닥 조명이 실험대를 조금 더 넓게 비추고, 접안렌즈 끝에 작은 빛점 하나.
                 Color cold = new Color(0.82f, 0.9f, 1f);
-                Vector3 at = new Vector3(b.center.x, b.min.y + 0.1f, b.center.z);
-                Glow(look, at, cold, 1.25f, 0.9f * glow, 0.04f);   // 43차: 3구간에서 하얗게 날아갔다 — 세기는 그대로 두고 범위만 넓힌다
+                // 53차 플레이 점검: 빛을 현미경 바닥 안쪽에 두니 몸체가 0.1m 거리에서 하얗게 타 보였다 — 몸체 옆 0.15m · 재물대 높이로 빼고 세기를 1/4로.
+                Vector3 at = new Vector3(b.center.x, b.min.y + b.size.y * 0.3f, b.center.z) + Flat(prop.forward) * 0.15f;
+                Glow(look, at, cold, 1.25f, 0.22f * glow, 0.04f);
                 Card(look, "접안렌즈 빛", Dot(), new Vector3(b.center.x, b.max.y - 0.02f, b.center.z), new Vector2(0.025f, 0.025f), new Color(cold.r, cold.g, cold.b, 0.85f), 0.02f);
                 break;
             }
@@ -410,6 +416,9 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 Water(look, prop, b, band, Flat(prop.forward), new Color(0.03f, 0.028f, 0.02f, 0.82f), 0.3f, true);
                 Hair(look, prop, b, band);
                 break;
+            case FaucetItem:
+                Faucet(look, prop, jt.transform, b, band);   // 57차: 잠겼어야 할 수도에서 물이 떨어진다
+                break;
             case "C-3":
                 ok = HideProp(look, prop, jt.transform);   // 51차: 사다리가 없다(점검 기준점만 남는다)
                 break;
@@ -425,6 +434,38 @@ public sealed class InspectionAnomalies : MonoBehaviour
         }
 
         return look;
+    }
+
+    /// <summary>[소리] 틀이지만 눈에 보이는 물도 세우는 항목(57차).</summary>
+    public const string FaucetItem = "S-3";
+
+    /// <summary>과학실 개수대(Laboratory_Sink) 수도꼭지 입 — 소품 로컬 좌표(모형 축척 77.9·x 270°). 57차 레이 측정: 월드 (51.30, 2.40, 40.465).</summary>
+    private static readonly Vector3 FaucetMouthLocal = new Vector3(-0.00013f, 0.00096f, 0.01155f);
+
+    /// <summary>
+    /// S-3 물 — 수도꼭지 입에서 개수대 바닥까지 물방울(구간 1)·물줄기(구간 2+)·파문(<see cref="FaucetWater"/>).
+    /// 입은 소품 로컬 좌표, 소품 크기가 바뀌어 상자 밖이면 상자 윗부분 가운데. 바닥은 입 아래로 쏜 레이가 맞는 그 소품의 면.
+    /// </summary>
+    private static void Faucet(Look look, Transform prop, Transform inspect, Bounds b, Band band)
+    {
+        Vector3 mouth = prop.TransformPoint(FaucetMouthLocal);
+        Bounds grown = b;
+        grown.Expand(0.05f);
+        if (!grown.Contains(mouth)) mouth = new Vector3(b.center.x, b.min.y + b.size.y * 0.88f, b.center.z);
+
+        float basin = mouth.y - 0.34f;
+        float best = float.MaxValue;
+        foreach (RaycastHit h in Physics.RaycastAll(mouth + Vector3.down * 0.02f, Vector3.down, 1.2f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            if (h.collider == null || h.collider.transform.IsChildOf(inspect) || !h.collider.transform.IsChildOf(prop)) continue;
+            if (h.distance < best)
+            {
+                best = h.distance;
+                basin = h.point.y;
+            }
+        }
+
+        look.Objects.Add(FaucetWater.Create("이상 " + look.ItemId + " 물", mouth, basin, Mathf.Max(1, (int)band), Ring(), Dot()));
     }
 
     /// <summary>[옮김·없음] 소품을 통째로 감춘다 — 렌더러·콜라이더를 끄고(점검 기준점 아래는 남김) 거둘 때 되돌린다.</summary>
@@ -462,14 +503,14 @@ public sealed class InspectionAnomalies : MonoBehaviour
         Light l = go.AddComponent<Light>();
         l.type = LightType.Point;
         l.color = color;
-        l.range = range;
-        l.intensity = intensity;
+        l.range = range * Mathf.Lerp(1f, LightAnomalyScale, 0.5f);
+        l.intensity = intensity * LightAnomalyScale;
         l.shadows = LightShadows.None;
         l.renderMode = LightRenderMode.ForcePixel;
         look.Objects.Add(go);
         if (dotSize > 0f)
         {
-            Renderer dot = Card(look, "빛점", Dot(), at, new Vector2(dotSize, dotSize), new Color(color.r, color.g, color.b, 0.95f), 0.03f);
+            Renderer dot = Card(look, "빛점", Dot(), at, new Vector2(dotSize * 0.7f, dotSize * 0.7f), new Color(color.r, color.g, color.b, 0.55f), 0.03f);   // 53차: 빛점도 작고 흐리게
         }
 
         return l;
@@ -489,9 +530,10 @@ public sealed class InspectionAnomalies : MonoBehaviour
         Vector3 fwd = Flat(prop.forward);
         Vector3 at = new Vector3(b.center.x, b.max.y + 0.14f, b.center.z) + fwd * 0.07f;
         Color cold = new Color(0.86f, 0.95f, 1f);
-        Light l = Glow(look, at + fwd * 0.25f, cold, 2.2f, 0.9f * glow, 0f);
+        // 53차 플레이 점검: 거울 위 벽이 통째로 하얗게 씻겼다 — 세기 1/3, 범위는 조금 넓혀 가장자리를 부드럽게.
+        Light l = Glow(look, at + fwd * 0.25f, cold, 2.6f, 0.3f * glow, 0f);
         float width = Mathf.Max(0.3f, Mathf.Max(b.size.x, b.size.z) * 0.85f);
-        Renderer tube = Card(look, "형광등", Bar(), at, new Vector2(width, 0.05f), new Color(cold.r, cold.g, cold.b, 0.95f), -1f);
+        Renderer tube = Card(look, "형광등", Bar(), at, new Vector2(width, 0.05f), new Color(cold.r, cold.g, cold.b, 0.6f), -1f);
         tube.transform.rotation = Quaternion.LookRotation(-fwd, Vector3.up);
         look.Flickers.Add(new Flicker
         {
@@ -558,7 +600,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
         l.spotAngle = 62f;
         l.innerSpotAngle = 28f;
         l.range = 7f;
-        l.intensity = 6f * glow;
+        l.intensity = 6f * glow * Mathf.Lerp(1f, LightAnomalyScale, 0.5f);   // 53차: 달빛도 약하게
         l.shadows = LightShadows.None;
         l.renderMode = LightRenderMode.ForcePixel;
         look.Objects.Add(moon);

@@ -321,6 +321,12 @@ namespace NightDuty
 
                 // 50차: 점검 순차 지시기 — 조우 슬롯을 보고 호출 1에 아낄 공간을 정한다.
                 BeginOrders(plannedToday);
+
+                // 54차: [근무 지시] — 점검 공백을 걷고·닫고·끄고·적는 업무로 메운다.
+                BeginDuties();
+
+                // 56차: 손전등 배터리 — 밤 시작 100%·예비 0, 칸 자리는 화면 쪽이 씬의 칸으로 채운다.
+                BeginBattery();
             }
 
             // 재시작한 밤은 덱·점검을 다시 뽑지 않는다 — 이상 배정·덱·조우·역설 편성은 밤 시작에 확정된다(2026-09-30 최종 기획서).
@@ -368,6 +374,9 @@ namespace NightDuty
             List<ISnapshotable> parts = new List<ISnapshotable> { Board };
             if (_finalBook != null) parts.Add(_finalBook);
             if (_orders != null) parts.Add(_orders);
+            if (_duties != null) parts.Add(_duties);
+            if (_battery != null) parts.Add(_battery);
+            if (_batteryPlan != null) parts.Add(_batteryPlan);
             return parts.ToArray();
         }
 
@@ -391,6 +400,7 @@ namespace NightDuty
 
             // 점검 지시도 판정 정지 구간에 흐른다(출근 직후 첫 지시, 호출 2는 이완이 끝나는 순간).
             OrdersTick(judgeSeconds);
+            DutiesTick(judgeSeconds);
 
             if (!IsJudgingNow)
             {
@@ -440,6 +450,7 @@ namespace NightDuty
             {
                 TrackSpace(signal);
                 OrdersObserve(signal);
+                DutiesObserve(signal);
                 FinaleObserve(signal);
 
                 // 새 수칙은 모든 신호로 상태(공간·자세·손전등)를 갱신하고, 판정 구간에만 판정한다.
@@ -485,7 +496,7 @@ namespace NightDuty
 
         /// <summary>
         /// 점검 보고(최종 기획서 「보고 경제」). 거리 2m·응시 1초·0.5초 길게 누르기는 센서·태블릿이 거른 뒤 부른다.
-        /// 항목당 1회, 되돌릴 수 없다. 판정 정지 구간·03:30 이후의 델타는 95에서 멈춘다(보고는 04:00까지 받는다).
+        /// 항목당 1회(60차부터 <see cref="ReviseInspection"/>으로 판정을 바꿀 수 있다). 판정 정지 구간·03:30 이후의 델타는 95에서 멈춘다(보고는 04:00까지 받는다).
         /// </summary>
         /// <param name="itemId">항목 ID(「H-2」). 씬 대상 ID(<c>inspect.H-2</c>)도 받는다.</param>
         /// <param name="saysAnomaly">[이상]이면 true, [정상]이면 false.</param>
@@ -519,6 +530,37 @@ namespace NightDuty
                 EventBus.RaiseInspectionReported(report);
             }
 
+            CloseIfCaptured();
+            return report;
+        }
+
+        /// <summary>
+        /// 60차 — 이미 보고한 항목의 판정을 바꾼다(민: 「점검을 보고한 물품들의 이상/정상 여부를 수정할 수 있게」). 현장에서만(센서가 거른 뒤 부른다).
+        /// 지난 보고의 수치 몫을 되돌리고 새 판정으로 다시 보고한다(<see cref="InspectionBoard.Revise"/>). 점검 지시의 「보고 뒤 다음 지시」는 다시 세지 않는다.
+        /// </summary>
+        public static InspectionReport ReviseInspection(string itemId, bool saysAnomaly)
+        {
+            InspectionItem item = InspectionCatalog.FindByTarget(itemId);
+            string id = item != null ? item.Id : itemId;
+            if (!_nightOpen) return InspectionReport.Reject(id, saysAnomaly, ReportRejection.NoNight);
+            if (IsCaptured) return InspectionReport.Reject(id, saysAnomaly, ReportRejection.Captured);
+            if (item != null && _unavoidable.Banned != SpaceId.None && SpaceIds.Canonical(item.Space) == _unavoidable.Banned)
+            {
+                return InspectionReport.Reject(id, saysAnomaly, ReportRejection.SpaceClosed);
+            }
+
+            _axes.SoftCap = IsJudgingNow ? (int?)null : Deltas.SoftCap;
+            InspectionReport report;
+            try
+            {
+                report = Board.Revise(id, saysAnomaly, CurrentMinute(), _axes, _currentSpace);
+            }
+            finally
+            {
+                _axes.SoftCap = null;
+            }
+
+            if (report.Accepted) EventBus.RaiseInspectionReported(report);
             CloseIfCaptured();
             return report;
         }
@@ -608,23 +650,32 @@ namespace NightDuty
         // ── 체크포인트와 재시작 ───────────────────────────────────
 
         /// <summary>
+        /// 지금 근무일지에 서명할 수 있는지(<see cref="SignCheckpoint"/>가 받아 줄지) — 밤 진행 중 · 붙잡히지 않음 · 아직 서명 전 · 이완 구간(01:52~02:16).
+        /// 시계를 모르거나 판정 시간창이 꺼져 있으면 시각 검사를 건너뛴다. 경비실 근무일지(<c>DutyLogBook</c>)가 [E] 안내를 띄울지 이것으로 정한다(54차 QA).
+        /// </summary>
+        public static bool CanSignCheckpointNow
+        {
+            get
+            {
+                if (!_nightOpen || IsCaptured || _checkpoint != null) return false;
+                int minute = CurrentMinute();
+                return !JudgingWindowEnabled || minute < 0 || NightClock.CanSignCheckpoint(minute);
+            }
+        }
+
+        /// <summary>
         /// 근무일지 중간 서명 — 02:16 체크포인트를 찍는다(무한 루프 방지 장치 5). 밤당 한 번, 이완 구간에만.
         /// 시계를 모르거나 판정 시간창이 꺼져 있으면 시각 검사를 건너뛴다.
         /// </summary>
         /// <returns>찍었으면 true.</returns>
         public static bool SignCheckpoint()
         {
-            if (!_nightOpen || IsCaptured || _checkpoint != null)
+            if (!CanSignCheckpointNow)
             {
                 return false;
             }
 
-            int minute = CurrentMinute();
-            if (JudgingWindowEnabled && minute >= 0 && !NightClock.CanSignCheckpoint(minute))
-            {
-                return false;
-            }
-
+            DutiesNoteSigned();   // 54차: 근무일지 [근무 지시](W5) — 체크포인트가 「서명함」을 담도록 먼저
             _checkpoint = NightSnapshot.Take(Day, NightClock.Call2, true, _axes, _bands, _ledger, SnapshotParts());
             return true;
         }
@@ -976,6 +1027,7 @@ namespace NightDuty
             ClearRaised();
             ResetExtensions(true);
             ResetOrders();
+            ResetDuties();
             InspectionDripEnabled = false;
             ViolationMinutesToday.Clear();
             Board.Begin(InspectionPlan.Empty(0));

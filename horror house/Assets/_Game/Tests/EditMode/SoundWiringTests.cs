@@ -27,7 +27,7 @@ namespace NightDuty.Tests
             "capture.dark.illuminance", "capture.choke.illuminance", "capture.choke.layout", "capture.tail", "capture.tail.auditory",
             "capture.precard.auditory", "capture.precard.illuminance", "capture.precard.layout",
             "capture.auditory", "capture.illuminance", "capture.layout", "capture.died", "capture.card", "capture.return", "capture.wake",
-            "punish.stamp", "punish.auditory", "punish.illuminance", "punish.layout", "punish.hit", "punish.cut", "tension.confront",
+            "punish.stamp", "punish.auditory", "punish.illuminance", "punish.layout", "punish.hit", "punish.cut",
             "tablet.buzz", "tablet.corrupt", "ui.ready", "ui.confirm", "inspect.near",
             "body.heart.62", "body.heart.72", "body.heart.86", "body.heart.104", "body.ear", "body.tinnitus",
             "body.heart.boundary", "body.breath", "body.breath.stop", "body.sigh",
@@ -85,6 +85,13 @@ namespace NightDuty.Tests
             }
 
             Assert.IsEmpty(missing, "없는 소리 키: " + string.Join(", ", missing));
+        }
+
+        [Test]
+        public void 조우에_현악기_긴장음은_없다()
+        {
+            // 58차(민: 「조우 효과음이 아직도 현악기」) — 51차에 스팅어만 바꾸고 대면에 깔던 떨리는 현(CLX-29)이 남아 있었다.
+            Assert.IsFalse(TableClips().ContainsKey("tension.confront"), "tension.confront(떨리는 현)는 되살리지 않는다");
         }
 
         [Test]

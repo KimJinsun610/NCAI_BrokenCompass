@@ -66,10 +66,10 @@ namespace NightDuty.Tests
         }
 
         [TestCase(1, 5, 2)]
-        [TestCase(2, 5, 2)]
-        [TestCase(3, 6, 3)]
-        [TestCase(4, 6, 3)]
-        [TestCase(5, 7, 3)]
+        [TestCase(2, 6, 2)]   // 57차: 점검을 하루 한 개씩 늘림(민: 「점검이 빨리빨리 안 나와서 지겨웠어」)
+        [TestCase(3, 7, 3)]
+        [TestCase(4, 7, 3)]
+        [TestCase(5, 8, 3)]
         public void 일차별_점검수와_이상수(int day, int items, int anomalies)
         {
             Assert.AreEqual(items, InspectionQuota.Items(day));

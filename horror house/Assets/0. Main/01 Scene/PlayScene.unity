@@ -57173,7 +57173,7 @@ MonoBehaviour:
   gazeProxy: {fileID: 0}
   revealDoor: {fileID: 0}
   walkTo: {fileID: 365639894}
-  walkSpeed: 0.45
+  walkSpeed: 0.36
   debugViewDistance: 4
 --- !u!4 &496395999 stripped
 Transform:

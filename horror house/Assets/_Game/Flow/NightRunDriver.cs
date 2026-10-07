@@ -163,6 +163,7 @@ public sealed class NightRunDriver : MonoBehaviour
         // 최종 기획서 규칙 셋. 옛 테스트는 모두 꺼진 상태를 기준으로 쓰였으므로 코어의 기본값은 꺼 둔다.
         NightRun.JudgingWindowEnabled = true;
         NightRun.InspectionsEnabled = true;
+        NightRun.InspectionDripEnabled = true;   // 50차: 점검은 순차 지시로
         NightRun.ProgramEnabled = true;
 
         _rewindOffset = 0f;
@@ -201,6 +202,7 @@ public sealed class NightRunDriver : MonoBehaviour
         // EditMode 테스트(옛 규칙 기준)가 깨진다 — 2026-10-01 실측 4건.
         NightRun.JudgingWindowEnabled = false;
         NightRun.InspectionsEnabled = false;
+        NightRun.InspectionDripEnabled = false;
         NightRun.ProgramEnabled = false;
         NightRun.DirectorAutoRun = true;
     }

@@ -253,10 +253,55 @@ public sealed class PlayerInteractor : MonoBehaviour
             _door.Open();
         }
 
+        PlayDoorSound(!wasOpen);
+
         if (logActions)
         {
             Debug.Log("[상호작용] " + _door.Owner.name + " " + (wasOpen ? "닫기" : "열기"), _door.Owner);
         }
+    }
+
+    /// <summary>
+    /// 문 여닫는 소리(2026-10-06 50차, 민: 「문 열리는 효과음도 필요해」). 씬의 문 56개는 벤더 <c>doorSounds</c>가 비어 있어 무음이었다.
+    /// <b>플레이어가 [E]로 여닫은 문만</b> 낸다 — 연출이 여는 문(H2 저절로 열림 = <c>H2.cue</c> 삐걱, 노란 얼굴 문, 피날레 문)은 제 단서 소리가 따로 있어
+    /// 같은 소리를 쓰면 「저절로 열린 문」 신호가 흐려진다. 서랍·사물함·책장 수납장은 제 소리(51차, <see cref="FurnitureSoundKey"/>).
+    /// </summary>
+    /// <summary>
+    /// 여닫이 종류별 소리 키(51차, 민: 「서랍·관물대·책장 아래 여닫는 건 다른 적절한 소리로」).
+    /// 교탁·서랍(TeacherTable·Drawer) = 나무 서랍, 사물함·관물대(Locker) = 철제 사물함, 책장 아래 수납장(Bookcase) = 나무 수납장 문, 그 밖 = 문.
+    /// </summary>
+    public static string FurnitureSoundKey(string ownerName, bool opening)
+    {
+        string n = ownerName ?? string.Empty;
+        string verb = opening ? ".open" : ".close";
+        if (n.IndexOf("Drawer", System.StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("TeacherTable", System.StringComparison.OrdinalIgnoreCase) >= 0) return "door.drawer" + verb;
+        if (n.StartsWith("Locker", System.StringComparison.OrdinalIgnoreCase)) return "door.locker" + verb;
+        if (n.IndexOf("Bookcase", System.StringComparison.OrdinalIgnoreCase) >= 0 || n.IndexOf("Cabinet", System.StringComparison.OrdinalIgnoreCase) >= 0 && n.IndexOf("ToiletCabin", System.StringComparison.OrdinalIgnoreCase) < 0) return "door.cabinet" + verb;
+        return "door" + verb;
+    }
+
+    private void PlayDoorSound(bool opening)
+    {
+        Component owner = _door.Owner;
+        if (owner == null) return;
+        string n = owner.name;
+        string key = FurnitureSoundKey(n, opening);
+        float volume;
+        AudioClip clip = DirectionSoundTableSO.FindExact(key, out volume);
+        if (clip == null) return;
+        GameObject go = new GameObject("sfx " + key);
+        go.transform.position = owner.transform.position + Vector3.up * 1.1f;
+        AudioSource s = go.AddComponent<AudioSource>();
+        s.playOnAwake = false;
+        s.clip = clip;
+        s.volume = volume;
+        s.spatialBlend = 1f;
+        s.dopplerLevel = 0f;
+        s.minDistance = 1.5f;
+        s.maxDistance = 25f;
+        s.pitch = Random.Range(0.95f, 1.05f);
+        s.Play();
+        Destroy(go, clip.length / s.pitch + 0.2f);
     }
 
     /// <summary>
@@ -281,8 +326,8 @@ public sealed class PlayerInteractor : MonoBehaviour
     private static readonly System.Collections.Generic.HashSet<Component> s_unlockedLockers = new System.Collections.Generic.HashSet<Component>();
 
     /// <summary>
-    /// 사물함은 잠겨 있다(점검표 H-4 「사물함은 모두 잠겨 있습니다」, 2026-10-04 43차 민). [E]를 누르면 「잠겨 있습니다」.
-    /// 그날 H-4가 이상이면 그 사물함만 풀린다(<see cref="SetLockerUnlocked"/> — 연출 <c>InspectionAnomalies</c>가 부른다) — 여닫히면 [이상]이다.
+    /// 사물함은 잠겨 있다(2026-10-04 43차 민). [E]를 누르면 「잠겨 있습니다」.
+    /// 49차에 점검 항목 H-4(복도 사물함)를 빼서 지금은 <see cref="SetLockerUnlocked"/>를 부르는 곳이 없다 — 연출이 사물함 하나를 풀 때 쓴다.
     /// 사물함 = 이름이 <c>Locker</c>로 시작하는 벤더 문(복도·라커룸의 사물함). 서랍·책장·교탁은 그대로 여닫힌다.
     /// </summary>
     public static bool IsLockedLocker(DoorHandle door)

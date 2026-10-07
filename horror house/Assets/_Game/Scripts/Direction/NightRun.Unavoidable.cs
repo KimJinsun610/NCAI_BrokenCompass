@@ -77,7 +77,7 @@ namespace NightDuty
         private static void UnavoidableObserve(in JudgeSignal signal, bool judging)
         {
             if (!judging || IsCaptured || _unavoidable.Def == null) return;
-            UnavoidableApply(_unavoidable.Observe(signal, _currentSpace, SpacePending, ItemPending));
+            UnavoidableApply(_unavoidable.Observe(signal, _currentSpace, IssuedSpacePending, IssuedItemPending));   // 50차: 지시받은 점검만
         }
 
         /// <summary>새 수칙 정산 — 진짜 회피 불가가 걸린 뒤 쌍의 수칙을 어기면 근무일지 「불가피」.</summary>
@@ -97,6 +97,7 @@ namespace NightDuty
                     _paradoxPlanner.MarkUnavoidable();
                     Debug.Log("[NightRun] 회피 불가 역설 " + def + ": " + def.Message);
                     EventBus.RaiseMessageSent(new ParadoxMessage("unavoidable." + def.Id, def.Rules[0], def.Space, def.Message, CurrentMinute()));
+                    OrdersNoteMessage();
                     if (!string.IsNullOrEmpty(def.ChainEncounter) && _tension != null) _tension.ChainEncounter(def.ChainEncounter);
                     break;
 
@@ -152,6 +153,9 @@ namespace NightDuty
         /// <summary>위반 얼룩 색(TMP mark — 글 뒤에 깔린다).</summary>
         public const string ViolationStain = "#7A1E1E66";
 
+        /// <summary>위반 얼룩을 보일지. 51차부터 끔(되살리려면 이 값만).</summary>
+        public static bool ShowViolationStain = false;
+
         /// <summary>표시 카드 글을 다시 쓴다 — 변조·검은 줄 + 오늘 어긴 수칙의 얼룩. 판정은 그대로.</summary>
         private static void RefreshRuleCards()
         {
@@ -173,7 +177,8 @@ namespace NightDuty
         {
             string text = paradox.DisplayTextOf(def.Id) ?? def.Text;
             FinalJudge judge = _finalBook != null ? _finalBook.Judge(def.Id) : null;
-            if (judge != null && judge.Violated) text = "<mark=" + ViolationStain + ">" + text + "</mark>";
+            // 51차(민: 「태블릿에 수칙을 어긴 게 표시되지 않았으면」): 위반 얼룩을 쓰지 않는다. 위반은 현장 반응·몸·근무일지로만 안다.
+            if (ShowViolationStain && judge != null && judge.Violated) text = "<mark=" + ViolationStain + ">" + text + "</mark>";
             return text;
         }
     }

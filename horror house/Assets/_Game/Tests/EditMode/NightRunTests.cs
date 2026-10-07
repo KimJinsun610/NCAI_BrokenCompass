@@ -128,7 +128,7 @@ namespace NightDuty.Tests
                 new[]
                 {
                     new InspectionAssignment(InspectionCatalog.Find("H-2"), false, Band.Band0, false),
-                    new InspectionAssignment(InspectionCatalog.Find("H-4"), false, Band.Band0, false)
+                    new InspectionAssignment(InspectionCatalog.Find("H-1"), false, Band.Band0, false)
                 },
                 SpaceId.None, string.Empty);
             NightRun.BeginNight(1, () => _clock);

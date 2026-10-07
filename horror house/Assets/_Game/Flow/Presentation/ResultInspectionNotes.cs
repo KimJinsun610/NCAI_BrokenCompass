@@ -183,7 +183,7 @@ public sealed class ResultInspectionNotes : MonoBehaviour
             box.anchoredPosition = new Vector2(box.anchoredPosition.x, top - (1f - box.pivot.y) * BoxHeight);
         }
 
-        _notes.enableWordWrapping = true;
+        _notes.textWrappingMode = TMPro.TextWrappingModes.Normal;
         _notes.richText = true;
         _notes.enableAutoSizing = true;
         _notes.fontSizeMin = 14f;

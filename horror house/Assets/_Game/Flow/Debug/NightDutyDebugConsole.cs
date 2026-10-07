@@ -306,7 +306,7 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         GUILayout.Label(a, _rich);
         FinalRuleBook book = NightRun.FinalRules;
         GUILayout.Label("공간 " + (book != null ? book.World.Space.ToString() : "-")
-                        + (t != null ? "  ·  디렉터 " + t.Mood + "  ·  예산 " + t.Budget.Usage + "  ·  가짜 놀람 " + t.FakesUsed : "  ·  디렉터 없음(새 편성 꺼짐)"), _small);
+                        + (t != null ? "  ·  디렉터 " + t.Mood + "  ·  예산 " + t.Budget.Usage + "  ·  가짜 놀람 " + t.FakesUsed + "  ·  긴장 " + t.Pacer : "  ·  디렉터 없음(새 편성 꺼짐)"), _small);
     }
 
     // ── 개요 ───────────────────────────────────────────────
@@ -634,6 +634,15 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
         }
 
         GUILayout.Label("<b>오늘 점검표</b>  " + board.Plan.Day + "일차 · 늦게 열리는 공간 " + board.Plan.LateSpace, _rich);
+        InspectionDispatcher orders = NightRun.Orders;
+        if (orders != null)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("순차 지시 — " + Escape(orders.Describe(NightRun.NightMinute, NightRun.BannedSpace)), _small);
+            if (GUILayout.Button("다음 지시", GUILayout.Width(80f))) Later(() => NightRun.DebugIssueOrder());
+            GUILayout.EndHorizontal();
+        }
+
         IReadOnlyList<InspectionAssignment> rows = board.Plan.Assignments;
         for (int i = 0; i < rows.Count; i++)
         {
@@ -641,7 +650,7 @@ public sealed class NightDutyDebugConsole : MonoBehaviour
             string id = a.Id;
             GUILayout.BeginHorizontal();
             GUILayout.Label("<b>" + id + "</b> " + Escape(a.Item.Name) + (a.IsAnomaly ? " <color=#f77>[이상 " + a.Intensity + "]</color>" : " <color=#7f7>[정상]</color>")
-                            + (a.IsLate ? " 늦게" : string.Empty) + "  " + board.StateOf(id), _small, GUILayout.Width(330f));
+                            + (a.IsLate ? " 늦게" : string.Empty) + (board.IsIssued(id) ? string.Empty : " <color=#999>지시 전</color>") + "  " + board.StateOf(id), _small, GUILayout.Width(330f));
             if (GUILayout.Button("이동", GUILayout.Width(44f))) Later(() => TeleportToTarget(a.Item.TargetId, a.Item.Space));
             if (GUILayout.Button("정상", GUILayout.Width(44f))) Later(() => NightRun.ReportInspection(id, false));
             if (GUILayout.Button("이상", GUILayout.Width(44f))) Later(() => NightRun.ReportInspection(id, true));

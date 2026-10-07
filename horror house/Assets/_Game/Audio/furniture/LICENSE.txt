@@ -1,0 +1,3 @@
+SFX_FURN_DrawerOpen/Close: BigSoundBank 1499·1500 Wooden drawer opening/closing (Joseph SARDIN) CC0 — https://bigsoundbank.com
+SFX_FURN_CabinetOpen/Close: BigSoundBank 0046 Cupboard (Joseph SARDIN) CC0, 잘라서 정규화
+SFX_FURN_LockerOpen/Close: freesound 508383 Pr3tzelz 'locker opening:closing' CC0(미리듣기 mp3), 잘라서 씀

@@ -82,7 +82,7 @@ namespace NightDuty
         /// <summary>대응 수칙의 공간(「과학실 앞 복도」의 S5는 과학실).</summary>
         public readonly SpaceId Space;
 
-        /// <summary>대응 수칙 ID.</summary>
+        /// <summary>대응 수칙 ID. 빈 문자열이면 수칙 없이 놀람만 주는 조우(52차 시체 낙하).</summary>
         public readonly string ResponseRule;
 
         /// <summary>교차 조우의 두 번째 대응 수칙(소년 머리 박기 = C2 + C3). 없으면 빈 문자열.</summary>
@@ -108,7 +108,7 @@ namespace NightDuty
             Name = name;
             Axis = axis;
             Space = space;
-            ResponseRule = responseRule;
+            ResponseRule = responseRule ?? string.Empty;
             Intensity = intensity;
             Mob = mob;
             Requires = requires ?? new KeyValuePair<FearAxis, Band>[0];
@@ -157,7 +157,7 @@ namespace NightDuty
         public const string SuitMan = "E.SuitMan";
         public const string CctvPerson = "E.CctvPerson";
 
-        /// <summary>2일차 첫 역설이 겨누는 수칙(「천장에서 물이 샙니다. 지금 바닥을 확인하십시오.」 — 눈으로만).</summary>
+        /// <summary>2일차 첫 역설이 겨누는 수칙(C2 — 소년이 앉은 뒤 「교실에 남은 학생이 있습니다. 지금 확인하십시오.」, 눈으로만).</summary>
         public const string FirstParadoxRule = "C2";
 
         /// <summary>5일차 경비실 고정 수칙(04:00 뒤에만 판정).</summary>
@@ -190,22 +190,22 @@ namespace NightDuty
 
         private static readonly RuleDef[] Rules =
         {
-            new RuleDef("H1", SpaceId.Corridor, L, true, "복도의 미분류 물체는 점검 대상이 아닙니다. 피하십시오.", boundEncounter: PeopleTree),   // 2026-10-01: 사람 나무가 없으면 피할 물체가 없다
+            new RuleDef("H1", SpaceId.Corridor, L, true, "복도의 미분류 물체에 다가가지 마십시오.", boundEncounter: PeopleTree),   // 2026-10-01: 사람 나무가 없으면 피할 물체가 없다
             new RuleDef("H2", SpaceId.Corridor, L, true, "열린 문은 열린 채로 두십시오."),
-            new RuleDef("H3", SpaceId.Corridor, A, true, "발소리가 들리면 가장 가까운 방으로 대피하십시오.", isThreat: true, isWaitType: true, boundEncounter: Footsteps),
-            new RuleDef("H4", SpaceId.Corridor, A, true, "육성에 응답하지 마십시오.", isThreat: true, boundEncounter: CallingVoice),
+            new RuleDef("H3", SpaceId.Corridor, A, true, "발소리가 들리면 가까운 방으로 대피하십시오.", isThreat: true, isWaitType: true, boundEncounter: Footsteps),
+            new RuleDef("H4", SpaceId.Corridor, A, true, "뒤에서 부르면 돌아보지 마십시오.", isThreat: true, boundEncounter: CallingVoice),
 
             new RuleDef("C1", SpaceId.Classroom, A, true, "판서가 끝난 뒤에 들어가십시오.", isWaitType: true),
-            new RuleDef("C2", SpaceId.Classroom, A, true, "교실 안쪽의 ??은 무시하십시오.", boundEncounter: CeilingLegs),   // 2026-10-01: 천장 다리가 없으면 무시할 것이 없다
+            new RuleDef("C2", SpaceId.Classroom, A, true, "교실의 _? 는 무시하십시오.", boundEncounter: BoyBang),   // 52차 민: 앉은 소년과 묶음(C2 + C3 + 소년) — 3초 바라보면 책상에 머리를 박는다
             new RuleDef("C3", SpaceId.Classroom, A, true, "수업 중에 움직이지 마십시오.", isThreat: true, isWaitType: true, boundEncounter: BoySeated),
-            new RuleDef("C4", SpaceId.Classroom, I, true, "붉은 불빛 아래에서는 손전등을 끄지 마십시오.", usesFlashlight: true),
-            new RuleDef("C5", SpaceId.Classroom, L, true, "교실의 문은 고장입니다. 정상 문은 교실이 아닙니다.", boundEncounter: PhantomDoor),
+            new RuleDef("C4", SpaceId.Classroom, I, true, "붉은 불빛 아래에서는 손전등을 끄십시오.", usesFlashlight: true),   // 52차 민: 늘 켜고 다니니 「끄라」로 — 붉은 등은 맵 어딘가 하나(RedLightSpot)
+            new RuleDef("C5", SpaceId.Classroom, L, true, "교실의 문은 모두 부서져 있습니다. 성한 문으로는 나가지 마십시오.", boundEncounter: PhantomDoor),
 
             new RuleDef("S1", SpaceId.ScienceRoom, L, true, "과학실은 통로가 아닙니다. 통로로 사용하지 마십시오."),
-            new RuleDef("S2", SpaceId.ScienceRoom, A, true, "깨지는 소리가 나면, 오늘 과학실 점검은 종료입니다."),
-            new RuleDef("S3", SpaceId.ScienceRoom, I, true, "인체 모형을 빛으로 확인하십시오.", usesFlashlight: true),
-            new RuleDef("S4", SpaceId.ScienceRoom, I, true, "소등은 금지입니다.", usesFlashlight: true, boundEncounter: ScienceBlackout),
-            new RuleDef("S5", SpaceId.ScienceRoom, I, true, "복도 _? 이 지나갈 때까지 빛을 끄고 기다리십시오.", isThreat: true, usesFlashlight: true, isWaitType: true, boundEncounter: HallEndFigure),
+            new RuleDef("S2", SpaceId.ScienceRoom, A, true, "깨지는 소리가 나면 과학실을 나가 다시 오지 마십시오."),
+            new RuleDef("S3", SpaceId.ScienceRoom, I, true, "인체 모형에는 빛을 비추지 마십시오.", usesFlashlight: true),
+            new RuleDef("S4", SpaceId.ScienceRoom, I, true, "소등 중에는 손전등을 끄지 마십시오.", usesFlashlight: true, boundEncounter: ScienceBlackout),
+            new RuleDef("S5", SpaceId.ScienceRoom, I, true, "복도 끝에 _?이 서 있으면 빛을 끄고 기다리십시오.", isThreat: true, usesFlashlight: true, isWaitType: true, boundEncounter: HallEndFigure),
 
             new RuleDef("T1", SpaceId.Toilet, A, true, "물이 다 내려가기 전에 나오십시오."),
             new RuleDef("T2", SpaceId.Toilet, L, true, "사용 중인 칸은 열지 마십시오."),
@@ -214,14 +214,14 @@ namespace NightDuty
             new RuleDef("T5", SpaceId.Toilet, I, true, "불이 켜진 칸이 있으면 당신도 불을 켜십시오.", usesFlashlight: true),
 
             new RuleDef("L1", SpaceId.Library, A, true, "쓰러진 책장 곁에 서지 마십시오."),
-            new RuleDef("L2", SpaceId.Library, A, true, "책장 넘기는 소리가 들리면, 도서관 점검은 끝났습니다.", isWaitType: true),
+            new RuleDef("L2", SpaceId.Library, A, true, "책장 넘기는 소리가 들리면, 도서관 점검 시간은 끝났습니다. 나가십시오.", isWaitType: true),
             new RuleDef("L3", SpaceId.Library, I, true, "도서관 ?_? 을 계속 비추십시오.", isThreat: true, usesFlashlight: true, boundEncounter: YellowFace),
             new RuleDef("L4", SpaceId.Library, L, true, "상자에서 떨어져 걸으십시오."),
-            new RuleDef("L5", SpaceId.Library, A, true, "창밖에 먼저 인사하지 마십시오.", isThreat: true, boundEncounter: SuitMan),
+            new RuleDef("L5", SpaceId.Library, A, true, "창밖에 먼저 인사하지 마십시오. 눈길도, 빛도 인사입니다.", isThreat: true, boundEncounter: SuitMan),
 
-            new RuleDef("K1", SpaceId.SecurityRoom, L, true, "화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오.", boundEncounter: CctvPerson),
-            new RuleDef("K2", SpaceId.SecurityRoom, A, true, "빈 방을 오래 보지 마십시오."),
-            new RuleDef("K3", SpaceId.SecurityRoom, A, true, "근무 중에는 경비실에 오래 머물지 마십시오."),
+            new RuleDef("K1", SpaceId.SecurityRoom, L, true, "화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오.", boundEncounter: CctvPerson),   // 52차 민: 원래대로(점프스케어를 예고하는 수칙은 쓰지 않는다)
+            new RuleDef("K2", SpaceId.SecurityRoom, A, true, "공실 채널은 오래 보지 마십시오."),
+            new RuleDef("K3", SpaceId.SecurityRoom, A, true, "서명 시간 외에는 경비실에 오래 머물지 마십시오."),
             new RuleDef("K4", SpaceId.SecurityRoom, L, false, "근무 종료 후에는 경비실을 나가지 마십시오."),
 
             new RuleDef("G1", SpaceId.None, A, true, "복도에서는 뛰지 마십시오."),
@@ -241,7 +241,7 @@ namespace NightDuty
             new EncounterDef(ScienceBlackout, "과학실 소등", I, SpaceId.ScienceRoom, "S4", 3, "science.dark", new[] { Need(I, Band.Band2) }),
             new EncounterDef(ToiletBlackout, "화장실 소등", I, SpaceId.Toilet, "T3", 3, "toilet.dark", new[] { Need(I, Band.Band2) }),
             new EncounterDef(PeopleTree, "사람 나무", L, SpaceId.Corridor, "H1", 3, "tree", new[] { Need(L, Band.Band2) }),
-            new EncounterDef(CeilingLegs, "천장 다리", L, SpaceId.Classroom, "C2", 3, "boy", new[] { Need(L, Band.Band2) }),
+            new EncounterDef(CeilingLegs, "시체 낙하", L, SpaceId.Classroom, string.Empty, 3, "boy", new[] { Need(L, Band.Band2) }),   // 52차: 대응 수칙 없음(사다리 점검 중 놀람만 — 예고하는 수칙을 두지 않는다)
             new EncounterDef(PhantomDoor, "없던 문", L, SpaceId.Classroom, "C5", 2, "door", new[] { Need(L, Band.Band2) }),
             new EncounterDef(SuitMan, "창밖 정장 남자", T, SpaceId.Library, "L5", 3, "glitchman", new[] { Need(T, Band.Band3) }),
             new EncounterDef(CctvPerson, "CCTV에만 보이는 사람", L, SpaceId.SecurityRoom, "K1", 2, "blackman", new KeyValuePair<FearAxis, Band>[0])

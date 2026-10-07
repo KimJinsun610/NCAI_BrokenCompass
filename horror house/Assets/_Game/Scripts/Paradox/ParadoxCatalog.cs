@@ -81,31 +81,32 @@ namespace NightDuty
 
         static ParadoxCatalog()
         {
-            Add("H1", "복도의 중앙을 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, FinalCues.H1Object, "복도의 미분류 물체는 점검 하시겠습니까.? 아니오. 피하 십시오.");
-            Add("H2", "저절로 열린 문이 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, null, "열린 문은 열린 문이다.");
+            Add("H1", "복도의 중앙을 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, FinalCues.H1Object, "복도의 미분류 물체에? 다가가지 마 십시오.");
+            Add("H2", "저절로 열린 문이 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, null, "열린 문은 열린 문입니다. 열린 채로. 두십 시오.");
             Add("H3", "복도에 인원이 있습니다. 지금 확인하십시오.", SafeReadPattern.StandStill, FinalCues.Footsteps, null, "발소리 가 들리면? 가까운 방 으로. 대피 하십니까.? 대피하십시오.");
             Add("H4", null, SafeReadPattern.None, null, null, null);
-            Add("C1", "교실에서 소리가 나면 즉시 점검하십시오.", SafeReadPattern.StandStill, FinalCues.Chalk, null, "판서 를 합류 하지 마시오.");
-            Add("C2", "천장에서 물이 샙니다. 지금 바닥을 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.Legs, null, "교실의 ??은 무시 대상 입니 다.");
+            Add("C1", "교실에서 소리가 나면 즉시 점검하십시오.", SafeReadPattern.StandStill, FinalCues.Chalk, null, "판서 가 끝나기 전 에는? 들어가지 마시오.");
+            Add("C2", "교실에 남아 있는 학생이 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.BoySeated, FinalCues.BoyTarget, "교실 의 _? 는 무시 대상 입니 다.");   // 52차: 소년이 앉은 뒤에 온다(예고하지 않음) — 따르면(바라보면) C2를 어긴다
             Add("C3", null, SafeReadPattern.None, null, null, "수업 중 이동 은 금지입니 ㄷ ㅏ.");   // 민 2026-10-04: 역설 폐기(몬스터를 과하게 예고해 긴장 저하)
-            Add("C4", "붉은 등이 켜졌습니다. 즉시 조명 상태를 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.RedLight, null, "붉은 불빛 아래 손전등 은 끄지 마. 끄지 마.");
-            Add("C5", null, SafeReadPattern.None, null, null, "정상 문은? 교실이 아닙 니다. 교실 의 문은 고장.");   // 민 2026-10-04: 역설 폐기
+            Add("C4", "붉은 등 아래가 어둡습니다. 지금 손전등으로 비추십시오.", SafeReadPattern.StandStill, FinalCues.RedLight, null, "붉은 불빛 아래 손전등 은 켜지 마. 켜지 마.");   // 52차: 끄라는 수칙 — 따르면(켜면) 어긴다, 붉은 등 아래를 꺼진 채 지나가면 안전한 읽기
+            Add("C5", null, SafeReadPattern.None, null, null, "성한 문 으로는? 나가지 마시오. 교실 의 문은 부서졌다.");   // 민 2026-10-04: 역설 폐기
             Add("S1", "반대편 문이 열렸습니다. 지금 점검하십시오.", SafeReadPattern.EyesOnly, null, null, "과학 실은 통로 입니까?. 아니오.");
-            Add("S2", "지금 과학실의 훼손 물품을 점검하십시오.", SafeReadPattern.EyesOnly, FinalCues.Glass, null, "깨지는 소리 가 나면? 오늘 과학실 은 끝.");   // 민 2026-10-04: CCTV로 → 눈으로만
+            Add("S2", "지금 과학실의 훼손 물품을 점검하십시오.", SafeReadPattern.EyesOnly, FinalCues.Glass, null, "깨지는 소리 가 나면? 과학실 을 나가. 다시 오지 마.");   // 민 2026-10-04: CCTV로 → 눈으로만
             Add("S3", null, SafeReadPattern.None, null, null, null);   // 민 2026-10-04: 수칙 문구를 「빛으로 확인」으로 바꾸며 변조본 폐기
-            Add("S4", null, SafeReadPattern.None, null, null, "어둠을 지양하십시오?.");
-            Add("S5", "복도 끝 출구를 즉시 확인하십시오.", SafeReadPattern.StandStill, FinalCues.HallEnd, null, "복도 _?에 눈 부십니까?. 끄고 기다리 십시오.");
+            Add("S4", null, SafeReadPattern.None, null, null, "소등 중 에는 손전등 을? 끄지 마 십시오.");
+            Add("S5", "복도 끝 출구를 즉시 확인하십시오.", SafeReadPattern.StandStill, FinalCues.HallEnd, null, "복도 끝 에 _?이 서 있습니까?. 끄고 기다리 십시오.");
             Add("T1", "물이 내려가고 있습니다. 지금 칸을 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.Flush, null, null);
             Add("T2", null, SafeReadPattern.None, null, null, "사용 중 인 칸은? 열지 마 십시오.");
             Add("T3", "정전입니다. 즉시 비상등을 찾으십시오.", SafeReadPattern.StandStill, FinalCues.ToiletBlackout, null, "어둠 에서 대기 하라.");
-            Add("T5", "불이 켜진 칸이 있습니다. 그 불빛이면 충분합니다.", SafeReadPattern.EyesOnly, FinalCues.StallLit, null, "빛? 에는 빛?으로 대처 하세요.");
+            Add("T5", "불이 켜진 칸이 있습니다. 지금은 그 불빛이면 충분합니다.",   // 51차: 역설 문자는 모두 「지금·즉시」
+                SafeReadPattern.EyesOnly, FinalCues.StallLit, null, "빛? 에는 빛?으로 대처 하세요.");
             Add("L1", "쓰러진 책장 밑에 책이 깔렸습니다. 지금 비추십시오.", SafeReadPattern.EyesOnly, null, FinalCues.L1Shelf, "쓰러진 책장 곁 에 서 지 마 십 시 오");
             Add("L2", null, SafeReadPattern.None, null, null, "종이 넘기 는 소리 가 들리면? 열람 끝.");   // 민 2026-10-04: 역설 폐기(몹 예고)
             Add("L3", null, SafeReadPattern.None, null, null, "도서관 ?_? 을 계속 비추 십니까? 예.");
             Add("L4", "바닥에 상자가 쏟아져 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, FinalCues.L4Box, "상자 에서 떨어 져 걸으 십시오?");
             Add("L5", null, SafeReadPattern.None, null, null, "창밖에 먼저 인사 하지 마시오. 먼저.");   // 민 2026-10-04: 역설 폐기(몹 예고)
             Add("K1", null, SafeReadPattern.None, null, null, null);   // 민 2026-10-04: 역설 폐기(몹 예고)
-            Add("K2", "CAM{0}에 신호가 잡힙니다. 즉시 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.EmptyRoom, null, null);   // {0} = 그날 빈 방 채널(CAM01~05)
+            Add("K2", "공실 CAM{0}에 움직임이 있습니다. 즉시 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.EmptyRoom, null, null);   // {0} = 그날 빈 방 채널(CAM01~05)
             Add("K3", "복도에 위험 신고가 있습니다. 즉시 CCTV로 확인하십시오.", SafeReadPattern.Cctv, null, null, null, SpaceId.Corridor);
         }
 

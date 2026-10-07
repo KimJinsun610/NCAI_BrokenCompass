@@ -81,6 +81,23 @@ public sealed class AmbiencePlayer : MonoBehaviour
     private bool _building;
     private System.Random _rng;
 
+    // ── 51차: 「신음」은 가끔만 ─────────────────────────────────
+    // 민: 「2일차부터 신음/귀신 소리가 내내 들려서 오히려 덜 무서웠다. 가끔씩 들려야지.」
+    // 원인은 청각 불안 레이어 1(AMB_Dread_B1, 40초 루프) — 2일차 하한 Band1부터 상시. 에셋에서 그 겹 볼륨을 0으로 두고(B2는 0.25),
+    // 같은 소리를 8~12초 조각으로 잘라 「옆 공간 벽 너머」에서 밤당 0/2/3/4/5번만 낸다.
+    // 조건: 긴장 조절기가 축적 상태(이완·출근·03:30 뒤는 저절로 빠짐)이고 긴장도 60 미만, 경비실 밖, 조우가 끝나고 20초 뒤, 직전 신음과 120~75초 간격.
+    private const string PresenceClipPath = "Ambience/Dread/AMB_Dread_B1";
+    private static readonly int[] PresenceCaps = { 0, 2, 3, 4, 5 };
+    private AudioSource _presence;
+    private AudioClip _presenceClip;
+    private InspectionPlan _presencePlan;
+    private int _presenceCount;
+    private float _presenceNext;
+    private float _presenceBlockUntil;
+    private float _presenceT = -1f;
+    private float _presenceLen;
+    private float _presenceVol;
+
     /// <summary>지금 살아 있는 재생기. 없으면 null.</summary>
     public static AmbiencePlayer Active
     {
@@ -404,6 +421,91 @@ public sealed class AmbiencePlayer : MonoBehaviour
         UpdateRooms(dt);
         UpdateDread(dt);
         UpdateShots();
+        UpdatePresence();
+    }
+
+    /// <summary>밤당 「신음」 횟수(1~5일차 0/2/3/4/5).</summary>
+    public static int PresenceCap(int day)
+    {
+        return PresenceCaps[Mathf.Clamp(day - 1, 0, PresenceCaps.Length - 1)];
+    }
+
+    /// <summary>「신음」 사이 최소 간격(초): 2일차 120 → 5일차 75.</summary>
+    public static float PresenceGap(int day)
+    {
+        return Mathf.Lerp(120f, 75f, Mathf.Clamp01((day - 2) / 3f));
+    }
+
+    private void UpdatePresence()
+    {
+        // 재생 중이면 앞뒤 1.5초 페이드.
+        if (_presenceT >= 0f && _presence != null)
+        {
+            _presenceT += Time.deltaTime;
+            float env = Mathf.Clamp01(_presenceT / 1.5f) * Mathf.Clamp01((_presenceLen - _presenceT) / 1.5f);
+            _presence.volume = Mathf.Clamp01(_presenceVol * env * Gain);
+            if (_presenceT >= _presenceLen)
+            {
+                _presence.Stop();
+                _presenceT = -1f;
+            }
+
+            return;
+        }
+
+        if (!NightRun.IsNightActive || NightRun.IsCaptured || _zone == null) return;
+
+        InspectionPlan plan = NightRun.Inspections.Plan;
+        if (!ReferenceEquals(plan, _presencePlan))
+        {
+            _presencePlan = plan;   // 새 밤(재시작은 같은 편성이라 횟수가 이어진다)
+            _presenceCount = 0;
+            _presenceNext = Time.time + PresenceGap(NightRun.Day);
+        }
+
+        if (_presenceCount >= PresenceCap(NightRun.Day)) return;
+
+        TensionDirector t = NightRun.Tension;
+        if (t == null) return;
+        if (t.Busy)
+        {
+            _presenceBlockUntil = Time.time + 20f;
+            return;
+        }
+
+        if (Time.time < _presenceNext || Time.time < _presenceBlockUntil) return;
+        if (t.Pacer.State != PacerState.BuildUp || t.Pacer.Intensity >= 60f) return;
+        if (NightRun.CurrentSpace == SpaceId.SecurityRoom || NightRun.CurrentSpace == SpaceId.None) return;
+
+        Camera cam = Camera.main;
+        if (cam == null) return;
+        if (_presenceClip == null) _presenceClip = LoadClip(PresenceClipPath);
+        if (_presenceClip == null) return;
+
+        if (_presence == null)
+        {
+            _presence = MakeSource("Presence (신음)", false, 1f);
+            _presence.rolloffMode = AudioRolloffMode.Logarithmic;
+            _presence.minDistance = 3f;
+            _presence.maxDistance = 35f;
+            AudioLowPassFilter lp = _presence.gameObject.AddComponent<AudioLowPassFilter>();
+            lp.cutoffFrequency = 1500f;   // 벽 너머
+        }
+
+        float angle = (float)_rng.NextDouble() * Mathf.PI * 2f;
+        float dist = Mathf.Lerp(8f, 20f, (float)_rng.NextDouble());
+        _presence.transform.position = cam.transform.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * dist;
+        _presence.clip = _presenceClip;
+        _presenceLen = Mathf.Lerp(8f, 12f, (float)_rng.NextDouble());
+        float start = Mathf.Max(0f, _presenceClip.length - _presenceLen - 0.1f) * (float)_rng.NextDouble();
+        _presence.time = start;
+        _presenceVol = Mathf.Lerp(0.55f, 0.7f, (float)_rng.NextDouble());
+        _presence.volume = 0f;
+        _presence.Play();
+        _presenceT = 0f;
+        _presenceCount++;
+        _presenceNext = Time.time + PresenceGap(NightRun.Day);
+        if (logActions) Debug.Log("[Ambience] 신음 " + _presenceCount + "/" + PresenceCap(NightRun.Day) + " @ " + _presence.transform.position.ToString("F1"), this);
     }
 
     private void SampleZone()
@@ -636,6 +738,14 @@ public sealed class AmbiencePlayer : MonoBehaviour
     /// 스팅어(점프스케어 효과음)를 2D로 튼다. 이름은 <c>stinger_hit</c> · <c>stinger_riser</c> · <c>stinger_breath</c> · <c>stinger_whisper</c>.
     /// 붙잡힘 페이드·덕킹의 영향을 받지 않는다 — 연출이 부르면 그대로 난다.
     /// </summary>
+    public bool PlayStingerClip(AudioClip clip, float volume = 1f)
+    {
+        if (clip == null || _stinger == null) return false;
+        _stinger.PlayOneShot(clip, Mathf.Clamp01(volume * config.StingerVolume * config.MasterVolume));
+        return true;
+    }
+
+    /// <summary>스팅어(이름으로, Resources/Ambience/Stingers).</summary>
     public bool PlayStinger(string name, float volume = 1f)
     {
         AudioClip clip = LoadClip(name.Contains("/") ? name : "Ambience/Stingers/" + name);

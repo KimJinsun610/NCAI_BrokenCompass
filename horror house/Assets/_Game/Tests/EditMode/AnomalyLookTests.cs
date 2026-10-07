@@ -88,7 +88,7 @@ namespace NightDuty.Tests
                 if (AnomalyLook.HasLook(item)) looks++;
             }
 
-            Assert.AreEqual(12, looks, "17개 중 [소리] 5개를 뺀 12개");
+            Assert.AreEqual(12, looks, "16개 중 [소리] 4개를 뺀 12개(51차: C-3 사다리가 [옮김] — 사다리 없음)");
             Assert.IsFalse(AnomalyLook.HasLook(null));
         }
 

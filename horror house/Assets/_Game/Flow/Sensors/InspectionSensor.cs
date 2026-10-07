@@ -31,8 +31,8 @@ public sealed class InspectionSensor : MonoBehaviour
     [Tooltip("[이상] 전용 키. 0.5초 길게 눌러 확정.")]
     [SerializeField] private KeyCode anomalyKey = KeyCode.X;
 
-    [Tooltip("개발 빌드에서 화면 왼쪽 아래에 보고 안내를 띄운다(정식 UI가 붙기 전 확인용).")]
-    [SerializeField] private bool showDevPrompt = true;
+    [Tooltip("화면 중앙 아래에 보고 안내를 띄운다(50차 — InteractionHud.InspectionPrompt).")]
+    [SerializeField] private bool showPrompt = true;
 
     private readonly Dictionary<string, ReportReadiness> _readiness = new Dictionary<string, ReportReadiness>(StringComparer.Ordinal);
     private string _focus = string.Empty;
@@ -142,6 +142,8 @@ public sealed class InspectionSensor : MonoBehaviour
         PlayerSensors.Sampled -= OnSampled;
         EventBus.InspectionPlanned -= OnPlanned;
         if (s_active == this) s_active = null;
+        InteractionHud.InspectionPrompt = string.Empty;
+        InteractionHud.InspectionProgress = 0f;
     }
 
     private void OnPlanned(InspectionPlan plan)
@@ -334,26 +336,28 @@ public sealed class InspectionSensor : MonoBehaviour
         }
     }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-    private void OnGUI()
+    // 50차(민: 「점검 관련 UI 문구가 화면 중앙 아래에」): 개발용 OnGUI(왼쪽 아래) 대신 HUD 화면 중앙 아래 패널로 — 정식 빌드에도 뜬다.
+    private void LateUpdate()
     {
-        if (!showDevPrompt) return;
-
-        string text = null;
-        if (_focus.Length > 0)
+        string text = string.Empty;
+        float progress = 0f;
+        if (showPrompt)
         {
-            InspectionItem item = InspectionCatalog.Find(_focus);
-            string name = item != null ? item.Name : _focus;
-            text = name + " — [" + normalKey + "] 정상 / [" + anomalyKey + "] 이상 (길게)";
-            if (_hold > 0f) text += "  " + Mathf.RoundToInt(HoldProgress * 100f) + "%";
-        }
-        else if (Time.unscaledTime < _lastResultUntil)
-        {
-            text = _lastResult;
+            if (_focus.Length > 0)
+            {
+                InspectionItem item = InspectionCatalog.Find(_focus);
+                string name = item != null ? item.Name : _focus;
+                text = name + "    [" + normalKey + "] 정상   [" + anomalyKey + "] 이상";
+                progress = _hold > 0f ? HoldProgress : 0f;
+            }
+            else if (Time.unscaledTime < _lastResultUntil)
+            {
+                text = _lastResult;
+            }
         }
 
-        if (text == null) return;
-        GUI.Label(new Rect(16f, Screen.height - 48f, 640f, 32f), text);
+        InteractionHud.InspectionPrompt = text;
+        InteractionHud.InspectionProgress = progress;
     }
-#endif
+
 }

@@ -29,6 +29,15 @@ namespace NightDuty
 
             _tension = new TensionDirector(_program, Day, RestartsTonight);
             _tension.Emitted += OnDirectionEmitted;
+            _tension.GazeTargetReady = GazeTargetReady;   // 51차: 사다리(C-3)를 「점검 중」일 때만 시체가 떨어진다
+        }
+
+        /// <summary>응시 방아쇠 대상(<c>inspect.&lt;항목&gt;</c>)이 지시받았고 아직 보고 전인지. 순차 지시가 꺼져 있으면 편성에 있고 보고 전이면 참.</summary>
+        private static bool GazeTargetReady(string targetId)
+        {
+            if (string.IsNullOrEmpty(targetId)) return false;
+            string item = targetId.StartsWith(InspectionCatalog.TargetPrefix, System.StringComparison.Ordinal) ? targetId.Substring(InspectionCatalog.TargetPrefix.Length) : targetId;
+            return IssuedItemPending(item);
         }
 
         private static void DisposeDirection()

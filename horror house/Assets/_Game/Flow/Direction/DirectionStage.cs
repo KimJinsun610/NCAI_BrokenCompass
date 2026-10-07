@@ -95,6 +95,7 @@ public sealed class DirectionStage : MonoBehaviour
     private void OnEnable()
     {
         s_active = this;
+        if (GetComponent<RedLightSpot>() == null) gameObject.AddComponent<RedLightSpot>();   // 52차 C4 붉은 등
         EventBus.DirectionEmitted += OnDirection;
         EventBus.FinalRuleSettled += OnRuleSettled;
         EventBus.NightRestarted += OnRestarted;
@@ -167,6 +168,16 @@ public sealed class DirectionStage : MonoBehaviour
             case DirectionPhase.Foreshadow:
             case DirectionPhase.FalseForeshadow:
                 if (Impact() != null) Impact().Foreshadow(e.Phase == DirectionPhase.FalseForeshadow);
+                if (IsCorpse(e.SourceId))
+                {
+                    // 51차 시체 낙하 전조: 떨어질 자리 위 천장에서 먼지 + 삐걱(대면 때 같은 자리로 떨어진다).
+                    _corpseSpot = CorpseSpot(out _corpseCeiling);
+                    _corpseSpotAt = Time.time;
+                    CorpseDrop.Dust(new Vector3(_corpseSpot.x, _corpseCeiling, _corpseSpot.z), e.Duration);
+                    PlaySound(e.SourceId + ".foreshadow", new Vector3(_corpseSpot.x, _corpseCeiling, _corpseSpot.z));
+                    break;
+                }
+
                 PlaySound(e.SourceId + ".foreshadow", PointOr(e.Point, 6f));
                 break;
             case DirectionPhase.Confront:
@@ -217,6 +228,24 @@ public sealed class DirectionStage : MonoBehaviour
         {
             SpawnCctvPerson(st);
         }
+        else if (script.StandIn == EncounterScripts.CorpseStandIn)
+        {
+            // 51차: 전조 때 고른 자리(플레이어가 1.5m 넘게 움직였으면 다시 고름)에 리지드바디 시체를 떨어뜨린다.
+            float ceilingY;
+            Vector3 spot = _corpseSpot;
+            if (Time.time - _corpseSpotAt > 6f || (FlatDistance(spot, player) > 1.5f))
+            {
+                spot = CorpseSpot(out ceilingY);
+            }
+            else
+            {
+                ceilingY = _corpseCeiling;
+            }
+
+            CorpseDrop body = CorpseDrop.Spawn(spot, player, ceilingY, script.AnchorId);
+            st.Objects.Add(body.gameObject);
+            point = spot;
+        }
         else if (script.StandIn.Length > 0)
         {
             Vector3 at;
@@ -226,7 +255,16 @@ public sealed class DirectionStage : MonoBehaviour
             cue.Play(new CueContext { Intensity = e.Intensity, Anchor = at, EncounterId = e.SourceId });
             st.Objects.Add(go);
 
-            if (script.ExtraStandIn.Length > 0)
+            if (script.ExtraStandIn == EncounterScripts.CorpseStandIn)
+            {
+                // 소년 머리 박기(C2 교차): 사다리 위 천장 구멍에서 시체가 떨어진다.
+                StageAnchor hole = StageAnchor.Find(script.ExtraStageAnchor);
+                Vector3 from = hole != null ? hole.transform.position : CeilingAbove(PointOr(Vector3.zero, 3f));
+                Vector3 floor = FloorBelow(from + Vector3.down * 0.5f);
+                CorpseDrop body = CorpseDrop.Spawn(floor, player, from.y, script.ExtraAnchorId);
+                st.Objects.Add(body.gameObject);
+            }
+            else if (script.ExtraStandIn.Length > 0)
             {
                 Vector3 ceiling;
                 GameObject extra = SpawnAt(st, script.ExtraStandIn, script.ExtraStageAnchor, true, PointOr(Vector3.zero, 3f), player, script.ExtraAnchorId, out ceiling);
@@ -249,6 +287,78 @@ public sealed class DirectionStage : MonoBehaviour
         if (Impact() != null) Impact().Confront(e.SourceId);
         // 대면 소리는 가깝고 크게(최소 거리 6m, 75%만 3D) — 4~8m 앞 몹의 소리가 PlayClipAtPoint(최소 1m)로 묻혔다(44차).
         PlaySound(e.SourceId + ".confront", point, ConfrontMinDistance, ConfrontSpatial);
+    }
+
+    private Vector3 _corpseSpot;
+    private float _corpseCeiling;
+    private float _corpseSpotAt = -100f;
+
+    private static bool IsCorpse(string encounterId)
+    {
+        EncounterScript s = EncounterScripts.Find(encounterId);
+        return s != null && s.StandIn == EncounterScripts.CorpseStandIn;
+    }
+
+    private static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
+
+    /// <summary>
+    /// 시체가 떨어질 바닥 점 — 카메라 정면에서 20° 옆(트인 쪽) 1.1m. 막혔으면 반대쪽·정면·0.9m 순. <paramref name="ceilingY"/> = 그 위 천장 높이.
+    /// </summary>
+    private static Vector3 CorpseSpot(out float ceilingY)
+    {
+        Vector3 feet = PlayerFeet();
+        Camera cam = Camera.main;
+        Vector3 fwd = cam != null ? cam.transform.forward : (PlayerRoot() != null ? PlayerRoot().forward : Vector3.forward);
+        fwd.y = 0f;
+        fwd = fwd.sqrMagnitude > 0.0001f ? fwd.normalized : Vector3.forward;
+        float side = UnityEngine.Random.value < 0.5f ? 1f : -1f;
+        float[] angles = { 20f * side, -20f * side, 0f, 35f * side, -35f * side };
+        float[] dists = { 1.1f, 0.9f };
+        Vector3 chest = feet + Vector3.up * 1.2f;
+        Transform player = PlayerRoot();
+        for (int d = 0; d < dists.Length; d++)
+        {
+            for (int a = 0; a < angles.Length; a++)
+            {
+                Vector3 dir = Quaternion.Euler(0f, angles[a], 0f) * fwd;
+                if (Blocked(chest, dir, dists[d] + 0.35f, player)) continue;
+                Vector3 floor = FloorBelow(feet + dir * dists[d] + Vector3.up * 0.3f);
+                ceilingY = CeilingY(floor, player);
+                return floor;
+            }
+        }
+
+        Vector3 fallback = FloorBelow(feet + fwd * 0.9f + Vector3.up * 0.3f);
+        ceilingY = CeilingY(fallback, player);
+        return fallback;
+    }
+
+    private static bool Blocked(Vector3 from, Vector3 dir, float dist, Transform player)
+    {
+        foreach (RaycastHit h in Physics.RaycastAll(from, dir, dist, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            if (player != null && h.collider.transform.IsChildOf(player)) continue;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static float CeilingY(Vector3 floor, Transform player)
+    {
+        float best = float.MaxValue;
+        foreach (RaycastHit h in Physics.RaycastAll(floor + Vector3.up * 0.5f, Vector3.up, 5f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            if (player != null && h.collider.transform.IsChildOf(player)) continue;
+            if (h.point.y < best) best = h.point.y;
+        }
+
+        return best < float.MaxValue ? best : floor.y + 3f;
     }
 
     private const float ConfrontMinDistance = 6f;
@@ -772,11 +882,20 @@ public sealed class DirectionStage : MonoBehaviour
 
         Vector3 fwd = cam.transform.forward;
         fwd.y = 0f;
-        Vector3 at = FloorBelow(cam.transform.position + (fwd.sqrMagnitude > 0.01f ? fwd.normalized : Vector3.forward) * 6f);
-        GameObject go = StandInFactory.Create("mob.blackman", at, cam.transform.position, string.Empty);
+        fwd = fwd.sqrMagnitude > 0.01f ? fwd.normalized : Vector3.forward;
+        Vector3 right = Vector3.Cross(Vector3.up, fwd);
+        // 52차(K1 원래 문구 「지나갈 때까지」): 화면을 가로지른다 — 안쪽 왼편에서 앞쪽 오른편으로, 걷지 않고 1.5초마다 0.7m 툭툭.
+        Vector3 from = FloorBelow(cam.transform.position + fwd * 6f - right * 2.2f);
+        Vector3 to = FloorBelow(cam.transform.position + fwd * 4.5f + right * 2.2f);
+        GameObject go = StandInFactory.Create("mob.blackman", from, cam.transform.position, string.Empty);
         CctvOnlyVisible only = go.AddComponent<CctvOnlyVisible>();
         only.Channel = cctv.CurrentChannel;
         st.Objects.Add(go);
+        // 3초 이어서 보면 얼굴 점프스케어(3일차부터, 밤당 한 번) — 끝까지 가거나 점프스케어 뒤에는 사라진다.
+        CctvFaceScare.RegisterCrossing(go, cctv.CurrentChannel, from, to, () =>
+        {
+            if (only != null) only.enabled = false;
+        });
     }
 
     private void OnRuleCue(DirectionEvent e)
@@ -916,11 +1035,16 @@ public sealed class DirectionStage : MonoBehaviour
 
     private void OnRuleSettled(FinalRuleResult r)
     {
-        // 교차: 소년이 있는 동안 C2를 어기면 머리 박기(소리는 복도 어디서나).
-        if (r.RuleId == "C2" && r.Outcome == FinalOutcome.Violated && _staged.ContainsKey(ProgramCatalog.BoyBang))
+        // 52차: 앉은 소년을 3초 바라보면(C2 위반) 책상에 머리를 세 번 박고 엎드린다(소리는 복도까지).
+        Staged boy;
+        if (r.RuleId == "C2" && r.Outcome == FinalOutcome.Violated && _staged.TryGetValue(ProgramCatalog.BoyBang, out boy))
         {
-            PlaySound(ProgramCatalog.BoyBang + ".headbang", PlayerFeet());
-            if (Verbose) Debug.Log("[Direction] 교차 연출 — 소년 머리 박기(C2 위반)");
+            for (int i = 0; i < boy.Objects.Count; i++)
+            {
+                if (boy.Objects[i] != null) BoyHeadBang.Play(boy.Objects[i]);
+            }
+
+            if (Verbose) Debug.Log("[Direction] 소년 머리 박기(C2 위반)");
         }
     }
 

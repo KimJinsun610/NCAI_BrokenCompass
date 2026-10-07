@@ -14,7 +14,9 @@ using UnityEngine.SceneManagement;
 /// <item><b>역설 문자</b> — <see cref="EventBus.MessageSent"/>를 받아 태블릿 메시지함에 넣는다.
 /// 넣는 순간 <see cref="TabletAlarm"/>이 울린다(TabletMessageList.MessageReceived 경유).</item>
 /// <item><b>점검 지시 문자</b>(32차) — 그날 점검표를 메시지 한 통(<see cref="NightRun.ChecklistMessage"/>)으로 넣는다.
-/// 새 점검 편성이면 지우고 새로 넣고(알람 한 번), 보고·안전한 읽기·재시작 때는 같은 ID로 본문만 고친다(알람 없음).</item>
+/// 새 점검 편성이면 지우고 새로 넣고(알람 한 번), 보고·안전한 읽기·재시작 때는 같은 ID로 본문만 고친다(알람 없음).
+/// 50차 순차 지시(<see cref="NightRun.InspectionDripEnabled"/>)면 점검표 대신 <b>지시 한 통마다 메시지 하나</b>(<see cref="NightRun.OrderMessageId"/>) —
+/// 새 지시는 알람, 보고하면 그 지시 문자의 줄만 조용히 고친다. 재시작으로 되돌린 지시의 문자는 지운다.</item>
 /// <item><b>안전한 읽기</b>(10단계) — <see cref="EventBus.SafeReadConfirmed"/>를 받으면 태블릿이 짧게 떨고(약한 글리치) 진동음(<c>tablet.buzz</c>) 한 번, 태블릿 글을 다시 읽는다(점검표에 「확인 필요」/「이상 없음」).
 /// 수칙 위반 때도 같은 진동음이다(2026-10-04 사운드 전달본 PUN-02).</item>
 /// <item><b>글자 깨짐</b> — 그 밤 수칙에 변조·검게 지운 줄이 있으면 태블릿을 처음 올릴 때 「틱틱」(<c>tablet.corrupt</c>)과 짧은 글리치.</item>
@@ -57,6 +59,8 @@ public sealed class TabletBridge : MonoBehaviour
     private ParadoxPlan _corruptShownFor;
     private InspectionPlan _checklistPlan;
     private string _checklistText;
+    private InspectionDispatcher _ordersFor;
+    private readonly Dictionary<string, string> _orderTexts = new Dictionary<string, string>();
     private AudioSource _tickSource;
 
     [Tooltip("비워 두면 씬에서 자동으로 찾는다.")]
@@ -133,6 +137,7 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.MessageSent += OnMessageSent;
         EventBus.SafeReadConfirmed += OnSafeReadConfirmed;
         EventBus.InspectionReported += OnInspectionReported;
+        EventBus.InspectionOrdered += OnInspectionOrdered;
         EventBus.NightRestarted += OnNightRestarted;
         EventBus.TabletTextChanged += OnTabletTextChanged;
         EventBus.FinalRuleSettled += OnFinalRuleSettled;
@@ -143,6 +148,7 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.MessageSent -= OnMessageSent;
         EventBus.SafeReadConfirmed -= OnSafeReadConfirmed;
         EventBus.InspectionReported -= OnInspectionReported;
+        EventBus.InspectionOrdered -= OnInspectionOrdered;
         EventBus.NightRestarted -= OnNightRestarted;
         EventBus.TabletTextChanged -= OnTabletTextChanged;
         EventBus.FinalRuleSettled -= OnFinalRuleSettled;
@@ -173,16 +179,29 @@ public sealed class TabletBridge : MonoBehaviour
         {
             SyncChecklist(true);
         }
+
+        if (NightRun.IsNightActive && NightRun.Orders != _ordersFor)
+        {
+            SyncOrders();
+        }
     }
 
     private void OnInspectionReported(InspectionReport report)
     {
         SyncChecklist(false);
+        SyncOrders();
+    }
+
+    private void OnInspectionOrdered(InspectionOrder order)
+    {
+        if (!Bind()) return;
+        SyncOrders();
     }
 
     private void OnNightRestarted(RestartResult result)
     {
         SyncChecklist(false);
+        SyncOrders();
         ReloadDocuments();
     }
 
@@ -191,6 +210,7 @@ public sealed class TabletBridge : MonoBehaviour
     {
         if (!Bind()) return;
         SyncChecklist(false);
+        SyncOrders();
         ReloadDocuments();
     }
 
@@ -198,6 +218,7 @@ public sealed class TabletBridge : MonoBehaviour
     private void OnFinalRuleSettled(FinalRuleResult result)
     {
         if (result.Outcome != FinalOutcome.Violated || !Bind()) return;
+        if (!NightRun.ShowViolationStain) return;   // 51차: 위반은 태블릿에 드러내지 않는다(진동·글리치 없음 — 진동은 문자 도착 전용)
         if (glitch != null && !_glitchOn)
         {
             glitch.SetIntensity(ViolationGlitch);
@@ -265,6 +286,68 @@ public sealed class TabletBridge : MonoBehaviour
         if (!force && present && text == _checklistText) return;
         _checklistText = text;
         messages.Add(NightRun.ChecklistMessageId, text);
+    }
+
+    /// <summary>
+    /// 점검 지시 문자를 맞춘다(50차). 지시마다 메시지 하나 — 없으면 넣고(알람), 본문이 바뀌었으면 같은 ID로 고친다(알람 없음).
+    /// 새 밤이면 옛 지시 문자를 모두 지우고, 재시작으로 되돌린 지시(번호가 지금 지시 수보다 큰 것)의 문자도 지운다.
+    /// 피날레가 지운 문자는 다시 넣지 않는다.
+    /// </summary>
+    private void SyncOrders()
+    {
+        if (messages == null) return;
+
+        InspectionDispatcher d = NightRun.IsNightActive ? NightRun.Orders : _ordersFor;
+        if (d != _ordersFor)
+        {
+            RemoveOrders(0);
+            _ordersFor = d;
+            _orderTexts.Clear();
+        }
+
+        if (d == null) return;
+        RemoveOrders(d.Orders.Count);
+
+        bool finale = NightRun.Finale.Active;
+        for (int i = 0; i < d.Orders.Count; i++)
+        {
+            InspectionOrder order = d.Orders[i];
+            string id = NightRun.OrderMessageId(order.Index);
+            string text = NightRun.OrderMessage(order);
+            if (!Contains(id))
+            {
+                if (finale) continue;
+                messages.Add(id, text);
+                _orderTexts[id] = text;
+                continue;
+            }
+
+            string old;
+            if (_orderTexts.TryGetValue(id, out old) && old == text) continue;
+            _orderTexts[id] = text;
+            messages.Add(id, text);
+        }
+    }
+
+    /// <summary>번호가 <paramref name="keep"/>보다 큰 지시 문자를 지운다(0이면 전부).</summary>
+    private void RemoveOrders(int keep)
+    {
+        if (messages == null) return;
+        List<string> drop = new List<string>();
+        IReadOnlyList<TabletMessageList.Message> list = messages.Messages;
+        for (int i = 0; i < list.Count; i++)
+        {
+            string id = list[i].id;
+            if (id == null || !id.StartsWith(NightRun.OrderMessagePrefix)) continue;
+            int n;
+            if (!int.TryParse(id.Substring(NightRun.OrderMessagePrefix.Length), out n) || n > keep) drop.Add(id);
+        }
+
+        for (int i = 0; i < drop.Count; i++)
+        {
+            messages.Remove(drop[i]);
+            _orderTexts.Remove(drop[i]);
+        }
     }
 
     private bool Contains(string id)
@@ -353,6 +436,7 @@ public sealed class TabletBridge : MonoBehaviour
         if (!Bind()) return;
 
         SyncChecklist(false);
+        SyncOrders();
         foreach (TabletDocument doc in FindObjectsByType<TabletDocument>(FindObjectsInactive.Include, FindObjectsSortMode.None)) doc.Reload();
 
         if (glitch != null && !_glitchOn)

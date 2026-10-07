@@ -49,3 +49,39 @@ MonoBehaviour:
   - "\uC774\uC804 \uADFC\uBB34\uC790\uC758 \uAE30\uB85D\uC740 \uB450 \uBC88\uC9F8
     \uAD00\uCE21\uC5D0\uC11C \uBA48\uCDB0 \uC788\uC5C8\uB2E4."
   backgrounds: []
+  tipImageFolder: Assets/0. Main/06 Data/LoadingTipImages
+  tipImages:
+  - id: TIP_001
+    sprite: {fileID: 0}
+  - id: TIP_002
+    sprite: {fileID: 0}
+  - id: TIP_003
+    sprite: {fileID: 0}
+  - id: TIP_004
+    sprite: {fileID: 0}
+  - id: TIP_005
+    sprite: {fileID: 0}
+  - id: TIP_006
+    sprite: {fileID: 0}
+  - id: TIP_007
+    sprite: {fileID: 0}
+  - id: TIP_008
+    sprite: {fileID: 0}
+  - id: TIP_009
+    sprite: {fileID: 0}
+  - id: TIP_010
+    sprite: {fileID: 0}
+  - id: TIP_011
+    sprite: {fileID: 0}
+  - id: TIP_012
+    sprite: {fileID: 0}
+  - id: TIP_013
+    sprite: {fileID: 0}
+  - id: LORE_001
+    sprite: {fileID: 0}
+  - id: LORE_002
+    sprite: {fileID: 0}
+  - id: LORE_003
+    sprite: {fileID: 0}
+  - id: LORE_004
+    sprite: {fileID: 0}

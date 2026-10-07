@@ -6,7 +6,7 @@ using UnityEngine;
 /// Resources 폴더의 "SceneFlowConfig" 에셋 하나만 사용하며, SceneFlow가 자동으로 불러온다.
 /// Play 씬을 바꾸려면 이 에셋의 Play Scene 칸에 새 씬을 드래그하면 된다.
 ///
-/// 씬별 배경음(BGM)도 여기서 정한다 — SceneBgmPlayer가 씬이 바뀔 때마다 읽는다(씬 파일은 고치지 않는다).
+/// 씬별 배경음(BGM)·입장 소리와 UI 버튼 클릭음도 여기서 정한다 — SceneBgmPlayer·UiClickSound가 읽는다(씬 파일은 고치지 않는다).
 /// Play 씬은 자체 앰비언스가 있어 BGM 칸이 없다(들어가면 BGM을 끈다).
 /// </summary>
 [CreateAssetMenu(fileName = "SceneFlowConfig", menuName = "Programmer_Kim/Scene Flow Config")]
@@ -28,7 +28,14 @@ public class SceneFlowConfig : ScriptableObject
     [Tooltip("BGM이 꺼지거나 다른 곡으로 넘어갈 때 앞 곡이 줄어드는 시간(초)")]
     [SerializeField, Min(0f)] private float bgmFadeOut = 1.0f;
 
+    [Header("UI 소리")]
+    [Tooltip("모든 씬의 UI 버튼을 마우스로 누를 때(누를 수 있는 버튼만). 비우면 소리 없음.")]
+    [SerializeField] private AudioClip buttonClick;
+    [SerializeField, Range(0f, 1f)] private float buttonClickVolume = 0.8f;
+
     public float BgmFadeOut { get { return bgmFadeOut; } }
+    public AudioClip ButtonClick { get { return buttonClick; } }
+    public float ButtonClickVolume { get { return buttonClickVolume; } }
 
     public string GetPath(GameScene scene)
     {
@@ -90,4 +97,8 @@ public class SceneBgm
     [Min(0f)] public float fadeIn = 1.5f;
     [Tooltip("곡이 비어 있을 때 앞 씬의 곡을 계속 튼다.")]
     public bool keepPrevious;
+
+    [Tooltip("이 씬에 들어올 때 한 번 내는 소리(예: 계약서 종이 넘김). 비우면 없음.")]
+    public AudioClip enterSound;
+    [Range(0f, 1f)] public float enterVolume = 0.9f;
 }

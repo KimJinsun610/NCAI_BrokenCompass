@@ -1,8 +1,15 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 /// <summary>
-/// 로딩 화면에 표시할 안내 문구와 배경 이미지 목록.
+/// 로딩 화면에 표시할 안내 문구 · 팁 이미지 · 배경 이미지 목록.
+/// <para>
+/// <b>팁 문구와 팁 이미지는 CSV의 Id로 1:1 짝짓는다.</b> 문구는 CSV(<see cref="tipCsv"/>), 이미지는 이 에셋의
+/// <see cref="tipImages"/>(Id → Sprite). 한 번 뽑은 줄(<see cref="PickTipEntry"/>)에서 문구와 이미지를 함께 꺼내므로
+/// 둘이 어긋나지 않는다. 이미지 파일 이름을 Id와 같게(예: TIP_001.png) 지으면 인스펙터의 [자동 채우기]가 연결한다.
+/// </para>
 /// <para>
 /// 문구는 두 갈래다. <see cref="tips"/>는 조작·규칙 안내라 언제 떠도 안전하고,
 /// <see cref="unlockedTips"/>는 <b>현장에서 알게 되는 내용</b>이라 DAY 1에 뜨면 스포일러가 된다.
@@ -31,6 +38,37 @@ public class LoadingTipTable : ScriptableObject
     [Tooltip("비워 두면 로딩 씬에 배치된 기본 배경을 그대로 쓴다.")]
     public Sprite[] backgrounds;
 
+    /// <summary>팁 하나의 이미지(Id는 CSV의 Id와 같아야 한다).</summary>
+    [Serializable]
+    public class TipImage
+    {
+        public string id;
+        public Sprite sprite;
+    }
+
+    [Header("팁 이미지 (CSV의 Id와 1:1)")]
+    [Tooltip("[자동 채우기]가 이 폴더에서 Id와 이름이 같은 이미지를 찾는다.")]
+    public string tipImageFolder = "Assets/0. Main/06 Data/LoadingTipImages";
+
+    [Tooltip("Id마다 보여 줄 이미지. 비어 있는 팁은 이미지 칸을 숨기고 문구만 보여 준다.")]
+    public List<TipImage> tipImages = new List<TipImage>();
+
+    /// <summary>한 번에 뽑은 팁 한 줄 — 문구와 이미지가 늘 같은 줄에서 나온다.</summary>
+    public readonly struct Tip
+    {
+        public readonly string Id;
+        public readonly string Text;
+        /// <summary>없으면 null.</summary>
+        public readonly Sprite Image;
+
+        public Tip(string id, string text, Sprite image)
+        {
+            Id = id;
+            Text = text;
+            Image = image;
+        }
+    }
+
     // 연속으로 같은 항목이 나오지 않도록 직전 인덱스를 기억한다 (씬이 바뀌어도 유지)
     private static int lastTipIndex = -1;
     private static int lastBackgroundIndex = -1;
@@ -40,45 +78,76 @@ public class LoadingTipTable : ScriptableObject
 
     // CSV는 처음 고를 때 한 번만 읽는다
     private List<LoadingTipRow> csvRows;
-    private readonly List<string> csvPool = new List<string>();
+    private readonly List<LoadingTipRow> csvPool = new List<LoadingTipRow>();
+    private Dictionary<string, Sprite> imageById;
 
     /// <summary>
-    /// 지금 띄울 문구 하나. CSV가 있으면 CSV에서(UnlockDay ≤ 현재 DAY),
-    /// 없으면 해금 전에는 <see cref="tips"/>에서만, 해금 뒤에는 두 목록을 합쳐서 고른다.
+    /// 지금 띄울 팁 한 줄(문구 + 같은 Id의 이미지). CSV가 있으면 CSV에서(UnlockDay ≤ 현재 DAY),
+    /// 없으면 해금 전에는 <see cref="tips"/>에서만, 해금 뒤에는 두 목록을 합쳐서 고른다(이 경우 Id·이미지 없음).
     /// </summary>
-    public string PickTip()
+    public Tip PickTipEntry()
     {
         if (tipCsv != null) return PickFromCsv();
-        return Pick(IsUnlocked ? Merged() : tips, ref lastTipIndex);
+        return new Tip(string.Empty, Pick(IsUnlocked ? Merged() : tips, ref lastTipIndex), null);
     }
+
+    /// <summary>문구만 필요할 때.</summary>
+    public string PickTip() => PickTipEntry().Text;
 
     public Sprite PickBackground() => Pick(backgrounds, ref lastBackgroundIndex);
 
-    private string PickFromCsv()
+    /// <summary>CSV의 모든 줄(에디터 검사 · 자동 채우기용).</summary>
+    public IReadOnlyList<LoadingTipRow> CsvRows
     {
-        if (csvRows == null) csvRows = LoadingTipCsv.Parse(tipCsv.text, tipCsv.name);
+        get
+        {
+            if (tipCsv == null) return Array.Empty<LoadingTipRow>();
+            if (csvRows == null) csvRows = LoadingTipCsv.Parse(tipCsv.text, tipCsv.name);
+            return csvRows;
+        }
+    }
 
+    /// <summary>그 Id의 팁 이미지(없으면 null). Id는 대소문자를 가리지 않는다.</summary>
+    public Sprite ImageFor(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        if (imageById == null)
+        {
+            imageById = new Dictionary<string, Sprite>(StringComparer.OrdinalIgnoreCase);
+            foreach (TipImage t in tipImages)
+            {
+                if (t == null || string.IsNullOrWhiteSpace(t.id) || t.sprite == null) continue;
+                imageById[t.id.Trim()] = t.sprite;
+            }
+        }
+        return imageById.TryGetValue(id, out Sprite s) ? s : null;
+    }
+
+    private Tip PickFromCsv()
+    {
         int day = Mathf.Max(1, GameSession.CurrentDay);
         csvPool.Clear();
-        foreach (LoadingTipRow row in csvRows)
+        foreach (LoadingTipRow row in CsvRows)
         {
-            if (row.UnlockDay <= day) csvPool.Add(row.Text);
+            if (row.UnlockDay <= day) csvPool.Add(row);
         }
 
         if (csvPool.Count == 0)
         {
             Debug.LogWarning($"[LoadingTipTable] {tipCsv.name}에 DAY {day}에 나올 문구가 없습니다.");
-            return string.Empty;
+            return new Tip(string.Empty, string.Empty, null);
         }
 
-        return Pick(csvPool.ToArray(), ref lastTipIndex);
+        LoadingTipRow picked = Pick(csvPool.ToArray(), ref lastTipIndex);
+        return new Tip(picked.Id, picked.Text, ImageFor(picked.Id));
     }
 
-    // 인스펙터에서 CSV·배열을 바꾸면 다시 읽게 한다
+    // 인스펙터에서 CSV·배열·이미지를 바꾸면 다시 읽게 한다
     private void OnValidate()
     {
         csvRows = null;
         merged = null;
+        imageById = null;
     }
 
     /// <summary>현장 내용을 띄워도 되는 시점인지.</summary>

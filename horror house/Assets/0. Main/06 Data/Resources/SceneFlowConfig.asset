@@ -23,22 +23,32 @@ MonoBehaviour:
     loop: 1
     fadeIn: 1.5
     keepPrevious: 0
+    enterSound: {fileID: 0}
+    enterVolume: 0.9
   loadingBgm:
     clip: {fileID: 0}
     volume: 0.6
     loop: 1
     fadeIn: 1.5
     keepPrevious: 1
+    enterSound: {fileID: 0}
+    enterVolume: 0.9
   contractBgm:
     clip: {fileID: 0}
     volume: 0.6
     loop: 1
     fadeIn: 1.5
     keepPrevious: 1
+    enterSound: {fileID: 8300000, guid: 21f71e4920bfb9244b5d5bb33b0bb26f, type: 3}
+    enterVolume: 0.9
   resultBgm:
     clip: {fileID: 8300000, guid: 4978208248f512e49b643f769531a97a, type: 3}
     volume: 0.5
     loop: 1
     fadeIn: 1.5
     keepPrevious: 0
+    enterSound: {fileID: 8300000, guid: a9aa2bc13cb90ce478027d35608cd7d6, type: 3}
+    enterVolume: 0.9
   bgmFadeOut: 1
+  buttonClick: {fileID: 8300000, guid: 6b75ed0f09bf0c845913e2358766beb9, type: 3}
+  buttonClickVolume: 0.8

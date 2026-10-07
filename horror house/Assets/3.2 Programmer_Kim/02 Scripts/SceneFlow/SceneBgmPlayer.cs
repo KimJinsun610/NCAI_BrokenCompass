@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 씬별 배경음 재생기. 씬이 바뀌어도 살아 있는 오브젝트 하나가 SceneFlowConfig의 BGM 칸대로 곡을 바꾼다.
+/// 씬별 배경음 재생기. 씬이 바뀌어도 살아 있는 오브젝트 하나가 SceneFlowConfig의 BGM 칸대로 곡을 바꾸고,
+/// 그 씬의 입장 소리(enterSound)를 한 번 낸다. 같은 오브젝트에 버튼 클릭음(UiClickSound)도 붙인다.
 ///
 /// <para>· 씬 파일에 놓지 않아도 된다 — 첫 씬이 열릴 때 스스로 선다(DontDestroyOnLoad).
 /// · 곡이 바뀌면 크로스페이드(앞 곡은 Config.BgmFadeOut, 새 곡은 그 씬의 fadeIn). 같은 곡이면 끊지 않고 볼륨만 맞춘다.
@@ -18,6 +19,7 @@ public class SceneBgmPlayer : MonoBehaviour
 
     private AudioSource current;   // 지금 곡
     private AudioSource previous;  // 줄어드는 앞 곡
+    private AudioSource oneShot;   // 씬 입장 소리
     private AudioListener ownListener;
     private Coroutine fadeRoutine;
 
@@ -49,8 +51,10 @@ public class SceneBgmPlayer : MonoBehaviour
         Instance = this;
         current = NewSource();
         previous = NewSource();
+        oneShot = NewSource();
         ownListener = gameObject.AddComponent<AudioListener>();
         ownListener.enabled = false;
+        gameObject.AddComponent<UiClickSound>();   // 모든 씬의 버튼 클릭음
 
         SceneManager.sceneLoaded += OnSceneLoaded;
         OnSceneLoaded(SceneManager.GetActiveScene(), LoadSceneMode.Single);   // 첫 씬
@@ -84,6 +88,12 @@ public class SceneBgmPlayer : MonoBehaviour
             bgm = config.GetBgm(gameScene);   // Play 씬은 null
         }
         float fadeOut = config != null ? config.BgmFadeOut : 1f;
+
+        // 입장 소리(예: 계약서 종이 넘김 · 결과창 종이 바스락) — 씬에 들어올 때 한 번
+        if (bgm != null && bgm.enterSound != null)
+        {
+            oneShot.PlayOneShot(bgm.enterSound, bgm.enterVolume);
+        }
 
         if (bgm == null)
         {

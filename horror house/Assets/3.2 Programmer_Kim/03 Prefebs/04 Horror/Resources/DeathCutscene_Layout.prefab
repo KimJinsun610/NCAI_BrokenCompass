@@ -1,0 +1,213 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4537415783785348630
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6198368722442405316}
+  - component: {fileID: 4542270074030673257}
+  m_Layer: 0
+  m_Name: DeathCutscene_Layout
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6198368722442405316
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4537415783785348630}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4542270074030673257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4537415783785348630}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38d9bf86c7fdf71419ea9c281aee3d82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LayoutDeathCutscene
+  bloodRain: 0
+  bloodDripPrefab: {fileID: 0}
+  firstDropDistance: 1.4
+  firstDropsMin: 3
+  firstDropsMax: 4
+  firstDropDelay: 0.4
+  firstDropInterval: {x: 0.8, y: 1.15}
+  lockAfterLastDrop: 0.5
+  dropClips: []
+  dropVolume: 0.85
+  dropSizeScale: 2
+  lookUpSeconds: 2.6
+  stainHoldSeconds: 2.8
+  maxLookUpPitch: -75
+  lookTremble: 0.6
+  lookDownSeconds: 1.6
+  revealHoldSeconds: 2
+  rainPoints: 40
+  rainRadius: 10
+  rainRateStart: 4
+  rainRateFull: 26
+  rainRampSeconds: 5
+  rainStainChance: 0.6
+  rainStainFadeSeconds: 1.5
+  rainSoundChance: 0.4
+  crowdTrees: 14
+  crowdRadius: 12
+  crowdSpacing: 2.2
+  crowdMinDistance: 2.6
+  targetPathLength: {x: 6, y: 11}
+  pathClearance: 1.2
+  revealWobble: 0.8
+  revealVignette: 0.4
+  revealFadeSeconds: 2.5
+  rainSounds: []
+  treePrefab: {fileID: 5857396982247940455, guid: 78f6fcb1281798d41b017b7389f6b78f, type: 3}
+  branchHeight: 2.2
+  lookHeight: 2
+  blockRadius: 2
+  searchRange: 35
+  maxPathLength: 40
+  freezeSeconds: 0.6
+  walkSpeed: 1.45
+  stepLength: 0.72
+  pullDistance: 2.3
+  swayPeriod: 3.2
+  swayYawDeg: 4
+  swayPitchDeg: 3
+  staggerRoll: 4
+  approachFov: 46
+  pullSeconds: 0.38
+  pullFov: 85
+  blotDelay: 0.08
+  blotSeconds: 0.32
+  blackHold: 1
+  forceFlashlight: 1
+  darkenFrom: 5
+  darkenVignette: 0.95
+  darkenOverall: 0.45
+  wobbleMax: 0.85
+  stepClips:
+  - {fileID: 8300000, guid: 0060af09ea054ce4da382b2e158afb24, type: 3}
+  - {fileID: 8300000, guid: cba5df0312c1a1443826a3febac5575a, type: 3}
+  - {fileID: 8300000, guid: c77e16c4dd49acc45b528bf95854b353, type: 3}
+  - {fileID: 8300000, guid: aad7630c9c10e78428a18dffda325ffa, type: 3}
+  - {fileID: 8300000, guid: b7e3258bfe44bf34c98650be043dbc71, type: 3}
+  stepVolume: 0.45
+  echoDelayMs: 320
+  startHits: []
+  layers:
+  - clip: {fileID: 8300000, guid: 3fa01b77250f270479ea808a4d88a4a8, type: 3}
+    volume: 0.55
+    fromProgress: 0.3
+    fullProgress: 0.85
+    fadeOutFrom: 1.01
+    fadeOutTo: 1.01
+    atTree: 0
+    copies: 1
+    clipStart: 0
+  - clip: {fileID: 8300000, guid: f7235a1d603046d48be29b973dd7a983, type: 3}
+    volume: 0.7
+    fromProgress: 0.3
+    fullProgress: 0.75
+    fadeOutFrom: 1.01
+    fadeOutTo: 1.01
+    atTree: 1
+    copies: 1
+    clipStart: 0
+  - clip: {fileID: 8300000, guid: 83c674ae489702743808c77b3cbab5af, type: 3}
+    volume: 0.9
+    fromProgress: 0.3
+    fullProgress: 0.7
+    fadeOutFrom: 1.01
+    fadeOutTo: 1.01
+    atTree: 1
+    copies: 1
+    clipStart: 0
+  - clip: {fileID: 8300000, guid: 175f47fd9954ece499b50675b8f1ac27, type: 3}
+    volume: 0.45
+    fromProgress: 0.4
+    fullProgress: 1
+    fadeOutFrom: 1.01
+    fadeOutTo: 1.01
+    atTree: 0
+    copies: 1
+    clipStart: 0
+  - clip: {fileID: 8300000, guid: 234cb716594e34e4886968e23a111253, type: 3}
+    volume: 0.6
+    fromProgress: 0.02
+    fullProgress: 0.25
+    fadeOutFrom: 0.35
+    fadeOutTo: 0.5
+    atTree: 0
+    copies: 3
+    clipStart: 0
+  - clip: {fileID: 8300000, guid: 2f4d5533294855447999ca251d74ce50, type: 3}
+    volume: 0.8
+    fromProgress: 0.35
+    fullProgress: 0.5
+    fadeOutFrom: 0.68
+    fadeOutTo: 0.8
+    atTree: 0
+    copies: 3
+    clipStart: 0
+  - clip: {fileID: 8300000, guid: d6b5ef9570f88c44e976a664d65f1123, type: 3}
+    volume: 1
+    fromProgress: 0.68
+    fullProgress: 0.8
+    fadeOutFrom: 1.01
+    fadeOutTo: 1.01
+    atTree: 0
+    copies: 3
+    clipStart: 0
+  suckIn:
+    clip: {fileID: 8300000, guid: 7aab74b9cdbe46c44ac78b63b04f6bfd, type: 3}
+    volume: 0.9
+    clipStart: 0
+    delay: 0
+  suckInPeak: 2.86
+  pullHits:
+  - clip: {fileID: 8300000, guid: f37d3b0bdfc1ebe47b81552b3be85f82, type: 3}
+    volume: 1
+    clipStart: 0.9
+    delay: 0
+  - clip: {fileID: 8300000, guid: cc40ad9c79f3cb945860e06c6f85b29f, type: 3}
+    volume: 1
+    clipStart: 0.15
+    delay: 0
+  - clip: {fileID: 8300000, guid: 71fba3f390a287f45906e706ec97a6f3, type: 3}
+    volume: 0.8
+    clipStart: 5.9
+    delay: 0
+  - clip: {fileID: 8300000, guid: 053304e3083e69346b2f95ef6baba349, type: 3}
+    volume: 0.8
+    clipStart: 0.07
+    delay: 0
+  - clip: {fileID: 8300000, guid: 7e7f5b14fcd870246a6f13e7e20c1f5c, type: 3}
+    volume: 0.7
+    clipStart: 2.8700001
+    delay: 0
+  endHits:
+  - clip: {fileID: 8300000, guid: 75ce7e3b188d3b0409926ea8a7d3b45e, type: 3}
+    volume: 0.6
+    clipStart: 0.010000002
+    delay: 0
+  useDebugKey: 0
+  debugKey: 287

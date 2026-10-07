@@ -26,11 +26,18 @@ public static class ContractSceneSetup
 
     private static readonly Color InkColor = new Color(0.12f, 0.12f, 0.12f, 1f);
 
+    private const string DocumentTitle = "파견 근무 계약서";
+
+    // 계약서 본문(2026-10-07). 조항 사이는 \n(문단 간격), 조항 안 ①② 줄바꿈은 \v(문단 간격 없이 줄만 바꿈).
+    // TMP는 한글을 글자 단위로 줄바꿈하므로 조항 끝 낱말을 <nobr>로 묶어 「다.」만 다음 줄로 떨어지지 않게 한다.
     private const string PlaceholderBody =
-        "밤 근무할 땐 항상 주변을 살펴봐야 해요. 어두운 곳에서 이상한 소리가 나면 바로 지침서를 확인하고 대처하세요.\n"
-        + "밤 근무 중엔 주변을 늘 주의하세요. 어둠 속에서 소리가 들리면 즉시 지침서를 참고해 대응하세요.\n"
-        + "야간 근무 시 주변을 항상 경계하세요. 어두운 곳에서 소리가 나면 바로 지침서를 확인해 행동하세요.\n"
-        + "밤 근무 중에는 주변을 꼼꼼히 살피세요. 어둠 속 소리가 들리면 즉시 지침서를 보고 대응하세요.";
+        "<b>제1조 (근무)</b> 철거 전 5일간, 매일 00:00부터 04:00까지 폐교 1층을 <nobr>순찰한다.</nobr>\n"
+        + "<b>제2조 (보고)</b> 점검 대상을 확인하고 태블릿으로 [정상] 또는 [이상]을 <nobr>보고한다.</nobr>\n"
+        + "<b>제3조 (근무 방식)</b>\v<margin-left=1.4em>① 근무는 태블릿으로 매일 전달되는 근무수칙에 <nobr>따른다.</nobr>\v② 근무자는 업무 호출에 지체 없이 응하여야 <nobr>한다.</nobr></margin>\n"
+        + "<b>제4조 (수칙 준수)</b>\v<margin-left=1.4em>① 수칙은 매일 갱신되며, 근무자는 이를 임의로 변경할 수 <nobr>없다.</nobr>\v② 회사가 태블릿으로 전달하는 문자는 모두 정상적으로 발송된 <nobr>것이다.</nobr></margin>\n"
+        + "<b>제5조 (안전)</b> 수칙을 따르지 않아 생긴 상해와 정신적 변화에 회사는 책임지지 <nobr>않는다.</nobr>\n"
+        + "<b>제6조 (기밀)</b> 현장에서 보고 들은 내용은 외부에 누설하지 <nobr>않는다.</nobr>\n"
+        + "<b>제7조 (해지)</b> 수칙을 반복 위반하면 회사는 통보 없이 계약을 해지할 수 <nobr>있다.</nobr>";
 
     [MenuItem("Tools/Programmer_Kim/Scene Flow/Setup Contract Scene")]
     public static void Setup()
@@ -110,7 +117,7 @@ public static class ContractSceneSetup
             Stretch(dim.rectTransform);
 
             // 제목 + 밑줄 (왼쪽 위)
-            TextMeshProUGUI title = CreateText("Txt_Title", canvasRt, bold, "파견근무 계약서", 44f, Color.white, TextAlignmentOptions.MidlineLeft);
+            TextMeshProUGUI title = CreateText("Txt_Title", canvasRt, bold, DocumentTitle, 44f, Color.white, TextAlignmentOptions.MidlineLeft);
             Place(title.rectTransform, new Vector2(0f, 1f), new Vector2(110f, -130f), new Vector2(600f, 60f));
             Image titleLine = CreateImage("Img_TitleLine", canvasRt, new Color(1f, 1f, 1f, 0.7f));
             Place(titleLine.rectTransform, new Vector2(0f, 1f), new Vector2(68f, -222f), new Vector2(470f, 2f));
@@ -139,7 +146,7 @@ public static class ContractSceneSetup
             Place(paper.rectTransform, new Vector2(0f, 0f), new Vector2(255f, 0f), new Vector2(725f, 940f), new Vector2(0f, 0f));
             RectTransform paperRt = paper.rectTransform;
 
-            TextMeshProUGUI heading = CreateText("Txt_Heading", paperRt, bold, "야간근무 지침서", 26f, InkColor, TextAlignmentOptions.MidlineLeft);
+            TextMeshProUGUI heading = CreateText("Txt_Heading", paperRt, bold, DocumentTitle, 26f, InkColor, TextAlignmentOptions.MidlineLeft);
             Place(heading.rectTransform, new Vector2(0f, 1f), new Vector2(86f, -115f), new Vector2(560f, 40f));
 
             TextMeshProUGUI body = CreateText("Txt_Body", paperRt, regular, PlaceholderBody, 21f, InkColor, TextAlignmentOptions.TopLeft);

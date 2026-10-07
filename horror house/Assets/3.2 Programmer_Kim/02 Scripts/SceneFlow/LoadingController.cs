@@ -12,11 +12,16 @@ public class LoadingController : MonoBehaviour
 {
     // allowSceneActivation = false 상태에서 AsyncOperation.progress는 0.9에서 멈춘다
     private const float ActivationReadyProgress = 0.9f;
+    private const string TipImageName = "tip_image";
 
     [Header("UI")]
     [Tooltip("Image Type = Filled")]
     [SerializeField] private Image gaugeFill;
     [SerializeField] private TMP_Text tipText;
+    [Tooltip("팁 문구와 짝인 이미지 칸. 비워 두면 씬에서 이름이 「tip_image」인 Image를 찾는다.")]
+    [SerializeField] private Image tipImage;
+    [Tooltip("팁 이미지를 늘리지 않고 원래 비율로 칸 안에 맞춘다.")]
+    [SerializeField] private bool keepTipImageAspect = true;
     [SerializeField] private Image background;
     [Tooltip("화면 전체를 덮는 검정 이미지. alpha 1 = 가림")]
     [SerializeField] private CanvasGroup fade;
@@ -96,9 +101,23 @@ public class LoadingController : MonoBehaviour
     {
         if (tipTable == null) return;
 
+        // 문구와 이미지는 같은 한 줄에서 꺼낸다 — 따로 뽑으면 짝이 어긋난다
+        LoadingTipTable.Tip tip = tipTable.PickTipEntry();
+
         if (tipText != null)
         {
-            tipText.text = tipTable.PickTip() ?? string.Empty;
+            tipText.text = tip.Text ?? string.Empty;
+        }
+
+        if (tipImage == null) tipImage = FindTipImage();
+        if (tipImage != null)
+        {
+            // 이미지가 없는 팁은 칸을 숨긴다(빈 칸은 흰 사각형으로 보인다)
+            tipImage.sprite = tip.Image;
+            tipImage.enabled = tip.Image != null;
+            // 씬의 tip_image는 빈 자리 표시용으로 거의 투명한 회색(알파 0.04)이다 — 이미지를 넣을 땐 원래 색으로
+            if (tip.Image != null) tipImage.color = Color.white;
+            if (tip.Image != null && keepTipImageAspect) tipImage.preserveAspect = true;
         }
 
         if (background != null)
@@ -116,6 +135,16 @@ public class LoadingController : MonoBehaviour
                 }
             }
         }
+    }
+
+    /// <summary>칸이 비어 있으면 씬에서 「tip_image」라는 이름의 Image를 찾는다(씬 파일을 고치지 않고 연결).</summary>
+    private Image FindTipImage()
+    {
+        foreach (Image img in FindObjectsByType<Image>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (img.gameObject.scene == gameObject.scene && img.name == TipImageName) return img;
+        }
+        return null;
     }
 
     private void PlayBgm()

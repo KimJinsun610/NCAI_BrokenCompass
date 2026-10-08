@@ -54,8 +54,6 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 9dc9af25b4757184581c010421f92b90, type: 3}
   - id: TIP_002
     sprite: {fileID: 21300000, guid: 26ef758b63a9e5b4e83505197e0f93fc, type: 3}
-  - id: TIP_003
-    sprite: {fileID: 21300000, guid: f7bf1b17beb65ac4dabce364185a882c, type: 3}
   - id: TIP_004
     sprite: {fileID: 21300000, guid: b644aac82d39796419180d8541a07b1d, type: 3}
   - id: TIP_005

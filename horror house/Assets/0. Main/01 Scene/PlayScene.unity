@@ -152229,17 +152229,13 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5918593991904231597, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
-      propertyPath: m_AngularDamping
-      value: 0.5
-      objectReference: {fileID: 0}
     - target: {fileID: 7211598377816875816, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
       propertyPath: m_Name
       value: FPController
       objectReference: {fileID: 0}
     - target: {fileID: 8282405189132691889, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
       propertyPath: tabletZoomSpeed
-      value: 0.1
+      value: 0.3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

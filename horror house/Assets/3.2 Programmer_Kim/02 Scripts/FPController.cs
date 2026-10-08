@@ -15,6 +15,8 @@ public class FPController : MonoBehaviour
     [Header("MOVEMENT")]
     public float walkSpeed = 1;
     public float runSpeed = 3;
+    [Tooltip("태블릿을 Tab으로 확대해 읽는 동안의 이동 속도(Shift를 눌러도 이 속도). 플레이 중에 바꾸면 바로 반영된다.")]
+    public float tabletZoomSpeed = 0.5f;
     private float speed = 1;
 
     [Header("CONTROLS")]
@@ -174,6 +176,10 @@ public class FPController : MonoBehaviour
         {
             speed = walkSpeed;
         }
+
+        // 태블릿 확대 중에는 확대 진행도(0~1)만큼 tabletZoomSpeed로 바뀐다
+        float zoom = TabletZoom.Active != null ? TabletZoom.Active.ZoomAmount : 0f;
+        speed = Mathf.Lerp(speed, tabletZoomSpeed, zoom);
 
         if (Input.GetKey(forward))
         {

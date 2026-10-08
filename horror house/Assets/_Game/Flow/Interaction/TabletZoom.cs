@@ -85,6 +85,12 @@ public sealed class TabletZoom : MonoBehaviour
         get { return _blend > 0.5f; }
     }
 
+    /// <summary>확대 진행도 0(든 상태) ~ 1(확대). 확대·축소 동안 화면 움직임과 같은 곡선으로 바뀐다 — 이동 속도가 이것을 본다(FPController).</summary>
+    public float ZoomAmount
+    {
+        get { return Mathf.SmoothStep(0f, 1f, _blend); }
+    }
+
     // ── 자동 설치 ─────────────────────────────────────────────
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

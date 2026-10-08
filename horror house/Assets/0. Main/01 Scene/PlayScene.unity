@@ -51193,15 +51193,15 @@ PrefabInstance:
       objectReference: {fileID: 21300000, guid: 9c5cc848fafa4514cad41e7b88c63cff, type: 3}
     - target: {fileID: 2984404975837593463, guid: 2d17b90cdca22f14bb332f0b93f13775, type: 3}
       propertyPath: m_Color.b
-      value: 0.31132078
+      value: 0.8018868
       objectReference: {fileID: 0}
     - target: {fileID: 2984404975837593463, guid: 2d17b90cdca22f14bb332f0b93f13775, type: 3}
       propertyPath: m_Color.g
-      value: 0.31132078
+      value: 0.8018868
       objectReference: {fileID: 0}
     - target: {fileID: 2984404975837593463, guid: 2d17b90cdca22f14bb332f0b93f13775, type: 3}
       propertyPath: m_Color.r
-      value: 0.31132078
+      value: 0.8018868
       objectReference: {fileID: 0}
     - target: {fileID: 5234872516862514434, guid: 2d17b90cdca22f14bb332f0b93f13775, type: 3}
       propertyPath: m_TextStyleHashCode
@@ -152229,9 +152229,17 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5918593991904231597, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
+      propertyPath: m_AngularDamping
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 7211598377816875816, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
       propertyPath: m_Name
       value: FPController
+      objectReference: {fileID: 0}
+    - target: {fileID: 8282405189132691889, guid: 3d189a1484d3aea45819e62d428fe2ee, type: 3}
+      propertyPath: tabletZoomSpeed
+      value: 0.1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

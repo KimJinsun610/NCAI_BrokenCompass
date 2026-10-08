@@ -4,7 +4,8 @@ namespace NightDuty
 {
     /// <summary>
     /// 손전등 배터리 상태(56차) — 충전량과 주머니의 예비. 규칙 값은 <see cref="BatteryRules"/>.
-    /// 점검판처럼 재시작 스냅샷에 실린다(붙잡힌 스냅샷 — 밤 시작 또는 02:16 서명 — 의 충전량·예비로 돌아간다).
+    /// 점검판처럼 재시작 스냅샷에 실린다(붙잡힌 스냅샷 — 밤 시작 또는 02:16 서명 — 의 예비로 돌아간다).
+    /// 61차부터 재시작하면 충전량은 늘 가득이다(<see cref="Refill"/>, 「밤이 초기화되면 배터리가 이어지면 안 된다」).
     /// </summary>
     public sealed class FlashlightBattery : ISnapshotable
     {
@@ -62,6 +63,12 @@ namespace NightDuty
             Spare--;
             Charge = 1f;
             return true;
+        }
+
+        /// <summary>충전량만 가득 채운다(예비는 그대로) — 61차 밤 재시작.</summary>
+        public void Refill()
+        {
+            Charge = 1f;
         }
 
         /// <summary>디버그: 충전량(0~1)과 예비 수를 정한다.</summary>

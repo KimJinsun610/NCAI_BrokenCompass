@@ -48,34 +48,34 @@ MonoBehaviour:
   - "\uC774\uC804 \uADFC\uBB34\uC790\uC758 \uAE30\uB85D\uC740 \uB450 \uBC88\uC9F8
     \uAD00\uCE21\uC5D0\uC11C \uBA48\uCDB0 \uC788\uC5C8\uB2E4."
   backgrounds: []
-  tipImageFolder: Assets/0. Main/06 Data/LoadingTipImages
+  tipImageFolder: Assets/0. Main/06 Data/BG_TIP
   tipImages:
   - id: TIP_001
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 9dc9af25b4757184581c010421f92b90, type: 3}
   - id: TIP_002
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 26ef758b63a9e5b4e83505197e0f93fc, type: 3}
   - id: TIP_003
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: f7bf1b17beb65ac4dabce364185a882c, type: 3}
   - id: TIP_004
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: b644aac82d39796419180d8541a07b1d, type: 3}
   - id: TIP_005
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 3d39f03e707dec548b3891cdea9ffb8f, type: 3}
   - id: TIP_006
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: ec9c452da316527438571d92600367b7, type: 3}
   - id: TIP_007
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: b364cbba9b3069a45b2f9eaf3f4ccb0e, type: 3}
   - id: TIP_008
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 454419ae335193142a8f5968d3ff6376, type: 3}
   - id: TIP_009
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 64857b2cc52a49149a15c544b8aec58d, type: 3}
   - id: TIP_010
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 7faaf812c36436948aea5dd9490b2a9e, type: 3}
   - id: TIP_011
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 3b70cc85c3a9fe144956feb548ee4ee7, type: 3}
   - id: TIP_012
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 23204a5bd9789964fa65e0c134885c32, type: 3}
   - id: TIP_013
-    sprite: {fileID: 0}
+    sprite: {fileID: 21300000, guid: 462b1d21f6ee7f3489d999be0dc41ae1, type: 3}
   - id: LORE_001
     sprite: {fileID: 0}
   - id: LORE_002

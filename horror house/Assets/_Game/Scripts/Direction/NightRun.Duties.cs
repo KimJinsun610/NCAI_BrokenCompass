@@ -62,6 +62,22 @@ namespace NightDuty
             if (_duties.NoteSigned(out ev)) AnnounceDuty(ev);
         }
 
+        /// <summary>65차: 줍기 지시의 물건을 주웠다. 그 지시를 끝냈으면 true(완료 답장·축 −3).</summary>
+        public static bool PickUpDutyItem(string target)
+        {
+            if (!_nightOpen || _duties == null || IsCaptured) return false;
+            DutyEvent ev;
+            if (!_duties.NotePicked(target, out ev)) return false;
+            AnnounceDuty(ev);
+            return true;
+        }
+
+        /// <summary>65차: 지금 그 물건을 줍기를 바라는 지시가 진행 중인지.</summary>
+        public static bool DutyWants(string target)
+        {
+            return _nightOpen && _duties != null && !IsCaptured && _duties.Wants(target);
+        }
+
         private static void DutiesRuleSettled(FinalRuleResult result)
         {
             if (_duties != null && result.Outcome == FinalOutcome.Violated) _duties.NoteViolation();

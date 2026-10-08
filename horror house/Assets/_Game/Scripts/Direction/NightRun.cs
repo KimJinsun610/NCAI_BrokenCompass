@@ -289,6 +289,7 @@ namespace NightDuty
             ViolationMinutesToday.Clear();
             ClearRaised();
             ResetTabletState();
+            _stare.Reset();
 
             // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
@@ -377,6 +378,7 @@ namespace NightDuty
             if (_duties != null) parts.Add(_duties);
             if (_battery != null) parts.Add(_battery);
             if (_batteryPlan != null) parts.Add(_batteryPlan);
+            if (_deskKit != null) parts.Add(_deskKit);   // 66차
             return parts.ToArray();
         }
 
@@ -459,6 +461,7 @@ namespace NightDuty
                     FinalDispatch(signal, judging);
                     ParadoxObserve(signal, judging);
                     UnavoidableObserve(signal, judging);
+                    StareObserve(signal, judging);   // 64차: 고정 몹 응시
                 }
 
                 DirectionObserve(signal);
@@ -718,6 +721,9 @@ namespace NightDuty
             _bands.RestoreReached(from.ReachedCopy());
             _ledger.RestoreFromSnapshot(from);
             from.RestoreParts(SnapshotParts());
+            // 61차(플레이테스트: 「배터리 — 밤이 초기화되면 이어지면 안 된다」): 체크포인트에서 다시 해도 손전등은 가득 찬 채로 시작한다.
+            // 예비·칸 자리는 스냅샷 그대로(주운 예비를 잃지 않게).
+            if (_battery != null) _battery.Refill();
             ParadoxAfterRestore();
 
             BeginNightCore(Day, _clockMinutes, true);
@@ -921,12 +927,18 @@ namespace NightDuty
         /// <summary>디버그: 지정 축을 100으로 올려 포획 경로를 시험한다(신뢰는 100이 돼도 포획되지 않는다). 에디터·디버그 빌드에서만 쓴다.</summary>
         public static void DebugForceCapture(FearAxis axis)
         {
+            DebugForceCapture(axis, "debug");
+        }
+
+        /// <summary>디버그: 출처를 정해 붙잡는다 — 붙잡힘 장면이 출처를 보고 고를 때(64차: <c>stare.rule.S3.model</c> = 인체 모형 컷신). 에디터·디버그 빌드에서만 쓴다.</summary>
+        public static void DebugForceCapture(FearAxis axis, string sourceId)
+        {
             EnsureRun();
             int remain = Bands.Max - _axes.GetValue(axis);
             SpaceId space = CurrentSpace;
             int? cap = _axes.SoftCap;
             _axes.SoftCap = null;
-            _axes.Apply(axis, remain, "debug", space);
+            _axes.Apply(axis, remain, string.IsNullOrEmpty(sourceId) ? "debug" : sourceId, space);
             _axes.SoftCap = cap;
             CloseIfCaptured();
         }
@@ -1028,6 +1040,8 @@ namespace NightDuty
             ResetExtensions(true);
             ResetOrders();
             ResetDuties();
+            _stare.Reset();
+            FixedMobStareEnabled = false;
             InspectionDripEnabled = false;
             ViolationMinutesToday.Clear();
             Board.Begin(InspectionPlan.Empty(0));

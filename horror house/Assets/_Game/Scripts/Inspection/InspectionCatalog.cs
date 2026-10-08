@@ -67,7 +67,7 @@ namespace NightDuty
     }
 
     /// <summary>
-    /// 점검 항목 16개(복도 3 · 교실 3 · 과학실 3 · 화장실 3 · 도서관 3 · 경비실 1). <b>점검 항목의 구현값 정본</b>이다 —
+    /// 점검 항목 29개(복도 6 · 교실 5 · 과학실 6 · 화장실 5 · 도서관 4 · 경비실 3 — 66차 민: 「점검은 안 겹칠수록 좋아, 필요하면 하루 점검을 줄여도 돼」로 13개 더함). <b>점검 항목의 구현값 정본</b>이다 —
     /// 기획 정본은 최종 기획서 「공간별 설계」이고, 거기서 문구·축·틀이 바뀌면 여기를 고친다.
     /// 「가까이」 연출 내용과 이상의 모습은 연출 단계(7단계)의 몫이라 여기 적지 않는다.
     /// 2026-10-05(49차 민): H-4 복도 사물함(관물대)을 뺐다 — 복도 라커가 142개라 어느 것을 보라는지 찾기 어렵다. ID H-4는 다시 쓰지 않는다.
@@ -97,24 +97,37 @@ namespace NightDuty
             new InspectionItem("H-1", "소화기", SpaceId.Corridor, FearAxis.Illuminance, AnomalyTemplate.Light, "소화기 압력계에는 불이 들어오지 않습니다."),
             new InspectionItem("H-2", "식수대", SpaceId.Corridor, FearAxis.Layout, AnomalyTemplate.Switch, "식수대 바닥은 말라 있습니다."),
             new InspectionItem("H-3", "알림종", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Sound, "알림종은 수업 종이 칠 때만 울립니다."),
+            new InspectionItem("H-4", "쓰레기통", SpaceId.Corridor, FearAxis.Layout, AnomalyTemplate.Switch, "쓰레기통이 정상인지 보고하십시오."),   // 65차 민: 이상이면 다가갈 때 누가 걷어찬 듯 날아간다(L-3 반납 상자 대체 — 반납 상자는 [근무 지시] W15 「biology 책 습득」으로)
+            new InspectionItem("H-5", "스피커", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Sound, "복도 스피커에서는 아무 소리도 나지 않습니다."),   // 66차(민: 「점검은 안 겹칠수록 좋아」) — 화장실 앞 복도 벽 높이의 스피커, 이상이면 지직거림
+            new InspectionItem("H-6", "벤치", SpaceId.Corridor, FearAxis.Layout, AnomalyTemplate.Move, "화장실 앞 복도 벤치는 벽에 붙어 있습니다."),   // 66차 — 이상이면 한쪽 끝이 벽에서 떨어져 복도로 돌아 나와 있다
 
             new InspectionItem("C-1", "화분", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "화분은 창가에 있습니다."),
             new InspectionItem("C-2", "책상 램프", SpaceId.Classroom, FearAxis.Illuminance, AnomalyTemplate.Light, "책상 램프는 꺼져 있습니다."),
             new InspectionItem("C-3", "사다리", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교실 안쪽에 작은 사다리가 있는지 확인하십시오."),   // 52차 민 문구(이상 = 사다리 없음)
+            new InspectionItem("C-4", "시계", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교실 시계는 벽에 걸려 있습니다."),   // 66차 — 이상이면 벽 아래 바닥에 떨어져 있다
+            new InspectionItem("C-5", "교사 의자", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교사 의자는 교탁을 보고 있습니다."),   // 66차 — 이상이면 교실 쪽으로 돌아앉음
 
-            new InspectionItem("S-1", "인체 모형", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Move, "모형은 테이프 안에 그대로 서 있습니다."),
+            new InspectionItem("S-1", "인체 모형", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Move, "인체 모형은 정면을 보고 있습니다."),   // 64차 민: 실제 이상은 90° 돌아감(회전)이라 그에 맞춘 문구
             new InspectionItem("S-2", "현미경", SpaceId.ScienceRoom, FearAxis.Illuminance, AnomalyTemplate.Light, "현미경은 꺼져 있습니다."),
             new InspectionItem("S-3", "개수대", SpaceId.ScienceRoom, FearAxis.Auditory, AnomalyTemplate.Sound, "수도는 잠겨 있습니다."),
+            new InspectionItem("S-4", "지구본", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Switch, "지구본은 멈춰 있습니다."),   // 66차 — 이상이면 혼자 천천히 돈다
+            new InspectionItem("S-5", "플라스크", SpaceId.ScienceRoom, FearAxis.Illuminance, AnomalyTemplate.Light, "개수대 옆 선반의 플라스크는 빛나지 않습니다."),   // 66차 — 이상이면 유리가 붉게 빛난다(깜빡임)
+            new InspectionItem("S-6", "지도", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Move, "칠판의 세계 지도는 가로로 반듯하게 걸려 있습니다."),   // 66차 — 이상이면 기울거나 세로로·거꾸로
 
             new InspectionItem("T-1", "변기", SpaceId.Toilet, FearAxis.Layout, AnomalyTemplate.Switch, "변기 물은 맑습니다."),
             new InspectionItem("T-2", "칸 문", SpaceId.Toilet, FearAxis.Auditory, AnomalyTemplate.Sound, "빈 칸의 문은 열려 있습니다."),
             new InspectionItem("T-3", "거울", SpaceId.Toilet, FearAxis.Illuminance, AnomalyTemplate.Light, "거울 위 조명은 깜빡이지 않습니다."),
+            new InspectionItem("T-4", "세면대", SpaceId.Toilet, FearAxis.Auditory, AnomalyTemplate.Switch, "세면대 수도는 모두 잠겨 있습니다."),   // 66차 — 이상이면 네 개 중 하나에서 물이 흐른다
+            new InspectionItem("T-5", "수건", SpaceId.Toilet, FearAxis.Layout, AnomalyTemplate.Move, "세면대 옆 수건은 걸려 있습니다."),   // 66차 — 이상이면 바닥에 떨어져 있다
 
             new InspectionItem("L-1", "열람석", SpaceId.Library, FearAxis.Layout, AnomalyTemplate.Move, "열람석 의자는 모두 책상 안에 들어가 있습니다."),
-            new InspectionItem("L-2", "블라인드", SpaceId.Library, FearAxis.Illuminance, AnomalyTemplate.Light, "블라인드는 모두 내려져 있습니다."),
-            new InspectionItem("L-3", "반납 상자", SpaceId.Library, FearAxis.Auditory, AnomalyTemplate.Sound, "반납 상자는 조용합니다."),
+            new InspectionItem("L-2", "블라인드", SpaceId.Library, FearAxis.Illuminance, AnomalyTemplate.Light, "도서관 입구 맞은편 벽 창문의 블라인드 두 개는 내려져 있습니다."),   // 65차(민: 「어떤 블라인드를 지칭하는지 헷갈려」 — 도서관엔 창 블라인드 5개 + 바닥에 떨어진 조각들. 이상은 입구 맞은편 서쪽 벽 둘 중 하나가 올라감)
+            new InspectionItem("L-4", "칠판", SpaceId.Library, FearAxis.Layout, AnomalyTemplate.Switch, "도서관 칠판은 깨끗이 지워져 있습니다."),   // 66차 — ID L-3은 다시 쓰지 않는다(65차에 뺀 반납 상자). 이상이면 분필 글씨
+            new InspectionItem("L-5", "쓰레기통", SpaceId.Library, FearAxis.Layout, AnomalyTemplate.Move, "도서관 쓰레기통은 바닥에 쓰러져 있습니다."),   // 66차 — 씬에서 원래 누워 있다. 이상이면 누가 세워 놓았다
 
-            new InspectionItem("K-1", "CCTV 전 채널", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Switch, "CCTV 화면에는 사람이 없습니다.")
+            new InspectionItem("K-1", "CCTV 전 채널", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Switch, "CCTV 화면에는 사람이 없습니다."),
+            new InspectionItem("K-2", "접이식 의자", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Move, "경비실 접이식 의자 두 개는 같은 쪽을 보고 있습니다."),   // 66차 — 이상이면 하나가 돌아앉음
+            new InspectionItem("K-3", "화분", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Move, "경비실 화분은 똑바로 서 있습니다.")   // 66차 — 이상이면 쓰러져 있다
         };
 
         private static readonly Dictionary<string, InspectionItem> ById = BuildIndex();
@@ -123,6 +136,16 @@ namespace NightDuty
         public static IReadOnlyList<InspectionItem> All
         {
             get { return Items; }
+        }
+
+        /// <summary>
+        /// 65차(민: 「사다리 없는 자리에서 없다고 보고할 수 있도록」): 보고 키의 이름 — 「있는지 확인」 항목(C-3 사다리)은 있음/없음, 나머지는 정상/이상.
+        /// 판정은 그대로다(없음 = 이상).
+        /// </summary>
+        public static string ReportWord(string itemId, bool anomaly)
+        {
+            if (itemId == "C-3") return anomaly ? "없음" : "있음";
+            return anomaly ? "이상" : "정상";
         }
 
         /// <summary>ID로 찾는다. 없으면 null.</summary>

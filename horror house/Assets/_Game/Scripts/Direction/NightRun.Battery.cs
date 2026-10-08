@@ -10,6 +10,37 @@ namespace NightDuty
         private static FlashlightBattery _battery;
         private static BatteryPlan _batteryPlan;
         private static List<string> _batteryYesterday = new List<string>();
+        private static DeskKit _deskKit;
+
+        /// <summary>66차: 오늘 경비실 책상 위 시작 물품(1일차 손전등·배터리). 배터리가 꺼져 있거나 밤 전이면 null.</summary>
+        public static DeskKit DeskKit
+        {
+            get { return _deskKit; }
+        }
+
+        /// <summary>66차: 플레이어가 손전등을 가졌는지 — 1일차는 책상에서 주워야 F가 듣는다. 배터리가 꺼져 있으면(옛 테스트) 늘 참.</summary>
+        public static bool HasFlashlight
+        {
+            get { return _deskKit == null || !_deskKit.FlashlightOnDesk; }
+        }
+
+        /// <summary>66차: 책상 위 손전등을 줍는다. 없거나 붙잡힌 중이면 false.</summary>
+        public static bool PickUpFlashlight()
+        {
+            if (_deskKit == null || IsCaptured || !_deskKit.TakeFlashlight()) return false;
+            Debug.Log("[NightRun] 손전등 주움 — 이제 F로 켤 수 있다");
+            return true;
+        }
+
+        /// <summary>66차: 책상 위 예비 배터리를 주머니에 넣는다. 없거나 주머니가 차 있으면 false.</summary>
+        public static bool TakeDeskBattery()
+        {
+            if (_deskKit == null || _battery == null || IsCaptured || !_deskKit.BatteryOnDesk || _battery.PocketFull) return false;
+            _deskKit.TakeBattery();
+            _battery.TryPocket();
+            Debug.Log("[NightRun] 책상 배터리 주움 — " + _battery);
+            return true;
+        }
 
         /// <summary>배터리를 쓸지. 구동기(<c>NightRunDriver</c>)가 켠다. 옛 테스트를 위해 코어 기본값은 꺼짐(꺼져 있으면 손전등은 닳지 않는다).</summary>
         public static bool BatteryEnabled { get; set; }
@@ -42,10 +73,12 @@ namespace NightDuty
             {
                 _battery = null;
                 _batteryPlan = null;
+                _deskKit = null;
                 return;
             }
 
             _battery = new FlashlightBattery();
+            _deskKit = new DeskKit(Day);   // 66차: 1일차는 손전등·배터리가 책상 위에
             System.Random rng = BatterySeed.HasValue ? new System.Random(BatterySeed.Value * 31 + Day) : new System.Random();
             _batteryPlan = new BatteryPlan(Day, _batteryYesterday, rng);
         }
@@ -74,6 +107,7 @@ namespace NightDuty
         {
             _battery = null;
             _batteryPlan = null;
+            _deskKit = null;
             _batteryYesterday = new List<string>();
             if (clearSwitches)
             {

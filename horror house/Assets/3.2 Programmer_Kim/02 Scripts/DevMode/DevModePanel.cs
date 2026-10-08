@@ -12,23 +12,28 @@ using UnityEngine.InputSystem;
 /// 플레이 중 '-' 키로 여닫는 개발자 모드 패널입니다. 화면 오른쪽에 뜹니다.
 /// </summary>
 /// <remarks>
-/// 탭 세 개:
-/// - <b>일차</b>: 일차를 골라 Play 씬을 처음부터 다시 불러옵니다.
-/// - <b>게임 시간</b>: 배속 변경, 정해진 시각(정수 시)으로 이동.
-/// - <b>지시 사항</b>: Lee의 판정 시스템을 연결할 자리. 지금은 버튼만 있습니다.
+/// 탭 여덟 개(두 줄):
+/// - <b>① 일차</b>: 일차를 골라 Play 씬을 처음부터 다시 불러오기(김진선님) · 이 자리에서 그 일차로 빠르게 다시 열기 · 즉시 사망 · 축별 붙잡힘 · 재시작 · 밤 종료 · 손전등·배터리 · 공간 이동.
+/// - <b>② 시간</b>: 배속 · 정각 이동(김진선님) + 밤 시계 구간 점프(판정 시작·슬롯 A·이완·슬롯 B·슬롯 C·판정 끝) · 판정 강제 · 자동 연출 · 시계 멈춤 · 문 잠금.
+/// - <b>③ 축</b>: 네 축 막대(구간 경계선 · 연출 구간 · 방금 바뀐 양이 깜빡임) · ± 버튼 · 「무엇이 올렸는지」 변화 기록.
+/// - <b>④ 조우</b>: 오늘 흐름(슬롯 A·B·C — 그 시각·자리로 가서 자연 발동, 또는 바로 실행) · 진행 중 연출의 단계(대기 → 전조 → 세움(보면 시작) → 대면 → 마무리 → 끝) · 조우 15개 전부.
+/// - <b>⑤ 장면</b>: 과학실 인체 모형(자리·응시·목·다가옴) · 붙잡힘 장면 미리 보기(청각·조도·배치·인체 모형) · 가짜 놀람 · 피날레 몹.
+/// - <b>⑥ 수칙</b>: 오늘 덱(방아쇠·위반) · 수칙마다 이동·단서·조우 · 덱에 추가 · 역설·회피 불가 · 정산 결과.
+/// - <b>⑦ 점검</b>: 오늘 점검표 · 순차 지시 · 항목마다 이동·정상·이상 보고.
+/// - <b>⑧ 메시지·기록</b>: 태블릿 메시지 보내기 · CSV 메시지 연출(김진선님) · 연출·수칙·점검·재시작 기록.
 ///
 /// 씬 파일을 고치지 않습니다. 플레이를 시작하면 DontDestroyOnLoad 오브젝트로 자동으로 생기고,
 /// 에디터와 Development Build에만 들어갑니다. 패널이 열려 있는 동안 FPController를 꺼서 시점이 돌지 않게 합니다.
+/// 2026-10-08(64차, 이성현): 야간근무 디버그 콘솔(F3)을 없애고 이 패널에 합쳤습니다 — 야간근무 쪽 탭은 <c>DevModePanel.NightDuty.cs</c>.
 /// </remarks>
-public sealed class DevModePanel : MonoBehaviour
+public sealed partial class DevModePanel : MonoBehaviour
 {
-    private const float PanelWidth = 380f;
-    private const int MaxLog = 30;
+    private const float PanelWidth = 500f;
+    private const int MaxLog = 120;
 
-    private static readonly string[] TabNames = { "① 일차 · 사망", "② 게임 시간", "③ 지시 사항" };
+    private static readonly string[] TabNames = { "① 일차", "② 시간", "③ 축", "④ 조우", "⑤ 장면", "⑥ 수칙", "⑦ 점검", "⑧ 메시지·기록" };
     private static readonly float[] SpeedFactors = { 1f, 2f, 5f, 10f, 30f };
     private static readonly int[] QuickHours = { 1, 2, 3, 4, 5, 6 };
-    private static readonly string[] SpaceNames = { "복도", "교실", "과학실", "화장실" };
 
     private static readonly Color SelectedTab = new Color(1f, 0.8f, 0.4f);
     private static readonly Color SelectedItem = new Color(0.6f, 0.85f, 1f);
@@ -45,20 +50,25 @@ public sealed class DevModePanel : MonoBehaviour
     private int tab;
     private int dayInput = 1;
     private int hourInput = 1;
-    private int space;
     private Vector2 scroll;
 
     private GameTime gameTime;
     private float baseMultiplier;
 
     private bool cursorWasVisible;
+    private CursorLockMode cursorWasLock;
     private readonly List<Behaviour> lockedPlayers = new List<Behaviour>();
     private readonly List<string> log = new List<string>();
 
     private GUIStyle small;
     private GUIStyle bold;
+    private GUIStyle rich;
+    private GUIStyle section;
+    private GUIStyle panelStyle;
+    private Texture2D panelBg;
+    private Texture2D sectionBg;
 
-    // ③ 탭에서 태블릿으로 보낼 메시지
+    // ⑧ 탭에서 태블릿으로 보낼 메시지
     private static readonly string[] SampleMessages =
     {
         "복도를 점검하십시오",
@@ -88,6 +98,9 @@ public sealed class DevModePanel : MonoBehaviour
     {
         if (instance != null) return;
 
+        // 개발용 기본값(옛 F3 콘솔에서 옮김): 에디터가 초점을 잃어도 플레이 루프가 멈추지 않게(알트탭 한 번에 게임이 얼던 문제). 런타임 값만.
+        Application.runInBackground = true;
+
         GameObject go = new GameObject("__DevMode (runtime)");
         DontDestroyOnLoad(go);
         instance = go.AddComponent<DevModePanel>();
@@ -96,16 +109,20 @@ public sealed class DevModePanel : MonoBehaviour
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
+        HookNightDuty(true);
     }
 
     private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        HookNightDuty(false);
     }
 
     private void OnDestroy()
     {
         if (instance == this) instance = null;
+        if (panelBg != null) Destroy(panelBg);
+        if (sectionBg != null) Destroy(sectionBg);
     }
 
     private void Start()
@@ -127,7 +144,9 @@ public sealed class DevModePanel : MonoBehaviour
     {
         if (TogglePressed()) SetShow(!show);
 
+        TrackAxes();   // 패널이 닫혀 있어도 축 변화는 기록한다
         RunPending();
+        RunAfterSettle();
 
         if (!show) return;
         if (gameTime == null) BindGameTime();
@@ -162,6 +181,7 @@ public sealed class DevModePanel : MonoBehaviour
         if (show)
         {
             cursorWasVisible = Cursor.visible;
+            cursorWasLock = Cursor.lockState;
             dayInput = GameSession.CurrentDay;
             BindGameTime();
             HoldPlayers();
@@ -184,6 +204,7 @@ public sealed class DevModePanel : MonoBehaviour
             lockedPlayers.Add(player);
         }
 
+        Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
@@ -198,7 +219,11 @@ public sealed class DevModePanel : MonoBehaviour
         }
         lockedPlayers.Clear();
 
-        if (!restored) Cursor.visible = cursorWasVisible;
+        if (!restored)
+        {
+            Cursor.visible = cursorWasVisible;
+            Cursor.lockState = cursorWasLock;
+        }
     }
 
     private void BindGameTime()
@@ -270,15 +295,16 @@ public sealed class DevModePanel : MonoBehaviour
             : hour + "시로 이동 → " + gameTime.CurrentTimeText);
     }
 
-    private void Placeholder(string action)
-    {
-        Note("(연결 예정) " + SpaceNames[space] + " · " + action);
-    }
-
     private void Note(string line)
     {
         Debug.Log("[DevMode] " + line, this);
-        log.Add(line);
+        AddLog(line);
+    }
+
+    private void AddLog(string line)
+    {
+        int minute = NightRun.NightMinute;
+        log.Add("<color=#888>[" + Clock(minute) + "]</color> " + line);
         while (log.Count > MaxLog) log.RemoveAt(0);
     }
 
@@ -307,25 +333,43 @@ public sealed class DevModePanel : MonoBehaviour
 
     // ─────────────────────────────── 화면 ───────────────────────────────
 
+    private void EnsureStyles()
+    {
+        if (small != null) return;
+        small = new GUIStyle(GUI.skin.label) { fontSize = 12, wordWrap = true, richText = true };
+        bold = new GUIStyle(GUI.skin.label) { fontSize = 13, fontStyle = FontStyle.Bold, richText = true };
+        rich = new GUIStyle(GUI.skin.label) { fontSize = 13, richText = true, wordWrap = false };
+
+        // 뒤의 HUD가 비치지 않게 불투명 배경(옛 콘솔: 「가독성이 떨어짐」).
+        panelBg = new Texture2D(1, 1);
+        panelBg.SetPixel(0, 0, new Color(0.07f, 0.07f, 0.08f, 0.97f));
+        panelBg.Apply();
+        sectionBg = new Texture2D(1, 1);
+        sectionBg.SetPixel(0, 0, new Color(0.13f, 0.13f, 0.15f, 1f));
+        sectionBg.Apply();
+
+        panelStyle = new GUIStyle(GUI.skin.box) { padding = new RectOffset(8, 8, 8, 8) };
+        panelStyle.normal.background = panelBg;
+        section = new GUIStyle(GUI.skin.box) { padding = new RectOffset(8, 8, 6, 8), margin = new RectOffset(0, 0, 4, 4) };
+        section.normal.background = sectionBg;
+    }
+
     private void OnGUI()
     {
         if (!show) return;
-        if (small == null)
-        {
-            small = new GUIStyle(GUI.skin.label) { fontSize = 12, wordWrap = true };
-            bold = new GUIStyle(GUI.skin.label) { fontSize = 13, fontStyle = FontStyle.Bold };
-        }
+        EnsureStyles();
 
-        float scale = Mathf.Clamp(Screen.width * 0.35f / PanelWidth, 0.4f, 1.1f);
+        float scale = Mathf.Clamp(Screen.width * 0.36f / PanelWidth, 0.45f, 1.15f);
         Matrix4x4 saved = GUI.matrix;
         GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), Vector2.zero);
 
         float w = Screen.width / scale;
         float h = Screen.height / scale;
+        GUI.depth = -100;
         try
         {
             GUILayout.BeginArea(new Rect(w - PanelWidth - 10f, 10f, PanelWidth, h - 20f));
-            GUILayout.BeginVertical(GUI.skin.box);
+            GUILayout.BeginVertical(panelStyle);
 
             DrawHeader();
             if (!collapsed)
@@ -333,10 +377,17 @@ public sealed class DevModePanel : MonoBehaviour
                 DrawStatus();
                 DrawTabs();
                 scroll = GUILayout.BeginScrollView(scroll);
-                if (tab == 0) DrawDayTab();
-                else if (tab == 1) DrawTimeTab();
-                else DrawInstructionTab();
-                DrawLog();
+                switch (tab)
+                {
+                    case 0: DrawDayTab(); break;
+                    case 1: DrawTimeTab(); break;
+                    case 2: DrawAxesTab(); break;
+                    case 3: DrawEncounterTab(); break;
+                    case 4: DrawSceneTab(); break;
+                    case 5: DrawRulesTab(); break;
+                    case 6: DrawInspectionTab(); break;
+                    default: DrawMessageTab(); break;
+                }
                 GUILayout.EndScrollView();
             }
 
@@ -369,31 +420,61 @@ public sealed class DevModePanel : MonoBehaviour
         else
         {
             string state = gameTime.IsEnded ? " (종료)" : gameTime.IsRunning ? string.Empty : " (멈춤)";
-            clock = gameTime.CurrentTimeText + state + " · 배속 ×" + speedFactor + " (x" + gameTime.TimeMultiplier.ToString("0.#") + ")";
+            clock = gameTime.CurrentTimeText + state + " · 배속 ×" + speedFactor;
         }
 
-        GUILayout.Label(GameSession.CurrentDay + "일차 · " + clock, small);
+        GUILayout.Label("<b>" + GameSession.CurrentDay + "일차</b> · " + clock + "   " + NightStatusLine(), small);
+        DrawAxisStrip();
     }
 
     private void DrawTabs()
     {
-        GUILayout.BeginHorizontal();
-        for (int i = 0; i < TabNames.Length; i++)
+        for (int row = 0; row < 2; row++)
         {
-            int index = i;
-            Color saved = GUI.backgroundColor;
-            if (tab == i) GUI.backgroundColor = SelectedTab;
-            if (GUILayout.Button(TabNames[i], GUILayout.Height(26))) Later(() => tab = index);
-            GUI.backgroundColor = saved;
+            GUILayout.BeginHorizontal();
+            for (int i = row * 4; i < row * 4 + 4 && i < TabNames.Length; i++)
+            {
+                int index = i;
+                Color saved = GUI.backgroundColor;
+                if (tab == i) GUI.backgroundColor = SelectedTab;
+                if (GUILayout.Button(TabNames[i], GUILayout.Height(26))) Later(() =>
+                {
+                    tab = index;
+                    scroll = Vector2.zero;
+                });
+                GUI.backgroundColor = saved;
+            }
+            GUILayout.EndHorizontal();
         }
-        GUILayout.EndHorizontal();
+    }
+
+    /// <summary>제목 있는 묶음 상자를 연다. 닫을 때는 <see cref="EndSection"/>.</summary>
+    private void BeginSection(string title, string hint = null)
+    {
+        GUILayout.BeginVertical(section);
+        GUILayout.Label("<color=#ffd27a>" + title + "</color>", bold);
+        if (!string.IsNullOrEmpty(hint)) GUILayout.Label("<color=#9a9a9a>" + hint + "</color>", small);
+    }
+
+    private static void EndSection()
+    {
+        GUILayout.EndVertical();
+    }
+
+    private static bool ColorButton(string label, Color color, params GUILayoutOption[] options)
+    {
+        Color saved = GUI.backgroundColor;
+        GUI.backgroundColor = color;
+        bool pressed = GUILayout.Button(label, options);
+        GUI.backgroundColor = saved;
+        return pressed;
     }
 
     // ─────────────────────────────── ① 일차 ───────────────────────────────
 
     private void DrawDayTab()
     {
-        GUILayout.Label("일차를 바꾸면 Play 씬을 처음부터 다시 불러옵니다(Day 인트로부터). 결과창은 거치지 않습니다.", small);
+        BeginSection("일차 다시 시작", "Day 버튼은 Play 씬을 처음부터(Day 인트로부터) 다시 불러옵니다. 「이 자리에서」는 씬을 다시 부르지 않고 그 일차의 밤을 새로 편성합니다(빠름).");
 
         GUILayout.BeginHorizontal();
         for (int day = 1; day <= GameSession.FinalDay; day++)
@@ -407,35 +488,38 @@ public sealed class DevModePanel : MonoBehaviour
         GUILayout.EndHorizontal();
 
         GUILayout.BeginHorizontal();
+        GUILayout.Label("이 자리에서", GUILayout.Width(70));
+        for (int day = 1; day <= GameSession.FinalDay; day++)
+        {
+            int target = day;
+            if (GUILayout.Button(day + "일차", GUILayout.Height(22))) Later(() => ReopenAsDay(target));
+        }
+        GUILayout.EndHorizontal();
+
+        GUILayout.BeginHorizontal();
         GUILayout.Label("일차", GUILayout.Width(30));
         if (GUILayout.Button("−", GUILayout.Width(24))) Later(() => dayInput = Mathf.Max(1, dayInput - 1));
         GUILayout.Label(dayInput.ToString(), GUILayout.Width(20));
         if (GUILayout.Button("+", GUILayout.Width(24))) Later(() => dayInput = Mathf.Min(GameSession.FinalDay, dayInput + 1));
         if (GUILayout.Button("이 날로 다시 시작")) Later(() => RestartDay(dayInput));
         GUILayout.EndHorizontal();
+        EndSection();
 
-        GUILayout.Space(6);
-        GUILayout.Label("사망", bold);
-        GUILayout.Label("페이드 후 사망 화면(YOU DIED / Restart / Quit)을 띄웁니다. 패널은 닫힙니다.", small);
-        Color savedColor = GUI.backgroundColor;
-        GUI.backgroundColor = ViolateColor;
-        if (GUILayout.Button("즉시 사망 ▶", GUILayout.Height(26))) Later(() => DieNow());
-        GUI.backgroundColor = savedColor;
+        BeginSection("사망 · 붙잡힘", "「즉시 사망」은 사망 화면(YOU DIED / Restart / Quit)으로 바로 갑니다. 축 버튼은 그 축을 100으로 올려 실제 붙잡힘 장면 → 재시작 카드까지 갑니다.");
+        if (ColorButton("즉시 사망 ▶", ViolateColor, GUILayout.Height(26))) Later(() => DieNow());
+        DrawCaptureButtons();
+        EndSection();
+
+        DrawNightControls();
     }
 
-    // ─────────────────────────────── ② 게임 시간 ───────────────────────────────
+    // ─────────────────────────────── ② 시간 ───────────────────────────────
 
     private void DrawTimeTab()
     {
-        if (gameTime == null)
-        {
-            GUILayout.Label("이 씬에는 게임 시간(GameTime)이 없습니다. Play 씬에서 쓸 수 있습니다.", small);
-        }
-        else
-        {
-            GUILayout.Label("근무 시간 " + gameTime.StartTimeText + " → " + gameTime.EndTimeText
-                            + " · 기본 배속 x" + baseMultiplier.ToString("0.#"), small);
-        }
+        BeginSection("게임 시간", gameTime == null
+            ? "이 씬에는 게임 시간(GameTime)이 없습니다. Play 씬에서 쓸 수 있습니다."
+            : "근무 시간 " + gameTime.StartTimeText + " → " + gameTime.EndTimeText + " · 기본 배속 x" + baseMultiplier.ToString("0.#"));
 
         GUILayout.Label("시간 빠르게", bold);
         GUILayout.BeginHorizontal();
@@ -468,45 +552,19 @@ public sealed class DevModePanel : MonoBehaviour
         if (GUILayout.Button("이 시각으로 이동")) Later(() => JumpTo(hourInput));
         GUILayout.EndHorizontal();
         GUILayout.Label("12시는 자정으로 봅니다. 근무 종료 시각 이후를 고르면 종료 시각으로 이동해 근무가 끝납니다.", small);
-
         GUI.enabled = true;
+        EndSection();
+
+        DrawNightClockControls();
     }
 
-    // ─────────────────────────────── ③ 지시 사항 ───────────────────────────────
+    // ─────────────────────────────── ⑧ 메시지·기록 ───────────────────────────────
 
-    private void DrawInstructionTab()
+    private void DrawMessageTab()
     {
         DrawMessageSender();
-
-        GUILayout.Space(8);
         DrawMessageEvents();
-
-        GUILayout.Space(8);
-        GUILayout.Label("Lee님의 판정 시스템을 연결할 자리입니다. 지금은 버튼만 있고 누르면 기록에 '연결 예정'만 남습니다.", small);
-
-        GUILayout.BeginHorizontal();
-        for (int i = 0; i < SpaceNames.Length; i++)
-        {
-            int index = i;
-            Color saved = GUI.backgroundColor;
-            if (space == i) GUI.backgroundColor = SelectedItem;
-            if (GUILayout.Button(SpaceNames[i], GUILayout.Height(24))) Later(() => space = index);
-            GUI.backgroundColor = saved;
-        }
-        GUILayout.EndHorizontal();
-
-        GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label(SpaceNames[space] + " 지시 사항", bold);
-        GUILayout.BeginHorizontal();
-        if (GUILayout.Button("지시 사항 확인")) Later(() => Placeholder("지시 사항 확인"));
-        Color savedColor = GUI.backgroundColor;
-        GUI.backgroundColor = ComplyColor;
-        if (GUILayout.Button("지키기 ▶", GUILayout.Width(80))) Later(() => Placeholder("지키기"));
-        GUI.backgroundColor = ViolateColor;
-        if (GUILayout.Button("어기기 ▶", GUILayout.Width(80))) Later(() => Placeholder("어기기"));
-        GUI.backgroundColor = savedColor;
-        GUILayout.EndHorizontal();
-        GUILayout.EndVertical();
+        DrawLog();
     }
 
     /// <summary>
@@ -515,8 +573,7 @@ public sealed class DevModePanel : MonoBehaviour
     /// </summary>
     private void DrawMessageSender()
     {
-        GUILayout.BeginVertical(GUI.skin.box);
-        GUILayout.Label("메시지 보내기 (태블릿 알람)", bold);
+        BeginSection("메시지 보내기 (태블릿 알람)");
 
         TabletMessageList list = FindAnyObjectByType<TabletMessageList>();
         TabletAlarm alarm = FindAnyObjectByType<TabletAlarm>();
@@ -524,7 +581,7 @@ public sealed class DevModePanel : MonoBehaviour
         if (list == null)
         {
             GUILayout.Label("이 씬에는 태블릿(HUD_Tablet)이 없습니다.", small);
-            GUILayout.EndVertical();
+            EndSection();
             return;
         }
 
@@ -581,7 +638,7 @@ public sealed class DevModePanel : MonoBehaviour
             });
         }
 
-        GUILayout.EndVertical();
+        EndSection();
     }
 
     /// <summary>
@@ -590,11 +647,8 @@ public sealed class DevModePanel : MonoBehaviour
     /// </summary>
     private void DrawMessageEvents()
     {
-        GUILayout.BeginVertical(GUI.skin.box);
+        BeginSection("메시지 연출 이벤트 (CSV)");
 
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("메시지 연출 이벤트 (CSV)", bold);
-        GUILayout.FlexibleSpace();
         if (GUILayout.Button("CSV 다시 읽기", GUILayout.Width(100)))
         {
             Later(() =>
@@ -603,7 +657,6 @@ public sealed class DevModePanel : MonoBehaviour
                 Note("CSV를 다시 읽었습니다. 이벤트 " + TabletMessageEvents.EventNames.Count + "개.");
             });
         }
-        GUILayout.EndHorizontal();
 
         IReadOnlyList<string> names = TabletMessageEvents.EventNames;
         if (names.Count == 0)
@@ -620,9 +673,7 @@ public sealed class DevModePanel : MonoBehaviour
             GUILayout.BeginHorizontal();
             GUILayout.Label(name + "  (" + data.Messages.Length + "개 · " + data.Interval.ToString("0.##") + "초)", small);
 
-            Color saved = GUI.backgroundColor;
-            GUI.backgroundColor = playing ? ViolateColor : ComplyColor;
-            if (GUILayout.Button(playing ? "멈춤" : "실행 ▶", GUILayout.Width(70), GUILayout.Height(22)))
+            if (ColorButton(playing ? "멈춤" : "실행 ▶", playing ? ViolateColor : ComplyColor, GUILayout.Width(70), GUILayout.Height(22)))
             {
                 if (playing)
                 {
@@ -641,7 +692,6 @@ public sealed class DevModePanel : MonoBehaviour
                     });
                 }
             }
-            GUI.backgroundColor = saved;
             GUILayout.EndHorizontal();
         }
 
@@ -654,7 +704,7 @@ public sealed class DevModePanel : MonoBehaviour
             });
         }
 
-        GUILayout.EndVertical();
+        EndSection();
     }
 
     private void SendDevMessage(TabletMessageList list, string text)
@@ -667,15 +717,13 @@ public sealed class DevModePanel : MonoBehaviour
 
     private void DrawLog()
     {
-        GUILayout.Space(6);
-        GUILayout.BeginHorizontal();
-        GUILayout.Label("기록 (최신이 위)", bold);
+        BeginSection("기록 (최신이 위)", "연출(파랑) · 수칙(초록 지킴/빨강 위반) · 점검(노랑) · 재시작(보라) · 패널 조작");
         if (GUILayout.Button("지우기", GUILayout.Width(60))) Later(() => log.Clear());
-        GUILayout.EndHorizontal();
-        for (int i = log.Count - 1; i >= 0 && i >= log.Count - 10; i--)
+        for (int i = log.Count - 1; i >= 0 && i >= log.Count - 60; i--)
         {
             GUILayout.Label(log[i], small);
         }
+        EndSection();
     }
 }
 #endif

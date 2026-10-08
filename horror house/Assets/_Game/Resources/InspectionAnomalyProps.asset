@@ -15,10 +15,31 @@ MonoBehaviour:
   entries:
   - itemId: C-1
     prefab: {fileID: 1072143945553088, guid: 0d237ec63f71deb438097e97018f4927, type: 3}
+  - itemId: C-3
+    prefab: {fileID: 1778804042398874, guid: 909a60327faee304d923794cac18b844, type: 3}
   - itemId: S-1
     prefab: {fileID: 919132149155446097, guid: 83b0c6eb2d458e04183ba65f8cfa7e74, type: 3}
   - itemId: L-1
     prefab: {fileID: 1925883805207276, guid: d2516a21766828c45905c8106b790985, type: 3}
+  - itemId: H-6
+    prefab: {fileID: 1142184565175986, guid: 872788dd7bf389349ab8b7040e21f125, type: 3}
+  - itemId: C-4
+    prefab: {fileID: 1647428969246632, guid: 71c8cd08a96394b40838c75fc397f4e4, type: 3}
+  - itemId: C-5
+    prefab: {fileID: 1043252975280500, guid: 988b663b6053d934489ab2416cefca4c, type: 3}
+  - itemId: S-4
+    prefab: {fileID: 1542069210565680, guid: ab36198cc18c23c469c1b069735f7e64, type: 3}
+  - itemId: S-6
+    prefab: {fileID: 100000, guid: f54f14830e755f44691ae1620a07a265, type: 3}
+  - itemId: T-5
+    prefab: {fileID: 1875445411029796, guid: 463952d6b52fbba4da40d390935a96e9, type: 3}
+  - itemId: L-5
+    prefab: {fileID: 1218126081954924, guid: 94c3178f8d4aa4e43b94aaee789b4953, type: 3}
+  - itemId: K-2
+    prefab: {fileID: 919132149155446097, guid: d4743551b48ed2e4497189b7a02fbcfb, type: 3}
+  - itemId: K-3
+    prefab: {fileID: 100000, guid: 3ca115a1f4e794a40acf2033b319fd4c, type: 3}
   events:
   - itemId: H-2
     prefab: {fileID: 1176571423181846504, guid: 673b1b28ad2776c4bb72e32c296ed5cf, type: 3}
+  chalkFont: {fileID: 11400000, guid: 6d886e49aa4bc0b4689a3ab28486ba52, type: 2}

@@ -8,7 +8,9 @@ using UnityEngine;
 /// <item>천장 다리 대역(<c>mob.legs</c> = 치마 소년 리그)을 런타임 래그돌로 바꿔 천장 바로 밑에서 떨어뜨린다 — 뼈 11개에 리지드바디·콜라이더·캐릭터 조인트(약 40kg).</item>
 /// <item>판정 기준점(<c>rule.C2.legs</c>)은 루트에 둔다 — 응시 레이가 어느 팔다리에 맞아도 「떨어진 것」을 본 것으로 센다.</item>
 /// <item>첫 충돌에 몸 부딪는 소리(<c>corpse.fall</c>), 2.8초 뒤(또는 멈추면) 키네마틱으로 굳힌다.</item>
-/// <item>착지 뒤 한 번 화면에 들어온 다음, 1.2초가 지나고 몸 어디도 시선(카메라 정면 30°·화면 안)에 없는 채 0.5초면 조용히 사라진다.</item>
+/// <item>착지 뒤 한 번 화면에 들어온 다음, 1.2초가 지나고 몸 어디도 화면에 보이지 않는 채 0.5초면 조용히 사라진다.
+/// 62차(민: 「시체의 디스폰은 플레이어 시야에서 완전히 벗어나면」): 「보인다」를 옛 「정면 30°」에서 <see cref="UnseenDespawn.Visible"/>(화면 가장자리까지·가림 포함)로 —
+/// 화면 끝에 걸려 있는데 사라지는 일이 없다. 조우 창이 닫혀도 보이는 동안은 남는다(<c>DirectionStage.Cleanup</c> → <see cref="UnseenDespawn.Begin"/>).</item>
 /// </list>
 /// 전조(먼지)는 <see cref="Dust"/>가 만든다. 플레이어 충돌체와는 부딪히지 않는다(길을 막거나 밀지 않게).
 /// </summary>
@@ -376,16 +378,10 @@ public sealed class CorpseDrop : MonoBehaviour
     /// <summary>몸의 어느 부분이든 화면 안(가장자리 5% 여유 안쪽)에 있는지. 정면에서 <see cref="LookAwayAngle"/>° 밖이면 보이지 않는 것으로 본다.</summary>
     private bool InView(Camera cam)
     {
-        Vector3 eye = cam.transform.position;
-        for (int i = 0; i < _bodies.Count; i++)
-        {
-            Vector3 p = _bodies[i].worldCenterOfMass;
-            Vector3 v = cam.WorldToViewportPoint(p);
-            if (v.z <= 0f || v.x < 0.05f || v.x > 0.95f || v.y < 0.05f || v.y > 0.95f) continue;
-            if (Vector3.Angle(cam.transform.forward, p - eye) <= LookAwayAngle) return true;
-        }
-
-        return false;
+        // 62차: 화면 어디에든(가장자리 포함) 몸이 보이면 보이는 것 — 가림도 본다.
+        UnseenDespawn u = GetComponent<UnseenDespawn>();
+        if (u == null) u = gameObject.AddComponent<UnseenDespawn>();
+        return u.Visible(cam);
     }
 
     private bool Resting()

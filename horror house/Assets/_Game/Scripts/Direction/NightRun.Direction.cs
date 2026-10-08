@@ -30,13 +30,36 @@ namespace NightDuty
             _tension = new TensionDirector(_program, Day, RestartsTonight);
             _tension.Emitted += OnDirectionEmitted;
             _tension.GazeTargetReady = GazeTargetReady;   // 51차: 사다리(C-3)를 「점검 중」일 때만 시체가 떨어진다
-            // 60차: 시체가 떨어지는 곳 반반 — 교실 입구에서 사다리를 볼 때(거리 무관) / 사다리 방 안에 들어와서(사다리 2.8m 안).
+            // 60차: 시체가 떨어지는 곳 반반 — 사다리 방 안에 들어와서(사다리 2.8m 안) 사다리를 볼 때 /
+            // 61차(민: 「교실 안쪽에서 떨어지는 건, 플레이어가 그 안쪽에서 나오면서 플레이어 쪽으로」): 사다리 곁에 들어갔다가 나오는 길에(옛: 교실 입구에서 사다리를 볼 때).
             _tension.GazeTargetPosition = TargetPosition;
-            _tension.GazeTargetNearRadius = s_corpseRoll.NextDouble() < 0.5 ? CorpseLadderRoomRadius : 0f;
-            if (_program.HasEncounter(ProgramCatalog.CeilingLegs)) Debug.Log("[NightRun] 시체 낙하 — " + (_tension.GazeTargetNearRadius > 0f ? "사다리 방 안에서" : "교실 입구에서 사다리를 볼 때"));
+            bool ladderRoom = s_corpseRoll.NextDouble() < 0.5;
+            _tension.GazeTargetNearRadius = ladderRoom ? CorpseLadderRoomRadius : 0f;
+            _tension.GazeTargetExitMode = !ladderRoom;
+            if (_program.HasEncounter(ProgramCatalog.CeilingLegs)) Debug.Log("[NightRun] 시체 낙하 — " + (ladderRoom ? "사다리 방 안에서 사다리를 볼 때" : "사다리 곁에서 나오는 길에"));
+            // 61차: 몹은 먼저 세우고 플레이어가 본 뒤 대면 · 안쪽 깊이 머무름 — 연출 쪽이 있을 때만(코어 시험은 옛 흐름).
+            _tension.SightGated = EncounterSightGating;
+            _tension.DeepInSpace = (space, margin) => DeepInSpaceProbe == null || DeepInSpaceProbe(space, margin);
             _tension.Missed += VoidEncounterRules;          // 57차: 끝내 오지 않은 조우의 수칙은 태블릿에서 거둔다
             _tension.FakeBlocked = FakeBlockedAt;            // 57차: 점검 대상 가까이에서는 가짜 놀람을 미룬다
             _voidRules.Clear();
+        }
+
+        /// <summary>
+        /// 61차: 몹 대역이 있는 조우를 「세워 두고 → 플레이어가 본 뒤 대면」으로 할지(<see cref="TensionDirector.SightGated"/>). 연출 쪽(DirectionStage)이 켠다.
+        /// </summary>
+        public static bool EncounterSightGating { get; set; }
+
+        /// <summary>61차: 플레이어가 그 공간 상자 안쪽으로 그만큼(m) 들어와 있는지(연출 쪽이 넣는다). null이면 참.</summary>
+        public static System.Func<SpaceId, float, bool> DeepInSpaceProbe { get; set; }
+
+        /// <summary>61차: 플레이어가 세워 둔 몹을 봤다(연출 쪽이 부른다). 받았으면 true.</summary>
+        public static bool EncounterSeen(string encounterId)
+        {
+            if (_tension == null) return false;
+            bool ok = _tension.NotifySeen(encounterId);
+            if (ok) Debug.Log("[NightRun] 몹을 봄 — " + encounterId + " 대면");
+            return ok;
         }
 
         /// <summary>60차: 「사다리 방 안」으로 보는 사다리(C-3)와의 거리(m, 수평).</summary>
@@ -138,6 +161,7 @@ namespace NightDuty
         private static void DirectionTick(float realSeconds)
         {
             if (_tension == null) return;
+            _tension.SightGated = EncounterSightGating;   // 61차: 연출 쪽이 늦게 서도 따라간다
 
             int highest = _axes.GetValue(HighestSensory());
             Band auditory = _bands.Shown.GetBand(FearAxis.Auditory);

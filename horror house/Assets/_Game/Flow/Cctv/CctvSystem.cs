@@ -768,7 +768,7 @@ public sealed class CctvSystem : MonoBehaviour
 
     private void UpdateAim()
     {
-        if (!CanInteract() || !IsAimingAtMonitor())
+        if (!CanInteract() || PlayerInteractor.SuppressedThisFrame || !IsAimingAtMonitor())   // 66차: 책상 손전등·배터리를 겨눈 프레임은 양보
         {
             ReleasePrompt();
             return;
@@ -1015,6 +1015,11 @@ public sealed class CctvSystem : MonoBehaviour
             return;
         }
 
+        // 61차(2026-10-07 플레이테스트: 「cctv 누르면 커서 등장」): 들여다보는 동안은 매 프레임 커서를 숨기고 잠근다.
+        // FPController.OnDisable이 커서를 켜고, 잠그지 않은 커서는 창 밖으로 나갔다 들어오며 다시 보였다.
+        if (Cursor.visible) Cursor.visible = false;
+        if (Cursor.lockState != CursorLockMode.Locked) Cursor.lockState = CursorLockMode.Locked;
+
         if (_playerCam == null)
         {
             FinishExit(true);
@@ -1072,6 +1077,10 @@ public sealed class CctvSystem : MonoBehaviour
         {
             _fp.enabled = _fpWasEnabled;
         }
+
+        // 61차: 잠금을 풀어 FPController의 원래 방식(숨김·잠그지 않음)으로 돌려놓는다.
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = false;
 
         for (int i = 0; i < _tablets.Count; i++)
         {

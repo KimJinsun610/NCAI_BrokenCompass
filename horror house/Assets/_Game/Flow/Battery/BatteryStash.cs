@@ -19,8 +19,11 @@ using UnityEngine.SceneManagement;
 [DefaultExecutionOrder(40)]   // PlayerInteractor(50)보다 먼저 — 배터리를 겨눈 프레임에 문 조작을 막는다
 public sealed class BatteryStash : MonoBehaviour
 {
-    /// <summary>손이 닿는 거리(m).</summary>
-    public const float Reach = 1.7f;
+    /// <summary>
+    /// 손이 닿는 거리(m, 눈에서 배터리까지 조준선 방향). 61차(민 스크린샷: 열린 관물대 바닥의 배터리가 주워지지 않음):
+    /// 키를 1.95m(눈 1.70m)로 올리자 관물대 바닥(바닥 위 12cm)까지 세로만 1.58m — 문짝을 피해 1m 떨어져 서면 1.87m라 1.7에 걸렸다. 1.7 → 2.1.
+    /// </summary>
+    public const float Reach = 2.1f;
 
     /// <summary>안내 줄.</summary>
     public const string PromptText = "[E] 배터리 줍기";
@@ -417,7 +420,8 @@ public sealed class BatteryStash : MonoBehaviour
 
     private static bool CanInteract()
     {
-        if (Time.timeScale <= 0f || PlayerSensors.TabletRaised || NightRun.IsCaptured) return false;
+        // 61차: 태블릿을 든 채로도 줍는다 — 문([E] 닫기)은 태블릿을 들어도 되는데 배터리만 안 돼 「배터리가 안 주워진다」로 보였다(민 스크린샷).
+        if (Time.timeScale <= 0f || NightRun.IsCaptured) return false;
         CctvSystem cctv = CctvSystem.Active;
         return cctv == null || !cctv.IsViewing;
     }

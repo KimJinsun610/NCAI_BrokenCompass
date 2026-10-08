@@ -1201,7 +1201,7 @@ namespace NightDuty
             }
 
             _onFor += s.Value;
-            if (_onFor > _grace) Fail("붉은 불빛 아래에서 손전등을 켬");
+            if (_onFor > _grace) Fail("초록 불빛 아래에서 손전등을 켬");
         }
 
         internal override void ResetEpisode()

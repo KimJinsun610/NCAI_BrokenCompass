@@ -109,6 +109,27 @@ namespace NightDuty
         {
             get { return Window < 0f; }
         }
+
+        /// <summary>
+        /// 61차(민: 「도서관 안에 완전히 다 들어오고 몇 초 · 교실 안에 확실하게 들어가고 소년」): 0보다 크면 머무름(<see cref="EncounterTrigger.DwellInSpace"/>)을
+        /// 그 방 상자 안쪽으로 이만큼(m) 들어와 있는 동안만 센다(문간·가장자리는 세지 않는다). 깊이는 연출 쪽이 잰다(<c>TensionDirector.DeepInSpace</c>).
+        /// </summary>
+        public float DeepMargin;
+
+        /// <summary>61차(민: 「도서관 창밖 남자가 너무 멀리서부터 작동」): 0보다 크면 고정 자리(<see cref="StageAnchor"/>)에서 이 거리(m, 수평) 안에 있을 때만 방아쇠를 받는다.</summary>
+        public float NearAnchor;
+
+        /// <summary>
+        /// 61차: 몹 대역이 서는 조우(존재형·시체·CCTV·응시 방아쇠 제외) — 대역을 먼저 세우고 플레이어가 본 뒤 대면한다(<see cref="DirectionPhase.Present"/>).
+        /// </summary>
+        public bool NeedsSight
+        {
+            get
+            {
+                return StandIn.Length > 0 && !IsPresence && StandIn != EncounterScripts.CorpseStandIn
+                       && Trigger != EncounterTrigger.ViewingCctv && Trigger != EncounterTrigger.GazeTarget;
+            }
+        }
     }
 
     /// <summary>씬의 고정 연출 자리 ID(<c>StageAnchor</c> 오브젝트의 ID와 같다).</summary>
@@ -166,7 +187,7 @@ namespace NightDuty
                     Id = ProgramCatalog.BoySeated, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Classroom, Dwell = 3f,
                     Cue = FinalCues.BoySeated, ReleaseCue = FinalCues.Bell, Window = 15f,
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy",
-                    StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3,
+                    StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3, DeepMargin = 2f,   // 61차: 교실 안에 확실히 들어와서
                     Note = "기획서: 교실 점검 항목을 처음 비출 때. 비춤 대신 교실 3초 체류로 시작한다(점검 대상이 교실 깊숙이 있어 거의 같은 순간)."
                 },
                 new EncounterScript
@@ -174,7 +195,7 @@ namespace NightDuty
                     Id = ProgramCatalog.BoyBang, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Classroom, Dwell = 3f,
                     Cue = FinalCues.BoySeated, ReleaseCue = FinalCues.Bell, Window = 18f,
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy", AnchorId = FinalCues.BoyTarget,
-                    StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3,
+                    StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3, DeepMargin = 2f,   // 61차
                     Note = "52차 민: C2 「교실의 _? 는 무시하십시오.」 + C3 「수업 중에 움직이지 마십시오.」 + 앉은 소년 — 셋이 하나. " +
                            "움직이지도, 바라보지도 말아야 한다. 소년을 3초 바라보면(C2 위반) 책상에 머리를 박는다(BoyHeadBang, 소리는 복도까지)." 
                 },
@@ -202,7 +223,7 @@ namespace NightDuty
                 },
                 new EncounterScript
                 {
-                    Id = ProgramCatalog.YellowFace, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 8f,
+                    Id = ProgramCatalog.YellowFace, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 4f, DeepMargin = 2.5f,   // 61차: 도서관 안쪽 2.5m 넘게 들어와 4초(옛 도서관 8초 체류)
                     Cue = FinalCues.YellowFace, Window = 11f,   // 44차: 8초는 알아보고 비추면 끝나 공포가 쌓이지 않았다 — 마주 비추고 버티는 시간
                     Placement = CuePlacement.AheadOfPlayer, Distance = 4f, StandIn = "mob.duck", AnchorId = FinalCues.FaceTarget,
                     StageAnchor = StageAnchors.YellowDoor,
@@ -261,7 +282,7 @@ namespace NightDuty
                     Id = ProgramCatalog.SuitMan, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 6f,
                     Cue = FinalCues.WindowKnock, Window = 10f,
                     Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.windowman", AnchorId = FinalCues.ManTarget,
-                    StageAnchor = StageAnchors.WindowMan,
+                    StageAnchor = StageAnchors.WindowMan, NearAnchor = 6f,   // 61차: 창에서 6m 안에서만
                     Note = "창 두드림으로 시작. L5: 먼저 인사(비춤·2초 응시)하지 않는다. 도서관 북쪽 창(WallOutside_4m_WindowDouble) 밖 — 모델은 DUCK(민 지정)."
                 },
                 new EncounterScript

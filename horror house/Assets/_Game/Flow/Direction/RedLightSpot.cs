@@ -4,6 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// 52차 C4 붉은 등(민: 「유저들은 손전등을 무조건 켜고 다니니 끄라고 정해 두고, 빨간 등에 변칙성을 더해서 맵 곳곳에 랜덤하게 하나를 정하고 나오게」).
+/// <b>66차: 초록 등</b>(민: 「조도 축이 오르면 전체 조명이 미세하게 붉어지고, 수칙의 빨간 불빛은 초록으로」) — 색은 <see cref="CueColor"/>. 클래스·단서 이름(cue.redlight)은 그대로 둔다.
 /// <list type="bullet">
 /// <item>C4(「붉은 불빛 아래에서는 손전등을 끄십시오.」)가 덱에 있는 밤, 근무 공간(복도·교실 둘·과학실·도서관·화장실)의 형광등 하나를 무작위로 골라 붉게 켠다(밤 시작에 정함, 재시작해도 같은 자리).</item>
 /// <item>그 등 아래 구역(가로세로 4m)에 들어서면 판정 단서 <c>cue.redlight</c>를 보내고, 나서면 끝 단서 — 판정(<c>LightOffJudge</c>)은 그동안 손전등이 1.5초 넘게 켜져 있으면 위반.</item>
@@ -23,6 +24,15 @@ public sealed class RedLightSpot : MonoBehaviour
     };
 
     private static RedLightSpot s_active;
+
+    /// <summary>빛이 닿는 거리(m).</summary>
+    public const float LightRange = 4.2f;
+
+    /// <summary>66차: C4 수칙 등의 색(초록). 교실 단서 물들임(DirectionStage C4)도 이 색.</summary>
+    public static readonly Color CueColor = new Color(0.12f, 1f, 0.3f);
+
+    /// <summary>66차: 등 재질 바탕색(어두운 초록).</summary>
+    private static readonly Color CueBase = new Color(0.04f, 0.3f, 0.08f);
 
     private object _night;
     private GameObject _root;
@@ -129,6 +139,8 @@ public sealed class RedLightSpot : MonoBehaviour
             string n = r.name;
             if (!n.StartsWith("LampFluo") || n.Contains("Broken") || n.Contains("_LOD1") || n.Contains("_LOD2") || !r.gameObject.activeInHierarchy) continue;
             Vector3 c = r.bounds.center;
+            // 61차(민 스크린샷: 복도에 붉은 등이 서면 경비실 벽·천장이 붉게 물들었다): 빛이 닿는 거리 안에 경비실이 있는 등은 쓰지 않는다.
+            if (GuardRoomColliders.Room.SqrDistance(c) < (LightRange + 0.5f) * (LightRange + 0.5f)) continue;
             for (int i = 0; i < boxes.Count; i++)
             {
                 if (!boxes[i].Contains(c)) continue;
@@ -139,7 +151,7 @@ public sealed class RedLightSpot : MonoBehaviour
 
         if (lamps.Count == 0)
         {
-            Debug.LogWarning("[RedLightSpot] 붉은 등으로 쓸 형광등을 찾지 못했습니다.");
+            Debug.LogWarning("[RedLightSpot] 초록 등으로 쓸 형광등을 찾지 못했습니다.");
             return;
         }
 
@@ -147,20 +159,22 @@ public sealed class RedLightSpot : MonoBehaviour
         Bounds lb = lamp.bounds;
         Vector3 under = new Vector3(lb.center.x, lb.min.y - 0.05f, lb.center.z);
 
-        _root = new GameObject("C4 붉은 등");
+        _root = new GameObject("C4 초록 등");
         _root.transform.position = under;
 
-        GameObject lightGo = new GameObject("붉은 빛");
+        GameObject lightGo = new GameObject("초록 빛");
         lightGo.transform.SetParent(_root.transform, false);
         lightGo.transform.localPosition = Vector3.down * 0.25f;
         _light = lightGo.AddComponent<Light>();
         _light.type = LightType.Point;
-        _light.color = new Color(1f, 0.1f, 0.06f);
+        _light.color = CueColor;
         // 53차 플레이 점검: 6.5m · 3.2는 복도 한 토막을 통째로 물들여 「붉은 불빛 아래」가 어디인지 흐려졌다 — 등 밑 웅덩이로 줄인다.
-        _light.range = 4.2f;
+        _light.range = LightRange;
         _base = 0.85f;   // 57차(민: 「붉은 조명은 밝기를 좀 줄여야」): 1.5 → 0.85
         _light.intensity = _base;
-        _light.shadows = LightShadows.None;
+        // 61차: 그림자를 켠다 — 그림자 없는 점광은 벽을 뚫고 옆방(경비실)을 물들였다.
+        _light.shadows = LightShadows.Soft;
+        _light.shadowNearPlane = 0.1f;
         _light.renderMode = LightRenderMode.ForcePixel;
 
         // 53차(민 스크린샷: 매달린 등 아래 붉은 판이 허공에 떠 있었다): 판을 따로 세우지 않고 등 자체(LOD 형제 포함)의 재질을 붉게 빛나게 바꾼다.
@@ -182,7 +196,7 @@ public sealed class RedLightSpot : MonoBehaviour
         _zone = new Bounds(new Vector3(under.x, floor + ZoneSize.y * 0.5f, under.z), ZoneSize);
         _inside = false;
         _sounded = false;
-        Debug.Log("[RedLightSpot] 오늘 붉은 등 — " + lamp.name + " " + under.ToString("F1") + " (후보 " + lamps.Count + ")");
+        Debug.Log("[RedLightSpot] 오늘 초록 등 — " + lamp.name + " " + under.ToString("F1") + " (후보 " + lamps.Count + ")");
     }
 
     private readonly List<KeyValuePair<Renderer, Material[]>> _tinted = new List<KeyValuePair<Renderer, Material[]>>();
@@ -203,7 +217,7 @@ public sealed class RedLightSpot : MonoBehaviour
         }
 
         if (!rs.Contains(lamp)) rs.Add(lamp);
-        Color red = new Color(1f, 0.1f, 0.06f);
+        Color red = CueColor;
         foreach (Renderer r in rs)
         {
             Material[] old = r.sharedMaterials;
@@ -212,8 +226,8 @@ public sealed class RedLightSpot : MonoBehaviour
             {
                 if (old[i] == null) continue;
                 Material m = new Material(old[i]);
-                m.name = old[i].name + " (붉은 등)";
-                if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", new Color(0.35f, 0.04f, 0.03f));
+                m.name = old[i].name + " (C4 초록 등)";
+                if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", CueBase);
                 if (m.HasProperty("_EmissionColor"))
                 {
                     m.EnableKeyword("_EMISSION");

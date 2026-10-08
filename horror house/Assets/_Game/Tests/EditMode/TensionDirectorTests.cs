@@ -558,6 +558,33 @@ namespace NightDuty.Tests
         [Test]
         public void 벌레_떼는_창고가_있는_1_3_교실_화장실_도서관에서만()
         {
+            TensionDirector.FakeBugsEnabled = true;   // 61차부터 꺼져 있다 — 켰을 때의 자리 규칙만 본다
+            try
+            {
+                BugRooms();
+            }
+            finally
+            {
+                TensionDirector.FakeBugsEnabled = false;
+            }
+        }
+
+        [Test]
+        public void 벌레_떼는_가짜_놀람으로_나오지_않는다()
+        {
+            Assert.IsFalse(TensionDirector.FakeBugsEnabled);
+            foreach (SpaceId room in TensionDirector.BugSpaces)
+            {
+                DirectorFixture inside = new DirectorFixture(2, 0.99, null);
+                inside.Minute = 30f;
+                inside.Enter(room).Wait(600f);
+                Assert.AreEqual(0, Count(inside, TensionDirector.FakeBugs), room + " — 바퀴벌레는 시체 낙하와만");
+                Assert.Greater(inside.Director.FakesUsed, 0, "다른 가짜 놀람은 그대로");
+            }
+        }
+
+        private static void BugRooms()
+        {
             Assert.Contains(TensionDirector.FakeBugs, TensionDirector.FakeScares);
             CollectionAssert.AreEquivalent(new[] { SpaceId.Classroom_1_3, SpaceId.Toilet, SpaceId.Library }, TensionDirector.BugSpaces);
 

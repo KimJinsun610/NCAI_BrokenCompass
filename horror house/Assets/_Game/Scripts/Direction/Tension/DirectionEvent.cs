@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace NightDuty
 {
@@ -43,7 +43,13 @@ namespace NightDuty
         Result = 5,
 
         /// <summary>중단(붙잡힘·04:00·재시작) — 끝 단서 없이 즉시 거둔다.</summary>
-        Aborted = 6
+        Aborted = 6,
+
+        /// <summary>
+        /// 61차(민: 「몹은 나타나 있되, 플레이어가 몹을 시야에 넣고 인지한 뒤에 연출이 시작되도록」): 대역만 세운다(움직임·점프스케어·대응 수칙 단서 없음).
+        /// 연출 쪽이 플레이어가 본 것을 알리면(<c>NightRun.EncounterSeen</c>) 대면(<see cref="Confront"/>)이 온다. 오래 못 보면 중단(<see cref="Aborted"/>)으로 거두고 다시 기다린다.
+        /// </summary>
+        Present = 7
     }
 
     /// <summary>대역·소리를 놓을 자리.</summary>

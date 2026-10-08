@@ -24,11 +24,21 @@ public sealed partial class CaptureDirector
     /// 장면만 미리 본다(재시작·카드 없이). <paramref name="repeat"/> = 몇 번째 붙잡힘처럼 틀지(2 = 짧게, 3 = 건너뛰기 가능).
     /// 이미 진행 중이면 false. 끝나면 플레이어 방향을 되돌린다.
     /// </summary>
-    public bool Preview(FearAxis axis, int repeat = 1)
+    public bool Preview(FearAxis axis, int repeat = 1, string sourceId = null)
     {
         if (_running) return false;
+        _previewSource = sourceId;   // 64차: 개발자 모드가 「인체 모형 응시로 붙잡힘」 장면을 미리 볼 때(stare.rule.S3.model)
         StartCoroutine(PreviewRun(axis, Mathf.Max(1, repeat)));
         return true;
+    }
+
+    private string _previewSource;
+
+    /// <summary>이번 장면의 김진선님 컷신 — 미리 보기 출처가 있으면 그것, 아니면 지금 붙잡힌 출처로 고른다.</summary>
+    private DeathCutscene CutsceneFor(FearAxis axis)
+    {
+        string source = _previewSource ?? (NightRun.IsCaptured ? NightRun.Cause.SourceId : null);
+        return CutscenePrefab(axis, source);
     }
 
     private IEnumerator PreviewRun(FearAxis axis, int count)
@@ -52,6 +62,7 @@ public sealed partial class CaptureDirector
         RestoreOtherHud();
         if (player != null) player.enabled = true;
         if (clock != null) clock.Release(this);
+        _previewSource = null;
         _running = false;
     }
 
@@ -102,7 +113,7 @@ public sealed partial class CaptureDirector
     private IEnumerator PlayScene(FearAxis axis, int count, FPController player)
     {
         // 46차: 김진선님 축 사망 컷신(청각·조도)이 있으면 그것을 튼다 — 자기 빌드업·소리·카메라를 다 가진 Timeline이라 공용 정적·얼굴 장면은 건너뛴다.
-        DeathCutscene cutscene = CutscenePrefab(axis);
+        DeathCutscene cutscene = CutsceneFor(axis);
         if (cutscene != null)
         {
             bool played = false;
@@ -224,9 +235,19 @@ public sealed partial class CaptureDirector
     /// </summary>
     public static DeathCutscene CutscenePrefab(FearAxis axis)
     {
+        return CutscenePrefab(axis, NightRun.IsCaptured ? NightRun.Cause.SourceId : null);
+    }
+
+    /// <summary>
+    /// 붙잡은 출처까지 보고 고른다. 64차(민: 「붙잡히면 인체모형 사망 컷신이 나오게」): 과학실 인체 모형을 오래 바라봐 붙잡히면(출처 <c>stare.rule.S3.model</c>, 배치 축)
+    /// 인체 모형이 나오는 김진선님 컷신(<c>DeathCutscene_Illuminance</c>)을 튼다. 그 밖의 배치 붙잡힘은 옛 연출표 장면(사람 나무 얼굴) 그대로.
+    /// </summary>
+    public static DeathCutscene CutscenePrefab(FearAxis axis, string sourceId)
+    {
         string name = axis == FearAxis.Auditory ? DeathCutscene.ResourceName
             : axis == FearAxis.Illuminance ? DeathCutscene.ResourceNameIlluminance
             : null;
+        if (sourceId == FixedMobStare.SourcePrefix + FinalCues.ModelTarget) name = DeathCutscene.ResourceNameIlluminance;
         return name != null ? Resources.Load<DeathCutscene>(name) : null;
     }
 
@@ -239,6 +260,7 @@ public sealed partial class CaptureDirector
     {
         DeathCutscene cs = Instantiate(prefab);
         cs.name = prefab.name;
+        FitDummyFace(cs.transform);   // 64차: 인체 모형 컷신 — 얼굴이 카메라 높이에 오게
         // 58차(민: 「scream을 붙잡힘 장면으로 쓰자」): 청각 컷신의 소년이 Hit 소리에 맞춰 비명 지르며 덮쳐 온다 — 이 인스턴스의 바인딩만 바꾼다(Play 전).
         bool scream = axis == FearAxis.Auditory && CutsceneScream.Attach(cs.gameObject);
         bool finished = false;
@@ -283,6 +305,34 @@ public sealed partial class CaptureDirector
         LastScene += " → " + t.ToString("0.00") + "초";
         Destroy(cs.gameObject);
         done(true);
+    }
+
+    /// <summary>
+    /// 64차(민: 「엔딩 장면이 … 인체 모형의 얼굴이 강조되어야 하는데, 쇄골 쪽이 강조되네」): 김진선님 조도 컷신(<c>DeathCutscene_Illuminance</c>)의 「Dummy」는
+    /// 우리 대역 <c>mob.dummy.stand</c>를 품는데, 61차에 대역 키를 1.7 → 1.9m로 올려 얼굴이 카메라(CamTarget, 바닥에서 1.7m)보다 20cm쯤 위로 올라갔다 —
+    /// 마지막 확대에서 카메라가 쇄골을 본다. 이 인스턴스의 모형(Model)만 발을 기준으로 줄여 눈높이(head ~ head_end의 60%)를 카메라 높이에 맞춘다.
+    /// 김진선님 프리팹·타임라인과 과학실의 모형 크기는 그대로. Dummy·CamTarget·뼈가 없으면 아무것도 하지 않는다.
+    /// </summary>
+    public static float FitDummyFace(Transform cutscene)
+    {
+        if (cutscene == null) return 1f;
+        Transform dummy = FindDeep(cutscene, "Dummy");
+        Transform camTarget = FindDeep(cutscene, "CamTarget");
+        if (dummy == null || camTarget == null) return 1f;
+        Transform model = dummy.Find("Model");
+        Transform head = FindDeep(dummy, "head");
+        Transform headEnd = FindDeep(dummy, "head_end");
+        if (model == null || head == null || headEnd == null) return 1f;
+
+        float feet = dummy.position.y;
+        float eye = Mathf.Lerp(head.position.y, headEnd.position.y, 0.6f) - feet;
+        float want = camTarget.position.y - feet;
+        if (eye <= 0.01f || want <= 0.01f) return 1f;
+        float f = Mathf.Clamp(want / eye, 0.75f, 1.1f);
+        model.localScale *= f;
+        Transform aim = dummy.Find("Aim");
+        if (aim != null) aim.localPosition = new Vector3(aim.localPosition.x, aim.localPosition.y * f, aim.localPosition.z);
+        return f;
     }
 
     // ── 프리팹 장면 ───────────────────────────────────────────

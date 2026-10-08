@@ -209,7 +209,7 @@ namespace NightDuty
             new RuleDef("C1", SpaceId.Classroom, A, true, "교실은 판서가 끝난 뒤에 들어가십시오.", isWaitType: true),   // 57차 민: 앞에 「교실」을 밝힘
             new RuleDef("C2", SpaceId.Classroom, A, true, "교실의 _? 는 무시하십시오.", boundEncounter: BoyBang),   // 52차 민: 앉은 소년과 묶음(C2 + C3 + 소년) — 3초 바라보면 책상에 머리를 박는다
             new RuleDef("C3", SpaceId.Classroom, A, true, "수업 중에 움직이지 마십시오.", isThreat: true, isWaitType: true, boundEncounter: BoySeated),
-            new RuleDef("C4", SpaceId.Classroom, I, true, "붉은 불빛 아래에서는 손전등을 끄십시오.", usesFlashlight: true),   // 52차 민: 늘 켜고 다니니 「끄라」로 — 붉은 등은 맵 어딘가 하나(RedLightSpot)
+            new RuleDef("C4", SpaceId.Classroom, I, true, "초록 불빛 아래에서는 손전등을 끄십시오.", usesFlashlight: true),   // 52차 민: 늘 켜고 다니니 「끄라」로 — 등은 맵 어딘가 하나(RedLightSpot). 66차 민: 「조도 축이 오르면 전체 조명이 붉어지니 수칙의 빨간 불빛은 초록으로」
             new RuleDef("C5", SpaceId.Classroom, L, true, "교실의 문은 모두 부서져 있습니다. 성한 문으로는 나가지 마십시오.", boundEncounter: PhantomDoor),
 
             new RuleDef("S1", SpaceId.ScienceRoom, L, true, "과학실은 통로가 아닙니다. 통로로 사용하지 마십시오."),

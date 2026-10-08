@@ -36,17 +36,18 @@ namespace NightDuty.Tests
     public sealed class InspectionCatalogTests
     {
         [Test]
-        public void 점검_항목은_16개다_복도3_교실3_과학실3_화장실3_도서관3_경비실1()
+        public void 점검_항목은_29개다_복도6_교실5_과학실6_화장실5_도서관4_경비실3()
         {
-            Assert.AreEqual(16, InspectionCatalog.All.Count);
-            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Corridor).Count);
-            Assert.IsNull(InspectionCatalog.Find("H-4"), "복도 사물함(관물대)은 49차에 뺐다");
-            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Classroom).Count);
-            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.ScienceRoom).Count);
-            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Toilet).Count);
-            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Library).Count);
-            Assert.AreEqual(1, InspectionCatalog.InSpace(SpaceId.SecurityRoom).Count);
-            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Classroom_1_3).Count, "옛 교실 값도 새 교실로 읽는다");
+            Assert.AreEqual(29, InspectionCatalog.All.Count, "66차: 16 → 29(민: 「점검은 안 겹칠수록 좋아」)");
+            Assert.AreEqual(6, InspectionCatalog.InSpace(SpaceId.Corridor).Count);
+            Assert.AreEqual("쓰레기통", InspectionCatalog.Find("H-4").Name, "65차: H-4 = 쓰레기통(49차에 뺀 복도 사물함이 아니다)");
+            Assert.IsNull(InspectionCatalog.Find("L-3"), "65차: 반납 상자는 [근무 지시] W15 biology 책 줍기로");
+            Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Classroom).Count);
+            Assert.AreEqual(6, InspectionCatalog.InSpace(SpaceId.ScienceRoom).Count);
+            Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Toilet).Count);
+            Assert.AreEqual(4, InspectionCatalog.InSpace(SpaceId.Library).Count);
+            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.SecurityRoom).Count);
+            Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Classroom_1_3).Count, "옛 교실 값도 새 교실로 읽는다");
         }
 
         [Test]
@@ -67,9 +68,9 @@ namespace NightDuty.Tests
 
         [TestCase(1, 5, 2)]
         [TestCase(2, 6, 2)]   // 57차: 점검을 하루 한 개씩 늘림(민: 「점검이 빨리빨리 안 나와서 지겨웠어」)
-        [TestCase(3, 7, 3)]
+        [TestCase(3, 6, 3)]   // 66차: 5·6·7·7·8 → 5·6·6·7·7(민: 「필요하면 하루 점검을 줄여도 돼」 — 29개로 닷새 겹침을 줄이려고)
         [TestCase(4, 7, 3)]
-        [TestCase(5, 8, 3)]
+        [TestCase(5, 7, 3)]
         public void 일차별_점검수와_이상수(int day, int items, int anomalies)
         {
             Assert.AreEqual(items, InspectionQuota.Items(day));

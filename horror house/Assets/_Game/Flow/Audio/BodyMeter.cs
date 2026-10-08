@@ -319,19 +319,19 @@ public sealed class BodyMeter : MonoBehaviour
         _lastBreath = clip;
         if (_breath == null)
         {
-            // 53차: 내 숨이 아니라 「저 멀리 누군가의 숨」 — 플레이어 뒤쪽 9~14m의 3D 소리, 저역만 남긴다.
+            // 53차: 내 숨이 아니라 「저 멀리 누군가의 숨」 — 플레이어 뒤쪽 5~8m(61차, 옛 9~14m)의 3D 소리, 저역만 남긴다.
             GameObject go = new GameObject("body breath (far)");
             go.transform.SetParent(transform, false);
             _breath = go.AddComponent<AudioSource>();
             _breath.playOnAwake = false;
             _breath.spatialBlend = 1f;
             _breath.rolloffMode = AudioRolloffMode.Logarithmic;
-            _breath.minDistance = 2.5f;
+            _breath.minDistance = 4f;   // 61차(민: 「숨소리 등 축 소리들이 너무 작다」) 2.5 → 4
             _breath.maxDistance = 30f;
             _breath.dopplerLevel = 0f;
             _breath.priority = 40;
             AudioLowPassFilter lp = go.AddComponent<AudioLowPassFilter>();
-            lp.cutoffFrequency = 1100f;
+            lp.cutoffFrequency = 1800f;   // 61차: 1100 → 1800(먹먹하되 숨인 줄은 알게)
         }
 
         Transform player = PlayerSensors.Active != null ? PlayerSensors.Active.PlayerRoot : null;
@@ -340,11 +340,11 @@ public sealed class BodyMeter : MonoBehaviour
             Vector3 back = -player.forward;
             back.y = 0f;
             back = Quaternion.Euler(0f, Random.Range(-70f, 70f), 0f) * (back.sqrMagnitude > 0.01f ? back.normalized : Vector3.back);
-            _breath.transform.position = player.position + back * Random.Range(9f, 14f) + Vector3.up * 0.4f;
+            _breath.transform.position = player.position + back * Random.Range(5f, 8f) + Vector3.up * 0.4f;   // 61차: 9~14m → 5~8m
         }
 
         _breath.pitch = Random.Range(0.9f, 1.02f);
-        _breath.PlayOneShot(clip, volume * scale * 0.55f * Random.Range(0.8f, 1f));
+        _breath.PlayOneShot(clip, volume * scale * 0.95f * Random.Range(0.8f, 1f));   // 61차: 0.55 → 0.95
         if (DirectionStage.Verbose) Debug.Log("[Body] body.breath ← " + clip.name);
     }
 

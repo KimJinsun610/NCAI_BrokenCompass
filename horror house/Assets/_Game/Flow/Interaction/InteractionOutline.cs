@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -276,6 +276,10 @@ public sealed class InteractionOutline : MonoBehaviour
 
     private Renderer[] RenderersOf(Transform root)
     {
+        // 66차: 소품 여러 개를 한 점검 대상으로 묶은 것(세면대 넷·의자 둘·플라스크 선반) — 묶음이 정한 렌더러. 이상 연출이 대역으로 바꿀 수 있어 캐시하지 않는다.
+        OutlineGroup group = root.GetComponent<OutlineGroup>();
+        if (group != null) return group.Members;
+
         Renderer[] cached;
         if (_renderers.TryGetValue(root, out cached)) return cached;
 

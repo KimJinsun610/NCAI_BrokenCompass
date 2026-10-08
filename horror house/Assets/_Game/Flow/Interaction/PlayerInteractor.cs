@@ -32,6 +32,15 @@ using UnityEngine;
 [DefaultExecutionOrder(50)]
 public sealed class PlayerInteractor : MonoBehaviour
 {
+    /// <summary>66차: 플레이어가 [E]로 문을 닫았다(서랍·사물함 포함 — 받는 쪽이 고른다). 판정과 무관하다.</summary>
+    public static event System.Action<DoorHandle> PlayerClosedDoor;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetClosedDoorEvent()
+    {
+        PlayerClosedDoor = null;
+    }
+
     /// <summary>
     /// 손이 닿는 거리(m). <b>짧게 잡는 것이 맞습니다</b> — 2.5m로 두었더니 복도 건너편 문까지 안내가 떠서
     /// 어느 문을 겨눈 것인지 알 수 없었습니다(2026-09-22 사용자 보고).
@@ -161,6 +170,12 @@ public sealed class PlayerInteractor : MonoBehaviour
         s_suppressFrame = Time.frameCount;
     }
 
+    /// <summary>66차: 이 프레임에 다른 줍기가 [E]를 가져갔는지 — CCTV 들여다보기도 따른다(책상 손전등이 모니터 점검 상자 너머에 보일 때).</summary>
+    public static bool SuppressedThisFrame
+    {
+        get { return s_suppressFrame == Time.frameCount; }
+    }
+
     // ─────────────────────────────── 매 프레임 ───────────────────────────────
 
     private void Update()
@@ -257,6 +272,8 @@ public sealed class PlayerInteractor : MonoBehaviour
         if (wasOpen)
         {
             _door.Close();
+            System.Action<DoorHandle> closed = PlayerClosedDoor;   // 66차: 닫은 문이 저절로 다시 열리는 연출(DoorReopener)
+            if (closed != null) closed(_door);
         }
         else
         {

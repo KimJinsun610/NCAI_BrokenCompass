@@ -16,6 +16,10 @@ using UnityEngine.SceneManagement;
 /// <item>S3 「인체 모형을 빛으로 확인하십시오」의 대상 <c>rule.S3.model</c>은 이 모형의 조준점이다 — 몸을 감싸는 단단한 응시 상자를 붙여 응시 원뿔이 잡는다.
 /// 씬의 바닥 토르소(옛 대상, 콜라이더가 없어 응시로 잡히지 않았다)는 근무 중 숨긴다. 씬 파일은 고치지 않는다.</item>
 /// <item>재시작하면 그 밤의 시작 자리로 돌아간다. 판정과 무관(S3 응시 대상 자리만 따라간다).</item>
+/// <item>64차(플레이테스트 2026-10-07 「인체모형 더 활발히 이동」): 2일차부터 ① 플레이어가 같은 곳에 있는데 모형이 화면에 보이지 않은 채 몇 초(2일 5 · 3일 3.5 · 4일~ 2.5) 지나면
+/// 플레이어 쪽으로 한 걸음(0.5 · 0.75 · 1m) 다가서서 플레이어를 본다(2.5m 안으로는 오지 않는다) ② 최대 자리에 닿은 뒤에도 과학실을 나갈 때마다 그 밤 범위의 다른 자리로 옮긴다(<see cref="ModelProgress.NextSpot"/>).</item>
+/// <item>64차(「3일차부터 오래 바라보면 목이 플레이어 방향으로 꺾이게」): 3일차부터 모형을 2.5초 이어서 바라보면(<see cref="NightRun.Stare"/>) 우두둑 소리와 함께
+/// 목(neck 35%·head 나머지)이 0.45초 만에 플레이어 쪽으로 꺾이고(좌우 130°·위아래 35°까지) 자리를 옮길 때까지 플레이어를 따라 본다. 오래 바라보면 배치 축이 오르는 것은 Core <see cref="FixedMobStare"/>.</item>
 /// </list>
 /// 근무 씬에 자동으로 선다.
 /// </summary>
@@ -53,6 +57,52 @@ public sealed class ScienceModel : MonoBehaviour
     private bool _rushed;
     private SpaceId _lastSpace = SpaceId.None;
     private Vector3 _door = WestDoor;
+
+    // 64차
+    /// <summary>보지 않을 때 다가오기 시작하는 날.</summary>
+    public const int CreepFromDay = 2;
+
+    /// <summary>플레이어에게 이보다 가까이 다가오지 않는다(수평 m).</summary>
+    public const float CreepMinDistance = 2.5f;
+
+    /// <summary>오래 바라보면 목이 꺾이기 시작하는 날.</summary>
+    public const int NeckFromDay = 3;
+
+    /// <summary>이만큼 이어서 바라보면 목이 꺾인다(초).</summary>
+    public const float NeckStareSeconds = 2.5f;
+
+    /// <summary>목이 다 꺾이는 데 걸리는 시간(초).</summary>
+    public const float NeckTurnSeconds = 0.45f;
+
+    public const float NeckMaxYaw = 130f;
+    public const float NeckMaxPitch = 35f;
+    private const float NeckShare = 0.35f;
+
+    /// <summary>목 꺾이는 소리(연출 소리표).</summary>
+    public const string NeckSoundKey = "model.neck";
+
+    private float _unseenSince = -1f;
+    private float _nextCreepCheck;
+    private int _creeps;
+    private bool _displaced;
+    private Transform _neck;
+    private Transform _head;
+    private Quaternion _neckRest = Quaternion.identity;
+    private Quaternion _headRest = Quaternion.identity;
+    private bool _neckTurned;
+    private float _neckSince;
+
+    /// <summary>64차: 목이 꺾여 플레이어를 보고 있는지.</summary>
+    public bool NeckTurned
+    {
+        get { return _neckTurned; }
+    }
+
+    /// <summary>64차: 그 밤 보지 않는 사이 다가선 걸음 수.</summary>
+    public int Creeps
+    {
+        get { return _creeps; }
+    }
 
     /// <summary>지금 근무 씬의 것. 없으면 null.</summary>
     public static ScienceModel Active { get; private set; }
@@ -175,8 +225,11 @@ public sealed class ScienceModel : MonoBehaviour
             }
         }
 
-        bool show = !_rushed && !staged;
+        // 64차: 인체 모형 사망 컷신(DeathCutscene_Illuminance)이 도는 동안은 컷신의 모형만 — 과학실에서 붙잡히면 둘이 겹쳐 보인다.
+        bool show = !_rushed && !staged && DeathCutscene.Playing == null;
         if (_model != null && _model.activeSelf != show) _model.SetActive(show);
+        if (show && _model != null) Creep();   // 64차
+        else _unseenSince = -1f;
     }
 
     private void NewNight()
@@ -187,6 +240,7 @@ public sealed class ScienceModel : MonoBehaviour
         _spot = _base;
         _rushed = false;
         _lastSpace = SpaceId.None;
+        _creeps = 0;
         Place();
         if (DirectionStage.Verbose) Debug.Log("[ScienceModel] " + _day + "일차 모형 자리 " + _spot + "(최대 " + _max + ")");
     }
@@ -216,12 +270,17 @@ public sealed class ScienceModel : MonoBehaviour
                 _door = w <= e ? WestDoor : EastDoor;
             }
         }
-        else if (_lastSpace == SpaceId.ScienceRoom && _spot < _max && !_rushed)
+        else if (_lastSpace == SpaceId.ScienceRoom && _max > _base && !_rushed)
         {
-            // 등 뒤에서 — 과학실을 나가면 한 칸.
-            _spot++;
+            // 등 뒤에서 — 과학실을 나가면 한 칸. 64차: 최대 자리에 닿은 뒤에도 나갈 때마다 그 밤 범위의 다른 자리로(「더 활발히」).
+            _spot = ModelProgress.NextSpot(_spot, _base, _max, Random.Range(0, 1000));
             Place();
             if (DirectionStage.Verbose) Debug.Log("[ScienceModel] 모형이 움직였다 → 자리 " + _spot);
+        }
+        else if (_lastSpace == SpaceId.ScienceRoom && _displaced && _spot < ModelProgress.HallSpot)
+        {
+            // 64차: 다가섰던 모형은 플레이어가 나가면 제 자리로 — 다음에 들어올 때 문간을 막고 서 있지 않게.
+            Place();
         }
 
         _lastSpace = now;
@@ -242,11 +301,16 @@ public sealed class ScienceModel : MonoBehaviour
             if (_model == null) return;
             _model.name = "과학실 인체 모형 (몬스터)";
             StandInFactory.Dress(_model, true, FinalCues.ModelTarget);
+            FindBones();
         }
         else
         {
             _model.transform.SetPositionAndRotation(at, rot);
         }
+
+        ResetNeck();
+        _unseenSince = -1f;
+        _displaced = false;
     }
 
     private void Pose(int spot, out Vector3 at, out Quaternion rot)
@@ -337,5 +401,207 @@ public sealed class ScienceModel : MonoBehaviour
         _hiddenRenderers = new Renderer[0];
         _hiddenColliders = new Collider[0];
         _sceneTarget = null;
+    }
+
+    // ── 64차: 보지 않을 때 다가옴 ─────────────────────────────
+
+    /// <summary>
+    /// 2일차부터, 플레이어가 모형과 같은 곳(과학실 — 복도 자리면 복도)에 있고 모형이 화면에 보이지 않은 채 <see cref="CreepDelay"/>초가 지나면
+    /// 플레이어 쪽으로 한 걸음(<see cref="CreepStep"/>) 다가서서 플레이어를 본다. <see cref="CreepMinDistance"/>m 안으로는 오지 않는다.
+    /// </summary>
+    private void Creep()
+    {
+        if (_day < CreepFromDay || _rushed)
+        {
+            _unseenSince = -1f;
+            return;
+        }
+
+        if (Time.time < _nextCreepCheck) return;
+        _nextCreepCheck = Time.time + 0.2f;
+
+        Camera cam = Camera.main;
+        Transform root = PlayerSensors.Active != null ? PlayerSensors.Active.PlayerRoot : null;
+        if (cam == null || root == null || !SameArea())
+        {
+            _unseenSince = -1f;
+            return;
+        }
+
+        if (UnseenDespawn.VisibleTo(_model, cam))
+        {
+            _unseenSince = -1f;
+            return;
+        }
+
+        if (_unseenSince < 0f) _unseenSince = Time.time;
+        if (Time.time - _unseenSince < CreepDelay(_day)) return;
+        _unseenSince = Time.time;   // 다음 걸음은 다시 기다린다
+        if (TryStep(root.position) && DirectionStage.Verbose) Debug.Log("[ScienceModel] 보지 않는 사이 다가섰다 → " + _model.transform.position);
+    }
+
+    /// <summary>플레이어가 모형과 같은 곳에 있는지 — 과학실 자리면 과학실, 복도 자리면 복도.</summary>
+    private bool SameArea()
+    {
+        SpaceId now = SpaceIds.Canonical(NightRun.CurrentSpace);
+        return _spot >= ModelProgress.HallSpot ? now == SpaceId.Corridor : now == SpaceId.ScienceRoom;
+    }
+
+    /// <summary>그날 보이지 않은 채 몇 초 지나면 한 걸음 다가오는지.</summary>
+    public static float CreepDelay(int day)
+    {
+        if (day <= 2) return 5f;
+        if (day == 3) return 3.5f;
+        return 2.5f;
+    }
+
+    /// <summary>그날 한 걸음(m).</summary>
+    public static float CreepStep(int day)
+    {
+        if (day <= 2) return 0.5f;
+        if (day == 3) return 0.75f;
+        return 1f;
+    }
+
+    private bool TryStep(Vector3 playerFeet)
+    {
+        Vector3 from = _model.transform.position;
+        Vector3 to = playerFeet - from;
+        to.y = 0f;
+        float dist = to.magnitude;
+        if (dist <= CreepMinDistance + 0.05f) return false;
+        Vector3 dir = to / dist;
+        float step = Mathf.Min(CreepStep(_day), dist - CreepMinDistance);
+
+        float[] turns = { 0f, 35f, -35f, 70f, -70f };
+        for (int i = 0; i < turns.Length; i++)
+        {
+            Vector3 d = Quaternion.Euler(0f, turns[i], 0f) * dir;
+            Vector3 p = from + d * step;
+            if (!InsideArea(p) || Blocked(p)) continue;
+            p.y = FloorY(p);
+            Vector3 face = playerFeet - p;
+            face.y = 0f;
+            Quaternion rot = face.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(face.normalized, Vector3.up) : _model.transform.rotation;
+            _model.transform.SetPositionAndRotation(p, rot);
+            _creeps++;
+            _displaced = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>모형의 자리 공간 상자 안(벽에서 0.35m)인지. 상자를 모르면 참.</summary>
+    private bool InsideArea(Vector3 p)
+    {
+        if (_zones == null) _zones = FindFirstObjectByType<SpaceZones>();
+        if (_zones == null) return true;
+        Bounds box;
+        SpaceId area = _spot >= ModelProgress.HallSpot ? SpaceId.Corridor : SpaceId.ScienceRoom;
+        if (!_zones.TryGetSpaceBox(area, out box)) return true;
+        box.Expand(new Vector3(-0.7f, 0f, -0.7f));
+        return p.x >= box.min.x && p.x <= box.max.x && p.z >= box.min.z && p.z <= box.max.z;
+    }
+
+    /// <summary>그 자리에 모형 몸(반지름 0.3 캡슐, 발목 위)이 들어갈 수 없는지 — 자기·플레이어 콜라이더와 트리거는 빼고.</summary>
+    private bool Blocked(Vector3 p)
+    {
+        float y = FloorY(p);
+        Vector3 a = new Vector3(p.x, y + 0.4f, p.z);
+        Vector3 b = new Vector3(p.x, y + 1.6f, p.z);
+        Transform player = PlayerSensors.Active != null ? PlayerSensors.Active.PlayerRoot : null;
+        Collider[] hits = Physics.OverlapCapsule(a, b, 0.3f, ~0, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Transform t = hits[i].transform;
+            if (t.IsChildOf(_model.transform)) continue;
+            if (player != null && t.IsChildOf(player)) continue;
+            return true;
+        }
+
+        return false;
+    }
+
+    // ── 64차: 오래 바라보면 목이 꺾인다(3일차부터) ─────────────
+
+    private void LateUpdate()
+    {
+        Neck();
+    }
+
+    private void Neck()
+    {
+        if (_model == null || _head == null || !_model.activeInHierarchy) return;
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        if (!_neckTurned && _day >= NeckFromDay && NightRun.IsNightActive)
+        {
+            FixedMobStare stare = NightRun.Stare;
+            if (stare.TargetId == FinalCues.ModelTarget && stare.Seconds >= NeckStareSeconds)
+            {
+                _neckTurned = true;
+                _neckSince = Time.time;
+                PlayNeckSound();
+                if (DirectionStage.Verbose) Debug.Log("[ScienceModel] 오래 바라봐 목이 꺾였다");
+            }
+        }
+
+        if (!_neckTurned) return;
+        float w = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - _neckSince) / NeckTurnSeconds));
+
+        // 쉬는 자세에서 시작해 플레이어(카메라) 쪽으로 — 모형 몸 기준 좌우·위아래로 잰다.
+        Transform body = _model.transform;
+        if (_neck != null) _neck.localRotation = _neckRest;
+        _head.localRotation = _headRest;
+        Quaternion headRest = _head.rotation;
+        Vector3 to = body.InverseTransformDirection((cam.transform.position - _head.position).normalized);
+        float yaw = Mathf.Clamp(Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, -NeckMaxYaw, NeckMaxYaw);
+        float pitch = Mathf.Clamp(-Mathf.Asin(Mathf.Clamp(to.y, -1f, 1f)) * Mathf.Rad2Deg, -NeckMaxPitch, NeckMaxPitch);
+        Quaternion turn = body.rotation * Quaternion.Euler(pitch * w, yaw * w, 0f) * Quaternion.Inverse(body.rotation);
+        if (_neck != null) _neck.rotation = Quaternion.Slerp(Quaternion.identity, turn, NeckShare) * _neck.rotation;
+        _head.rotation = turn * headRest;
+    }
+
+    /// <summary>목을 쉬는 자세로(자리를 옮기거나 새 밤·재시작).</summary>
+    private void ResetNeck()
+    {
+        _neckTurned = false;
+        if (_neck != null) _neck.localRotation = _neckRest;
+        if (_head != null) _head.localRotation = _headRest;
+    }
+
+    private void FindBones()
+    {
+        _neck = null;
+        _head = null;
+        foreach (Transform t in _model.GetComponentsInChildren<Transform>(true))
+        {
+            string n = t.name.ToLowerInvariant();
+            if (n == "neck" && _neck == null) _neck = t;
+            else if (n == "head" && _head == null) _head = t;
+        }
+
+        if (_neck != null) _neckRest = _neck.localRotation;
+        if (_head != null) _headRest = _head.localRotation;
+    }
+
+    private void PlayNeckSound()
+    {
+        float volume;
+        AudioClip clip = DirectionSoundTableSO.FindExact(NeckSoundKey, out volume);
+        if (clip == null) return;
+        GameObject go = new GameObject("sfx 모형 목");
+        go.transform.SetParent(_head, false);
+        AudioSource s = go.AddComponent<AudioSource>();
+        s.clip = clip;
+        s.volume = volume;
+        s.spatialBlend = 1f;
+        s.minDistance = 2.5f;
+        s.maxDistance = 20f;
+        s.priority = 32;
+        s.Play();
+        Destroy(go, clip.length + 0.2f);
     }
 }

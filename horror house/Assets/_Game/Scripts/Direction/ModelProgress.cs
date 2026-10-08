@@ -27,5 +27,19 @@ namespace NightDuty
             else max = Math.Min(start + 1, 2);
             if (max < start) max = start;
         }
+
+        /// <summary>
+        /// 64차(「인체모형 더 활발히 이동」): 과학실을 나갈 때 옮길 다음 자리. 최대 자리 전이면 한 칸 앞, 최대 자리면 그 밤 범위(시작~최대)의 <b>다른</b> 자리 하나(<paramref name="roll"/>로 고른다).
+        /// 범위가 한 자리뿐이면(1일차) 그대로.
+        /// </summary>
+        public static int NextSpot(int spot, int start, int max, int roll)
+        {
+            if (max <= start) return spot;
+            if (spot < max) return Math.Max(start, spot + 1);
+            int others = max - start;
+            int pick = start + (Math.Abs(roll) % others);
+            if (pick >= spot) pick++;
+            return Math.Min(pick, max);
+        }
     }
 }

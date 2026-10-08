@@ -11,7 +11,9 @@ using UnityEngine.SceneManagement;
 /// <item>58차(민: 「조우 효과음이 아직도 현악기」): 강도 3 이상 조우의 대면에 깔던 떨리는 현(<c>tension.confront</c>, CLX-29 8초)을 뺐다 — 51차에 스팅어만 바꾸고 이 겹을 남겨 두었다. 조우 소리는 <see cref="EncounterImpact"/>의 점프스케어 스팅어뿐.</item>
 /// <item>경고·처벌: 경고 도장이 늘면 <c>punish.stamp</c>, 세 번째 도장으로 처벌이 대기에 들어가면 <c>tablet.buzz</c>.
 /// 처벌이 나오면 축별 <c>punish.auditory</c>(속삭임이 귀를 스침) · <c>punish.illuminance</c>(차단기 툭·딸깍) · <c>punish.layout</c>(가지가 어깨를 스침) + <c>punish.hit</c> + 「뚝」 끊김(<c>punish.cut</c>).</item>
-/// <item>점검 「가까이」: 항목 자리에서 <c>inspect.&lt;항목&gt;.near</c>(3D, <c>+</c>는 0.6초 뒤 이어서) + 공용 충격음 <c>inspect.near</c>(2D).</item>
+/// <item>점검 「가까이」: 항목 자리에서 <c>inspect.&lt;항목&gt;.near</c>(3D, <c>+</c>는 0.6초 뒤 이어서) + 공용 충격음 <c>inspect.near</c>.
+/// 61차(민: 「쾅 소리가 1일차부터 너무 가까이서 들려 혼란 — 멀리서, 1~2일차엔 배정 안 했으면」): 공용 충격음은 <see cref="StartleImpactFromDay"/>일차부터만,
+/// 2D가 아니라 등 뒤 <see cref="StartleImpactDistance"/>m에서 저역만 남겨 낸다(<see cref="PlayFar"/>). 「가까이」 판정(축 +6)과 항목 소리는 그대로.</item>
 /// <item>점검 이상: 이상이 배정된 항목은 보고할 때까지 그 자리에서 <c>inspect.&lt;항목&gt;.loop</c>가 3D로 계속 난다(C-3 천장 사각거림 · H-2 식수대 · H-3 종 웅— · L-3 종이 넘김 · S-3 물방울 · T-2 휴지 뜯기).
 /// 이상의 강도(구간)가 높을수록 조금 크다.</item>
 /// </list>
@@ -147,7 +149,43 @@ public sealed class NightDutySfx : MonoBehaviour
         string key = "inspect." + itemId + ".near";
         PlayAt(key, at, 0f);
         PlayAt(key + "+", at, FollowUpSeconds);
-        Play2D("inspect.near");
+        if (NightRun.Day >= StartleImpactFromDay) PlayFar("inspect.near", StartleImpactDistance);
+    }
+
+    /// <summary>61차: 「가까이」 공용 충격음(쾅)이 나기 시작하는 날.</summary>
+    public const int StartleImpactFromDay = 3;
+
+    /// <summary>61차: 「가까이」 공용 충격음이 나는 거리(m, 등 뒤).</summary>
+    public const float StartleImpactDistance = 16f;
+
+    /// <summary>61차: 등 뒤(±70°) 먼 곳에서, 벽 너머처럼 저역만 남긴 3D 소리.</summary>
+    private void PlayFar(string key, float distance)
+    {
+        float volume;
+        AudioClip clip = DirectionSoundTableSO.FindExact(key, out volume);
+        if (clip == null) return;
+        Camera cam = Camera.main;
+        Vector3 ear = Ear();
+        Vector3 back = cam != null ? -Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up) : Vector3.back;
+        if (back.sqrMagnitude < 0.01f) back = Vector3.back;
+        back = Quaternion.Euler(0f, Random.Range(-70f, 70f), 0f) * back.normalized;
+
+        GameObject go = new GameObject("sfx(먼) " + key);
+        go.transform.SetParent(transform, false);
+        go.transform.position = ear + back * distance;
+        AudioSource s = go.AddComponent<AudioSource>();
+        s.playOnAwake = false;
+        s.clip = clip;
+        s.volume = volume;
+        s.spatialBlend = 1f;
+        s.dopplerLevel = 0f;
+        s.rolloffMode = AudioRolloffMode.Logarithmic;
+        s.minDistance = 4f;
+        s.maxDistance = 40f;
+        go.AddComponent<AudioLowPassFilter>().cutoffFrequency = 1100f;
+        s.Play();
+        Destroy(go, clip.length + 0.3f);
+        if (DirectionStage.Verbose) Debug.Log("[Sfx] " + key + " ← " + clip.name + " (먼 쾅 " + distance + "m)");
     }
 
     // ── 경고·처벌 ───────────────────────────────────────────

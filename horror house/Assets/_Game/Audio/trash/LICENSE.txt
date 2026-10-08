@@ -1,0 +1,4 @@
+SFX_TRASH_KickedCan_1.wav / SFX_TRASH_KickedCan_2.wav
+- 출처: BigSoundBank (Joseph SARDIN) "Tin can #5" (ID 0667) — https://bigsoundbank.com/tin-can-5-s0667.html
+- 라이선스: CC0 1.0 (BigSoundBank 표기 — 상업적 이용 가능, 저작자 표시 불필요)
+- 가공(2026-10-08 65차): 낙하음 네 개를 잘라 「걷어차임 → 떨어짐 → 튕김 → 구름」 순서로 이어 붙이고 피크 -3 dBFS로 맞춤(모노 44.1kHz).

@@ -329,11 +329,13 @@ public sealed partial class CaptureDirector : MonoBehaviour
         List<string> names = new List<string>();
         IReadOnlyList<string> sources = NightRun.LastCaptureSources;
         for (int i = 0; i < sources.Count; i++) names.Add(SourceName(sources[i]));
-        _sources.text = string.Join("\n", names);   // 출처가 없으면(디버그 강제 붙잡힘) 비워 둔다
+        // 64차(민: 「사망했을 때 설명은 나오지 않게」): 붙잡힌 까닭(수칙·점검·응시) 줄은 화면에 쓰지 않는다 — 디버그용 LastCard에만 남긴다.
+        _sources.text = string.Empty;
+        _sources.gameObject.SetActive(false);
 
         _sign.text = fromCheckpoint ? "마지막 서명: 02:16" : "마지막 서명: 없음 → 00:00";
         _hint.text = "아무 키나 눌러 계속";
-        LastCard = _title.text + " | " + (died ? "YOU DIED" : _symbol.text) + " | " + (names.Count > 0 ? _sources.text.Replace("\n", " / ") : "—") + " | " + _sign.text;
+        LastCard = _title.text + " | " + (died ? "YOU DIED" : _symbol.text) + " | " + (names.Count > 0 ? string.Join(" / ", names) : "—") + " | " + _sign.text;
     }
 
     /// <summary>
@@ -394,6 +396,8 @@ public sealed partial class CaptureDirector : MonoBehaviour
     public static string SourceName(string id)
     {
         if (string.IsNullOrEmpty(id)) return string.Empty;
+        string stare = FixedMobStare.SourceName(id);   // 64차: 고정 몹 응시
+        if (stare != null) return stare;
 
         IReadOnlyList<RuleDef> rules = ProgramCatalog.AllRules;
         for (int i = 0; i < rules.Count; i++)

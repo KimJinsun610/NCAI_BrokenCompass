@@ -88,7 +88,7 @@ namespace NightDuty
             Add("C1", "교실에서 소리가 나면 즉시 점검하십시오.", SafeReadPattern.StandStill, FinalCues.Chalk, null, "판서 가 끝나기 전 에는? 들어가지 마시오.");
             Add("C2", "교실에 남아 있는 학생이 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.BoySeated, FinalCues.BoyTarget, "교실 의 _? 는 무시 대상 입니 다.");   // 52차: 소년이 앉은 뒤에 온다(예고하지 않음) — 따르면(바라보면) C2를 어긴다
             Add("C3", null, SafeReadPattern.None, null, null, "수업 중 이동 은 금지입니 ㄷ ㅏ.");   // 민 2026-10-04: 역설 폐기(몬스터를 과하게 예고해 긴장 저하)
-            Add("C4", "붉은 등 아래가 어둡습니다. 지금 손전등으로 비추십시오.", SafeReadPattern.StandStill, FinalCues.RedLight, null, "붉은 불빛 아래 손전등 은 켜지 마. 켜지 마.");   // 52차: 끄라는 수칙 — 따르면(켜면) 어긴다, 붉은 등 아래를 꺼진 채 지나가면 안전한 읽기
+            Add("C4", "초록 등 아래가 어둡습니다. 지금 손전등으로 비추십시오.", SafeReadPattern.StandStill, FinalCues.RedLight, null, "초록 불빛 아래 손전등 은 켜지 마. 켜지 마.");   // 52차: 끄라는 수칙 — 따르면(켜면) 어긴다, 등 아래를 꺼진 채 지나가면 안전한 읽기. 66차: 붉은 → 초록
             Add("C5", null, SafeReadPattern.None, null, null, "성한 문 으로는? 나가지 마시오. 교실 의 문은 부서졌다.");   // 민 2026-10-04: 역설 폐기
             Add("S1", "반대편 문이 열렸습니다. 지금 점검하십시오.", SafeReadPattern.EyesOnly, null, null, "과학 실은 통로 입니까?. 아니오.");
             Add("S2", "지금 과학실의 훼손 물품을 점검하십시오.", SafeReadPattern.EyesOnly, FinalCues.Glass, null, "깨지는 소리 가 나면? 과학실 을 나가. 다시 오지 마.");   // 민 2026-10-04: CCTV로 → 눈으로만

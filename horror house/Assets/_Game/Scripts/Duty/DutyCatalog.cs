@@ -25,7 +25,10 @@ namespace NightDuty
         ExitSignCheck = 5,
 
         /// <summary>57차 — 비품 하나(<see cref="DutyDef.Target"/>, 그날 점검에 없는 점검 대상)를 1초 본다. 보고는 없다.</summary>
-        GazeCheck = 6
+        GazeCheck = 6,
+
+        /// <summary>65차 — 물건 하나(<see cref="DutyDef.Target"/>)를 [E]로 줍는다(민: 「반납 상자 → 도서관 안쪽 책상의 biology 책 습득, 클릭해서 습득하면 완료」).</summary>
+        Pickup = 7
     }
 
     /// <summary>[근무 지시] 한 종류의 정의. 문구는 「~바랍니다」(수칙 「하십시오」 · 점검 「있습니다」 · 역설 「지금 하십시오」와 갈린다).</summary>
@@ -70,6 +73,14 @@ namespace NightDuty
             DutyDef d = new DutyDef(id, DutyKind.GazeCheck, it != null ? it.Space : SpaceId.Corridor, axis, order, done, missed, seconds, days);
             d.Item = item;
             d.Target = InspectionCatalog.TargetPrefix + item;
+            return d;
+        }
+
+        /// <summary>줍기 지시를 만든다(65차). <paramref name="target"/> = 연출 쪽이 세우는 줍는 물건 ID.</summary>
+        public static DutyDef Pickup(string id, string target, SpaceId space, FearAxis axis, string order, string done, string missed, float seconds, params int[] days)
+        {
+            DutyDef d = new DutyDef(id, DutyKind.Pickup, space, axis, order, done, missed, seconds, days);
+            d.Target = target;
             return d;
         }
 
@@ -121,6 +132,9 @@ namespace NightDuty
         /// <summary>복도 끝 유도등(응시 대상).</summary>
         public const string ExitSignTarget = "duty.exit.sign";
 
+        /// <summary>65차: 도서관 안쪽 책상 위 biology 책(줍기 대상, 씬 <c>Interior/Library/Book16 (2)</c>).</summary>
+        public const string LibraryBookTarget = "duty.library.book";
+
         /// <summary>CCTV 채널 하나를 본 것으로 치는 초.</summary>
         public const float ChannelSeconds = 2f;
 
@@ -154,6 +168,9 @@ namespace NightDuty
             DutyDef.Gaze("W12", "T-3", FearAxis.Illuminance, "화장실 거울 조명 확인 바랍니다.", "거울 조명 확인이 기록되었습니다.", "거울 조명 확인 기록이 없습니다.", 90f, 2, 3, 4, 5),
             DutyDef.Gaze("W13", "L-1", FearAxis.Layout, "도서관 열람석 정리 상태 확인 바랍니다.", "열람석 확인이 기록되었습니다.", "열람석 확인 기록이 없습니다.", 100f, 2, 3, 4, 5),
             DutyDef.Gaze("W14", "T-2", FearAxis.Auditory, "화장실 빈 칸 문 상태 확인 바랍니다.", "칸 문 확인이 기록되었습니다.", "칸 문 확인 기록이 없습니다.", 90f, 3, 4, 5),
+
+            // 65차(민: 「반납 상자는 book16(2) 관련 지시로 — 도서관 안쪽 책상에 있는 biology 책을 습득하세요. 클릭해서 습득하면 완료」). 문구는 민 그대로(「~바랍니다」 예외).
+            DutyDef.Pickup("W15", LibraryBookTarget, SpaceId.Library, FearAxis.Auditory, "도서관 안쪽 책상에 있는 biology 책을 습득하세요.", "biology 책 습득이 기록되었습니다.", "biology 책 습득 기록이 없습니다.", 120f, 1, 2, 3, 4, 5),
         };
 
         /// <summary>전부(정의 순).</summary>

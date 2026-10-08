@@ -28,6 +28,19 @@ public sealed class DirectionStage : MonoBehaviour
     }
 
     private readonly Dictionary<string, Staged> _staged = new Dictionary<string, Staged>(StringComparer.Ordinal);
+
+    /// <summary>61차: 세워 두고 플레이어가 보기를 기다리는 대역(<see cref="DirectionPhase.Present"/>). 대면 때 무대로 옮긴다.</summary>
+    private sealed class Presented
+    {
+        public GameObject Go;
+        public Vector3 At;
+        public readonly Staged Holder = new Staged();
+    }
+
+    private readonly Dictionary<string, Presented> _presented = new Dictionary<string, Presented>(StringComparer.Ordinal);
+
+    /// <summary>62차: 조우가 끝났지만 시야에서 벗어나기를 기다리는 대역(소년·시체). 재시작·하루 끝에는 곧바로 지운다.</summary>
+    private readonly List<GameObject> _lingering = new List<GameObject>();
     private readonly Dictionary<SpaceId, LightGroup> _groups = new Dictionary<SpaceId, LightGroup>();
     private SpaceZones _zones;
     private DirectionScreenFx _fx;
@@ -101,6 +114,20 @@ public sealed class DirectionStage : MonoBehaviour
         EventBus.FinalRuleSettled += OnRuleSettled;
         EventBus.NightRestarted += OnRestarted;
         EventBus.DayEnded += OnDayEnded;
+        // 61차: 몹은 먼저 세우고 플레이어가 알아본 뒤 대면 · 「안쪽 깊이」 머무름은 방 상자로 잰다.
+        NightRun.EncounterSightGating = true;
+        NightRun.DeepInSpaceProbe = DeepIn;
+    }
+
+    /// <summary>61차: 플레이어 발이 그 공간 상자 안쪽으로 <paramref name="margin"/>m 넘게(수평, 가장 가까운 벽까지) 들어와 있는지. 상자를 모르면 참.</summary>
+    private static bool DeepIn(SpaceId space, float margin)
+    {
+        SpaceZones z = s_active != null ? s_active.Zones() : FindAnyObjectByType<SpaceZones>();
+        Bounds box;
+        if (z == null || !z.TryGetSpaceBox(space, out box)) return true;
+        Vector3 f = PlayerFeet();
+        float depth = Mathf.Min(Mathf.Min(f.x - box.min.x, box.max.x - f.x), Mathf.Min(f.z - box.min.z, box.max.z - f.z));
+        return depth >= margin;
     }
 
     private void OnDisable()
@@ -109,6 +136,8 @@ public sealed class DirectionStage : MonoBehaviour
         EventBus.FinalRuleSettled -= OnRuleSettled;
         EventBus.NightRestarted -= OnRestarted;
         EventBus.DayEnded -= OnDayEnded;
+        NightRun.EncounterSightGating = false;
+        NightRun.DeepInSpaceProbe = null;
         ClearAll(DirectionPhase.Aborted);
         if (s_active == this) s_active = null;
     }
@@ -128,6 +157,10 @@ public sealed class DirectionStage : MonoBehaviour
     {
         List<string> ids = new List<string>(_staged.Keys);
         for (int i = 0; i < ids.Count; i++) Cleanup(ids[i], phase);
+        List<string> shown = new List<string>(_presented.Keys);
+        for (int i = 0; i < shown.Count; i++) DropPresented(shown[i]);
+        for (int i = 0; i < _lingering.Count; i++) if (_lingering[i] != null) Destroy(_lingering[i]);
+        _lingering.Clear();
         foreach (LightGroup g in _groups.Values) g.Restore();
         if (_fx != null) _fx.ClearAll();
     }
@@ -182,6 +215,9 @@ public sealed class DirectionStage : MonoBehaviour
 
                 PlaySound(e.SourceId + ".foreshadow", PointOr(e.Point, 6f));
                 break;
+            case DirectionPhase.Present:
+                Present(e);
+                break;
             case DirectionPhase.Confront:
                 Confront(e);
                 break;
@@ -198,13 +234,66 @@ public sealed class DirectionStage : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 61차(민: 「몹은 나타나 있되, 플레이어가 몹이 시야에 들어오고 인지한 뒤에 연출이 시작되도록」): 대역만 세운다 — 걷기·움직임·점프스케어·소리·화면 효과 없음.
+    /// 플레이어가 알아보면(<see cref="SightProbe"/>) 디렉터에 알리고, 대면(<see cref="Confront"/>)이 이 대역을 그대로 이어 쓴다.
+    /// </summary>
+    private void Present(DirectionEvent e)
+    {
+        EncounterScript script = EncounterScripts.Find(e.SourceId);
+        if (script == null || script.StandIn.Length == 0) return;
+        DropPresented(e.SourceId);
+        Cleanup(e.SourceId, DirectionPhase.Aborted);
+
+        Presented pre = new Presented();
+        Vector3 player = PlayerFeet();
+        Vector3 point = PointOr(e.Point, script.Distance > 0f ? script.Distance : 3f);
+        pre.Go = SpawnAt(pre.Holder, script.StandIn, script.StageAnchor, script.Placement == CuePlacement.CeilingAhead, point, player, script.AnchorId, out pre.At, false);
+        _presented[e.SourceId] = pre;
+        string id = e.SourceId;
+        SightProbe.Attach(pre.Go, id, () => NightRun.EncounterSeen(id));
+        if (Verbose) Debug.Log("[Direction] 대역을 세움(보기를 기다림) — " + id + " @" + pre.At.ToString("F1"));
+    }
+
+    private Presented TakePresented(string id)
+    {
+        Presented pre;
+        if (!_presented.TryGetValue(id, out pre)) return null;
+        _presented.Remove(id);
+        return pre;
+    }
+
+    private void DropPresented(string id)
+    {
+        Presented pre = TakePresented(id);
+        if (pre == null) return;
+        if (pre.Go != null) Destroy(pre.Go);
+        for (int i = pre.Holder.Undo.Count - 1; i >= 0; i--)
+        {
+            try { pre.Holder.Undo[i](); }
+            catch (Exception ex) { Debug.LogException(ex, this); }
+        }
+    }
+
+    /// <summary>61차: 세워 둔 대역의 고정 자리가 걷기(<c>WalkTo</c>)를 가지면 대면 때 걷기 시작.</summary>
+    private static void StartWalk(string stageAnchor, GameObject placed, Vector3 at)
+    {
+        StageAnchor fixedAt = StageAnchor.Find(stageAnchor);
+        if (fixedAt == null || fixedAt.WalkTo == null || placed == null) return;
+        DirectionWalker walker = placed.GetComponent<DirectionWalker>();
+        if (walker == null) walker = placed.AddComponent<DirectionWalker>();
+        walker.Walk(at, fixedAt.WalkTo.position, fixedAt.WalkSpeed, true);
+    }
+
     private void Confront(DirectionEvent e)
     {
         EncounterScript script = EncounterScripts.Find(e.SourceId);
         if (script == null) return;
 
+        Presented pre = TakePresented(e.SourceId);   // 61차: 세워 둔 대역을 이어 쓴다
         Cleanup(e.SourceId, DirectionPhase.Aborted);
         Staged st = Stage(e.SourceId);
+        if (pre != null) st.Undo.AddRange(pre.Holder.Undo);
         Vector3 player = PlayerFeet();
         Vector3 point = PointOr(e.Point, script.Distance > 0f ? script.Distance : 3f);
 
@@ -245,6 +334,7 @@ public sealed class DirectionStage : MonoBehaviour
             }
 
             CorpseDrop body = CorpseDrop.Spawn(spot, player, ceilingY, script.AnchorId);
+            UnseenDespawn.Mark(body.gameObject);   // 62차
             st.Objects.Add(body.gameObject);
             point = spot;
             StartCoroutine(CorpseRoaches(spot, RoachDelay));   // 60차(민: 「시체 등장할 때 바닥에 바퀴벌레가 — 내가 올린 효과음과 함께」)
@@ -253,7 +343,18 @@ public sealed class DirectionStage : MonoBehaviour
         else if (script.StandIn.Length > 0)
         {
             Vector3 at;
-            GameObject go = SpawnAt(st, script.StandIn, script.StageAnchor, script.Placement == CuePlacement.CeilingAhead, point, player, script.AnchorId, out at);
+            GameObject go;
+            if (pre != null && pre.Go != null)
+            {
+                go = pre.Go;
+                at = pre.At;
+                StartWalk(script.StageAnchor, go, at);
+            }
+            else
+            {
+                go = SpawnAt(st, script.StandIn, script.StageAnchor, script.Placement == CuePlacement.CeilingAhead, point, player, script.AnchorId, out at);
+            }
+            if (script.StandIn == "mob.boy") UnseenDespawn.Mark(go);   // 62차: 소년은 시야에서 벗어나야 사라진다
             DirectionCue cue = go.GetComponent<DirectionCue>();
             if (cue == null) cue = go.AddComponent<DirectionCue>();
             cue.Play(new CueContext { Intensity = e.Intensity, Anchor = at, EncounterId = e.SourceId });
@@ -277,6 +378,7 @@ public sealed class DirectionStage : MonoBehaviour
                 Vector3 from = hole != null ? hole.transform.position : CeilingAbove(PointOr(Vector3.zero, 3f));
                 Vector3 floor = FloorBelow(from + Vector3.down * 0.5f);
                 CorpseDrop body = CorpseDrop.Spawn(floor, player, from.y, script.ExtraAnchorId);
+                UnseenDespawn.Mark(body.gameObject);   // 62차
                 st.Objects.Add(body.gameObject);
             }
             else if (script.ExtraStandIn.Length > 0)
@@ -307,6 +409,12 @@ public sealed class DirectionStage : MonoBehaviour
     private Vector3 _corpseSpot;
     private float _corpseCeiling;
     private float _corpseSpotAt = -100f;
+    /// <summary>61차: 사다리 방(창고, 문간 x≈50.3 포함) 상자 — 2026-10-07 실측(사다리 C-3 (52.7, 33.2), 문간 z 33.6~34.4).</summary>
+    public static readonly Bounds LadderRoom = new Bounds(new Vector3(52.3f, 2.5f, 33.9f), new Vector3(4.8f, 3f, 4.0f));
+
+    /// <summary>61차: 사다리 방 시체 자리 — 문간에서 사다리를 볼 때 화면 가운데에 오는 바닥(민 스크린샷).</summary>
+    public static readonly Vector3 LadderRoomCorpseSpot = new Vector3(51.8f, 1.5f, 33.9f);
+
     /// <summary>바퀴벌레 이펙트 대역(김진선님 벌레 떼를 감싼 것, 빌더가 만든다).</summary>
     public const string CorpseRoachesId = "fx.corpse.roaches";
 
@@ -364,6 +472,18 @@ public sealed class DirectionStage : MonoBehaviour
     private static Vector3 CorpseSpot(out float ceilingY)
     {
         Vector3 feet = PlayerFeet();
+        Transform me = PlayerRoot();
+
+        // 61차(민: 「사다리 방은 너무 어두워 시체가 나와도 못 보는 경우가 있다 — 2번째 사진 조준점 자리에서 떨어지게」):
+        // 사다리 방 안(문간 포함)이면 늘 정해 둔 자리 — 문간에서 사다리를 볼 때 화면 가운데 바닥. 플레이어가 그 자리에 서 있으면 평소대로.
+        Vector3 flatFeet = new Vector3(feet.x, LadderRoom.center.y, feet.z);
+        if (LadderRoom.Contains(flatFeet) && FlatDistance(feet, LadderRoomCorpseSpot) > 0.8f)
+        {
+            Vector3 fixedFloor = FloorBelow(LadderRoomCorpseSpot + Vector3.up * 0.3f);
+            ceilingY = CeilingY(fixedFloor, me);
+            return fixedFloor;
+        }
+
         Camera cam = Camera.main;
         Vector3 fwd = cam != null ? cam.transform.forward : (PlayerRoot() != null ? PlayerRoot().forward : Vector3.forward);
         fwd.y = 0f;
@@ -510,7 +630,7 @@ public sealed class DirectionStage : MonoBehaviour
     /// <summary>
     /// 대역을 세운다. 고정 자리(<see cref="StageAnchor"/>)가 씬에 있으면 그 자리·방향(+응시 상자), 없으면 디렉터가 준 점의 바닥(천장)에서 플레이어를 보게.
     /// </summary>
-    private static GameObject SpawnAt(Staged st, string standIn, string stageAnchor, bool ceiling, Vector3 point, Vector3 player, string anchorId, out Vector3 at)
+    private static GameObject SpawnAt(Staged st, string standIn, string stageAnchor, bool ceiling, Vector3 point, Vector3 player, string anchorId, out Vector3 at, bool walk = true)
     {
         StageAnchor fixedAt = StageAnchor.Find(stageAnchor);
         if (fixedAt != null)
@@ -521,7 +641,7 @@ public sealed class DirectionStage : MonoBehaviour
             if (fixedAt.RevealDoor != null) RevealDoor(st, fixedAt.RevealDoor);
             // 고정 천장 앵커도 구멍을 낸다 — 멀쩡한 천장 타일을 다리가 뚫고 나오면 소품처럼 보인다(43차 시뮬).
             if (standIn == "mob.legs") AddCeilingHole(placed, at);
-            if (fixedAt.WalkTo != null)
+            if (fixedAt.WalkTo != null && walk)   // 61차: 세워 둘 때(Present)는 걷지 않는다 — 대면 때 StartWalk
             {
                 DirectionWalker walker = placed.GetComponent<DirectionWalker>();
                 if (walker == null) walker = placed.AddComponent<DirectionWalker>();
@@ -992,7 +1112,7 @@ public sealed class DirectionStage : MonoBehaviour
                 SpaceId here = ClassroomHere();
                 LightGroup g = here != SpaceId.None ? ExactGroup(here) : Group(SpaceId.Classroom);
                 // 44차: 교실 등은 평소 꺼져 있다(RoomDarkness) — 어둠 속에 붉은 등이 확 들어오도록 세기 0.7 → 2.4배.
-                g.Tint(new Color(1f, 0.12f, 0.08f), 1.5f);   // 57차(민: 「붉은 조명 밝기 줄이기」): 2.4 → 1.5
+                g.Tint(RedLightSpot.CueColor, 1.5f);   // 57차(민: 「붉은 조명 밝기 줄이기」): 2.4 → 1.5 · 66차: 초록(조도 축이 오르면 모든 등이 붉어지므로)
                 st.Undo.Add(g.Untint);
                 break;
             }
@@ -1209,6 +1329,7 @@ public sealed class DirectionStage : MonoBehaviour
 
     private void Cleanup(string id, DirectionPhase phase)
     {
+        DropPresented(id);   // 61차: 못 보고 거둔(중단) 대역
         Staged st;
         if (!_staged.TryGetValue(id, out st)) return;
         _staged.Remove(id);
@@ -1229,6 +1350,15 @@ public sealed class DirectionStage : MonoBehaviour
             if (exit != null)
             {
                 exit.Leave();
+                continue;
+            }
+
+            // 62차(민: 「소년, 시체의 디스폰은 플레이어 시야에서 완전히 벗어나면 사라지게」): 보이는 동안은 남겨 둔다. 중단(붙잡힘·재시작·04:00)은 바로 지운다.
+            if (phase != DirectionPhase.Aborted && go.GetComponent<UnseenDespawn>() != null)
+            {
+                UnseenDespawn.Begin(go);
+                _lingering.RemoveAll(x => x == null);
+                _lingering.Add(go);
                 continue;
             }
 

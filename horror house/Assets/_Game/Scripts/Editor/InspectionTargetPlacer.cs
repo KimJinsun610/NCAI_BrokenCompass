@@ -30,6 +30,7 @@ namespace NightDuty.EditorTools
             Pair("H-1", "Interior/Corridors/FireExtinguisherHang (2)"),
             Pair("H-2", "Interior/Corridors/DrinkingFountain (1)"),
             Pair("H-3", "Interior/Corridors/Bell (7)"),
+            Pair("H-4", "Interior/Corridors/TrashCanBig_A (1)"),   // 65차 — 씬에 놓기 전까지는 TrashCanKick이 런타임에 세운다
             Pair("C-1", "Interior/Classroom02/Plant02 (1)"),
             Pair("C-2", "Interior/Classroom02/LampDesk (1)"),
             Pair("C-3", "Interior/Classroom02/LibraryLadder (1)"),
@@ -41,7 +42,6 @@ namespace NightDuty.EditorTools
             Pair("T-3", "Interior/Toilet02/Toilet_MirrorB (1)"),
             Pair("L-1", "Interior/Library/LibraryChair (15)"),
             Pair("L-2", "Interior/Library/JalousieE (6)"),
-            Pair("L-3", "Interior/Library/CardboardBoxB_open_booksC (2)"),
             Pair("K-1", "Interior/janitor's room/Old CRT Monitor")
         };
 

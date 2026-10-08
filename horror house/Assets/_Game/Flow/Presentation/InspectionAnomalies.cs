@@ -28,6 +28,15 @@ public sealed class InspectionAnomalies : MonoBehaviour
     /// <summary>빛 이상의 후광 링(최종 기획서 접근성: 색과 함께 정적인 모양 단서).</summary>
     public static bool HaloRing = false;   // 53차 민(C-2 램프 스크린샷): 「UI처럼 보인다」 — 빛 이상 후광 링을 모두 끈다(49차 S-2에 이어)
 
+    /// <summary>
+    /// 66차 실시간 조작(민 피드백 6단계 「실시간 조작」 — 원문이 남아 있지 않아 이렇게 읽었다): 그날 늦게 열리는 공간(호출 2)의 이상은 밤 시작에 세우지 않고,
+    /// 그 점검이 열린 뒤 플레이어가 보지 않고 4m 넘게 떨어져 있을 때 세운다 — 앞서 지나가며 본 정상 모습이 나중에 바뀌어 있다. 판정(편성)은 그대로다. 끄면 옛 동작.
+    /// </summary>
+    public static bool LiveTamper = true;
+
+    /// <summary>실시간 조작을 기다리는 동안 플레이어와 떨어져 있어야 하는 거리(m).</summary>
+    public const float TamperMinDistance = 4f;
+
     /// <summary>[빛] 이상의 세기 배수(53차 민: 「빛과 관련된 점검 물품들은 빛이 아주 약하게」).</summary>
     public static float LightAnomalyScale = 0.3f;
 
@@ -41,6 +50,9 @@ public sealed class InspectionAnomalies : MonoBehaviour
         public readonly List<Action> Undo = new List<Action>();
         public readonly List<Flicker> Flickers = new List<Flicker>();
         public Walker Walker;
+        public Transform Spin;   // 66차 S-4: 세로축 둘레로 도는 것(원본 또는 대역)
+        public Vector3 SpinPivot;
+        public float SpinSpeed;
     }
 
     private sealed class Flicker
@@ -51,6 +63,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
         public Color GlowColor;
         public float Hz;
         public float Seed;
+        public Material Emit;   // 66차 S-5: 발광 재질(사본) — 깜빡임에 맞춰 발광 세기
+        public Color EmitColor;
     }
 
     private sealed class Walker
@@ -93,8 +107,10 @@ public sealed class InspectionAnomalies : MonoBehaviour
     private static Texture2D s_dot;
     private static Texture2D s_bar;
     private static Texture2D s_hair;
+    private static Texture2D s_footprint;
 
     private readonly List<Look> _looks = new List<Look>();
+    private readonly List<InspectionAssignment> _pending = new List<InspectionAssignment>();
     private readonly List<Bill> _billboards = new List<Bill>();
     private readonly List<HaloFade> _halos = new List<HaloFade>();
     private readonly List<Material> _materials = new List<Material>();
@@ -182,7 +198,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
     /// </summary>
     public Action Preview(string itemId, Band band)
     {
-        if (IsApplied(itemId) || itemId == "K-1") return null;
+        if (IsApplied(itemId) || itemId == "K-1" || itemId == TrashCanKick.ItemId) return null;   // 65차: H-4는 다가갈 때 걷어차이는 사건이라 한 컷 미리 보기가 없다
         Look look = Build(itemId, band);
         if (look == null) return null;
         return () => Remove(look);
@@ -225,6 +241,12 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 for (int i = 0; i < rows.Count; i++)
                 {
                     if (!rows[i].IsAnomaly) continue;
+                    if (LiveTamper && rows[i].IsLate && AnomalyLook.HasLook(rows[i].Item) && rows[i].Id != "K-1")
+                    {
+                        _pending.Add(rows[i]);   // 66차: 실시간 조작 — 점검이 열린 뒤 보지 않을 때 세운다
+                        continue;
+                    }
+
                     Look look = Build(rows[i].Id, rows[i].Intensity);
                     if (look != null) _looks.Add(look);
                 }
@@ -246,11 +268,14 @@ public sealed class InspectionAnomalies : MonoBehaviour
             }
         }
 
+        TickTamper();
+
         for (int i = 0; i < _looks.Count; i++)
         {
             Look look = _looks[i];
             for (int f = 0; f < look.Flickers.Count; f++) Tick(look.Flickers[f]);
             if (look.ItemId == "K-1") TickWalker(look);
+            if (look.Spin != null) look.Spin.RotateAround(look.SpinPivot, Vector3.up, look.SpinSpeed * Time.deltaTime);
         }
     }
 
@@ -290,8 +315,54 @@ public sealed class InspectionAnomalies : MonoBehaviour
         }
     }
 
+    /// <summary>66차: 실시간 조작을 기다리는 이상 수.</summary>
+    public int PendingTamperCount
+    {
+        get { return _pending.Count; }
+    }
+
+    /// <summary>66차: 기다리는 이상 — 점검이 열렸고, 소품이 화면에 안 보이고, 플레이어가 4m 넘게 떨어져 있으면 그때 세운다.</summary>
+    private void TickTamper()
+    {
+        if (_pending.Count == 0) return;
+        InspectionBoard board = NightRun.Inspections;
+        Camera cam = Camera.main;
+        Transform player = PlayerSensors.Active != null ? PlayerSensors.Active.PlayerRoot : null;
+        if (board == null || cam == null) return;
+        for (int i = _pending.Count - 1; i >= 0; i--)
+        {
+            InspectionAssignment row = _pending[i];
+            if (!board.IsIssued(row.Id)) continue;
+            JudgeTarget jt;
+            if (!JudgeTargetRegistry.TryGet(row.Item.TargetId, out jt) || jt == null || jt.transform.parent == null) continue;
+            Transform prop = jt.transform.parent;
+            if (player != null && SensingRules.HorizontalDistance(player.position, jt.transform.position) < TamperMinDistance) continue;
+            if (SeenNow(prop, cam)) continue;
+            _pending.RemoveAt(i);
+            if (FindLook(row.Id) != null) continue;
+            Look look = Build(row.Id, row.Intensity);
+            if (look == null) continue;
+            _looks.Add(look);
+            if (DirectionStage.Verbose) Debug.Log("[InspectionAnomalies] 실시간 조작: " + row.Id + "[" + (int)row.Intensity + "]");
+        }
+    }
+
+    private static bool SeenNow(Transform prop, Camera cam)
+    {
+        OutlineGroup group = prop.GetComponent<OutlineGroup>();
+        if (group == null) return UnseenDespawn.VisibleTo(prop.gameObject, cam);
+        Renderer[] members = group.Members;
+        for (int i = 0; i < members.Length; i++)
+        {
+            if (members[i] != null && UnseenDespawn.VisibleTo(members[i].gameObject, cam)) return true;
+        }
+
+        return false;
+    }
+
     private void ClearAll()
     {
+        _pending.Clear();
         for (int i = _looks.Count - 1; i >= 0; i--) Remove(_looks[i]);
         _looks.Clear();
         _halos.Clear();
@@ -330,6 +401,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
         look.Objects.Clear();
         look.Flickers.Clear();
         look.Walker = null;
+        look.Spin = null;
     }
 
     // ── 항목별 ───────────────────────────────────────────────
@@ -364,14 +436,16 @@ public sealed class InspectionAnomalies : MonoBehaviour
             {
                 Vector3 at = new Vector3(b.center.x, b.max.y - 0.1f, b.center.z) + Flat(prop.forward) * (b.extents.z + 0.015f);
                 // 53차 플레이 점검: 범위 0.3m 점광원은 벽에 테두리가 또렷한 초록 원판을 그렸다(「UI 같은 원」) — 범위를 넓히고 세기를 1/10로 해 번지게.
-                Glow(look, at, new Color(0.45f, 1f, 0.55f), 1.4f, 0.05f * glow, 0.045f);
+                Light l = Glow(look, at, new Color(0.45f, 1f, 0.55f), 1.4f, 0.05f * glow, 0.045f);
+                AddFlicker(look, l, _lastDot, band, UnityEngine.Random.value * 100f);   // 65차(민: 「빛 관련 지시는 그냥 켜져 있는 게 아니라 이상이면 깜빡이게」)
                 Halo(look, b, new Color(0.5f, 1f, 0.6f));
                 break;
             }
             case "C-2":
             {
                 Vector3 at = new Vector3(b.center.x, b.max.y - 0.1f, b.center.z) + Flat(prop.forward) * 0.1f;
-                Glow(look, at, new Color(1f, 0.78f, 0.5f), 2.6f, 1.6f * glow, 0.08f);
+                Light l = Glow(look, at, new Color(1f, 0.78f, 0.5f), 2.6f, 1.6f * glow, 0.08f);
+                AddFlicker(look, l, _lastDot, band, UnityEngine.Random.value * 100f);   // 65차: 깜빡임
                 Halo(look, b, new Color(1f, 0.8f, 0.5f));
                 break;
             }
@@ -381,8 +455,11 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 Color cold = new Color(0.82f, 0.9f, 1f);
                 // 53차 플레이 점검: 빛을 현미경 바닥 안쪽에 두니 몸체가 0.1m 거리에서 하얗게 타 보였다 — 몸체 옆 0.15m · 재물대 높이로 빼고 세기를 1/4로.
                 Vector3 at = new Vector3(b.center.x, b.min.y + b.size.y * 0.3f, b.center.z) + Flat(prop.forward) * 0.15f;
-                Glow(look, at, cold, 1.25f, 0.22f * glow, 0.04f);
-                Card(look, "접안렌즈 빛", Dot(), new Vector3(b.center.x, b.max.y - 0.02f, b.center.z), new Vector2(0.025f, 0.025f), new Color(cold.r, cold.g, cold.b, 0.85f), 0.02f);
+                Light l = Glow(look, at, cold, 1.25f, 0.22f * glow, 0.04f);
+                float seed = UnityEngine.Random.value * 100f;
+                AddFlicker(look, l, _lastDot, band, seed);   // 65차: 깜빡임 — 접안렌즈 빛점도 같은 박자로
+                Renderer eye = Card(look, "접안렌즈 빛", Dot(), new Vector3(b.center.x, b.max.y - 0.02f, b.center.z), new Vector2(0.025f, 0.025f), new Color(cold.r, cold.g, cold.b, 0.85f), 0.02f);
+                AddFlicker(look, null, eye, band, seed);
                 break;
             }
             case "T-3":
@@ -413,14 +490,76 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 if (!FountainEvent(look, prop, b, band)) Water(look, prop, b, band, Flat(prop.forward), new Color(0.015f, 0.02f, 0.025f, 0.8f), 0.25f, false);
                 break;
             case "T-1":
+            {
+                // 61차(민: 「소녀가 칸에 들어간 뒤 변기에 핏물·머리카락」 — 진선님 에셋): 김진선님 핏물·머리카락 변기를 겹친다. 없으면 옛 절차 물·머리카락.
+                GameObject blood = ToiletBowls.Blood(prop);
+                if (blood != null)
+                {
+                    look.Objects.Add(blood);
+                    Transform toilet = prop;
+                    look.Undo.Add(() => ToiletBowls.Restore(toilet));
+                    break;
+                }
+
                 Water(look, prop, b, band, Flat(prop.forward), new Color(0.03f, 0.028f, 0.02f, 0.82f), 0.3f, true);
                 Hair(look, prop, b, band);
                 break;
+            }
             case FaucetItem:
                 Faucet(look, prop, jt.transform, b, band);   // 57차: 잠겼어야 할 수도에서 물이 떨어진다
                 break;
             case "C-3":
                 ok = HideProp(look, prop, jt.transform);   // 51차: 사다리가 없다(점검 기준점만 남는다)
+                if (ok) EmptyMark(look, prop, b);   // 65차(민: 「사다리 없는 자리에서 없다고 보고할 수 있도록」): 빈자리에 자국 — 외곽선이 그려지고 [없음]으로 보고
+                break;
+            case "H-4":
+            {
+                // 65차: 쓰레기통 — 복도에서 다가가 보면 누가 걷어찬 듯 날아간다(TrashCanKick). 정상이면 아무 일 없음.
+                TrashCanKick kick = TrashCanKick.Active;
+                ok = kick != null && kick.Arm();
+                if (ok) look.Undo.Add(() =>
+                {
+                    if (kick != null) kick.Disarm();
+                });
+                break;
+            }
+            // ── 66차(민: 「점검은 안 겹칠수록 좋아 — 점검 항목을 추가해도 돼」) 새 항목. 대상은 RuntimeInspectTargets가 근무 중에 세운다 ──
+            case "C-4":
+                ok = FallToFloor(look, prop, jt.transform, b, 0.45f);   // 시계가 벽에서 떨어져 바닥에(66차 플레이 점검: 둥근 시계는 돌려도 티가 안 났다)
+                break;
+            case "S-6":
+                ok = TiltOnWall(look, prop, jt.transform, b, band);   // 세계 지도가 기울거나 세로로·거꾸로
+                if (ok) HideTwin(look, RuntimeInspectTargets.MapTwinPath);   // 같은 자리에 겹친 두 번째 지도
+                break;
+            case "C-5":
+                ok = TurnAboutUp(look, prop, jt.transform, b, band <= Band.Band1 ? 135f : 180f);   // 교사 의자가 교실 쪽으로 돌아앉음
+                break;
+            case "K-2":
+                ok = TurnOneChair(look, band);   // 경비실 의자 둘 중 하나가 돌아앉음
+                break;
+            case "S-4":
+                ok = SpinGlobe(look, prop, jt.transform, b, band);   // 지구본이 혼자 돈다
+                break;
+            case "S-5":
+                ok = GlowFlasks(look, glow, band);   // 선반 플라스크 유리가 붉게 빛나며 깜빡임
+                break;
+            case "T-4":
+                ok = SinkRunning(look, band);   // 세면대 넷 중 하나에서 물이 흐른다
+                break;
+            case "T-5":
+                ok = FallToFloor(look, prop, jt.transform, b, 0.55f);   // 수건이 바닥에 떨어져 있다
+                break;
+            case "L-4":
+                ok = ChalkWriting(look, prop, b, band);   // 도서관 칠판에 분필 글씨
+                break;
+            case "L-5":
+                ok = StandUp(look, prop, jt.transform, b);   // 쓰러져 있던 쓰레기통이 세워져 있다(66차 플레이 점검: 씬의 도서관 쓰레기통은 원래 누워 있다)
+                break;
+            case "K-3":
+                ok = TipOver(look, prop, jt.transform, b);   // 화분이 쓰러져 있다
+                break;
+            case "H-6":
+                ok = BenchOut(look, prop, jt.transform, b, band);   // 벤치 한쪽 끝이 벽에서 떨어져 복도로 돌아 나옴
                 break;
             default:
                 ok = false;
@@ -511,9 +650,387 @@ public sealed class InspectionAnomalies : MonoBehaviour
         if (dotSize > 0f)
         {
             Renderer dot = Card(look, "빛점", Dot(), at, new Vector2(dotSize * 0.7f, dotSize * 0.7f), new Color(color.r, color.g, color.b, 0.55f), 0.03f);   // 53차: 빛점도 작고 흐리게
+            _lastDot = dot;
+        }
+        else
+        {
+            _lastDot = null;
         }
 
         return l;
+    }
+
+    private Renderer _lastDot;
+
+    // ── 66차 새 항목 ─────────────────────────────────────────
+
+    private static readonly float[] TiltDegreesByBand = { 0f, 35f, 90f, 150f, 180f };
+    private static readonly float[] SpinDegreesByBand = { 0f, 25f, 40f, 65f, 100f };
+    private static readonly float[] BenchDegreesByBand = { 0f, 25f, 40f, 55f, 70f };
+
+    private static readonly string[] ChalkLinesByBand =
+    {
+        "",
+        "보고 있어",
+        "보고 있어\n뒤에",
+        "보고하지 마\n뒤에 있어",
+        "보고하지 마\n보고하지 마\n뒤에 있어"
+    };
+
+    private static int BandIndex(Band band)
+    {
+        return Mathf.Clamp((int)band, 0, 4);
+    }
+
+    /// <summary>소품을 <paramref name="pivot"/>을 지나는 축 둘레로 돌린다(정적 배칭이면 대역). 옮겨진 것(원본 또는 대역)을 돌려준다.</summary>
+    private bool TurnAround(Look look, Transform prop, Transform judge, Vector3 pivot, Vector3 axis, float degrees, out Transform moved)
+    {
+        Quaternion q = Quaternion.AngleAxis(degrees, axis);
+        return MoveProp(look, prop, judge, pivot + q * (prop.position - pivot), q * prop.rotation, out moved);
+    }
+
+    private bool TurnAboutUp(Look look, Transform prop, Transform judge, Bounds b, float degrees)
+    {
+        Transform moved;
+        return TurnAround(look, prop, judge, b.center, Vector3.up, degrees, out moved);
+    }
+
+    /// <summary>C-4 시계 · S-6 지도: 벽 법선(얇은 축) 둘레로 — 구간 1 35° · 2 90° · 3 150° · 4 거꾸로. 방향은 그날 고정.</summary>
+    private bool TiltOnWall(Look look, Transform prop, Transform judge, Bounds b, Band band)
+    {
+        Vector3 normal = b.size.x < b.size.z ? Vector3.right : Vector3.forward;
+        float deg = TiltDegreesByBand[BandIndex(band)];
+        if (PoolIndex(look.ItemId + ".sign", 2) == 1) deg = -deg;
+        Transform moved;
+        return TurnAround(look, prop, judge, b.center, normal, deg, out moved);
+    }
+
+    /// <summary>K-2: 경비실 접이식 의자 둘 중 그날 하나가 돌아앉는다.</summary>
+    private bool TurnOneChair(Look look, Band band)
+    {
+        int n = RuntimeInspectTargets.PropCount(look.ItemId);
+        Transform chair = RuntimeInspectTargets.Prop(look.ItemId, PoolIndex(look.ItemId + ".chair", n));
+        if (chair == null || IsBatched(chair, null)) return false;
+        Bounds cb = PropBounds(chair, null);
+        Transform moved;
+        return TurnAround(look, chair, null, cb.center, Vector3.up, band <= Band.Band1 ? 120f : 180f, out moved);
+    }
+
+    /// <summary>S-4: 지구본이 세로축 둘레로 천천히 돈다(구간이 높을수록 빠르게). 정적 배칭이면 대역이 돈다.</summary>
+    private bool SpinGlobe(Look look, Transform prop, Transform judge, Bounds b, Band band)
+    {
+        Transform moved;
+        if (!MoveProp(look, prop, judge, prop.position, prop.rotation, out moved) || moved == null) return false;
+        look.Spin = moved;
+        look.SpinPivot = b.center;
+        look.SpinSpeed = SpinDegreesByBand[BandIndex(band)];
+        return true;
+    }
+
+    /// <summary>S-5: 선반 플라스크 유리가 붉게 빛나고(발광 재질 사본) 붉은 빛이 번진다 — 다른 [빛] 이상처럼 깜빡인다.</summary>
+    private bool GlowFlasks(Look look, float glow, Band band)
+    {
+        Color red = new Color(1f, 0.16f, 0.1f);
+        float seed = UnityEngine.Random.value * 100f;
+        float hz = AnomalyLook.FlickerHz(band, PhotosensitiveSafe);
+        Vector3 sum = Vector3.zero;
+        int n = 0;
+        for (int p = 0; p < RuntimeInspectTargets.PropCount(look.ItemId); p++)
+        {
+            Transform group = RuntimeInspectTargets.Prop(look.ItemId, p);
+            if (group == null) continue;
+            foreach (Renderer r in group.GetComponentsInChildren<Renderer>())
+            {
+                if (r.name.StartsWith("Inspect ")) continue;
+                Material[] old = r.sharedMaterials;
+                Material[] lit = new Material[old.Length];
+                for (int i = 0; i < old.Length; i++)
+                {
+                    Material m = new Material(old[i]);
+                    m.EnableKeyword("_EMISSION");
+                    m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+                    Color c = red * (1.1f * glow);
+                    m.SetColor("_EmissionColor", c);
+                    _materials.Add(m);
+                    lit[i] = m;
+                    look.Flickers.Add(new Flicker { Emit = m, EmitColor = c, Hz = hz, Seed = seed });
+                }
+
+                Renderer rr = r;
+                rr.sharedMaterials = lit;
+                look.Undo.Add(() =>
+                {
+                    if (rr != null) rr.sharedMaterials = old;
+                });
+                sum += r.bounds.center;
+                n++;
+            }
+        }
+
+        if (n == 0) return false;
+        Light l = Glow(look, sum / n, red, 1.8f, 0.7f * glow, 0f);
+        AddFlicker(look, l, null, band, seed);
+        return true;
+    }
+
+    /// <summary>T-4: 세면대 넷 중 그날 하나 — 수도꼭지(벽 쪽 윗면)에서 물이 흐른다(S-3과 같은 물).</summary>
+    private bool SinkRunning(Look look, Band band)
+    {
+        int n = RuntimeInspectTargets.PropCount(look.ItemId);
+        Transform sink = RuntimeInspectTargets.Prop(look.ItemId, PoolIndex(look.ItemId + ".sink", n));
+        if (sink == null) return false;
+        Bounds sb = PropBounds(sink, null);
+        Vector3 wall = WallDirection(sb.center, sink);
+        float reach = Mathf.Abs(wall.x) * sb.extents.x + Mathf.Abs(wall.z) * sb.extents.z;
+        Vector3 side = Vector3.Cross(Vector3.up, wall);   // 앞에서 봐서 오른쪽 수도꼭지(66차 플레이 점검: 두 꼭지 사이에서 흘렀다)
+        Vector3 mouth = new Vector3(sb.center.x, sb.max.y - SinkMouthDrop, sb.center.z) + wall * Mathf.Max(0.05f, reach - SinkMouthInset) + side * SinkMouthSide;
+        float basin = sb.center.y;
+        float best = float.MaxValue;
+        foreach (RaycastHit h in Physics.RaycastAll(mouth + Vector3.down * 0.03f, Vector3.down, 1f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            if (h.collider == null || h.collider.name.StartsWith("Inspect ")) continue;
+            if (h.distance < best)
+            {
+                best = h.distance;
+                basin = h.point.y;
+            }
+        }
+
+        look.Objects.Add(FaucetWater.Create("이상 " + look.ItemId + " 물", mouth, basin, Mathf.Max(1, (int)band), Ring(), Dot()));
+        return true;
+    }
+
+    /// <summary>세면대 수도꼭지 입: 윗면에서 아래로(m).</summary>
+    public static float SinkMouthDrop = 0.1f;
+
+    /// <summary>세면대 수도꼭지 입: 벽면에서 안쪽으로(m).</summary>
+    public static float SinkMouthInset = 0.17f;
+
+    /// <summary>세면대 수도꼭지 입: 가운데에서 오른쪽 꼭지까지(m).</summary>
+    public static float SinkMouthSide = 0.09f;
+
+    /// <summary>C-4 시계 · T-5 수건: 벽에 걸려 있던 것이 벽 아래 바닥에 떨어져 누워 있다(벽에서 <paramref name="pullOut"/>m).</summary>
+    private bool FallToFloor(Look look, Transform prop, Transform judge, Bounds b, float pullOut)
+    {
+        Vector3 wall = WallDirection(b.center, prop);
+        Vector3 along = Vector3.Cross(Vector3.up, wall);
+        if (along.sqrMagnitude < 0.0001f) along = Vector3.right;
+        Quaternion q = Quaternion.AngleAxis(90f, along.normalized);
+        Vector3 spot = new Vector3(b.center.x, b.min.y, b.center.z) - wall * pullOut;
+        float floor = FloorBelow(spot, b.min.y);   // 66차 플레이 점검: 벽 높이 3m 시계는 FloorY(3m 레이)로는 바닥이 안 잡혔다
+        if (float.IsNaN(floor) || floor >= b.min.y) return false;
+        Transform moved;
+        if (!MoveProp(look, prop, judge, prop.position, q * prop.rotation, out moved) || moved == null) return false;
+        SettleAt(moved, spot.x, spot.z, floor + 0.004f);
+        return true;
+    }
+
+    /// <summary>L-5: 누워 있던 원통(로컬 위 = 원통 축)을 같은 자리에 똑바로 세운다.</summary>
+    private bool StandUp(Look look, Transform prop, Transform judge, Bounds b)
+    {
+        Quaternion rot = Quaternion.FromToRotation(prop.up, Vector3.up) * prop.rotation;
+        Transform moved;
+        if (!MoveProp(look, prop, judge, prop.position, rot, out moved) || moved == null) return false;
+        SettleAt(moved, b.center.x, b.center.z, b.min.y + 0.004f);
+        return true;
+    }
+
+    /// <summary>K-3 화분: 소품 키만큼 트인 쪽으로 쓰러져 바닥에 누워 있다(쪽은 그날 고정).</summary>
+    private bool TipOver(Look look, Transform prop, Transform judge, Bounds b)
+    {
+        Vector3 dir = OpenSide(b, prop, look.ItemId);
+        Vector3 axis = Vector3.Cross(Vector3.up, dir);
+        if (axis.sqrMagnitude < 0.0001f) return false;
+        Vector3 pivot = new Vector3(b.center.x, b.min.y, b.center.z);
+        Quaternion q = Quaternion.AngleAxis(88f, axis.normalized);
+        Transform moved;
+        if (!MoveProp(look, prop, judge, pivot + q * (prop.position - pivot), q * prop.rotation, out moved) || moved == null) return false;
+        Bounds nb;
+        if (MovedBounds(moved, out nb)) moved.position += Vector3.up * (b.min.y + 0.004f - nb.min.y);
+        return true;
+    }
+
+    /// <summary>H-6: 벽에 붙은 벤치의 한쪽 끝을 축으로 다른 끝이 복도 쪽으로 돌아 나와 있다(구간 1 25° ~ 4 70° — 통로는 남긴다).</summary>
+    private bool BenchOut(Look look, Transform prop, Transform judge, Bounds b, Band band)
+    {
+        Vector3 wall = WallDirection(b.center, prop);
+        Vector3 along = b.size.x > b.size.z ? Vector3.right : Vector3.forward;
+        float half = Mathf.Max(b.extents.x, b.extents.z);
+        float end = PoolIndex(look.ItemId + ".end", 2) == 0 ? 1f : -1f;
+        Vector3 pivot = b.center + along * end * (half - 0.15f);
+        Vector3 far = b.center - along * end * half;
+        float deg = BenchDegreesByBand[BandIndex(band)];
+        Vector3 swung = pivot + Quaternion.AngleAxis(deg, Vector3.up) * (far - pivot);
+        if (Vector3.Dot(swung - far, -wall) < 0f) deg = -deg;
+        Transform moved;
+        return TurnAround(look, prop, judge, pivot, Vector3.up, deg, out moved);
+    }
+
+    /// <summary>L-4: 도서관 칠판(트인 쪽 면)에 분필 글씨 — 구간이 높을수록 줄이 늘어난다.</summary>
+    private bool ChalkWriting(Look look, Transform prop, Bounds b, Band band)
+    {
+        Vector3 n = b.size.x < b.size.z ? Vector3.right : Vector3.forward;
+        if (FreeDistance(b.center, -n, prop, 8f) > FreeDistance(b.center, n, prop, 8f)) n = -n;
+        float thick = Mathf.Abs(n.x) * b.extents.x + Mathf.Abs(n.z) * b.extents.z;
+        float width = Mathf.Abs(n.x) > 0.5f ? b.size.z : b.size.x;
+        if (_props == null) _props = Resources.Load<InspectionAnomalyPropsSO>(InspectionAnomalyPropsSO.ResourcePath);
+        TMPro.TMP_FontAsset font = _props != null ? _props.ChalkFont : null;
+
+        GameObject go = new GameObject("이상 " + look.ItemId + " 분필 글씨");
+        float tilt = PoolIndex(look.ItemId + ".tilt", 2) == 0 ? -4f : 5f;
+        go.transform.SetPositionAndRotation(b.center + n * (thick + 0.008f) + Vector3.down * 0.05f, Quaternion.LookRotation(-n, Vector3.up) * Quaternion.Euler(0f, 0f, tilt));
+        TMPro.TextMeshPro tmp = go.AddComponent<TMPro.TextMeshPro>();
+        if (font != null) tmp.font = font;
+        tmp.text = ChalkLinesByBand[BandIndex(band)];
+        tmp.fontSize = 3.8f;
+        tmp.alignment = TMPro.TextAlignmentOptions.Center;
+        tmp.enableWordWrapping = false;
+        tmp.color = new Color(0.93f, 0.93f, 0.88f, 0.82f);
+        tmp.rectTransform.sizeDelta = new Vector2(width * 0.85f, b.size.y * 0.9f);
+        look.Objects.Add(go);
+        return true;
+    }
+
+    /// <summary>66차: 그 점 아래 위를 보는 면 중 <paramref name="below"/>보다 낮은 가장 높은 것(8m까지). 없으면 NaN.</summary>
+    private static float FloorBelow(Vector3 p, float below)
+    {
+        float best = float.NaN;
+        foreach (RaycastHit h in Physics.RaycastAll(new Vector3(p.x, below - 0.02f, p.z), Vector3.down, 8f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            if (h.normal.y < 0.8f || h.collider.name.StartsWith("Inspect ")) continue;
+            if (h.collider.GetComponentInParent<Rigidbody>() != null) continue;
+            if (float.IsNaN(best) || h.point.y > best) best = h.point.y;
+        }
+
+        return best;
+    }
+
+    /// <summary>S-6: 같은 자리에 겹친 두 번째 소품을 숨긴다.</summary>
+    private static void HideTwin(Look look, string path)
+    {
+        GameObject twin = GameObject.Find("/" + path);
+        if (twin != null) HideOriginal(look, twin.transform, null, true);
+    }
+
+    /// <summary>그 점에서 가장 가까운 벽 쪽(가로 네 방향, 1.5m 안). 없으면 소품이 보는 반대쪽.</summary>
+    private static Vector3 WallDirection(Vector3 from, Transform ignore)
+    {
+        Vector3[] dirs = { Vector3.forward, Vector3.back, Vector3.left, Vector3.right };
+        Vector3 best = Vector3.back;
+        float bestD = float.MaxValue;
+        for (int i = 0; i < dirs.Length; i++)
+        {
+            float d = FreeDistance(from, dirs[i], ignore, 1.5f);
+            if (d < bestD)
+            {
+                bestD = d;
+                best = dirs[i];
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>그 점에서 그 방향으로 막힘까지의 거리(소품·점검 기준점·플레이어는 무시, 최대 <paramref name="max"/>).</summary>
+    private static float FreeDistance(Vector3 from, Vector3 dir, Transform ignore, float max)
+    {
+        float best = max;
+        foreach (RaycastHit h in Physics.RaycastAll(from, dir, max, ~0, QueryTriggerInteraction.Ignore))
+        {
+            if (h.collider == null || h.collider.name.StartsWith("Inspect ")) continue;
+            if (ignore != null && h.collider.transform.IsChildOf(ignore)) continue;
+            if (h.collider.GetComponentInParent<Rigidbody>() != null) continue;
+            if (h.distance < best) best = h.distance;
+        }
+
+        return best;
+    }
+
+    /// <summary>쓰러질 쪽 — 여덟 방향 중 바닥 위 0.3m에서 소품 키만큼 가장 트인 쪽(같으면 그날 무작위).</summary>
+    private static Vector3 OpenSide(Bounds b, Transform prop, string key)
+    {
+        Vector3 from = new Vector3(b.center.x, b.min.y + 0.3f, b.center.z);
+        float need = b.size.y + 0.2f;
+        List<Vector3> open = new List<Vector3>();
+        Vector3 bestDir = Vector3.forward;
+        float bestFree = -1f;
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 d = Quaternion.Euler(0f, i * 45f, 0f) * Vector3.forward;
+            float free = FreeDistance(from, d, prop, need);
+            if (free >= need - 0.001f) open.Add(d);
+            if (free > bestFree)
+            {
+                bestFree = free;
+                bestDir = d;
+            }
+        }
+
+        return open.Count > 0 ? open[PoolIndex(key + ".fall", open.Count)] : bestDir;
+    }
+
+    /// <summary>옮긴 소품(또는 대역)의 렌더러 상자(점검 기준점 자식은 뺀다).</summary>
+    private static bool MovedBounds(Transform t, out Bounds bounds)
+    {
+        bounds = new Bounds();
+        bool any = false;
+        foreach (Renderer r in t.GetComponentsInChildren<Renderer>())
+        {
+            if (r == null || !r.enabled || r.name.StartsWith("Inspect ") || r is ParticleSystemRenderer) continue;
+            if (!any)
+            {
+                bounds = r.bounds;
+                any = true;
+            }
+            else
+            {
+                bounds.Encapsulate(r.bounds);
+            }
+        }
+
+        return any;
+    }
+
+    /// <summary>옮긴 것을 그 자리(가로 x·z = 상자 가운데, 바닥 = 상자 밑면)에 맞춘다.</summary>
+    private static void SettleAt(Transform t, float x, float z, float floorY)
+    {
+        Bounds nb;
+        if (!MovedBounds(t, out nb)) return;
+        t.position += new Vector3(x - nb.center.x, floorY - nb.min.y, z - nb.center.z);
+    }
+
+
+    /// <summary>65차: [빛] 이상 깜빡임 — T-3 거울과 같은 박자(<see cref="AnomalyLook.FlickerHz"/>, 광과민 옵션이면 느린 맥동). 빛 없이 빛점만도 된다.</summary>
+    private static void AddFlicker(Look look, Light light, Renderer glow, Band band, float seed)
+    {
+        if (light == null && glow == null) return;
+        look.Flickers.Add(new Flicker
+        {
+            Light = light, Base = light != null ? light.intensity : 0f, Glow = glow, GlowColor = glow != null ? glow.sharedMaterial.color : Color.white,
+            Hz = AnomalyLook.FlickerHz(band, PhotosensitiveSafe), Seed = seed
+        });
+    }
+
+    /// <summary>
+    /// 65차 C-3: 사다리가 서 있던 바닥에 짙은 자국(사다리 바닥 크기). 소품의 자식으로 붙여 점검 외곽선이 빈자리에 그려진다(사다리 렌더러는 꺼져 있다) —
+    /// 그 자리를 보고 [없음](= 이상)으로 보고한다.
+    /// </summary>
+    private void EmptyMark(Look look, Transform prop, Bounds b)
+    {
+        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        go.name = "이상 C-3 빈자리";
+        DestroyImmediate(go.GetComponent<Collider>());
+        float y = FloorY(b.center, b.min.y);
+        Vector3 fwd = Flat(prop.forward).sqrMagnitude > 0.0001f ? Flat(prop.forward) : Vector3.forward;
+        go.transform.SetPositionAndRotation(new Vector3(b.center.x, y + 0.004f, b.center.z), Quaternion.LookRotation(Vector3.down, fwd));
+        Vector3 ext = Quaternion.Inverse(Quaternion.LookRotation(fwd, Vector3.up)) * b.size;
+        go.transform.localScale = new Vector3(Mathf.Max(0.35f, Mathf.Abs(ext.x)) * 1.05f, Mathf.Max(0.35f, Mathf.Abs(ext.z)) * 1.05f, 1f);
+        Renderer r = go.GetComponent<Renderer>();
+        // 65차 플레이 점검: 알파 컷(Wet)이라 반투명이 무시되어 시커먼 웅덩이로 보였다 — 반투명(WetSurface) + 가장자리가 번진 네모 자국(먼지가 덜 앉은 자리).
+        r.sharedMaterial = WetSurface(Footprint(), new Color(0.03f, 0.026f, 0.022f, 0.9f), 0.08f);
+        r.shadowCastingMode = ShadowCastingMode.Off;
+        go.transform.SetParent(prop, true);
+        look.Objects.Add(go);
     }
 
     private void Halo(Look look, Bounds b, Color color)
@@ -545,7 +1062,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
 
     private void Tick(Flicker f)
     {
-        if (f.Light == null) return;
+        if (f.Light == null && f.Glow == null && f.Emit == null) return;
         float k;
         if (PhotosensitiveSafe)
         {
@@ -558,13 +1075,15 @@ public sealed class InspectionAnomalies : MonoBehaviour
             k = n > 0.64f ? 0.04f : (n > 0.58f ? 0.45f : 1f);
         }
 
-        f.Light.intensity = f.Base * k;
+        if (f.Light != null) f.Light.intensity = f.Base * k;
         if (f.Glow != null)
         {
             Color c = f.GlowColor;
             c.a *= Mathf.Clamp01(k);
             f.Glow.sharedMaterial.color = c;
         }
+
+        if (f.Emit != null) f.Emit.SetColor("_EmissionColor", f.EmitColor * k);
     }
 
     private void Blind(Look look, Transform prop, Transform judge, Bounds b, float glow)
@@ -723,7 +1242,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
             {
                 if (h.collider.transform.IsChildOf(prop) || Mathf.Abs(h.normal.y) > 0.2f) continue;
                 if (h.collider.GetComponentInParent<Rigidbody>() != null) continue;   // 플레이어
-                float score = Flat(h.point - prop.position).magnitude;
+                float score = FlatDistance(h.point, prop.position);   // 65차: Flat은 단위 벡터라 .magnitude가 늘 1이었다 — 「가장 먼 벽」이 첫 벽이 되었다
                 if (h.distance > 1.2f && score > bestScore)
                 {
                     bestScore = score;
@@ -757,8 +1276,10 @@ public sealed class InspectionAnomalies : MonoBehaviour
 
         if (desks.Count == 0) return false;
         Vector3 origin = prop.position;
-        desks.Sort((x, y) => Flat(x.position - origin).sqrMagnitude.CompareTo(Flat(y.position - origin).sqrMagnitude));
-        Transform desk = desks[Mathf.Clamp(Mathf.RoundToInt((desks.Count - 1) * AnomalyLook.FarPick(band)), 0, desks.Count - 1)];
+        desks.Sort((x, y) => FlatDistance(x.position, origin).CompareTo(FlatDistance(y.position, origin)));   // 65차: Flat(단위 벡터) 길이로 정렬하던 것을 실제 거리로
+        // 65차(민: 「위치가 바뀌는 점검은 이상일 때 랜덤한 좌표 풀에서」): 가까운 셋을 뺀 책상 중 그날 무작위 하나(같은 날은 같은 책상 — CCTV 한 컷도 같다).
+        int skip = Mathf.Min(3, desks.Count - 1);
+        Transform desk = desks[skip + PoolIndex(look.ItemId + ".desk", desks.Count - skip)];
 
         Bounds db = PropBounds(desk, null);
         Vector3 top = new Vector3(db.center.x, db.max.y, db.center.z);
@@ -778,11 +1299,66 @@ public sealed class InspectionAnomalies : MonoBehaviour
     {
         Vector3 back = -Flat(prop.forward);
         Vector3 pos = prop.position + back * AnomalyLook.PullMeters(band);
+        // 65차(민: 「위치가 바뀌는 점검은 랜덤한 좌표 풀에서」): 빼 놓은 자리 + 도서관 바닥의 빈자리들(원래 자리에서 2.5~8m) 중 그날 무작위 하나.
+        List<Vector3> pool = ChairPool(prop, judge);
+        pool.Insert(0, pos);
+        pos = pool[PoolIndex(look.ItemId + ".spot", pool.Count)];
         Transform door = NearestDoorway(pos, 12f);
         Vector3 face = door != null ? Flat(door.position - pos) : back;
         if (face.sqrMagnitude < 0.0001f) face = back;
         Quaternion rot = Quaternion.LookRotation(face.normalized, Vector3.up);
         return MoveProp(look, prop, judge, pos, rot);
+    }
+
+    private static readonly Dictionary<string, int> s_pool = new Dictionary<string, int>();
+
+    /// <summary>65차: 그날 그 풀에서 고른 번호(같은 날 같은 키는 같은 번호 — 재시작·CCTV 다시보기도 같은 자리).</summary>
+    private static int PoolIndex(string key, int count)
+    {
+        if (count <= 1) return 0;
+        string k = NightRun.Day + "/" + key;
+        int v;
+        if (!s_pool.TryGetValue(k, out v) || v >= count)
+        {
+            v = UnityEngine.Random.Range(0, count);
+            s_pool[k] = v;
+        }
+
+        return v;
+    }
+
+    /// <summary>65차 L-1: 의자를 둘 수 있는 도서관 바닥 빈자리(1.2m 격자, 같은 바닥 높이, 반지름 0.35 캡슐(바닥 위 10cm부터)이 아무것과도 겹치지 않음, 원래 자리에서 2.5~8m). 실측 41자리.</summary>
+    private static List<Vector3> ChairPool(Transform prop, Transform judge)
+    {
+        List<Vector3> list = new List<Vector3>();
+        SpaceZones zones = FindAnyObjectByType<SpaceZones>();
+        Bounds box;
+        if (zones == null || !zones.TryGetSpaceBox(SpaceId.Library, out box)) return list;
+        float floor = prop.position.y;
+        for (float x = box.min.x + 0.8f; x <= box.max.x - 0.8f; x += 1.2f)
+        {
+            for (float z = box.min.z + 0.8f; z <= box.max.z - 0.8f; z += 1.2f)
+            {
+                Vector3 p = new Vector3(x, floor, z);
+                float d = FlatDistance(p, prop.position);
+                if (d < 2.5f || d > 8f) continue;
+                float y = FloorY(new Vector3(x, floor + 1.2f, z), float.NaN);
+                if (float.IsNaN(y) || Mathf.Abs(y - floor) > 0.12f) continue;
+                bool blocked = false;
+                // 65차 플레이 점검: 아래 구가 바닥에 10cm 박혀 모든 자리가 막혔다(빈 목록) — 아래 구 바닥을 바닥 위 10cm로.
+                foreach (Collider c in Physics.OverlapCapsule(new Vector3(x, floor + 0.45f, z), new Vector3(x, floor + 1.3f, z), 0.35f, ~0, QueryTriggerInteraction.Ignore))
+                {
+                    if (c.transform.IsChildOf(prop) || (judge != null && c.transform.IsChildOf(judge))) continue;
+                    if (c.GetComponentInParent<Rigidbody>() != null) continue;   // 플레이어
+                    blocked = true;
+                    break;
+                }
+
+                if (!blocked) list.Add(new Vector3(x, y, z));
+            }
+        }
+
+        return list;
     }
 
     /// <summary>
@@ -791,6 +1367,14 @@ public sealed class InspectionAnomalies : MonoBehaviour
     /// </summary>
     private bool MoveProp(Look look, Transform prop, Transform judge, Vector3 pos, Quaternion rot)
     {
+        Transform moved;
+        return MoveProp(look, prop, judge, pos, rot, out moved);
+    }
+
+    /// <summary>66차: 옮겨진 것(원본 또는 대역)을 함께 돌려준다. 점검 기준점이 소품 밖에 있는 묶음 소품(<paramref name="judge"/> null)은 정적 배칭이면 옮기지 못한다.</summary>
+    private bool MoveProp(Look look, Transform prop, Transform judge, Vector3 pos, Quaternion rot, out Transform moved)
+    {
+        moved = null;
         if (!IsBatched(prop, judge))
         {
             Vector3 p = prop.position;
@@ -800,8 +1384,11 @@ public sealed class InspectionAnomalies : MonoBehaviour
             {
                 if (prop != null) prop.SetPositionAndRotation(p, r);
             });
+            moved = prop;
             return true;
         }
+
+        if (judge == null) return false;
 
         if (_props == null) _props = Resources.Load<InspectionAnomalyPropsSO>(InspectionAnomalyPropsSO.ResourcePath);
         GameObject prefab = _props != null ? _props.Find(look.ItemId) : null;
@@ -816,6 +1403,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
         proxy.name = "이상 " + look.ItemId + " " + prefab.name;
         proxy.transform.localScale = prop.lossyScale;
         look.Objects.Add(proxy);
+        moved = proxy.transform;
 
         // 점검 기준점을 대역으로 옮긴다(같은 프리팹이라 같은 상대 자리). 되돌릴 때 원래 부모로.
         Transform oldParent = judge.parent;
@@ -1057,6 +1645,14 @@ public sealed class InspectionAnomalies : MonoBehaviour
     }
 
     // ── 도우미 ───────────────────────────────────────────────
+
+    /// <summary>65차: 수평 거리(m). <see cref="Flat"/>은 방향(단위 벡터)이라 거리로 쓰면 안 된다.</summary>
+    private static float FlatDistance(Vector3 a, Vector3 b)
+    {
+        a.y = 0f;
+        b.y = 0f;
+        return Vector3.Distance(a, b);
+    }
 
     private static Vector3 Flat(Vector3 v)
     {
@@ -1335,6 +1931,33 @@ public sealed class InspectionAnomalies : MonoBehaviour
         s_bar.SetPixels32(px);
         s_bar.Apply();
         return s_bar;
+    }
+
+    /// <summary>65차 C-3: 물건이 오래 서 있던 자리 — 가장자리가 번진 네모, 테두리가 조금 더 짙고 안쪽은 얼룩진다(반투명).</summary>
+    private static Texture2D Footprint()
+    {
+        if (s_footprint != null) return s_footprint;
+        const int n = 128;
+        s_footprint = NewTex(n, "anomaly footprint");
+        Color32[] px = new Color32[n * n];
+        for (int y = 0; y < n; y++)
+        {
+            for (int x = 0; x < n; x++)
+            {
+                float u = Mathf.Abs((x + 0.5f) / n * 2f - 1f);
+                float v = Mathf.Abs((y + 0.5f) / n * 2f - 1f);
+                float d = Mathf.Max(u, v);
+                float inside = Mathf.Clamp01((0.92f - d) / 0.12f);
+                float rim = Mathf.Exp(-Mathf.Pow((d - 0.8f) / 0.07f, 2f));
+                float mottle = 0.75f + 0.25f * Mathf.PerlinNoise(x * 0.09f + 3.1f, y * 0.09f + 7.7f);
+                float a = Mathf.Clamp01((inside * 0.6f + rim * 0.55f) * mottle);
+                px[y * n + x] = new Color32(255, 255, 255, (byte)(a * 255f));
+            }
+        }
+
+        s_footprint.SetPixels32(px);
+        s_footprint.Apply();
+        return s_footprint;
     }
 
     /// <summary>가장자리가 불규칙한 물웅덩이(알파 컷).</summary>

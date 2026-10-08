@@ -167,6 +167,7 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.ProgramEnabled = true;
         NightRun.DutiesEnabled = true;           // 54차: [근무 지시]
         NightRun.BatteryEnabled = true;          // 56차: 손전등 배터리
+        NightRun.FixedMobStareEnabled = true;    // 64차: 고정 몹 응시
 
         _rewindOffset = 0f;
         _tracker.Reset(NightMinute);
@@ -208,6 +209,7 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.ProgramEnabled = false;
         NightRun.DutiesEnabled = false;
         NightRun.BatteryEnabled = false;
+        NightRun.FixedMobStareEnabled = false;
         NightRun.BatterySeed = null;
         NightRun.DirectorAutoRun = true;
     }

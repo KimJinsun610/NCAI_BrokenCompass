@@ -156,7 +156,7 @@ namespace NightDuty
         /// <summary>점검 공간 상한(경비실 포함).</summary>
         public const int MaxSpaces = 4;
 
-        private static readonly int[] ItemsByDay = { 5, 6, 7, 7, 8 };   // 57차(민: 「점검도 빨리빨리 안 나와서 지겨웠다 — 맵이 좁으니 스피디하게」): 5·5·6·6·7 → 5·6·7·7·8
+        private static readonly int[] ItemsByDay = { 5, 6, 6, 7, 7 };   // 57차(민: 「점검도 빨리빨리 안 나와서 지겨웠다 — 맵이 좁으니 스피디하게」): 5·5·6·6·7 → 5·6·7·7·8. 66차(민: 「점검은 안 겹칠수록 좋아, 필요하면 하루 점검을 줄여도 돼」): 항목 29개와 맞춰 5·6·6·7·7
         private static readonly int[] AnomaliesByDay = { 2, 2, 3, 3, 3 };
 
         /// <summary>그날 점검 항목 수.</summary>
@@ -180,7 +180,7 @@ namespace NightDuty
     /// <summary>
     /// 이상 배정기(최종 기획서 「이상 배정」). 회차 동안 살아 있으며 공간을 처음 점검한 날을 기억한다.
     /// <list type="bullet">
-    /// <item>점검 수(그중 이상): 5(2) · 5(2) · 6(3) · 6(3) · 7(3). 점검 공간은 경비실 포함 4곳 이하이고, 2일차부터는 좌·우 동에 각각 하나 이상.</item>
+    /// <item>점검 수(그중 이상): 5(2) · 6(2) · 6(3) · 7(3) · 7(3)(66차). 점검 공간은 경비실 포함 4곳 이하이고, 2일차부터는 좌·우 동에 각각 하나 이상.</item>
     /// <item>1일차는 튜토리얼 고정: 복도·교실·과학실 + 경비실, 이상은 S-2 현미경 불(빛, 과학실이라 호출 2에 열림)과 C-1 화분(옮김), 첫 점검 K-1은 정상. 복도는 정상 항목 하나.</item>
     /// <item>이상의 축은 그 축의 <b>연출 구간</b>이 1 이상일 때만 고르고, 구간이 높을수록 가중치가 크다(가중치 = 구간 번호).</item>
     /// <item>공간을 처음 점검하는 날에는 그 공간에 이상을 두지 않는다(1일차 튜토리얼 제외).</item>
@@ -202,6 +202,9 @@ namespace NightDuty
 
         private readonly Random _rng;
         private readonly HashSet<SpaceId> _seen = new HashSet<SpaceId>();
+        private readonly Dictionary<string, int> _used = new Dictionary<string, int>(StringComparer.Ordinal);
+        private readonly Dictionary<string, int> _anomalyUsed = new Dictionary<string, int>(StringComparer.Ordinal);
+        private readonly Dictionary<SpaceId, int> _spaceUsed = new Dictionary<SpaceId, int>();
 
         /// <summary>배정기를 만든다. 테스트는 시드를 고정한 난수를 넘긴다.</summary>
         public AnomalyAssigner(Random rng = null)
@@ -222,6 +225,9 @@ namespace NightDuty
         public void Reset()
         {
             _seen.Clear();
+            _used.Clear();
+            _anomalyUsed.Clear();
+            _spaceUsed.Clear();
             LastReport = null;
         }
 
@@ -254,6 +260,17 @@ namespace NightDuty
             for (int i = 0; i < plan.Spaces.Count; i++)
             {
                 _seen.Add(plan.Spaces[i]);
+                int su;
+                _spaceUsed.TryGetValue(plan.Spaces[i], out su);
+                _spaceUsed[plan.Spaces[i]] = su + 1;
+            }
+
+            // 65차(민: 「5일 동안 너무 반복된다」): 회차 동안 나온 횟수를 센다 — 다음 날은 덜 나온 항목부터 고른다.
+            for (int i = 0; i < plan.Assignments.Count; i++)
+            {
+                InspectionAssignment a = plan.Assignments[i];
+                Count(_used, a.Id);
+                if (a.IsAnomaly) Count(_anomalyUsed, a.Id);
             }
 
             if (LastReport == null) LastReport = plan.ToString();
@@ -276,7 +293,7 @@ namespace NightDuty
             list.Add(new InspectionAssignment(light, true, Intensity(shown, light.Axis), light.Space == Day1LateSpace));
 
             // 복도는 정상 항목 하나(49차: 복도 사물함 H-4를 뺀 뒤에도 1일차 공간 셋을 다 돈다).
-            InspectionItem hall = Pick(InspectionCatalog.InSpace(SpaceId.Corridor));
+            InspectionItem hall = PickFresh(InspectionCatalog.InSpace(SpaceId.Corridor));
             list.Add(new InspectionAssignment(hall, false, Band.Band0, hall.Space == Day1LateSpace));
 
             List<InspectionItem> rest = new List<InspectionItem>();
@@ -291,7 +308,7 @@ namespace NightDuty
             }
 
             rest.RemoveAll(x => x.Space == Day1LateSpace);   // 늦은 항목은 하나만
-            InspectionItem extra = Pick(rest);
+            InspectionItem extra = PickFresh(rest);
             list.Add(new InspectionAssignment(extra, false, Band.Band0, false));
 
             string call1 = PickCall1(list, InspectionCatalog.FirstInspection);
@@ -328,7 +345,7 @@ namespace NightDuty
             // 1) 이상 — 연출 구간 가중치로 뽑는다.
             for (int n = 0; n < anomalies; n++)
             {
-                InspectionItem item = PickWeighted(eligible, shown);
+                InspectionItem item = PickWeighted(LeastUsed(LeastUsed(eligible, _used), _anomalyUsed), shown);   // 65차: 이상이 덜 됐던 항목부터 · 66차: 먼저 점검표에 덜 나온 항목(정상으로 나온 것도 센다)
                 eligible.Remove(item);
                 list.Add(new InspectionAssignment(item, true, Intensity(shown, item.Axis), false));
             }
@@ -337,7 +354,7 @@ namespace NightDuty
             for (int s = 0; s < spaces.Count; s++)
             {
                 if (HasSpace(list, spaces[s])) continue;
-                InspectionItem item = Pick(InspectionCatalog.InSpace(spaces[s]));
+                InspectionItem item = PickFresh(InspectionCatalog.InSpace(spaces[s]));
                 list.Add(new InspectionAssignment(item, false, Band.Band0, false));
             }
 
@@ -354,7 +371,7 @@ namespace NightDuty
 
             while (list.Count < total && rest.Count > 0)
             {
-                InspectionItem item = Pick(rest);
+                InspectionItem item = PickFresh(rest);
                 rest.Remove(item);
                 list.Add(new InspectionAssignment(item, false, Band.Band0, false));
             }
@@ -396,8 +413,8 @@ namespace NightDuty
             }
 
             List<SpaceId> chosen = new List<SpaceId>();
-            chosen.Add(Pick(left));
-            chosen.Add(Pick(right));
+            chosen.Add(Pick(FreshSpaces(left)));   // 65차: 덜 돌았던 공간부터 · 66차: 그중 아직 안 나온 항목이 많은 공간
+            chosen.Add(Pick(FreshSpaces(right)));
 
             List<SpaceId> rest = new List<SpaceId>();
             for (int i = 0; i < all.Count; i++)
@@ -407,7 +424,7 @@ namespace NightDuty
 
             while (chosen.Count < InspectionQuota.MaxSpaces && rest.Count > 0)
             {
-                SpaceId s = Pick(rest);
+                SpaceId s = Pick(FreshSpaces(rest));
                 rest.Remove(s);
                 chosen.Add(s);
             }
@@ -491,6 +508,81 @@ namespace NightDuty
         private T Pick<T>(List<T> list)
         {
             return list[_rng.Next(list.Count)];
+        }
+
+        /// <summary>
+        /// 65차: 회차 동안 점검한 횟수가 가장 적은 공간들. 66차: 기준을 「아직 점검표에 안 나온 항목 수」로 — 가장 많이 남은 공간들(같으면 덜 돈 공간).
+        /// 경비실은 K-1(첫 점검 자리, 겹쳐도 됨)을 빼고 센다.
+        /// </summary>
+        private List<SpaceId> FreshSpaces(List<SpaceId> list)
+        {
+            if (list.Count <= 1) return list;
+            int best = int.MinValue;
+            for (int i = 0; i < list.Count; i++) best = Math.Max(best, SpaceScore(list[i]));
+            List<SpaceId> fresh = new List<SpaceId>();
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (SpaceScore(list[i]) == best) fresh.Add(list[i]);
+            }
+
+            return fresh;
+        }
+
+        /// <summary>66차: 공간 점수 = 안 나온 항목 수 × 100 − 돈 횟수.</summary>
+        private int SpaceScore(SpaceId s)
+        {
+            List<InspectionItem> items = InspectionCatalog.InSpace(s);
+            int unused = 0;
+            for (int i = 0; i < items.Count; i++)
+            {
+                if (items[i].Id != InspectionCatalog.FirstInspection && Used(_used, items[i].Id) == 0) unused++;
+            }
+
+            return unused * 100 - SpaceUsed(s);
+        }
+
+        private int SpaceUsed(SpaceId s)
+        {
+            int n;
+            return _spaceUsed.TryGetValue(s, out n) ? n : 0;
+        }
+
+        /// <summary>65차: 회차 동안 가장 덜 나온 항목들 중 하나(같으면 무작위).</summary>
+        private InspectionItem PickFresh(List<InspectionItem> list)
+        {
+            return Pick(LeastUsed(list, _used));
+        }
+
+        /// <summary>그 횟수 표에서 가장 적게 나온 항목들만(목록이 비면 그대로).</summary>
+        private static List<InspectionItem> LeastUsed(List<InspectionItem> list, Dictionary<string, int> counts)
+        {
+            if (list.Count <= 1) return list;
+            int min = int.MaxValue;
+            for (int i = 0; i < list.Count; i++) min = Math.Min(min, Used(counts, list[i].Id));
+            List<InspectionItem> fresh = new List<InspectionItem>();
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (Used(counts, list[i].Id) == min) fresh.Add(list[i]);
+            }
+
+            return fresh;
+        }
+
+        /// <summary>회차 동안 그 항목이 점검표에 나온 횟수.</summary>
+        public int TimesUsed(string id)
+        {
+            return Used(_used, id);
+        }
+
+        private static int Used(Dictionary<string, int> counts, string id)
+        {
+            int n;
+            return counts.TryGetValue(id, out n) ? n : 0;
+        }
+
+        private static void Count(Dictionary<string, int> counts, string id)
+        {
+            counts[id] = Used(counts, id) + 1;
         }
 
         private static bool Contains(List<InspectionAssignment> list, string id)

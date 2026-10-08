@@ -224,15 +224,15 @@ MonoBehaviour:
   - key: door.open
     clip: {fileID: 8300000, guid: e872f113f83bf624e99634a4fae48038, type: 3}
     more: []
-    volume: 0.7
+    volume: 0.4
     hits:
     - 0.19916667
   - key: door.close
-    clip: {fileID: 8300000, guid: d457bc946db921e4fac83d8f6256e944, type: 3}
+    clip: {fileID: 8300000, guid: eb8525056a3bf81449bb35dcb572a48a, type: 3}
     more: []
-    volume: 0.7
+    volume: 0.95
     hits:
-    - 2.20075
+    - 1.0946875
   - key: door.locker
     clip: {fileID: 8300000, guid: 1ea4a0d368d4fe440a4473a1e0af94c8, type: 3}
     more:
@@ -688,47 +688,47 @@ MonoBehaviour:
     - 0.79041666
     - 5.157583
   - key: body.heart.62
-    clip: {fileID: 8300000, guid: 5c026cdccba948a43bdcaaceca3a44c0, type: 3}
+    clip: {fileID: 8300000, guid: 651a20dfa1e9d2f4fa63b211b8cdc8d3, type: 3}
     more: []
-    volume: 0.3
+    volume: 0.35
     hits:
     - 0.1041875
   - key: body.heart.72
-    clip: {fileID: 8300000, guid: 234cb716594e34e4886968e23a111253, type: 3}
-    more: []
-    volume: 0.4
-    hits:
-    - 0.1041875
-  - key: body.heart.86
-    clip: {fileID: 8300000, guid: 2f4d5533294855447999ca251d74ce50, type: 3}
+    clip: {fileID: 8300000, guid: e7e4b399dc02f1e458d1d1fd6a4d6fa0, type: 3}
     more: []
     volume: 0.5
     hits:
     - 0.1041875
-  - key: body.heart.104
-    clip: {fileID: 8300000, guid: d6b5ef9570f88c44e976a664d65f1123, type: 3}
+  - key: body.heart.86
+    clip: {fileID: 8300000, guid: 4b5342545e3469a4087633a043627509, type: 3}
     more: []
-    volume: 0.62
+    volume: 0.7
+    hits:
+    - 0.1041875
+  - key: body.heart.104
+    clip: {fileID: 8300000, guid: 3c0f20460f97b86409b73615d29055c0, type: 3}
+    more: []
+    volume: 0.95
     hits:
     - 0.1041875
   - key: body.ear
-    clip: {fileID: 8300000, guid: 2e6e59405c05680419ba159cd4ce5d0d, type: 3}
+    clip: {fileID: 8300000, guid: 9905b837ab043214f8224cddae10199b, type: 3}
     more: []
-    volume: 0.35
+    volume: 0.5
     hits:
     - 11.988854
   - key: body.tinnitus
-    clip: {fileID: 8300000, guid: a81983e6745144d4f96656987ae94538, type: 3}
+    clip: {fileID: 8300000, guid: 62a00375632721a40a15161632c586ea, type: 3}
     more: []
-    volume: 0.22
+    volume: 0.35
     hits:
-    - 0.008041667
+    - 0.0027291668
   - key: body.heart.boundary
-    clip: {fileID: 8300000, guid: b54fc649f281d7943aa33da6b4f5c893, type: 3}
+    clip: {fileID: 8300000, guid: cec4fb0834a398640a30acd90f69fc38, type: 3}
     more: []
     volume: 0.85
     hits:
-    - 0.9341458
+    - 0.934125
   - key: body.breath
     clip: {fileID: 8300000, guid: d139161adc2baa04aabc7f8f9286902d, type: 3}
     more:
@@ -1085,10 +1085,18 @@ MonoBehaviour:
     volume: 0.7
     hits:
     - 0.0013958333
-  - key: inspect.L-3.loop
+  - key: inspect.H-4.kick
+    clip: {fileID: 8300000, guid: bf22d0e2c10dcf74b82d23fbd718d6e0, type: 3}
+    more:
+    - {fileID: 8300000, guid: d65b3f4a967e386428bfb70b8cab3ba0, type: 3}
+    volume: 1
+    hits:
+    - 0.044807255
+    - 0.06929705
+  - key: duty.pickup
     clip: {fileID: 8300000, guid: f029d909827fd35478256ae2ea589113, type: 3}
     more: []
-    volume: 0.7
+    volume: 0.8
     hits:
     - 0.078041665
   - key: inspect.S-3.loop
@@ -1103,6 +1111,18 @@ MonoBehaviour:
     volume: 0.7
     hits:
     - 0.9402292
+  - key: inspect.H-5.loop
+    clip: {fileID: 8300000, guid: cc77b986836ab184aaa57a4a77836d52, type: 3}
+    more: []
+    volume: 0.55
+    hits:
+    - 2.0716043
+  - key: inspect.T-4.loop
+    clip: {fileID: 8300000, guid: 9051dca7579277f43b4474e279168624, type: 3}
+    more: []
+    volume: 0.7
+    hits:
+    - 6.6738124
   - key: inspect.near
     clip: {fileID: 8300000, guid: 053304e3083e69346b2f95ef6baba349, type: 3}
     more:
@@ -1161,6 +1181,12 @@ MonoBehaviour:
     volume: 1
     hits:
     - 3.2565207
+  - key: model.neck
+    clip: {fileID: 8300000, guid: df641ad9655075f4fbfb67c9bed05a5b, type: 3}
+    more: []
+    volume: 1
+    hits:
+    - 3.2565207
   - key: inspect.S-3.near
     clip: {fileID: 8300000, guid: e5812ad2febb7534a8b463792b484fa4, type: 3}
     more: []
@@ -1173,6 +1199,36 @@ MonoBehaviour:
     volume: 1
     hits:
     - 0.12875
+  - key: inspect.C-5.near
+    clip: {fileID: 8300000, guid: 879b6be6c869ad745970807556da4007, type: 3}
+    more: []
+    volume: 0.9
+    hits:
+    - 0.9509375
+  - key: inspect.K-2.near
+    clip: {fileID: 8300000, guid: 008f559eab7e51043986e3b75793b753, type: 3}
+    more: []
+    volume: 0.8
+    hits:
+    - 4.051521
+  - key: inspect.H-6.near
+    clip: {fileID: 8300000, guid: 008f559eab7e51043986e3b75793b753, type: 3}
+    more: []
+    volume: 0.8
+    hits:
+    - 4.051521
+  - key: inspect.L-4.near
+    clip: {fileID: 8300000, guid: c5acaa50d4e5be249a1d42397fef4dc0, type: 3}
+    more: []
+    volume: 1
+    hits:
+    - 0.27347916
+  - key: inspect.S-4.near
+    clip: {fileID: 8300000, guid: 20741c8f33b2ffd40abace39953d7327, type: 3}
+    more: []
+    volume: 0.8
+    hits:
+    - 4.7630625
   - key: step.CLASS.walk
     clip: {fileID: 8300000, guid: da0b5aa3c2451af4bb7e89cbe9dda1df, type: 3}
     more:
@@ -1200,31 +1256,31 @@ MonoBehaviour:
     - 0.038020834
     - 0.032854166
   - key: step.HALL.walk
-    clip: {fileID: 8300000, guid: 0060af09ea054ce4da382b2e158afb24, type: 3}
+    clip: {fileID: 8300000, guid: cf3c71007d7294d4ebd1e545877ea9b9, type: 3}
     more:
-    - {fileID: 8300000, guid: cba5df0312c1a1443826a3febac5575a, type: 3}
-    - {fileID: 8300000, guid: c77e16c4dd49acc45b528bf95854b353, type: 3}
-    - {fileID: 8300000, guid: aad7630c9c10e78428a18dffda325ffa, type: 3}
-    - {fileID: 8300000, guid: b7e3258bfe44bf34c98650be043dbc71, type: 3}
+    - {fileID: 8300000, guid: 2eb91aa6b5b2b474d964c2c48aa7ac17, type: 3}
+    - {fileID: 8300000, guid: 70141a81eaeab41489865e2dd2ac1209, type: 3}
+    - {fileID: 8300000, guid: 7b9a4d38add09d643ad17c522aa65ce5, type: 3}
+    - {fileID: 8300000, guid: 231d37ad7bf401648b4e60ec6f21d395, type: 3}
     volume: 1
     hits:
-    - 0.0298125
-    - 0.03375
-    - 0.034145832
-    - 0.0261875
-    - 0.032979168
+    - 0.013520833
+    - 0.014770834
+    - 0.01175
+    - 0.013395834
+    - 0.013395834
   - key: step.HALL.run
-    clip: {fileID: 8300000, guid: aa1fea351e229f34086e93e27556182e, type: 3}
+    clip: {fileID: 8300000, guid: 802b0eb00879df34e954ec329dcd6b12, type: 3}
     more:
-    - {fileID: 8300000, guid: 8b408a2414be8654a8cc87942a41628c, type: 3}
-    - {fileID: 8300000, guid: 2e47f8ad2c943a64fa9f992b885cc1f6, type: 3}
-    - {fileID: 8300000, guid: 0422b05a75160014294811aa722a4b88, type: 3}
+    - {fileID: 8300000, guid: 18b9c3ba4da1a87448c48fe984ce083e, type: 3}
+    - {fileID: 8300000, guid: 03f2e5b3e60e89448a67325120843e76, type: 3}
+    - {fileID: 8300000, guid: 537a628c56295064f8825ea43b5b074c, type: 3}
     volume: 1
     hits:
-    - 0.034166668
-    - 0.036604166
-    - 0.0280625
-    - 0.032895833
+    - 0.015458333
+    - 0.28810418
+    - 0.017333332
+    - 0.018520834
   - key: step.LIBRARY.walk
     clip: {fileID: 8300000, guid: 614be5cf53234f447bd138f38203e1e0, type: 3}
     more:

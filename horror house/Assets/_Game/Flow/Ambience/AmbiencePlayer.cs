@@ -338,6 +338,7 @@ public sealed class AmbiencePlayer : MonoBehaviour
             s.minDistance = config.OneShotMinDistance;
             s.maxDistance = config.OneShotMaxDistance;
             s.priority = 96;
+            s.gameObject.AddComponent<AudioLowPassFilter>().cutoffFrequency = 22000f;   // 61차: 먼 쾅만 먹먹하게(FarShots)
             _voices[i] = s;
         }
 
@@ -685,7 +686,7 @@ public sealed class AmbiencePlayer : MonoBehaviour
         }
 
         float angle = (float)_rng.NextDouble() * Mathf.PI * 2f;
-        Vector2 d = config.OneShotDistance;
+        Vector2 d = IsFarShot(pick) ? FarShotDistance : config.OneShotDistance;   // 61차: 쾅은 멀리서
         float dist = Mathf.Lerp(d.x, d.y, (float)_rng.NextDouble());
         Vector3 pos = cam.transform.position + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * dist
                       + Vector3.up * Mathf.Lerp(-0.8f, 1.2f, (float)_rng.NextDouble());
@@ -698,6 +699,26 @@ public sealed class AmbiencePlayer : MonoBehaviour
     }
 
     // ─────────────────────────────── 공개 API ───────────────────────────────
+
+    /// <summary>
+    /// 61차(민: 「쾅 소리는 대부분 멀리서 들리는 것처럼」): 쾅 계열 원샷은 20~30m 밖에서, 벽 너머처럼 저역만 남겨(<see cref="FarShotCutoff"/>Hz) 낸다.
+    /// 도서관 상자에서는 아예 뺐다(「도서관에서 고정적으로 나오는 쾅」 — <see cref="AmbienceConfigSO.FillDefaults"/>).
+    /// </summary>
+    public static readonly string[] FarShots = { "os_thud_upstairs", "os_door_slam" };
+
+    /// <summary>먼 쾅의 거리(m).</summary>
+    public static readonly Vector2 FarShotDistance = new Vector2(20f, 30f);
+
+    /// <summary>먼 쾅의 저역 통과(Hz).</summary>
+    public const float FarShotCutoff = 900f;
+
+    /// <summary>쾅 계열 원샷인지(경로 끝 이름으로 본다).</summary>
+    public static bool IsFarShot(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return false;
+        string name = path.Substring(path.LastIndexOf('/') + 1);
+        return Array.IndexOf(FarShots, name) >= 0;
+    }
 
     /// <summary>
     /// 원샷 하나를 월드 위치에서 튼다. 연출 코드가 「멀리서 노크」 같은 소리를 직접 낼 때 쓴다.
@@ -718,6 +739,8 @@ public sealed class AmbiencePlayer : MonoBehaviour
         v.clip = clip;
         v.volume = Mathf.Clamp01(volume * Gain);
         v.pitch = Mathf.Lerp(0.94f, 1.06f, (float)_rng.NextDouble());   // 같은 파일이 똑같이 들리지 않게
+        AudioLowPassFilter lp = v.GetComponent<AudioLowPassFilter>();
+        if (lp != null) lp.cutoffFrequency = IsFarShot(path) ? FarShotCutoff : 22000f;
         v.Play();
 
         if (logActions)

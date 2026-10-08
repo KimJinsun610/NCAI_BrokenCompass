@@ -3,6 +3,79 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
+> **개정: 2026-10-08(66차). 플레이테스트 피드백 5단계 마무리 ~ 8단계 — 민(자리를 비우며): 「점검은 안 겹칠수록 좋아. 점검 항목을 추가해도 되고 필요하면 하루 점검을 줄여도 돼. 마지막 단계까지 진행해 · HorrorEvent_CabinetCreak·CabinetBang·CabinetRampage·DrawerRampage·DoorSlam·OpenDoorSlam이 진선님 연출 프리셋 · 직접 닫은 문이 자동으로 열림은 이해한 게 맞아 · 책상 위 배터리는 1일차에만, 손전등도 같이 책상에 놓고, 손전등을 먹으면 그때부터 F로 켤 수 있도록」. EditMode 492/492(비동기), PlayScene 실측(QA 캡처): 새 점검 이상 12개 모두 섬 · 지구본 초당 40° 회전 · 선반 플라스크 붉게 발광 · 세면대 오른쪽 꼭지 물줄기 · 도서관 칠판 분필 글씨 · 경비실 의자 하나 돌아앉음 · 3일차 늦은 T-3이 열린 뒤 플레이어가 떠나자 그때 섬(앞에 서 있는 동안은 대기) · 조도 4구간 과학실 붉은 기 · C4 등 초록 · 1일차 손전등 없이 F 거절 → 책상 손전등 줍자 켜짐·예비 +1 · 2일차 진선님 OpenDoorSlam이 과학실 앞 문에 서고 구역에 들어서자 쾅 · 닫은 문(복도 DoorNarrow (3))이 떠나자 다시 열림, 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
+> ⓐ **점검 29개**(복도 6 · 교실 5 · 과학실 6 · 화장실 5 · 도서관 4 · 경비실 3): 새 H-5 스피커[소리] · H-6 벤치[옮김] · C-4 시계(벽에서 떨어져 바닥) · C-5 교사 의자(돌아앉음) · S-4 지구본(혼자 돎) · S-5 선반 플라스크(붉게 발광·깜빡임) · S-6 세계 지도(기울어짐·세로·거꾸로, 겹친 두 번째 지도는 숨김) · T-4 세면대 넷 중 하나 물 · T-5 수건(바닥에) · L-4 도서관 칠판(분필 글씨, 글꼴 `neurimboGothicRegular SDF`) · L-5 도서관 쓰레기통(**씬에서 원래 누워 있다 — 이상이면 세워져 있다**, 문구 「바닥에 쓰러져 있습니다」) · K-2 경비실 접이식 의자 둘 중 하나 돌아앉음 · K-3 경비실 화분(쓰러짐). ID L-3·H-4(사물함)는 다시 쓰지 않는다.
+> ⓑ **대상**: 씬은 고치지 않았다 — `Flow/Presentation/RuntimeInspectTargets`(자동)가 근무 중 `inspect.<ID>`를 세운다(경로 표 `Paths`). 여러 소품 항목(S-5·T-4·K-2)은 씬 뿌리 묶음 `Inspect group <ID>` + `Flow/Interaction/OutlineGroup`(외곽선이 묶인 소품들 — `InteractionOutline.RenderersOf`가 읽는다). 정적 배칭 소품의 대역은 `InspectionAnomalyPropsBuilder`가 이 경로 표로도 채운다([옮김] + S-4).
+> ⓒ **편성**: 하루 점검 5·6·7·7·8 → **5·6·6·7·7**. `AnomalyAssigner` — 이상도 먼저 점검표에 덜 나온 항목부터(`LeastUsed(LeastUsed(eligible, _used), _anomalyUsed)`), 공간은 「아직 안 나온 항목 수 × 100 − 돈 횟수」가 큰 곳부터(`SpaceScore`, K-1 제외). 500시드 실측: 한 항목 최대 2번, 닷새에 29개 중 최소 28개, 평균 겹침 2(31칸 − K-1 ≈ 30칸이라 1~2는 남는다).
+> ⓓ **실시간 조작**(민 피드백 6단계 「실시간 조작」 — **원문이 남아 있지 않아 이렇게 읽었다, 민 확인 필요**): `InspectionAnomalies.LiveTamper` — 그날 늦게 열리는 공간(호출 2)의 이상은 밤 시작에 세우지 않고, 그 점검이 열린 뒤 소품이 화면에 안 보이고 플레이어가 4m 넘게 떨어져 있을 때 세운다. 판정·편성은 그대로. 끄면 옛 동작.
+> ⓔ **조도 붉은 기**: 코어 `IlluminanceTint`(구간 0·8·16·26·36%) — `IlluminanceMap`이 실시간 천장 등(22개) 빛 색을 제 공간 구간만큼 붉게(밝기는 그대로 — 등 색이 세기를 겸한 회색이라 「붉은 색 × 바탕 최대 성분」으로), 베이크된 빛까지 「전체」로 보이게 공간 톤 Volume 색 필터도 같은 만큼 `(1, 0.8, 0.76)` 쪽으로. C4 단서 물들임·화장실 붉은 등은 건드리지 않는다.
+> ⓕ **C4 초록**: 「초록 불빛 아래에서는 손전등을 끄십시오.」 · 역설 「초록 등 아래가 어둡습니다…」 · `RedLightSpot.CueColor` 초록(클래스·단서 이름 cue.redlight는 그대로) · 교실 단서 물들임도 초록.
+> ⓖ **닫은 문 다시 열림**: `PlayerInteractor.PlayerClosedDoor`(이벤트) → `Flow/Interaction/DoorReopener`(자동) — Door로 시작하는 문만(서랍·사물함·책장 빼고), 닫은 뒤 6~14초 · 4m 밖 · 안 보일 때 `DoorHandle.Open`(출처는 연출, 보지 않을 때라 H2 관찰 신호 없음), 90초 지나면 포기.
+> ⓗ **진선님 근접 문**: `Flow/Direction/ProximityDoors`(자동) + `HorrorPresetsSO`(Resources, 빌더 `HorrorPresetsBuilder` — 여섯 프리셋). 씬의 DoorNarrowSolid와 모형·피벗이 같아 그 자리에 그대로 세우고 씬 문은 그림만 숨긴다(콜라이더는 남겨 막힌 방에 못 들어감). 일차표 `ScheduleFor`: 1일 없음 · 2일 OpenDoorSlam@과학실 앞(8) · 3일 DoorSlam@동쪽 끝 Toilet01 + OpenDoorSlam@서쪽(5) · 4일 DoorSlam@(8) + OpenDoorSlam@(9) · 5일 OpenDoorSlam@Toilet01 + DoorSlam@(2). 발동 구역이 모두 복도 쪽인 문만 골랐다(66차 실측 — (6)·(3)은 구역이 닿지 않는 쪽·바리케이드 뒤). 캐비닛 Creak·Bang은 진선님이 씬에 이미 둠, Rampage 둘(축 연동)은 자리 미정이라 두지 않았다.
+> ⓘ **책상 손전등**: 코어 `DeskKit`(스냅샷에 실림) · `NightRun.HasFlashlight/PickUpFlashlight/TakeDeskBattery` — 1일차만 경비실 교탁(CCTV 모니터 옆) 위에 손전등(복도 손전등 소품 복제)과 예비 배터리. 줍기 전에는 `FlashlightPower.CanTurnOn` 거짓, F를 누르면 딸깍 없이 「손전등이 없습니다 — 경비실 책상을 확인하십시오」. 화면 `Flow/Battery/DeskStarterKit`(3m 안 옅은 외곽선, 겨누면 「[E] 손전등 줍기」). CCTV 들여다보기는 `PlayerInteractor.SuppressedThisFrame`을 따른다(모니터 점검 상자 너머로 손전등을 겨눌 때).
+> ⓙ **새 UI 에셋**: `0. Main/06 Data/LoadingTipTable.asset` — 팁 이미지 폴더를 없던 `LoadingTipImages` → `BG_TIP`, TIP_001~013 스프라이트 연결(진선님 자동 채우기와 같은 규칙, SerializedObject). LORE 4개는 이미지 없음. `BG_Prologue/prologue1~5`(1920×1080)는 쓰는 곳이 없어 **민 결정 대기**.
+> ⓚ **부수**: `Flat()`은 단위 벡터 — 이번에도 새 코드는 `FlatDistance`. 플레이 중 동적 TMP 글꼴(느림보·Pretendard) 에셋 파일이 아틀라스로 바뀐다(커밋에서 빼도 된다). 소리 표 185개(H-5 지직 · T-4 물 · 가까이 C-5·K-2·H-6·L-4·S-4).
+> **되살리지 마십시오:** 「점검 16개·하루 8개」 · 「이상은 이상 횟수만 보고 고름」 · 「둥근 시계를 제자리에서 돌림(티가 안 남)」 · 「도서관 쓰레기통이 원래 서 있다고 봄」 · 「복제 손전등의 Light를 Destroy」 · 「C4 붉은 불빛」 · 「1일차 손전등을 든 채 시작」.
+
+> **개정: 2026-10-08(65차 ②). 플레이테스트 피드백 5단계(점검 지시) 나머지 — 민: 「블라인드 지시를 명확히 · 사다리가 없는 자리에서 없다고 보고 · 위치가 바뀌는 점검은 이상일 때 랜덤한 좌표 풀에서 · 빛 관련 지시는 이상이면 깜빡이게 · 점검 항목이 닷새 동안 겹치지 않게」. EditMode 473/473(비동기), PlayScene: H-1·C-2·S-2 이상 빛이 T-3과 같은 박자로 깜빡임(초당 약 3번 바뀌고 20~30% 시간 어두움 — 실측 중 C-2가 0.576 → 0.023으로 꺼진 순간 확인) · C-3 빈자리 네모 자국(QA 캡처) · L-1 의자 후보 41자리 중 하나로 4.2m 옮겨 섬(QA 캡처), 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
+> ⓐ **문구**: L-2 「도서관 입구 맞은편 벽 창문의 블라인드 두 개는 내려져 있습니다.」 보고 키 이름은 코어 `InspectionCatalog.ReportWord`(C-3 사다리만 [있음]/[없음], 나머지 [정상]/[이상] — 판정은 그대로, [없음] = 이상). `InspectionSensor.ReportWord`는 이것을 부른다.
+> ⓑ **편성(`AnomalyAssigner`)**: 공간·항목·이상 항목마다 닷새 동안 나온 횟수를 세어 덜 나온 것부터(`FreshSpaces`·`PickFresh`·`LeastUsed`, 경비실은 늘 후보). 200시드 실측 — 같은 항목 최대 3번(K-1 제외), 닷새에 16개 중 최소 14개. **16개로 33칸을 채우므로 완전히 안 겹치게 하려면 항목을 늘려야 한다(민 결정 대기).**
+> ⓒ **깜빡임**: `AddFlicker(look, light, glow, band, seed)` — H-1·C-2·S-2(S-2 접안렌즈 빛점도 같은 시드). 광과민 옵션이면 느린 맥동.
+> ⓓ **좌표 풀**: `PoolIndex(key, count)`(그날+키로 고정 — CCTV 한 컷도 같다). L-1 `ChairPool`(도서관 1.2m 격자 · 같은 바닥 · 캡슐(바닥 위 10cm부터, 반지름 0.35)이 비어 있음 · 원래 자리에서 2.5~8m) + 원래 「빼 둔」 자리 중 하나. C-1 책상 자리는 가까운 셋을 뺀 책상 중 하나(화분 자리 종류 천장·벽·책상은 원래대로 그날 무작위).
+> ⓔ **C-3 빈자리**: 사다리가 서 있던 바닥에 반투명 네모 자국(`Footprint` 텍스처, `WetSurface`) — 사다리의 자식이라 점검 외곽선이 빈자리에 그려진다.
+> ⓕ **플레이 점검에서 잡은 것**: ① `Flat()`은 **단위 벡터**다 — `Flat(a-b).magnitude`가 늘 1이라 L-1 후보가 0개였고, C-1 책상 거리순 정렬과 화분 「가장 먼 벽」(PlantOnWall, 52차부터)도 첫 것만 골랐다 → 수평 거리는 `FlatDistance(a, b)`. ② 캡슐 아래 구가 바닥에 박혀 모든 자리가 막혔다. ③ C-3 자국이 알파 컷(`Wet`) 재질이라 반투명이 무시되어 시커먼 웅덩이였다.
+> **되살리지 마십시오:** 「거리를 `Flat(…).magnitude`로」 · 「빈자리 자국을 알파 컷 재질로」 · 「L-2 블라인드 문구에서 자리를 뺌」.
+
+> **개정: 2026-10-08(65차). 플레이테스트 피드백 5단계(점검 지시) ① — 민: 「반납 상자는 book16(2) 관련 지시로 — 도서관 안쪽 책상에 있는 biology 책을 습득하세요, 클릭해서 습득하면 완료 · 쓰레기통 — 쓰레기통이 정상인지 보고하십시오, 정상이면 아무 일 없고 이상이면 누가 발로 찬 것처럼 깡통 소리와 함께 멀리 날아가는 작은 놀람」. EditMode 470/470(**비동기 실행** — 동기 run_tests가 에디터를 10분 넘게 멈춰 Unity를 다시 켰다), PlayScene 3일차: H-4 이상 → 복도 6.3m에서 보자 걷어차여 복도를 따라 6.7m 굴러 플레이어 옆 사물함 앞에 섬(QA 캡처) · W15 지시 → [줍기] → 책 사라짐 · 「biology 책 습득이 기록되었습니다. 00:21」 실측, 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
+> ⓐ **H-4 쓰레기통**(카탈로그 `H-4` 복도·배치·[켬], 문구 「쓰레기통이 정상인지 보고하십시오.」): 대상은 복도 서쪽 도서관 문 옆 `Interior/Corridors/TrashCanBig_A (1)`. `Flow/Presentation/TrashCanKick`(자동)이 런타임 점검 대상 `inspect.H-4`(소품 상자)를 세우고 옛 `inspect.L-3` 씬 대상은 근무 중 끈다(씬 무수정, `InspectionTargetPlacer` 표도 L-3 → H-4). 이상이면 `InspectionAnomalies` case H-4가 `Arm` → 플레이어가 복도에서 7m 안에서 0.25초 보면 원본(정적 배칭)을 숨기고 `StandIns/prop.trashcan`(새 대역 — NOT_Lonely `TrashCanBig_A` 감싸기) 복제를 같은 자리에 세워 Rigidbody(4kg, 캡슐)로 걷어찬다 — 방향은 `OpenDirection`(15°마다 트인 거리 + 1.5×플레이어 반대쪽, 플레이어 몸을 정면으로 지나가는 쪽은 뺌 — 이 쓰레기통은 구석이라 반대쪽이 벽이었다), 속도 트인 거리×1.5(4~7.5m/s)+위 2.6m/s+구름. 소리 `inspect.H-4.kick`(`Audio/trash/SFX_TRASH_KickedCan_1·2`, BigSoundBank 0667 CC0 낙하음 이어 붙임). 점검 대상은 복제를 따라가 떨어진 자리에서 보고. 정상이면 아무 일 없음. CCTV 다시보기 한 컷(`Preview`)에서는 뺀다.
+> ⓑ **L-3 반납 상자 → [근무 지시] W15**: 점검에서 빼고 `DutyKind.Pickup`·`DutyDef.Pickup`·`DutyCatalog.LibraryBookTarget`(`duty.library.book`) — 「[근무 지시] 도서관 안쪽 책상에 있는 biology 책을 습득하세요.」(민 문구 그대로 — 「~바랍니다」 예외), 1~5일차, 120초, 도서관·청각. 코어 `DutyDispatcher.NotePicked/Wants` · `NightRun.PickUpDutyItem/DutyWants`. 화면 `Flow/Interaction/DutyPickupItem`(DutyStage가 `Interior/Library/Book16 (2)`에 붙임): 지시가 진행 중일 때만 2.1m 안에서 겨누면 외곽선 + 「[E] biology 책 줍기」 → 책 숨김 + `duty.pickup` 소리 + 완료 답장(축 −3). 그 지시기에서 끝난 동안만 숨고 새 밤·줍기 전 재시작이면 다시 놓인다. 근무 지시는 하루 2~3개를 가까운 것 중에서 고르므로 매일 나오지는 않는다.
+> ⓒ **수**: 점검 16개 그대로(복도 4 · 도서관 2), 보이는 이상 13(소리 3). 소리 표 178개(`inspect.L-3.loop` 뺌 · `inspect.H-4.kick`·`duty.pickup` 더함 — 소리 배선 시험이 `kick` 접미를 허용).
+> **되살리지 마십시오:** 「L-3 반납 상자 점검」 · 「H-4 = 복도 사물함」(49차에 뺀 것) · 「쓰레기통은 무조건 플레이어 반대쪽으로」 · **「전체 EditMode를 동기 run_tests로」**.
+
+> **개정: 2026-10-08(64차 후속). 디버그 화면 하나로 — 민: 「디버그 모드가 진선님이 만든 것과 우리가 만든 것이 있는데, 우리 것은 폐지하고(가독성이 떨어짐) 진선님 것에 합쳐 줘. 축의 변화가 시각적으로 잘 보이고, 연출들을 의도한 흐름대로 다 확인할 수 있게」 · 합치는 방식은 민 선택 「진선님 파일에 통째로」(김진선님 폴더 불가침의 예외 — 이 두 파일만), 축 표시는 「패널 안 막대 + 기록」. EditMode 466/466, PlayScene에서 패널 여덟 탭을 차례로 그려 에러 0 · 배치 +12가 변화 기록에 「배치 0 → 12 debug」로 남음 · ④ [흐름 확인]으로 모형 급습 → 과학실로 옮겨 전조 → 세움(보기 기다림) 단계까지 기록 실측, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
+> ⓐ **F3 콘솔 폐지**: `Flow/Debug/NightDutyDebugConsole.cs`(와 빈 `Flow/Debug` 폴더) 삭제. 기능은 모두 김진선님 개발자 모드(`-` 키, 화면 오른쪽, `Assets/3.2 Programmer_Kim/02 Scripts/DevMode/`)로 옮겼다 — `DevModePanel.cs`(틀·김진선님 일차·시간·메시지 기능, 원래 인코딩 BOM 없음 유지)와 새 partial `DevModePanel.NightDuty.cs`(야간근무 탭·이동 도구). 김진선님 ③ 「지시 사항」 자리표시(지키기/어기기 「연결 예정」 버튼)는 우리 탭으로 대체했다.
+> ⓑ **탭 여덟 개(두 줄)**: ① 일차(Day 다시 불러오기 · 이 자리에서 N일차 · 즉시 사망 · 축별 붙잡힘 + 「인체 모형 응시」 붙잡힘 · 밤 종료·재시작 · 손전등·배터리 · 공간 이동) · ② 시간(배속·정각 + 밤 구간 점프 · 스위치: 판정 늘/시간창, 자동 연출, 시계 멈춤, 잠긴 문 무시, 모든 문 열기) · ③ 축 · ④ 조우 · ⑤ 장면(과학실 인체 모형 자리·응시·목·다가옴, 붙잡힘 장면 미리 보기 청각·조도·배치·인체 모형, 가짜 놀람, 피날레) · ⑥ 수칙(덱·단서·조우·덱에 추가·역설·회피 불가·정산) · ⑦ 점검(순차 지시·점검표 + 태블릿 문구·이동·정상·이상) · ⑧ 메시지·기록(김진선님 메시지·CSV + 연출·수칙·점검·재시작 기록). 불투명 배경·묶음 상자·색 버튼으로 읽기 쉽게, 폭 500.
+> ⓒ **축이 보이게**: 패널 위쪽에 늘 네 축 띠(값·막대). ③ 탭 큰 막대 — 색 = 그 값의 구간(회녹·노랑·주황·빨강·진홍), 흰 눈금 = 구간 경계(감각 25·50·75·90 / 신뢰 15·30·45·65), 바뀐 축은 1.5초 테두리 깜빡임 + 「+7」, 「연출 구간」 함께. 변화 기록은 패널이 닫혀 있어도 매 프레임 값을 읽어 남기고, 출처는 `FearAxisSystem.Raised`(같은 축·출처가 1.5초 안이면 한 줄로 묶음, 출처 없으면 「내림·되돌림」/「?」). 이름은 `CaptureDirector.SourceName`.
+> ⓓ **연출을 흐름대로**: ④ 오늘 흐름 — 편성된 조우마다 슬롯 시각·방아쇠 설명(`TriggerHint`: 깊이·머무름·고정 자리 거리·시선)·단계 사슬 「대기 › 전조 › 세움(보면 시작) › 대면 › 마무리 › 끝」(지금 단계 노랑, 놓침 빨강). [그 시각·자리로] = 자동 연출 켜고 밤 시계를 슬롯 시작으로 옮긴 뒤 방아쇠 자리로 데려가 패널을 닫음 → 실제 조건대로 발동. [바로(전조부터)]·조우 15개 [흐름 확인] = 옮긴 뒤 강제 시작(옛 [이동+실행]). 「실행하면 패널 닫기」 기본 켬(세움 연출은 패널이 닫혀야 몹을 볼 수 있다).
+> ⓔ **코드 덧붙임**: `CaptureDirector.Preview(axis, 회차, sourceId)` — 출처를 주면 그 출처로 컷신을 고른다(`CutsceneFor`, 미리 보기 「인체 모형 응시」). `NightRun.DebugForceCapture(axis, sourceId)` 오버로드.
+> **되살리지 마십시오:** 「F3 야간근무 디버그 콘솔」 · 「개발자 모드 ③ 지시 사항 자리표시 버튼」 · 「축은 숫자만」.
+
+> **개정: 2026-10-07(64차). 플레이테스트 피드백 4단계(과학실 고정 몹) — 민: 「고정된 몹(인체모형, 인체나무) 계속 보면 바로 수치 계속 떨구고, 엔딩 보도록 · 3일차부터 인체모형 오래 바라보면 목 플레이어 방향으로 꺾이게 · 인체모형 더 활발히 이동 · 인체모형 지시 — 인체 모형은 서랍 위에 잘 서있습니다」. EditMode 466/466, PlayScene 3일차에서 과학실 모형을 바라보자 6.7초에 배치 22 → 계속 보자 배치로 붙잡힘(재시작 카드 「[응시] 과학실 인체 모형을 오래 바라봄」) · 2.5초에 목이 꺾여 옆에서 본 몸은 옆을 향한 채 얼굴만 카메라를 봄(QA 캡처) · 등 돌리고 9초 동안 0.75m씩 3걸음 다가와 2.5m에 멈춤 · 복도로 나가자 제 자리(51.6, 41.3)로 돌아감 실측, 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
+> ⓐ **고정 몹 응시**(`Scripts/Direction/FixedMobStare` · `NightRun.Stare.cs`): 응시 샘플(`GazeSample`)의 대상이 과학실 모형(`rule.S3.model`)이나 사람 나무(`rule.H1.object`)면 이어 본 시간을 세고, 유예(1일 2.5 · 2일 2 · 3일~ 1.5초 — 역설 「눈으로만」 1초보다 길게) 뒤부터 배치 축을 초당 3 + 0.5×경과(최대 10)씩 올린다 → 끝내 100이면 배치로 붙잡힘. 0.3초 미만 빗나감은 이어서 셈. 판정 시간창 안에서만, 출처 `stare.<대상>`(재시작 카드 이름은 `FixedMobStare.SourceName`). 스위치 `NightRun.FixedMobStareEnabled`(구동기가 켬 — 옛 테스트가 H1·S3 대상을 오래 보는 신호를 보낸다). 김진선님 `DeathCutscene_Layout_ver2_HumanTree`(배치 컷신)는 씬에 `LayoutDeathSpot`이 없어 아직 잇지 않았다.
+> ⓔ **인체 모형 사망 컷신**(민 후속: 「붙잡히면 인체모형 사망 컷신이 나오게」): `CaptureDirector.CutscenePrefab(axis, sourceId)` — 붙잡힌 출처(`NightRun.Cause.SourceId`)가 `stare.rule.S3.model`이면 축이 배치여도 인체 모형이 나오는 김진선님 `DeathCutscene_Illuminance`를 튼다(사람 나무 응시·그 밖의 배치 붙잡힘은 옛 연출표 장면 = 사람 나무 얼굴). 컷신이 도는 동안 과학실 모형은 숨는다(둘이 겹치지 않게). **얼굴 맞춤**(민: 「모형이 커지며 얼굴이 강조돼야 하는데 쇄골이 강조된다」): 61차에 대역 키를 1.9m로 올려 컷신 마지막 확대에서 카메라(CamTarget 1.7m)가 쇄골을 봤다 → `CaptureDirector.FitDummyFace`가 컷신 인스턴스의 Dummy/Model만 발 기준으로 줄여(실측 ×0.877) 눈높이(head~head_end 60%)를 카메라 높이에 맞춘다(조도 붙잡힘에도 적용, 김진선님 프리팹·타임라인·과학실 모형 크기는 그대로). 7.4초 정지 캡처에서 얼굴이 화면 가운데.
+> ⓕ **재시작 카드 설명 숨김**(민: 「사망했을 때 설명은 나오지 않게」): 붙잡힌 까닭 줄(`Sources` — 수칙·점검·응시 이름)은 화면에 쓰지 않는다. 디버그용 `LastCard`에만 남는다.
+> ⓑ **목 꺾임**(`ScienceModel.Neck`, 3일차부터): 모형을 2.5초 이어 보면 `model.neck`(SFX_LAB_MannequinNeckTurn, 소리표 177개) 3D 소리와 함께 neck 35%·head 나머지로 0.45초 만에 플레이어(카메라) 쪽으로 꺾이고(좌우 130°·위아래 35°까지) 자리를 옮길 때까지(`Place`) 따라 본다. 모형 대역은 Animator 없는 리그라 LateUpdate에서 쉬는 자세 + 회전.
+> ⓒ **더 활발히**: ① `ScienceModel.Creep` — 2일차부터 플레이어가 같은 곳(과학실, 복도 자리면 복도)에 있고 모형이 화면에 안 보인 채(`UnseenDespawn.VisibleTo`) 2일 5 · 3일 3.5 · 4일~ 2.5초 지나면 플레이어 쪽으로 0.5 · 0.75 · 1m 다가서서 플레이어를 본다(2.5m 안으로는 안 옴, 방 상자 0.7m 안쪽·캡슐 겹침 없는 자리만, 막히면 ±35°·±70°). 다가섰던 모형은 플레이어가 과학실을 나가면 제 자리로(문간을 막지 않게). ② `ModelProgress.NextSpot` — 최대 자리에 닿은 뒤에도 과학실을 나갈 때마다 그 밤 범위의 다른 자리로(1일차는 그대로).
+> ⓓ **S-1 문구**: 「모형은 테이프 안에 그대로 서 있습니다.」 → 「인체 모형은 정면을 보고 있습니다.」(민: 실제 이상은 90° 회전 — 처음 바꾼 「서랍 위에 잘 서있습니다」는 이상과 맞지 않아 다시 고침. S-1 대상은 서랍장 위 토르소 — 몬스터 모형이 아니다).
+> **되살리지 마십시오:** 「고정 몹은 아무리 봐도 괜찮다」 · 「모형은 과학실을 나갈 때만, 최대 자리까지만 움직인다」 · 「S-1 = 테이프 안 모형」 · 「S-1 = 서랍 위에 잘 서 있음」 · 「인체 모형 응시로 붙잡혀도 사람 나무 얼굴」 · 「모형 컷신 마지막에 쇄골이 보임」 · 「재시작 카드에 붙잡힌 까닭 줄」.
+
+> **개정: 2026-10-07(63차). 플레이테스트 피드백 3단계(화장실) — 민: 「변기 수칙 등장 → 변기 지시 등장 → 화장실 입장 → 소녀 들어가는 거 목격 → 화장실 핏물·머리카락 목격 → 정상 보고 이 플로우로 · 변기 물 적용 안 되어 있음(진선님 에셋 있음)」. EditMode 453/453, PlayScene에서 화장실 변기 4개에 맑은 물이 얹힘·T-1 핏물·머리카락 겹침(QA 조명 캡처)·소녀 걷기 끝 = T-1 칸(4.21, 34.55) 실측, 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
+> ⓐ **변기 지시가 먼저**: T4 날 변기(T-1)는 여전히 밤 시작에 묶어 두되, 옛 「소녀 목격 → 3초 뒤 단독 지시」가 아니라 `NightRun.ReleaseToiletOrder` — 여자아이 슬롯 시작 `ToiletOrderLeadMinutes`(4게임분) 앞에(또는 그 조우가 이미 움직였거나 이월됐으면 곧바로) 단독 지시 「변기(3번 칸) — 변기 물은 맑습니다」. 화장실로 부르는 것은 이 지시 자신 — 옛 53차의 거울(T-3) 더하기와 소녀 방 「이른 항목」 보정은 소녀보다 먼저 화장실로 불러 순서를 흐트러뜨려 뺐다(`PatchPlanForProgram`). 소녀는 화장실 입장 → (62차) 세워 두고 보면 3번 칸으로 걸어 들어감 → 목격(`ReverseReportJudge`) → 역보고 → T-1 핏물·머리카락 → [정상]이 정답(옛 그대로). 소녀가 늦게 오면(긴장 절정 등) 맑은 변기를 먼저 보고할 수 있다 — 그때는 정상 보고가 맞고 역보고는 걸리지 않는다.
+> ⓑ **변기 물**(`Flow/Presentation/ToiletBowls`, 자동): 화장실 상자 안 ToiletA·ToiletC마다 `prop.toilet.water`(김진선님 `HorrorProp_ToiletA_ClearWater`를 감싼 대역 — 빌더 새 사양)을 같은 자리·방향에 겹치고 안쪽 변기 몸통(LODGroup `ToiletA`)은 끈다. ToiletC는 몸이 낮아 2.2cm 내림. **T-1 이상**(`InspectionAnomalies` T-1): `ToiletBowls.Blood` — 그 변기의 맑은 물을 감추고 `prop.toilet.bloodhair`(김진선님 `HorrorProp_ToiletA_BloodHair`, 0.8m 안에 오면 핏물이 솟음)을 겹친다. 이상이 걷히면 `Restore`. 대역이 없으면 옛 절차 물·머리카락.
+> **되살리지 마십시오:** 「T4 변기는 소녀 목격 뒤에야 지시」 · 「T4 날 거울(T-3)로 화장실에 부름」 · 「변기에 물 없음」 · 「T-1 이상 = 절차 검은 물」.
+
+> **개정: 2026-10-07(62차). 플레이테스트 피드백 2단계(연출 발동 조건) — 민 결정: 「태블릿은 주요 연출이 나오면 강제로 내리고 끝날 때까지 못 올리고, 한 번 올리면 5초 뒤 내려가고 2초 후 다시 올릴 수 있게 · 몹은 나타나 있되 플레이어가 몹을 시야에 넣고 인지한 뒤에 연출 시작 · 시선 끌어당기기는 보류」. EditMode 453/453, PlayScene에서 노란 얼굴 강제 실행 → 도서관 정문에 세워 둔 채 대기(Presenting) → 도서관 안에서 문을 보자 0.36초 만에 대면(Active) · 모형 급습도 같은 흐름 · 연출 중 태블릿이 시야 밖으로 내려가고 [Tab]을 눌러도 확대 안 됨 · 확대 5초 뒤 저절로 풀림 실측, 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
+> ⓐ **몹은 세워 두고 본 뒤 대면**: 새 단계 `DirectionPhase.Present`·상태 `EncounterRunState.Presenting`. `EncounterScript.NeedsSight`(몹 대역이 있고 존재형·시체·CCTV·응시 방아쇠가 아닌 조우 = 앉은 소년·소년 머리 박기·화장실 소녀·노란 얼굴·끝에 선 모형·모형 급습·창밖 남자)은 전조 뒤 `TensionDirector.Engage` → 대역만 세움(걷기·움직임·점프스케어·소리·화면 효과·대응 수칙 단서 없음) → `Flow/Direction/SightProbe`가 몸통·머리 중 하나가 화면 안쪽(가장자리 12% 제외)·30m 안·가림 없음(대역 앞 1m 유리·창틀 무시, CCTV 보는 중 제외)으로 0.35초 이어지면 `NightRun.EncounterSeen` → 다음 틱 대면(DirectionStage가 세워 둔 대역을 이어 쓰고, 고정 자리 걷기(소녀)는 그때 시작). 40초(`PresentMaxSeconds`) 못 보거나 슬롯이 지나면 거두고(중단) 그 방에 있으면 15초 뒤 다시(이월·놓침 규칙 그대로). 세워 둔 동안도 `Busy`. 연출 쪽이 있을 때만(`NightRun.EncounterSightGating` — DirectionStage가 켬), 코어 시험 기본은 옛 흐름.
+> ⓑ **방아쇠**: `EncounterScript.DeepMargin` — 방 상자 안쪽으로 그만큼 들어와 있는 동안만 머무름을 센다(`TensionDirector.DeepInSpace` ← DirectionStage `DeepIn`, 가장 가까운 벽까지 수평 거리): 소년 2m(교실 안에 확실히) · 노란 얼굴 2.5m·4초(옛: 도서관 8초 체류). `NearAnchor` — 고정 자리에서 그 거리 안에서만: 창밖 남자 6m(옛: 도서관 어디서든). **시체 「나가는 길」**(민: 「교실 안쪽에서 떨어지는 건, 그 안쪽에서 나오면서 플레이어 쪽으로」): 밤마다 반반 — 사다리 방 안에서 사다리를 볼 때(60차) / `GazeTargetExitMode` — 사다리 2.8m 안에 들어갔다가 3.8m 밖으로 나오는 순간(응시 무관, 옛 「교실 입구에서 사다리를 볼 때」 대체), 떨어질 자리는 늘 플레이어 앞(나가는 쪽).
+> ⓒ **태블릿 들기 제한**(`Scripts/Player/TabletLimit`, 화면 쪽은 `TabletZoom` — 태블릿은 늘 손에 들려 있고 「올림」 = 확대): 확대 5초 뒤 저절로 풀리고, 푼 뒤 2초는 다시 확대 못 함. 주요 연출(`TensionDirector.Busy` = 전조·몹을 세워 둔 동안·대면·마무리, 겹침 조우 포함) 동안은 확대를 풀고 손의 태블릿까지 시야 밖으로 내린다(끝나면 다시 듦). 일시정지·CCTV 중에는 흐르지 않음.
+> ⓓ **소년·시체는 시야에서 벗어나야 사라짐**(민: 「소년, 시체의 디스폰은 플레이어 시야에서 완전히 벗어나면」): `Flow/Direction/UnseenDespawn` — 소년(`mob.boy`)·시체(`CorpseDrop`)에 표시해 두고, 조우가 끝나(결과·창 닫힘) 정리될 때 바로 지우지 않고 렌더러 상자 하나라도 시야 사각뿔 안에 들고 가운데·위·아래 중 하나가 안 가려졌으면 남겨 둔다 → 안 보인 채 0.3초면 지움(최대 120초, 넘겨받을 때 판정 기준점 끔). 시체의 「시선 돌리면 사라짐」도 옛 정면 30°에서 같은 판정(화면 가장자리까지)으로. 중단(붙잡힘·재시작·04:00)은 곧바로 지운다(`DirectionStage._lingering`). PlayScene 실측: 소년 머리 박기 끝난 뒤 보는 동안 남고, 등 돌리자 사라짐.
+> **되살리지 마십시오:** 「몹이 나타나는 순간 대면·점프스케어」 · 「조우가 끝나면 보이는 앞에서 소년·시체가 사라짐」 · 「시체는 정면 30° 밖이면 사라짐」 · 「도서관 8초 체류로 노란 얼굴」 · 「창밖 남자 도서관 어디서든」 · 「교실 입구에서 사다리를 보면 시체」 · 「태블릿 무제한 확대」.
+
+> **개정: 2026-10-07(61차). 플레이테스트 피드백 1단계(민이 단계별로 확인하며 진행 — 조작·버그·소리) + 보완. EditMode 445/445, PlayScene에서 키 1.95(캡슐 1.95·중심 +0.125·눈 바닥에서 1.70m — 처음 2.2는 민: 「키가 너무 커」로 낮춤, 동선 문 20개 문간에 몸이 들어감·막힌 6개는 책장 등으로 막아 둔 문)·경비실 8방향 쓸기 끝 위치 겹침 없음·벽 비비기 200프레임 겹침 없음·경비실 덧붙인 상자 7개·CCTV 들여다보는 동안 커서 잠김·열린 관물대 바닥 배터리를 1m 앞(눈에서 1.87m)에서 겨눔 「[E] 배터리 줍기」·사다리 방 안 어디서든 시체 자리 (51.8, 33.9)·붉은 등 그림자 Soft 실측, 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
+> ⓐ **몸**(`Scripts/Player/PlayerBodyRules`·`Flow/Player/PlayerBody`, 플레이어 루트에 자동): FPController(김진선님 폴더)는 그대로 두고 결과만 바로잡는다. 키 1.7 → 1.95m(발 위치 그대로 캡슐을 늘리고 카메라 +0.25m — 눈 1.45 → 1.70m = 김진선님 사망 컷신 타임라인 기준 눈높이, 프리팹·씬 파일 그대로; 민이 처음 2.2를 불렀다가 「키가 너무 커, 조금 낮춰 줘, 문은 지나갈 수 있게」). 캡슐이 이미 1.95 이상이면 손대지 않는다 — 김진선님이 키를 따로 맞춰 병합하면 겹칠 수 있으니 확인. **벽 뚫림 원인**: FPController는 `transform.Translate`로 움직여 물리를 거치지 않는다 — Update 앞뒤 위치 차를 턱(0.3m) 위 캡슐로 쓸어 보고 막히면 벽면을 따라 미끄러지게(최대 3번 꺾음, 0.75m 넘는 한 프레임 이동은 순간이동으로 둠, FPController가 꺼져 있으면 손대지 않음). 마찰 0 재질. **점프**: 키 입력 점프는 원래 없다(벤더 SimpleFPController는 씬에 없음) — 가구에 끼었다 튀는 것까지 막으려 위로 솟는 속도 0.6m/s 상한, 수평 물리 속도는 매 고정 프레임 지운다.
+> ⓑ **CCTV 커서**: 들여다보는 동안(들어가기·보기·나오기) 매 프레임 `Cursor.visible=false`·`lockState=Locked`, 끝나면 `None`·숨김(FPController 방식).
+> ⓒ **재시작 배터리**: `RestartAfterCapture`가 스냅샷을 되돌린 뒤 `FlashlightBattery.Refill`(충전량만 100%, 예비·칸은 스냅샷). 02:16 서명 체크포인트에서 다시 하면 그때 충전량이 이어졌다.
+> ⓓ **경비실 충돌**(`Flow/Interaction/GuardRoomColliders`, 자동): 경비실 상자 안 바닥에 선 소품 중 막는 콜라이더가 없거나 몸 아래쪽 70%를 못 덮는 것에 보이는 크기의 상자. 경비실 사물함 6개는 피벗의 기본 1×1×1 상자(바닥 아래로 반이 묻힘)를 끄고 맞춘 상자로, 화분은 새로. DoorScript가 달린 것은 건드리지 않는다.
+> ⓔ **소리**: `door.open` 0.7 → 0.4 · `door.close` = `Audio/door/SFX_DOOR_Close.wav` = BigSoundBank 2421 나무 문 쿵 + 걸쇠 0.95(민: 「닫히는 소리가 작다」 → 「닫히는 소리도 관물대 닫히는 소리 같다」 — 옛 HALL_DoorClose는 쇳소리 걸쇠). `step.HALL.*` = 경비실 발소리 판. 몸 계기 = `Audio/body/loud/`(+12~22dB 판 — 옛 판은 실제 심박 -33~-27dB·귀 먹먹함 -46dB·이명 -57dB), 먼 숨 9~14m → 5~8m·저역 1100 → 1800Hz·크기 0.55 → 0.95, 배치 발소리 에코 0.42 → 0.7·늦은 발소리 0.55 → 0.85. 화장실 방 소리 = `Resources/Ambience/Rooms/AMB_TOILET_*_Loud`(+7dB). **물방울 루프(ToiletWater)는 민: 「안 맞아, 제거」로 지웠다.** 도서관 원샷에서 `os_thud_upstairs`를 뺐고, 쾅 계열 원샷(`AmbiencePlayer.FarShots`)은 20~30m 밖·저역 900Hz. 소리 표 176개.
+> ⓕ **「가까이」 쾅**(민: 「쾅이 1일차부터 너무 가까이서 — 원리 확인, 멀리서, 1~2일차엔 배정 안 했으면」): 원리 = 점검 머리 수칙 「점검 대상에 가까이 가거나 손대지 마십시오」 — 점검 대상 0.8m 안에서 0.3초 들여다보면 `NightRun.InspectionStartle`(그 축 +6, 항목마다 한 번) → `NightDutySfx.OnStartled`가 항목 소리 + 공용 충격음 `inspect.near`(CloseImpact). 이제 공용 충격음은 `StartleImpactFromDay`=3일차부터, 2D가 아니라 등 뒤 16m·저역 1100Hz(`PlayFar`). 판정(+6)과 항목 소리는 그대로.
+> ⓖ **바퀴벌레**: `TensionDirector.FakeBugsEnabled=false` — 벌레 떼 가짜 놀람(1-3 교실·뒤 창고 = 사다리 방·화장실·도서관)을 끔. 바퀴벌레는 시체 낙하와 함께만(`CorpseRoaches`). 디버그 강제는 그대로.
+> ⓗ **붉은 등 빛샘**(민 스크린샷: 복도 붉은 등이 경비실 벽·천장을 물들임): 붉은 빛 그림자 Soft(전에는 None이라 벽을 뚫음), 빛 거리(`RedLightSpot.LightRange` 4.2m) 안에 경비실이 있는 형광등은 후보에서 뺌.
+> ⓘ **사다리 방 시체 자리**(민: 「사다리 방이 너무 어두워 못 본다 — 2번째 사진 조준점 자리」): 플레이어가 `DirectionStage.LadderRoom`(문간 x≈50.3 포함) 안이면 시체는 `LadderRoomCorpseSpot` (51.8, 1.5, 33.9) — 문간에서 사다리를 볼 때 화면 가운데 바닥. 그 자리에 서 있으면(0.8m 안) 평소대로 앞.
+> ⓙ **배터리 줍기**(민 스크린샷: 열린 관물대 배터리가 안 주워짐): 키가 커져 관물대 바닥까지 세로만 1.58m — 문짝을 피해 1m 서면 1.87m라 `Reach` 1.7에 걸렸다 → 2.1. 태블릿을 든 채로도 줍는다(문은 태블릿을 들어도 됐다).
+> ⓚ **인체 모형 키**(민: 「키가 높아짐에 따라 인체 모형도 살짝」): `mob.dummy.stand`·`mob.dummy` 1.7 → 1.9m(빌더 재생성).
+> **다음 단계에 넣기로 한 것**(민 승인 전): 5단계 — 위치가 바뀌는 점검(화분 등)은 이상일 때 랜덤 좌표 풀에서, 빛 관련 점검(현미경 등)은 이상이면 깜빡임. 6단계 — 공포 배치를 1~5일차 그라데이션으로(1일차 `C4.cue` 같은 것 포함), 조도 축이 오르면 전체 조명이 미세하게 붉어지고 수칙의 빨간 불빛은 초록으로.
+> **되살리지 마십시오:** 「키 1.7m·눈 1.45m」 · 「키 2.2m·눈 1.95m」 · 「FPController 이동을 그대로 믿음(벽 뚫림)」 · 「CCTV에서 커서를 한 번만 숨김」 · 「체크포인트 재시작이 그때 충전량을 이어 감」 · 「경비실 사물함 피벗 1×1×1 상자」 · 「문 열림 0.7·닫힘 HALL_DoorClose」 · 「복도 발소리 = 타일」 · 「body.* 원본 판」 · 「도서관 원샷의 쾅」 · 「화장실 물방울 루프」 · 「inspect.near 2D·1일차부터」 · 「벌레 떼 가짜 놀람」 · 「그림자 없는 붉은 등」 · 「배터리 Reach 1.7·태블릿 들면 못 주움」 · 「인체 모형 1.7m」.
+
 > **개정: 2026-10-07(60차). 민 플레이 피드백: C1 판서 폐기 · 도서관 조우는 마주칠 때 효과음 · 시체는 교실 입구/사다리 방 안 랜덤으로 플레이어 앞에 + 바닥 바퀴벌레 + 민이 준 효과음 · 소년 머리 박기 길게·바라보면 빨라지고·칠 때마다 흔들림 · 배터리를 복도 관물대에서도(잠금 해제) · 문 소리 정리 · 보고한 점검의 이상/정상 정정. EditMode 439/439, PlayScene에서 사다리 방 시체 낙하(플레이어 앞 래그돌 + 바닥 바퀴벌레, 느린 재생 캡처)·노란 얼굴 마주침 스팅어(등지면 안 나고 돌아보면 「마주침」)·소년 머리 박기(바라보는 동안 빨라지다 14초에 엎드림)·복도 관물대 10개 잠김 없음·K-1 보고 → 정정(정상→이상, 같은 판정은 거절) 실측, 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
 > ⓐ **C1 폐기**: `ProgramCatalog.Retired = { "C1" }`·`IsRetired` — `Day1Pool`에서 빼고 `PickFiller`가 건너뛴다. 정의·판정기·역설 표는 남김(시험이 참조). 1일차 후보가 H2·C4·S2·K2·K3뿐이라 1일차 덱은 경비실 K2/K3만 갈린다 — 후보를 늘릴지는 민 판단.
 > ⓑ **도서관 마주침 스팅어**: `EncounterImpact.HitsWhenSeen`(노란 얼굴·창밖 남자)은 대면 때 엠비언트만 30%로 낮추고, `Flow/Direction/SeenStinger`가 대역이 시선 22° 안·화면 안·가림 없음(대역 앞 1m 유리·창틀 무시)이 되는 순간 `EncounterImpact.Hit`(덮치기 + 중 스팅어 + 심박).
@@ -828,9 +901,9 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 ### 3.3 검증
 
 1. 코드 수정 후 `Assets/Refresh` → 25~30초 뒤 `recompile_status` → `console_status`로 **컴파일 에러 0**을 확인합니다.
-2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 439/439 통과**(2026-10-07 60차 실측). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
+2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 492/492 통과**(2026-10-08 66차 실측, 비동기). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
    - **`DesignDriftTests`가 드리프트 감시입니다.** 일차 하한이 줄지 않고 Band4에 닿지 않는지, 그리고 **이 파일 본문에 옛 구간 경계가 남아 있는지**를 검사합니다. 여기가 깨지면 값이 아니라 **두 곳이 서로 다른 말을 하고 있다**는 뜻입니다. 결과가 크면 파일로 저장되므로 요약만 grep합니다. (옛 24장 카드의 에셋↔빌더·축 쿼터·죽은 카드 검사와 `CardScenarioTests`는 2026-10-03에 카드와 함께 지웠습니다.)
-3. 플레이 모드 확인은 근무 씬 `Assets/0. Main/01 Scene/PlayScene.unity`에서 합니다. **F3 디버그 콘솔**(`NightDutyDebugConsole`)로 축·시계·조우·수칙 단서를 조작합니다. (옛 `_Test_AxisRig` 씬·판정 디버그 패널·`DebugAxisDriver`는 2026-10-03 폐기.)
+3. 플레이 모드 확인은 근무 씬 `Assets/0. Main/01 Scene/PlayScene.unity`에서 합니다. **개발자 모드(`-` 키, 김진선님 `DevModePanel` — 64차에 옛 F3 콘솔을 합침)**로 축·시계·조우·수칙 단서·점검을 조작합니다. (옛 `_Test_AxisRig` 씬·판정 디버그 패널·`DebugAxisDriver`는 2026-10-03 폐기.)
 4. 플레이 중에는 `set_component_properties`가 안 됩니다 → `eval`. `FindAnyObjectByType`는 DontSave 오브젝트를 찾지 못합니다.
 5. 병합 후 빌드 씬 목록이 옛것이면 Unity를 재시작합니다(**재시작 전에 저장하지 마십시오**). 현재 빌드 씬은 9개입니다(0번 `0. Main/01 Scene/MainScene`).
 6. 에디터를 쓸 수 없을 때의 대안: `mono-mcs`와 UnityEngine 최소 스텁으로 `-langversion:7.2` 컴파일(`UNITY_EDITOR` / 심볼 없음 / `NIGHTDUTY_DEBUG` 세 구성). 스텁 누락 에러는 코드 문제가 아닙니다. 지금은 Unity MCP로 직접 컴파일·테스트하는 것이 기본입니다.
@@ -847,13 +920,13 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 | 센서 부착(`PlayerSensors`·`FlashlightRelay`) | 각자 자동 설치(`FlashlightRelay.EnsureFor`) |
 | 켜진 채 저장된 손전등 끄기(§5.5-22) | `FlashlightRelay.EnsureFor`가 플레이어 밖의 `Flashlight_ON`을 끈다 |
 | 문 발신기 `DoorRelay` | `DoorRelay` 자동 설치 |
-| 에디터가 초점을 잃으면 멈춤(`Run In Background`) | 디버그 콘솔 `Awake`가 `Application.runInBackground = true` |
-| 잠긴 문 무시(F4)·문 정책 무시(F5) | 디버그 콘솔 `Awake`가 `PlayerInteractor.IgnoreLocks = true`(에디터·개발 빌드만) · 개요 탭 [잠긴 문 무시]·[모든 문 열기] 버튼 |
-| 상태판(F9)·표식 보이기(F6)·구역 상자(F7) | 디버그 콘솔 F3(§19차 ⓖ). 표식·구역 시각화는 아직 콘솔에 옮기지 않았습니다 |
+| 에디터가 초점을 잃으면 멈춤(`Run In Background`) | 개발자 모드 `DevModePanel.AutoCreate`가 `Application.runInBackground = true` |
+| 잠긴 문 무시(F4)·문 정책 무시(F5) | 개발자 모드 ② 시간 탭 「스위치」 [잠긴 문 무시]·[모든 문 열기] |
+| 상태판(F9)·표식 보이기(F6)·구역 상자(F7) | 개발자 모드(`-`). 표식·구역 시각화는 아직 옮기지 않았습니다 |
 | 1초 응시로 `DoorAutoOpenObserved` 흉내 | 진짜 연출로 대체 — H2 단서가 문을 연다(20차 ⓓ) |
 | 옛 조우 모형·`ModelObserved` 흉내·게임 시계 덮어쓰기 | 폐기(옛 체계 전용) |
 
-**확인할 때는 F3 디버그 콘솔을 쓰십시오.** 수칙 탭의 [이동]·[단서], 조우 탭의 [이동+실행]으로 실제로 걷지 않고 수칙·연출을 볼 수 있습니다.
+**확인할 때는 개발자 모드(`-` 키)를 쓰십시오.** ④ 조우 탭의 [그 시각·자리로](실제 발동 조건대로)·[흐름 확인](전조부터 강제), ⑥ 수칙 탭의 [이동]·[단서], ⑦ 점검 탭의 [이동]·[정상]·[이상]으로 걷지 않고 연출을 볼 수 있습니다.
 
 ---
 
@@ -863,9 +936,9 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 
 **원인은 셋이고 전부 다릅니다.**
 
-1. **에디터가 초점을 잃으면 플레이가 통째로 멈춥니다.** `Run In Background`가 꺼져 있어, 알트탭 한 번이나 원격 조작 중에는 `Time.frameCount`가 그대로 섭니다(실측: 3분 동안 frame=2). 게임이 얼어 있으니 아무 키도 듣지 않고 트리거도 안 걸립니다. → **디버그 콘솔(F3) `Awake`가 `Application.runInBackground = true`를 런타임에만 덮습니다**(20차, 옛 하네스에서 옮김). 프로젝트 설정은 그대로입니다.
+1. **에디터가 초점을 잃으면 플레이가 통째로 멈춥니다.** `Run In Background`가 꺼져 있어, 알트탭 한 번이나 원격 조작 중에는 `Time.frameCount`가 그대로 섭니다(실측: 3분 동안 frame=2). 게임이 얼어 있으니 아무 키도 듣지 않고 트리거도 안 걸립니다. → **개발자 모드(`DevModePanel.AutoCreate`)가 `Application.runInBackground = true`를 런타임에만 덮습니다**(20차 옛 하네스 → F3 콘솔 → 64차 개발자 모드). 프로젝트 설정은 그대로입니다.
 2. **벤더 `DoorScript`의 조건이 셋인데 안내가 하나도 없었습니다.** ⑴ **카메라**가 문 앞 트리거 상자 안(`inZone`), ⑵ **문짝이 아니라 손잡이**를 약 25° 안쪽으로 조준(`dotProd < -0.9f`), ⑶ `E`. 그런데 문 56개 전부 `doorTexts.enabled = false`라 「Press [E] to open」이 안 뜨고, `doorSounds` 클립도 전부 비어 있고, 조준선도 안 보였습니다(알파 0.25). **조건은 멀쩡한데 보이지 않는 조작**이라 사람이 문 앞에서 막혔습니다. → **§4.6의 상호작용이 이걸 대체합니다.**
-3. **기획에 없는 문이 잔뜩 열려 있었습니다.** 지금은 `Resources/DoorPolicy.asset`이 가립니다(§4.6) — 실측 수납가구 30 · 열리는 문 10 · 잠긴 문 16. 밖으로 나가는 길은 **정문 `Exterior/Doors/DoorMain` (27.6, 1.5, 49.0)**입니다. 시험 동안 잠금은 디버그 콘솔이 기본으로 건너뛰고(개요 탭 [잠긴 문 무시]), 정책까지 무시하려면 개요 탭 [모든 문 열기]입니다(옛 F4·F5는 하네스와 함께 삭제).
+3. **기획에 없는 문이 잔뜩 열려 있었습니다.** 지금은 `Resources/DoorPolicy.asset`이 가립니다(§4.6) — 실측 수납가구 30 · 열리는 문 10 · 잠긴 문 16. 밖으로 나가는 길은 **정문 `Exterior/Doors/DoorMain` (27.6, 1.5, 49.0)**입니다. 시험 동안 잠금은 개발자 모드 ② 시간 탭 [잠긴 문 무시]로 건너뛰고, 정책까지 무시하려면 [모든 문 열기]입니다(옛 F4·F5는 하네스와 함께 삭제).
 
 ---
 
@@ -915,7 +988,7 @@ Assets/_Game/
 │   │   └── Tension/   TensionDirector · EncounterScripts · SurpriseBudget · StagePoints · DirectionEvent
 │   ├── Stats/         FearAxisSystem · BandResolver · DayFloor · DaySummary · DutyLogEntry · NightSnapshot · RestartPolicy · WarningLedger
 │   └── Editor/        NightDuty.Editor.asmdef — InspectionTargetPlacer · RuleAnchorPlacer
-├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 439개(2026-10-07 60차)
+├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 492개(2026-10-08 66차)
 ├── Resources/         NightDeckTable(빈 폴백) · CaptureCardLook(재시작 카드의 YOU DIED) · CaptureCast(붙잡힘 연출표) · FinaleCast(피날레 배역표) · DoorPolicy · CctvConfig · AmbienceConfig · DirectionSounds · DirectionScreenFx · IlluminanceTone · InspectionAnomalyProps · NightDutyLightmapScale.shader(불 꺼진 교실 블릿) · StandIns/
 └── Flow/              asmdef 없음 → Assembly-CSharp. 씬과 코어를 잇는 구동기 (§4.4)
     │                  NightRunDriver · NightDutyResultMapper · SpaceZones(공간·구역 신호) · TabletBridge · FlowAutoInstall · SpaceLights(빈 껍데기)
@@ -929,7 +1002,7 @@ Assets/_Game/
 
 - **`NightDuty.Client` 어셈블리는 아직 없습니다.** 진선님 코드(GameFlow·Result·HUD)와 Lee의 시험 리그는 개인 폴더의 `Assembly-CSharp`에 있습니다. `_Game`으로 옮길지는 결정 대기(Q8)입니다.
 - **`NightDuty.Core`는 연출을 참조하지 않습니다.** 축이 바뀌면 Core는 이벤트만 올리고, 무엇을 그릴지는 클라이언트가 정합니다. 「축이 올랐으니 여기서 바로 불을 끄면 되겠다」는 유혹이 반드시 옵니다. **asmdef에 참조를 추가해 우회하지 마십시오.**
-- 개인 폴더 `Assets/3.1. Programmer_lee/`의 옛 시험 리그(`AxisTestLightRig`·`AxisTestAnomalyRig`·`NightRunDebugPanel`·`_Test_AxisRig` 씬)는 2026-10-03에 지웠습니다. 걸어서 시험할 때는 근무 씬의 F3 콘솔을 씁니다.
+- 개인 폴더 `Assets/3.1. Programmer_lee/`의 옛 시험 리그(`AxisTestLightRig`·`AxisTestAnomalyRig`·`NightRunDebugPanel`·`_Test_AxisRig` 씬)는 2026-10-03에 지웠습니다. 걸어서 시험할 때는 근무 씬의 개발자 모드(`-`)를 씁니다.
 - 옛 에디터 메뉴(`NightDuty ▸` 카드 에셋 생성·이상현상 표·씬 대상 검사·조도 표·테스트 씬)는 2026-10-03에 지웠습니다. 지금 메뉴는 `야간근무 ▸`(연출·경비실·문 정책 등)입니다.
 
 ### 4.2 판정 흐름
@@ -1095,7 +1168,7 @@ DoorRelay.Update (실행 순서 60)  ← 같은 프레임의 뒤
 
 **HUD는 씬에 이미 있는 것을 씁니다.** `HUD_Play/Img_Reticle`의 알파를 평소 0.25 → 대상을 잡으면 0.95로 올립니다. 안내 줄(`Txt_Prompt`)만 없어서 없으면 런타임에 만들고, **글꼴은 같은 캔버스의 다른 글씨에서 빌립니다**(TMP 기본 글꼴에 한글이 없어 그냥 만들면 네모로 나옵니다). 민이 씬에 `Txt_Prompt`를 만들어 꽂으면 그쪽을 씁니다.
 
-**잠금 무시.** `PlayerInteractor.IgnoreLocks`는 기본 꺼짐(디버그 콘솔도 이제 켜지 않음, 개요 탭 [잠긴 문 무시]로 켤 수 있음). 동선의 문은 정책(`DoorPolicy.asset`)이 「열리는 문」이면 시작할 때 벤더 잠금을 푼다(21차 ⓘ).
+**잠금 무시.** `PlayerInteractor.IgnoreLocks`는 기본 꺼짐(개발자 모드 ② 시간 탭 [잠긴 문 무시]로 켤 수 있음). 동선의 문은 정책(`DoorPolicy.asset`)이 「열리는 문」이면 시작할 때 벤더 잠금을 푼다(21차 ⓘ).
 
 **확인**(실측 2026-09-22): 정문 앞 1.8m에서 문짝 가운데 조준 → 안내 「[E] 문 열기」, 조준선 0.95. `toilet.door`를 열면 콘솔에 `[DoorRelay] DoorCommandAccepted(None, 'toilet.door', Player, False, 0)`. 벤더 키를 거둔 문 56/56. EditMode 362/362.
 

@@ -24,7 +24,10 @@ namespace NightDuty
         Done = 4,
 
         /// <summary>슬롯이 끝날 때까지 방아쇠가 오지 않았다.</summary>
-        Missed = 5
+        Missed = 5,
+
+        /// <summary>61차: 대역을 세워 두고 플레이어가 보기를 기다린다(<see cref="DirectionPhase.Present"/>).</summary>
+        Presenting = 6
     }
 
     /// <summary>그날 슬롯 하나의 조우 진행.</summary>
@@ -74,6 +77,21 @@ namespace NightDuty
         /// 놀람 예산(횟수·간격·조우 뒤 휴지)에 넣지 않는다(민: 「소년이 앉아 있어도 시체가 나오고, 시체를 맞이해도 소년이 머리를 박도록」).
         /// </summary>
         public bool Overlay;
+
+        /// <summary>61차: 깊이 머무름(<see cref="EncounterScript.DeepMargin"/>)을 센 시작 시각(-1 = 지금 깊이 안에 없음).</summary>
+        public float DeepSince = -1f;
+
+        /// <summary>61차: 깊이를 마지막으로 잰 시각(오래 안 쟀으면 다시 센다).</summary>
+        public float DeepCheckedAt = float.NegativeInfinity;
+
+        /// <summary>61차: 대역을 세운 시각(<see cref="EncounterRunState.Presenting"/>).</summary>
+        public float PresentSince;
+
+        /// <summary>61차: 플레이어가 세워 둔 대역을 봤다.</summary>
+        public bool Seen;
+
+        /// <summary>61차: 「나가는 길」 시체 — 사다리 곁(<see cref="TensionDirector.ExitInner"/>)에 들어갔었다.</summary>
+        public bool ExitArmed;
 
         /// <inheritdoc/>
         public override string ToString()
@@ -161,6 +179,12 @@ namespace NightDuty
         /// <summary>벌레 떼(김진선님 BugSwarm, 2026-10-02 민 추가) — 천장에서 쏟아진다. <see cref="BugSpaces"/>에서만.</summary>
         public const string FakeBugs = "fake.bugs";
 
+        /// <summary>
+        /// 61차(민: 「1일차에 사다리 근무 지시와 함께 바퀴벌레가 등장 — 바퀴벌레는 교실에서, 시체 연출이 등장할 때만 시체와 함께」):
+        /// 벌레 떼 가짜 놀람을 끈다. 바퀴벌레는 시체 낙하(<c>DirectionStage.CorpseRoaches</c>)에만 나온다. 디버그 강제는 그대로.
+        /// </summary>
+        public static bool FakeBugsEnabled = false;
+
         /// <summary>벌레 떼가 떨어질 수 있는 방(정규화 전): 1-3 교실(뒤 창고 포함) · 화장실 · 도서관.</summary>
         public static readonly SpaceId[] BugSpaces = { SpaceId.Classroom_1_3, SpaceId.Toilet, SpaceId.Library };
 
@@ -215,6 +239,91 @@ namespace NightDuty
 
         /// <summary>응시 방아쇠 대상의 자리(없으면 null — 거리 조건을 보지 않는다).</summary>
         public Func<string, Vector3?> GazeTargetPosition { get; set; }
+
+        /// <summary>
+        /// 61차(민: 「도서관 안에 완전히 들어오고 몇 초 · 교실 안에 확실하게」): 플레이어가 그 공간 상자 안쪽으로 그만큼(m) 들어와 있는지. 연출 쪽이 넣는다.
+        /// null이면 그 공간 안이면 참(코어 시험).
+        /// </summary>
+        public Func<SpaceId, float, bool> DeepInSpace { get; set; }
+
+        /// <summary>
+        /// 61차(민: 「몹은 나타나 있되, 플레이어가 몹을 시야에 넣고 인지한 뒤에 연출이 시작되도록」): 켜면 몹 대역이 있는 조우(<see cref="EncounterScript.NeedsSight"/>)는
+        /// 전조 뒤 대역만 세우고(<see cref="DirectionPhase.Present"/>) <see cref="NotifySeen"/>가 오면 대면한다. 연출 쪽이 있을 때만 켠다(코어 시험은 옛 흐름).
+        /// </summary>
+        public bool SightGated { get; set; }
+
+        /// <summary>61차: 세운 대역을 이만큼(초) 못 보면 거두고 다시 기다린다.</summary>
+        public const float PresentMaxSeconds = 40f;
+
+        /// <summary>61차: 거둔 뒤 다시 시도까지(초).</summary>
+        public const float PresentRetrySeconds = 15f;
+
+        /// <summary>
+        /// 61차(민: 「교실 안쪽에서 시체 떨어지는 건, 플레이어가 그 안쪽에서 나오면서 플레이어 쪽으로 떨어지게」): 켜면 시체 낙하(응시 방아쇠)를
+        /// 사다리 곁(<see cref="ExitInner"/>m 안)에 들어갔다가 <see cref="ExitOuter"/>m 밖으로 나오는 순간 건다(응시는 보지 않는다). 대상 자리는 <see cref="GazeTargetPosition"/>.
+        /// </summary>
+        public bool GazeTargetExitMode { get; set; }
+
+        /// <summary>61차 「나가는 길」 시체: 사다리 곁(m).</summary>
+        public const float ExitInner = 2.8f;
+
+        /// <summary>61차 「나가는 길」 시체: 여기(m)를 넘어 나오면 떨어진다.</summary>
+        public const float ExitOuter = 3.8f;
+
+        private bool ExitTriggered(EncounterRun r, EncounterScript s)
+        {
+            if (GazeTargetPosition == null || !_hasPose) return false;
+            Vector3? at = GazeTargetPosition(s.GazeTargetId);
+            if (!at.HasValue) return false;
+            Vector3 d = at.Value - _feet;
+            d.y = 0f;
+            float dist = d.magnitude;
+            if (dist <= ExitInner)
+            {
+                r.ExitArmed = true;
+                return false;
+            }
+
+            return r.ExitArmed && dist >= ExitOuter;
+        }
+
+        private bool NearStage(EncounterScript s)
+        {
+            Vector3 at;
+            if (s.NearAnchor <= 0f || !_hasPose || s.StageAnchor.Length == 0 || !StagePoints.TryGet(s.StageAnchor, out at)) return true;
+            return SensingRules.HorizontalDistance(_feet, at) <= s.NearAnchor;
+        }
+
+        private bool DeepDwell(EncounterRun r, EncounterScript s, bool lastCall)
+        {
+            bool deep = InScriptSpace(s) && (DeepInSpace == null || DeepInSpace(s.ExactSpace != SpaceId.None ? s.ExactSpace : s.Space, s.DeepMargin));
+            bool stale = Now - r.DeepCheckedAt > 0.5f;
+            r.DeepCheckedAt = Now;
+            if (!deep)
+            {
+                r.DeepSince = -1f;
+                return false;
+            }
+
+            if (stale || r.DeepSince < 0f) r.DeepSince = Now;
+            return r.Rearmed || lastCall || Now - r.DeepSince >= s.Dwell;
+        }
+
+        /// <summary>
+        /// 61차: 플레이어가 세워 둔 대역을 봤다(연출 쪽이 부른다). 그 조우가 <see cref="EncounterRunState.Presenting"/>이면 다음 틱에 대면한다. 받았으면 true.
+        /// </summary>
+        public bool NotifySeen(string encounterId)
+        {
+            for (int i = 0; i < _runs.Count; i++)
+            {
+                EncounterRun r = _runs[i];
+                if (r.State != EncounterRunState.Presenting || r.Def.Id != encounterId) continue;
+                r.Seen = true;
+                return true;
+            }
+
+            return false;
+        }
 
         private bool GazeTargetNear(string targetId)
         {
@@ -394,7 +503,7 @@ namespace NightDuty
             {
                 EncounterRun r = _runs[i];
                 if (r.Overlay != overlay) continue;
-                if (r.State == EncounterRunState.Foreshadow || r.State == EncounterRunState.Releasing) return true;
+                if (r.State == EncounterRunState.Foreshadow || r.State == EncounterRunState.Releasing || r.State == EncounterRunState.Presenting) return true;
                 if (r.State == EncounterRunState.Active && !r.Script.IsPresence) return true;
             }
 
@@ -554,6 +663,10 @@ namespace NightDuty
             RunWindow(r, out from, out to);
             bool lastCall = minute >= to - LastCallMinutes;
 
+            // 61차: 고정 자리에서 가까워야 하는 조우(창밖 남자)·안쪽 깊이 머물러야 하는 조우(소년·노란 얼굴).
+            if (!NearStage(s)) return false;
+            if (s.DeepMargin > 0f && s.Trigger == EncounterTrigger.DwellInSpace) return DeepDwell(r, s, lastCall);
+
             // 57차(민: 2일차 교실·수업 수칙이 나왔는데 소년을 못 봄 — 헛예고가 하나뿐인 방문을 써 버렸다): 헛예고 뒤에는 그 방에 있기만 하면 된다.
             if (r.Rearmed && (s.Trigger == EncounterTrigger.DwellInSpace || s.Trigger == EncounterTrigger.EnterSpace)) return InScriptSpace(s);
 
@@ -568,7 +681,9 @@ namespace NightDuty
                 case EncounterTrigger.ViewingCctv:
                     return ViewingCctv && Now - _cctvSince >= s.Dwell;
                 case EncounterTrigger.GazeTarget:
-                    return _gazeId == s.GazeTargetId && _gazeRun >= s.Dwell && (GazeTargetReady == null || GazeTargetReady(s.GazeTargetId)) && GazeTargetNear(s.GazeTargetId);
+                    if (GazeTargetReady != null && !GazeTargetReady(s.GazeTargetId)) return false;
+                    if (GazeTargetExitMode) return ExitTriggered(r, s);   // 61차: 사다리 곁에서 나오는 길
+                    return _gazeId == s.GazeTargetId && _gazeRun >= s.Dwell && GazeTargetNear(s.GazeTargetId);
             }
 
             return false;
@@ -635,7 +750,7 @@ namespace NightDuty
 
             if (r.Def.Intensity < 3 && r.Script.FixedForeshadow <= 0f)
             {
-                Confront(r);
+                Engage(r);
                 return;
             }
 
@@ -674,6 +789,35 @@ namespace NightDuty
             r.PhaseEnds = Now + length;
             _pacer.Impulse(PacerImpulse.Foreshadow);
             Emit(DirectionEventKind.Encounter, DirectionPhase.Foreshadow, r.Def.Id, string.Empty, r.Script.Space, r.Def.Intensity, r.Point, length, string.Empty);
+        }
+
+        /// <summary>61차: 전조 뒤 — 몹 대역이 있는 조우는 대역부터 세우고 플레이어가 보기를 기다린다(<see cref="SightGated"/>), 아니면 곧바로 대면.</summary>
+        private void Engage(EncounterRun r)
+        {
+            if (!SightGated || !r.Script.NeedsSight)
+            {
+                Confront(r);
+                return;
+            }
+
+            if (r.Point == Vector3.zero) r.Point = PointFor(r.Script);
+            r.State = EncounterRunState.Presenting;
+            r.PresentSince = Now;
+            r.Seen = false;
+            Note(r.Def.Id, "대역을 세움 — 플레이어가 보기를 기다림");
+            Emit(DirectionEventKind.Encounter, DirectionPhase.Present, r.Def.Id, r.Script.Cue, r.Script.Space, r.Def.Intensity, r.Point, PresentMaxSeconds, string.Empty);
+        }
+
+        /// <summary>61차: 세운 대역을 오래 못 봤다 — 거두고 그 방에 있으면 곧 다시(슬롯이 지나면 대기의 넘김·놓침 규칙을 따른다).</summary>
+        private void Withdraw(EncounterRun r)
+        {
+            Emit(DirectionEventKind.Encounter, DirectionPhase.Aborted, r.Def.Id, r.Script.Cue, r.Script.Space, r.Def.Intensity, r.Point, 0f, "못 보고 지나침");
+            Note(r.Def.Id, "대역을 " + PresentMaxSeconds + "초 동안 못 봄 — 거두고 다시 기다림");
+            r.State = EncounterRunState.Waiting;
+            r.RetryAt = Now + PresentRetrySeconds;
+            r.Rearmed = true;
+            r.Point = Vector3.zero;
+            r.Seen = false;
         }
 
         private void Confront(EncounterRun r)
@@ -744,7 +888,11 @@ namespace NightDuty
                 switch (r.State)
                 {
                     case EncounterRunState.Foreshadow:
-                        if (Now >= r.PhaseEnds) Confront(r);
+                        if (Now >= r.PhaseEnds) Engage(r);
+                        break;
+                    case EncounterRunState.Presenting:
+                        if (r.Seen) Confront(r);
+                        else if (Now - r.PresentSince >= PresentMaxSeconds || (!r.Forced && PastSlot(r, minute))) Withdraw(r);
                         break;
                     case EncounterRunState.Active:
                         if (Now >= r.PhaseEnds) Release(r);
@@ -968,6 +1116,7 @@ namespace NightDuty
         {
             if (id == FakeGlimpse) return _day >= 2 && !Busy;
             if (id != FakeBugs) return true;
+            if (!FakeBugsEnabled) return false;   // 61차: 벌레 떼는 가짜 놀람으로 내지 않는다
             if (Array.IndexOf(BugSpaces, _exact) < 0 || Now - _spaceSince < BugDwellSeconds) return false;
             for (int i = 0; i < _runs.Count; i++)
             {
@@ -987,7 +1136,7 @@ namespace NightDuty
             for (int i = 0; i < _runs.Count; i++)
             {
                 EncounterRun r = _runs[i];
-                if (r.State != EncounterRunState.Foreshadow && r.State != EncounterRunState.Active && r.State != EncounterRunState.Releasing) continue;
+                if (r.State != EncounterRunState.Foreshadow && r.State != EncounterRunState.Active && r.State != EncounterRunState.Releasing && r.State != EncounterRunState.Presenting) continue;
                 r.State = EncounterRunState.Done;
                 Emit(DirectionEventKind.Encounter, DirectionPhase.Aborted, r.Def.Id, r.Script.Cue, r.Script.Space, r.Def.Intensity, r.Point, 0f, reason);
             }
@@ -1035,6 +1184,9 @@ namespace NightDuty
                 r.Waiting = string.Empty;
                 r.ConfrontMinute = -1f;
                 r.Point = Vector3.zero;
+                r.Seen = false;
+                r.ExitArmed = false;
+                r.DeepSince = -1f;
             }
 
             for (int i = 0; i < _rules.Count; i++)

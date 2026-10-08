@@ -191,6 +191,21 @@ namespace NightDuty
             return true;
         }
 
+        /// <summary>65차: 물건 하나를 주웠다. 진행 중인 줍기 지시의 대상이면 완료 사건.</summary>
+        public bool NotePicked(string target, out DutyEvent ev)
+        {
+            ev = default;
+            if (_active == null || _active.Kind != DutyKind.Pickup || string.IsNullOrEmpty(target) || _active.Target != target) return false;
+            ev = Finish(DutyOutcome.Done);
+            return true;
+        }
+
+        /// <summary>65차: 지금 그 물건을 줍기를 바라는 지시가 진행 중인지(연출 쪽이 [E] 줍기를 켤 때 본다).</summary>
+        public bool Wants(string target)
+        {
+            return _active != null && _active.Kind == DutyKind.Pickup && _active.Target == target;
+        }
+
         /// <summary>판정 신호 하나. 진행 중인 지시를 끝냈으면 완료 사건.</summary>
         public bool Observe(in JudgeSignal s, out DutyEvent ev)
         {

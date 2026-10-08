@@ -61,8 +61,8 @@ public static class DirectionSoundTableBuilder
         // 소리 수칙 신호
         { "H2.cue", Au + "door/SFX_HALL_DoorUnlatchCreak.wav", "0.9" },   // 60차(민: 「H2 문이 열릴 때 소리가 닫히는 소리에 가깝다」 — 옛 DoorOpenSlow는 2.3초에 쾅): BigSoundBank 1702 손잡이 딸깍 → 느린 열림
         // 50차: 플레이어가 [E]로 여닫는 문(PlayerInteractor.PlayDoorSound). H2 단서(DoorOpenSlow)와 다른 소리여야 한다.
-        { "door.open", Au + "door/SFX_DOOR_Open.wav", "0.7" },   // 60차: 나무 문 삐걱 열림(BigSoundBank 3205 앞 1.7초) — 옛 TOILET_DoorOpen(쇳소리 끽)은 관물대로
-        { "door.close", Au + "hall/SFX_HALL_DoorClose.wav", "0.7" },
+        { "door.open", Au + "door/SFX_DOOR_Open.wav", "0.4" },   // 61차(민: 「문 열리는 소리 너무 큼」) 0.7 → 0.4(약 -5dB). 60차: 나무 문 삐걱 열림(BigSoundBank 3205 앞 1.7초) — 옛 TOILET_DoorOpen(쇳소리 끽)은 관물대로
+        { "door.close", Au + "door/SFX_DOOR_Close.wav", "0.95" },   // 61차(민: 「닫히는 소리가 작다 · 관물대 닫히는 소리 같다」): BigSoundBank 2421 나무 문 쿵 + 걸쇠(옛 HALL_DoorClose는 쇳소리)
         { "door.locker", Au + "hall/SFX_HALL_LockerDoorSwing_*", "0.7" },
         // 51차(민: 「서랍·관물대·책장 아래 여닫이에도 문 소리가 난다」) — 민이 고른 소리(furniture/LICENSE.txt).
         { "door.drawer.open", Au + "furniture/SFX_FURN_DrawerOpen.mp3", "0.7" },
@@ -147,13 +147,13 @@ public static class DirectionSoundTableBuilder
         // 58차: 조우 대면에 깔던 떨리는 현 tension.confront(CLX-29)는 뺐다 — 되살리지 말 것(민: 「현악기 효과음」).
 
         // 몸 계기(BodyMeter) — 청각 심박·귀 먹먹함·이명, 조도 거친 호흡, 경계 신호, 회복 한숨
-        { "body.heart.62", Au + "body/SFX_BODY_Heartbeat_62.wav", "0.3" },
-        { "body.heart.72", Au + "body/SFX_BODY_Heartbeat_72.wav", "0.4" },
-        { "body.heart.86", Au + "body/SFX_BODY_Heartbeat_86.wav", "0.5" },
-        { "body.heart.104", Au + "body/SFX_BODY_Heartbeat_104.wav", "0.62" },
-        { "body.ear", Au + "body/SFX_BODY_EarPressure.wav", "0.35" },
-        { "body.tinnitus", Au + "body/SFX_BODY_Tinnitus.wav", "0.22" },
-        { "body.heart.boundary", Au + "body/SFX_BODY_HeartBoundary_2s.wav", "0.85" },
+        { "body.heart.62", Au + "body/loud/SFX_BODY_Heartbeat_62.wav", "0.35" },   // 61차(민: 「축 소리들 너무 작음, 티가 안 남」) +12dB 판 — 층 1~4가 약 +13~16dB
+        { "body.heart.72", Au + "body/loud/SFX_BODY_Heartbeat_72.wav", "0.5" },
+        { "body.heart.86", Au + "body/loud/SFX_BODY_Heartbeat_86.wav", "0.7" },
+        { "body.heart.104", Au + "body/loud/SFX_BODY_Heartbeat_104.wav", "0.95" },
+        { "body.ear", Au + "body/loud/SFX_BODY_EarPressure.wav", "0.5" },   // 61차: +20dB 판(옛 판은 실제 -46dB로 들리지 않았다)
+        { "body.tinnitus", Au + "body/loud/SFX_BODY_Tinnitus.wav", "0.35" },   // 61차: +22dB 판(옛 판은 실제 -57dB)
+        { "body.heart.boundary", Au + "body/loud/SFX_BODY_HeartBoundary_2s.wav", "0.85" },   // 61차: +12dB 판
         { "body.breath", Au + "body/SFX_BODY_RoughBreath_*", "0.6" },
         { "body.breath.stop", Au + "body/SFX_BODY_BreathStop.wav", "0.85" },
         { "body.sigh", Au + "body/SFX_BODY_LongSigh.wav", "0.6" },
@@ -214,9 +214,12 @@ public static class DirectionSoundTableBuilder
         { "inspect.C-3.loop", Au + "class/SFX_CLASS_CeilingCrawl.wav", "0.8" },
         { "inspect.H-2.loop", Au + "hall/SFX_HALL_FountainTrickle_1.wav", "0.7" },
         { "inspect.H-3.loop", Au + "hall/SFX_HALL_CheckBellHum.wav", "0.7" },
-        { "inspect.L-3.loop", Au + "library/SFX_LIBRARY_PageTurn.wav", "0.7" },
+        { "inspect.H-4.kick", Au + "trash/SFX_TRASH_KickedCan_*", "1" },   // 65차: H-4 쓰레기통 이상 — 걷어차여 날아가는 깡통(BigSoundBank 0667 CC0 낙하음 이어 붙임)
+        { "duty.pickup", Au + "library/SFX_LIBRARY_PageTurn.wav", "0.8" },   // 65차: W15 biology 책 줍기
         { "inspect.S-3.loop", Au + "lab/SFX_LAB_SinkDrip_1.wav", "0.8" },
         { "inspect.T-2.loop", Au + "toilet/SFX_TOILET_PaperTear.wav", "0.7" },
+        { "inspect.H-5.loop", "Assets/_Game/Resources/Cctv/cctv_static.wav", "0.55" },   // 66차: 복도 스피커 지직거림
+        { "inspect.T-4.loop", Au + "hall/SFX_HALL_FountainTrickle_2.wav", "0.7" },   // 66차: 세면대 물 흐름
 
         // 점검 「가까이」(NightDutySfx) — +는 0.6초 뒤 이어서, inspect.near는 공용 충격음
         { "inspect.near", Au + "creature/SFX_STINGER_CloseImpact_*", "0.8" },
@@ -227,14 +230,20 @@ public static class DirectionSoundTableBuilder
         { "inspect.C-2.near+", Au + "hall/SFX_HALL_ChairDrag.wav", "0.9" },
         { "inspect.L-1.near", Au + "hall/SFX_HALL_ChairDrag.wav", "0.9" },
         { "inspect.S-1.near", Au + "lab/SFX_LAB_MannequinNeckTurn.wav", "1" },
+        { "model.neck", Au + "lab/SFX_LAB_MannequinNeckTurn.wav", "1" },   // 64차: 3일차부터 오래 바라보면 과학실 모형의 목이 꺾인다(ScienceModel)
         { "inspect.S-3.near", Au + "toilet/SFX_TOILET_DrainBreath.wav", "1" },
         { "inspect.T-2.near", Au + "toilet/SFX_TOILET_DoorClose.wav", "1" },
+        { "inspect.C-5.near", Au + "class/SFX_CLASS_TeacherChair.wav", "0.9" },   // 66차
+        { "inspect.K-2.near", Au + "hall/SFX_HALL_ChairDrag.wav", "0.8" },
+        { "inspect.H-6.near", Au + "hall/SFX_HALL_ChairDrag.wav", "0.8" },
+        { "inspect.L-4.near", Au + "class/SFX_CLASS_ChalkStroke.wav", "1" },
+        { "inspect.S-4.near", Au + "lab/SFX_LAB_Scrape.wav", "0.8" },
 
         // 플레이어 발소리(PlayerFootsteps) — 바닥별 걷기·뛰기. 과학실·경비실은 FootstepSplitter가 한 걸음씩 자른 것
         { "step.CLASS.walk", Au + "footsteps/SFX_STEP_CLASS_Wood_Walk_*", "1" },
         { "step.CLASS.run", Au + "footsteps/SFX_STEP_CLASS_Wood_Run_*", "1" },
-        { "step.HALL.walk", Au + "footsteps/SFX_STEP_HALL_Tile_Walk_*", "1" },
-        { "step.HALL.run", Au + "footsteps/SFX_STEP_HALL_Tile_Run_*", "1" },
+        { "step.HALL.walk", Au + "footsteps/SFX_STEP_GUARD_Walk_*", "1" },   // 61차(민: 「복도 발소리 경비실 발소리랑 같게」) — 옛 타일 판은 footsteps/SFX_STEP_HALL_Tile_*
+        { "step.HALL.run", Au + "footsteps/SFX_STEP_GUARD_Run_*", "1" },
         { "step.LIBRARY.walk", Au + "footsteps/SFX_STEP_LIBRARY_Walk_*", "1" },
         { "step.LIBRARY.run", Au + "footsteps/SFX_STEP_LIBRARY_Run_*", "1" },
         { "step.TOILET.walk", Au + "footsteps/SFX_STEP_TOILET_WetTile_Walk_*", "1" },

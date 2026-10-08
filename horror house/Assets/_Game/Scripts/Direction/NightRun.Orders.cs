@@ -73,13 +73,10 @@ namespace NightDuty
 
                 if (rows.RemoveAll(r => r.Id == "T-2") > 0) changed = true;
 
-                // 53차 플레이 점검: 화장실 항목이 묶인 T-1뿐이면 아무 지시도 화장실로 부르지 않아 여자아이(화장실 입장 방아쇠)가 나오지 않았다.
-                // 묶이지 않는 화장실 항목 하나(T-3 거울, 정상)를 둔다 — 화장실이 늦은 공간이면 호출 2로.
-                if (!rows.Exists(r => r.Id != t1 && SpaceIds.Canonical(r.Item.Space) == SpaceId.Toilet))
-                {
-                    rows.Add(new InspectionAssignment(InspectionCatalog.Find("T-3"), false, Band.Band0, SpaceIds.Canonical(plan.LateSpace) == SpaceId.Toilet));
-                    changed = true;
-                }
+                // 61차(민: 「변기 수칙 → 변기 지시 → 화장실 입장 → 소녀가 칸에 들어가는 것 목격 → 핏물·머리카락 → 정상 보고」):
+                // 화장실로 부르는 것은 변기 지시(T-1) 자신이다 — 여자아이 슬롯이 열릴 때 단독 지시로 나간다(<see cref="ReleaseToiletOrder"/>).
+                // 옛 53차의 「묶이지 않는 화장실 항목(T-3)」은 소녀보다 먼저 화장실로 불러 순서를 흐트러뜨려 뺐다.
+                // 그날 다른 이유로 이미 있는 화장실 항목은 그대로 둔다.
             }
 
             // 53차 플레이 점검: 방에서 터지는 조우(소년·노란 얼굴·모형 …)는 그 방에 점검 지시가 하나도 없으면 플레이어가 갈 까닭이 없어
@@ -90,6 +87,7 @@ namespace NightDuty
                 if (script == null) continue;
                 SpaceId room = SpaceIds.Canonical(script.Space);
                 if (room == SpaceId.None || room == SpaceId.Corridor) continue;   // 경비실(CCTV 조우)은 K-1이 있어야 CCTV를 보러 온다
+                if (reverse && slot.Encounter.Id == ProgramCatalog.ToiletGirl) continue;   // 61차: 변기 지시(T-1)가 소녀 슬롯에 맞춰 부른다
 
                 // 54차 QA: 슬롯 A·C 조우 방이 늦은 공간이면 그 방 점검이 호출 2(02:16)에만 나와, A(01:00~01:52)에는 아무도 그 방에 가지 않고
                 // C(03:08~)에는 이미 보고를 끝낸 뒤였다(3일차 화장실 여자아이가 슬롯 A · 화장실이 늦은 공간 — 조우가 열리지 않음).
@@ -120,7 +118,10 @@ namespace NightDuty
             return changed ? new InspectionPlan(plan.Day, rows, plan.LateSpace, plan.Call1ItemId) : plan;
         }
 
-        /// <summary>T4 날 변기(T-1)는 여자아이를 목격할 때까지 묶어 둔다(지시·정산·총량에서 뺌).</summary>
+        /// <summary>
+        /// T4 날 변기(T-1)는 묶어 둔다(지시·정산·총량에서 뺌). 61차: 목격이 아니라 여자아이 슬롯이 열릴 때(<see cref="ToiletOrderLeadMinutes"/>분 앞) 단독 지시로 푼다 —
+        /// 「변기 지시 → 화장실 입장 → 소녀 목격 → 핏물·머리카락 → 정상 보고」(민). 소녀를 본 뒤의 역보고·핏물은 그대로(<c>ReverseReportJudge</c>).
+        /// </summary>
         private static void HoldForProgram(InspectionPlan plan, NightProgram program)
         {
             if (plan == null || program == null || !program.Has(ProgramCatalog.ReverseReportRule)) return;
@@ -170,8 +171,34 @@ namespace NightDuty
                 Banned = _unavoidable.Banned
             };
 
+            ReleaseToiletOrder(input.Minute);
             InspectionOrder order = _orders.Tick(input);
             if (order != null) AnnounceOrder(order);
+        }
+
+        /// <summary>61차: 변기 지시가 여자아이 슬롯보다 이만큼(게임 분) 먼저 나간다 — 지시를 읽고 화장실에 들어서면 슬롯이 열려 있다.</summary>
+        public const float ToiletOrderLeadMinutes = 4f;
+
+        /// <summary>61차: T4 날 묶어 둔 변기(T-1)를 여자아이 슬롯에 맞춰 단독 지시로 낸다(한 번).</summary>
+        private static void ReleaseToiletOrder(float minute)
+        {
+            string t1 = InspectionCatalog.ReverseReportItem;
+            if (_orders == null || minute < 0f || !Board.IsHeld(t1) || _program == null || !_program.Has(ProgramCatalog.ReverseReportRule)) return;
+
+            bool due = true;   // 소녀가 편성에 없으면(있을 수 없지만) 곧바로
+            if (_tension != null)
+            {
+                foreach (EncounterRun r in _tension.Runs)
+                {
+                    if (r.Def.Id != ProgramCatalog.ToiletGirl) continue;
+                    float from, to;
+                    TensionDirector.SlotWindow(r.Slot, out from, out to);
+                    due = r.State != EncounterRunState.Waiting || r.CarriedOver || minute >= from - ToiletOrderLeadMinutes;
+                    break;
+                }
+            }
+
+            if (due) _orders.QueueWitness(t1, 0f);
         }
 
         private static void AnnounceOrder(InspectionOrder order)

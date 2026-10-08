@@ -11,6 +11,13 @@ public static class InspectionAnomalyPropsBuilder
 {
     public const string AssetPath = "Assets/_Game/Resources/InspectionAnomalyProps.asset";
 
+    /// <summary>66차 L-4 칠판 분필 글씨 글꼴(한글 손글씨 「느림보」 — 없으면 Pretendard Medium).</summary>
+    public static readonly string[] ChalkFontPaths =
+    {
+        "Assets/0. Main/99 Resources/FONT/neurimboGothicRegular SDF.asset",
+        "Assets/3.2 Programmer_Kim/99 Resources/01 Fonts/Pretendard/Pretendard-Medium SDF.asset"
+    };
+
     /// <summary>항목별 이상 연출 프리팹(김진선님 폴더 — 경로가 바뀌면 여기만 고친다).</summary>
     private static readonly string[,] EventPrefabs =
     {
@@ -54,6 +61,31 @@ public static class InspectionAnomalyPropsBuilder
             list.Add(e);
         }
 
+        // 66차: 근무 중에만 대상을 세우는 항목(RuntimeInspectTargets)은 씬 경로의 대표 소품으로 — [옮김]과 S-4 지구본(대역이 돈다).
+        for (int i = 0; i < RuntimeInspectTargets.Paths.Length; i++)
+        {
+            string id = RuntimeInspectTargets.Paths[i].Key;
+            InspectionItem runtimeItem = InspectionCatalog.Find(id);
+            if (runtimeItem == null || !NeedsProxy(runtimeItem)) continue;
+            bool have = false;
+            for (int k = 0; k < list.Count; k++) have |= list[k].itemId == id;
+            if (have) continue;
+            GameObject prop = GameObject.Find("/" + RuntimeInspectTargets.Paths[i].Value[0]);
+            GameObject src = prop != null && PrefabUtility.IsAnyPrefabInstanceRoot(prop) ? PrefabUtility.GetCorrespondingObjectFromOriginalSource(prop) : null;
+            if (src == null)
+            {
+                missing.Remove(id);
+                missing.Add(id + "(경로)");
+                continue;
+            }
+
+            missing.Remove(id);
+            InspectionAnomalyPropsSO.Entry e;
+            e.itemId = id;
+            e.prefab = src;
+            list.Add(e);
+        }
+
         InspectionAnomalyPropsSO so = AssetDatabase.LoadAssetAtPath<InspectionAnomalyPropsSO>(AssetPath);
         if (so == null)
         {
@@ -79,6 +111,9 @@ public static class InspectionAnomalyPropsBuilder
         }
 
         so.Events = events.ToArray();
+        so.ChalkFont = null;
+        for (int i = 0; i < ChalkFontPaths.Length && so.ChalkFont == null; i++) so.ChalkFont = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>(ChalkFontPaths[i]);
+        if (so.ChalkFont == null) missing.Add("칠판 글꼴");
         EditorUtility.SetDirty(so);
         AssetDatabase.SaveAssets();
 
@@ -87,6 +122,12 @@ public static class InspectionAnomalyPropsBuilder
         for (int i = 0; i < events.Count; i++) sb.Append(events[i].itemId).Append(" 연출=").Append(events[i].prefab.name).Append(' ');
         if (missing.Count > 0) sb.Append("· 프리팹 아님: ").Append(string.Join(", ", missing));
         return sb.ToString().Trim();
+    }
+
+    /// <summary>66차: 대역 소품이 필요한 항목 — [옮김] 틀과 S-4 지구본(정적 배칭이라 대역이 돈다).</summary>
+    public static bool NeedsProxy(InspectionItem item)
+    {
+        return item.Template == AnomalyTemplate.Move || item.Id == "S-4";
     }
 
     private static bool Has(JudgeTarget t, string id)

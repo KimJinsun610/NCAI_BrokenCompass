@@ -20,16 +20,16 @@ public sealed class DeskStarterKit : MonoBehaviour
     public const float Reach = 2.1f;
 
     /// <summary>손전등 옅은 외곽선이 보이는 거리(m).</summary>
-    public const float HintRange = 3f;
+    public const float HintRange = 6f;   // 66차 민: 「눈에 띄게」 — 경비실 어디서든
 
     /// <summary>손전등 소품 원본(씬 경로 — 복제해 책상에 둔다).</summary>
     public const string FlashlightTemplatePath = "Interior/Corridors/Flashlight";
 
     /// <summary>책상 위 손전등 자리(가로).</summary>
-    public static readonly Vector3 FlashlightSpot = new Vector3(32.42f, 0f, 47.33f);
+    public static readonly Vector3 FlashlightSpot = new Vector3(32.86f, 0f, 46.92f);   // 66차 민 스크린샷: 모니터 앞 빈 상판(TeacherTable_static (1)) 한가운데
 
     /// <summary>책상 위 배터리 자리(가로).</summary>
-    public static readonly Vector3 BatterySpot = new Vector3(32.40f, 0f, 47.78f);
+    public static readonly Vector3 BatterySpot = new Vector3(33.04f, 0f, 46.62f);
 
     private const float DeskY = 2.11f;
     private const float AimSlack = 0.12f;
@@ -66,6 +66,15 @@ public sealed class DeskStarterKit : MonoBehaviour
     public static void ShowNoFlashlight()
     {
         Notice("손전등이 없습니다 — 경비실 책상을 확인하십시오");
+    }
+
+    /// <summary>66차: 다 닳은 손전등 — 예비가 있으면 R, 없으면 책상 배터리를 안내.</summary>
+    public static void ShowEmptyHint()
+    {
+        FlashlightBattery b = NightRun.Battery;
+        if (b == null || !b.IsEmpty) return;
+        if (b.Spare > 0) Notice("[R] 배터리 갈아 끼우기");
+        else if (NightRun.DeskKit != null && NightRun.DeskKit.BatteryOnDesk) Notice("손전등 배터리가 비어 있습니다 — 책상 위 배터리를 주우십시오");
     }
 
     private static void Notice(string text)
@@ -143,6 +152,7 @@ public sealed class DeskStarterKit : MonoBehaviour
         {
             Camera cam = Camera.main;
             if (cam != null && showLight && Vector3.Distance(cam.transform.position, _flashlight.transform.position) <= HintRange) InteractionOutline.Request(_flashlight.transform, 0.65f);
+            if (cam != null && showBattery && Vector3.Distance(cam.transform.position, _battery.transform.position) <= HintRange) InteractionOutline.Request(_battery.transform, 0.65f);
             if (CanInteract()) aimed = Aim(showLight, showBattery);
         }
 
@@ -172,7 +182,8 @@ public sealed class DeskStarterKit : MonoBehaviour
         if (!ok) return false;
         ReleasePrompt();
         if (FlashlightPower.Active != null) FlashlightPower.Active.PlayPickup();
-        if (flashlight) Notice("[F] 손전등 켜기");
+        if (NightRun.Battery != null && NightRun.Battery.IsEmpty) ShowEmptyHint();   // 66차: 처음 손전등은 0%
+        else if (flashlight) Notice("[F] 손전등 켜기");
         return true;
     }
 

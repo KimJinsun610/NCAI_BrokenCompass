@@ -65,7 +65,27 @@ namespace NightDuty
             return true;
         }
 
-        /// <summary>충전량만 가득 채운다(예비는 그대로) — 61차 밤 재시작.</summary>
+        /// <summary>66차(민: 「처음 손전등은 배터리 수치가 0이게」): 다 닳은 채로 — 1일차 책상 손전등. 책상 배터리를 주워 R로 갈아야 켜진다.</summary>
+        public void StartEmpty()
+        {
+            Charge = 0f;
+        }
+
+        /// <summary>66차(민: 「배터리는 일차가 바뀔 때 100%가 되지 않아 — 이전 배터리 상태가 계속 이월」): 전날 충전량·예비를 그대로 이어받는다.</summary>
+        public void CarryFrom(FlashlightBattery previous)
+        {
+            if (previous == null) return;
+            Charge = previous.Charge;
+            Spare = previous.Spare;
+        }
+
+        /// <summary>66차: 충전량을 적어도 이만큼으로(이미 더 많으면 그대로) — 밤 재시작은 그 밤을 시작할 때보다 나빠지지 않는다.</summary>
+        public void RaiseTo(float charge)
+        {
+            if (charge > Charge) Charge = Math.Max(0f, Math.Min(1f, charge));
+        }
+
+        /// <summary>충전량만 가득 채운다(예비는 그대로) — 61차 밤 재시작(66차부터는 <see cref="RaiseTo"/>로 밤 시작 충전량까지).</summary>
         public void Refill()
         {
             Charge = 1f;

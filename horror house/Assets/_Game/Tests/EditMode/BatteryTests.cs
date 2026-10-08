@@ -156,17 +156,25 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 다음_밤은_새로_100퍼센트에서_예비_없이_시작한다()
+        public void 다음_밤은_전날_충전량과_예비를_이어받는다()
         {
+            // 66차(민: 「배터리는 일차가 바뀔 때 100%가 되지 않아 — 이전 배터리 상태가 계속 이월」). 전에는 밤마다 100%·예비 0.
             NightRun.BeginNight(1, () => 30);
+            Assert.AreEqual(0f, NightRun.Battery.Charge, 1e-5f, "1일차 책상 손전등은 0%");
             NightRun.FillBatteryPlan(Caches(6, 0, 1));
             NightRun.TakeBattery(NightRun.BatteryPlan.Placed[0]);
-            NightRun.Battery.Drain(200f);
+            NightRun.Battery.DebugSet(0.4f, 1);
             NightRun.AbandonNight();
 
             NightRun.BeginNight(2, () => 30);
-            Assert.AreEqual(1f, NightRun.Battery.Charge, 1e-5f);
-            Assert.AreEqual(0, NightRun.Battery.Spare);
+            Assert.AreEqual(0.4f, NightRun.Battery.Charge, 1e-5f);
+            Assert.AreEqual(1, NightRun.Battery.Spare);
+            Assert.AreEqual(0.4f, NightRun.NightStartCharge, 1e-5f);
+
+            NightRun.Battery.Drain(500f);
+            NightRun.DebugForceCapture(FearAxis.Illuminance);
+            NightRun.RestartAfterCapture();
+            Assert.AreEqual(0.4f, NightRun.Battery.Charge, 1e-5f, "재시작은 밤 시작 충전량까지 — 가득 채우지 않는다");
             Assert.IsFalse(NightRun.BatteryPlan.Filled, "칸은 화면 쪽이 그 밤 씬으로 채운다");
         }
 

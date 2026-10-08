@@ -11,6 +11,13 @@ namespace NightDuty
         private static BatteryPlan _batteryPlan;
         private static List<string> _batteryYesterday = new List<string>();
         private static DeskKit _deskKit;
+        private static float _nightStartCharge = 1f;
+
+        /// <summary>66차: 이 밤을 시작할 때의 충전량(전날에서 이어받은 값, 1일차는 0). 재시작은 이보다 낮아지지 않는다.</summary>
+        public static float NightStartCharge
+        {
+            get { return _nightStartCharge; }
+        }
 
         /// <summary>66차: 오늘 경비실 책상 위 시작 물품(1일차 손전등·배터리). 배터리가 꺼져 있거나 밤 전이면 null.</summary>
         public static DeskKit DeskKit
@@ -77,8 +84,12 @@ namespace NightDuty
                 return;
             }
 
+            FlashlightBattery previous = _battery;
             _battery = new FlashlightBattery();
             _deskKit = new DeskKit(Day);   // 66차: 1일차는 손전등·배터리가 책상 위에
+            if (_deskKit.FlashlightOnDesk) _battery.StartEmpty();   // 66차 민: 「처음 손전등은 배터리 수치가 0이게」 — 책상 배터리로 갈아 끼워야 켜진다
+            else _battery.CarryFrom(previous);   // 66차 민: 「일차가 바뀔 때 100%가 되지 않아 — 이전 배터리 상태가 계속 이월」(충전량·예비)
+            _nightStartCharge = _battery.Charge;
             System.Random rng = BatterySeed.HasValue ? new System.Random(BatterySeed.Value * 31 + Day) : new System.Random();
             _batteryPlan = new BatteryPlan(Day, _batteryYesterday, rng);
         }
@@ -108,6 +119,7 @@ namespace NightDuty
             _battery = null;
             _batteryPlan = null;
             _deskKit = null;
+            _nightStartCharge = 1f;
             _batteryYesterday = new List<string>();
             if (clearSwitches)
             {

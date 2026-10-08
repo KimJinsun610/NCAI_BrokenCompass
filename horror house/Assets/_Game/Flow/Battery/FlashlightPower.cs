@@ -307,6 +307,7 @@ public sealed class FlashlightPower : MonoBehaviour
         }
 
         PlayClick(0.55f, 1.15f);
+        DeskStarterKit.ShowEmptyHint();   // 66차: 다 닳은 손전등 — R 또는 책상 배터리 안내
         if (Swapping || relay.Root == null || NightRun.Battery == null || !NightRun.Battery.IsEmpty) return;
         // 다 닳은 손전등 — 0.2초 희미한 빛(판정 신호 없음).
         relay.Root.SetActive(true);

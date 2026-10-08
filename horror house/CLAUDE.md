@@ -3,6 +3,12 @@
 이 파일은 이 저장소에서 코드를 다루는 Claude 세션을 위한 안내서입니다.
 **답변·문서·코드 주석은 모두 한국어로 작성합니다.**
 
+> **개정: 2026-10-08(66차 ②). 책상 손전등·배터리 이월 — 민: 「처음 손전등은 배터리 수치가 0이게 해 줘. 그리고 눈에 띄게 이 테이블(모니터 앞 빈 상판) 위에 올려 줘」 · 「배터리는 일차가 바뀔 때 100%가 되지 않아. 이전 배터리 상태가 계속 이월되도록」. EditMode 493/493, PlayScene: 1일차 0% → 손전등 줍고 F 거절 → 책상 배터리 줍고 R → 100% → 60초 켜 두고 2일차로 → 같은 충전량(39%)으로 시작, 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
+> ⓐ **0% 시작**: `FlashlightBattery.StartEmpty` — 1일차(책상 손전등) 밤은 충전량 0. F를 누르면 헛딸깍 + 안내 「[R] 배터리 갈아 끼우기」(예비가 있을 때) · 「손전등 배터리가 비어 있습니다 — 책상 위 배터리를 주우십시오」(`DeskStarterKit.ShowEmptyHint`, `FlashlightPower.OnDryClick`이 부른다).
+> ⓑ **자리**: 모니터 앞 빈 상판 `FloorCorridors_1st/TeacherTable_static (1)` 한가운데 — 손전등 (32.86, 46.92), 배터리 (33.04, 46.62). 옅은 외곽선 6m(손전등·배터리 둘 다).
+> ⓒ **이월**: `NightRun.BeginBattery`가 전날 배터리의 충전량·예비를 `CarryFrom`(1일차·새 회차만 새로). `NightRun.NightStartCharge`. **재시작은 가득 채우지 않고 `RaiseTo(밤 시작 충전량)`** — 체크포인트 때가 더 많으면 그대로(61차 「닳은 채 이어지면 안 된다」는 지키고, 이월된 배터리를 재시작으로 공짜로 채우지 않는다). 1일차 줍기 전 체크포인트면 밤 시작이 0이라 0.
+> **되살리지 마십시오:** 「밤마다 100%·예비 0」 · 「재시작하면 가득」 · 「1일차 손전등 100%」 · 「책상 물품을 모니터 뒤 교탁(TeacherTable02)에」.
+
 > **개정: 2026-10-08(66차). 플레이테스트 피드백 5단계 마무리 ~ 8단계 — 민(자리를 비우며): 「점검은 안 겹칠수록 좋아. 점검 항목을 추가해도 되고 필요하면 하루 점검을 줄여도 돼. 마지막 단계까지 진행해 · HorrorEvent_CabinetCreak·CabinetBang·CabinetRampage·DrawerRampage·DoorSlam·OpenDoorSlam이 진선님 연출 프리셋 · 직접 닫은 문이 자동으로 열림은 이해한 게 맞아 · 책상 위 배터리는 1일차에만, 손전등도 같이 책상에 놓고, 손전등을 먹으면 그때부터 F로 켤 수 있도록」. EditMode 492/492(비동기), PlayScene 실측(QA 캡처): 새 점검 이상 12개 모두 섬 · 지구본 초당 40° 회전 · 선반 플라스크 붉게 발광 · 세면대 오른쪽 꼭지 물줄기 · 도서관 칠판 분필 글씨 · 경비실 의자 하나 돌아앉음 · 3일차 늦은 T-3이 열린 뒤 플레이어가 떠나자 그때 섬(앞에 서 있는 동안은 대기) · 조도 4구간 과학실 붉은 기 · C4 등 초록 · 1일차 손전등 없이 F 거절 → 책상 손전등 줍자 켜짐·예비 +1 · 2일차 진선님 OpenDoorSlam이 과학실 앞 문에 서고 구역에 들어서자 쾅 · 닫은 문(복도 DoorNarrow (3))이 떠나자 다시 열림, 에러 0, 플레이 뒤 스위치 false·timeScale 1·씬 변경 없음.**
 > ⓐ **점검 29개**(복도 6 · 교실 5 · 과학실 6 · 화장실 5 · 도서관 4 · 경비실 3): 새 H-5 스피커[소리] · H-6 벤치[옮김] · C-4 시계(벽에서 떨어져 바닥) · C-5 교사 의자(돌아앉음) · S-4 지구본(혼자 돎) · S-5 선반 플라스크(붉게 발광·깜빡임) · S-6 세계 지도(기울어짐·세로·거꾸로, 겹친 두 번째 지도는 숨김) · T-4 세면대 넷 중 하나 물 · T-5 수건(바닥에) · L-4 도서관 칠판(분필 글씨, 글꼴 `neurimboGothicRegular SDF`) · L-5 도서관 쓰레기통(**씬에서 원래 누워 있다 — 이상이면 세워져 있다**, 문구 「바닥에 쓰러져 있습니다」) · K-2 경비실 접이식 의자 둘 중 하나 돌아앉음 · K-3 경비실 화분(쓰러짐). ID L-3·H-4(사물함)는 다시 쓰지 않는다.
 > ⓑ **대상**: 씬은 고치지 않았다 — `Flow/Presentation/RuntimeInspectTargets`(자동)가 근무 중 `inspect.<ID>`를 세운다(경로 표 `Paths`). 여러 소품 항목(S-5·T-4·K-2)은 씬 뿌리 묶음 `Inspect group <ID>` + `Flow/Interaction/OutlineGroup`(외곽선이 묶인 소품들 — `InteractionOutline.RenderersOf`가 읽는다). 정적 배칭 소품의 대역은 `InspectionAnomalyPropsBuilder`가 이 경로 표로도 채운다([옮김] + S-4).
@@ -901,7 +907,7 @@ unity command console_status   # 컴파일 실패 여부와 콘솔 카운트
 ### 3.3 검증
 
 1. 코드 수정 후 `Assets/Refresh` → 25~30초 뒤 `recompile_status` → `console_status`로 **컴파일 에러 0**을 확인합니다.
-2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 492/492 통과**(2026-10-08 66차 실측, 비동기). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
+2. `run_tests`로 EditMode 테스트를 돌립니다. **기준: 493/493 통과**(2026-10-08 66차 ② 실측, 비동기). 전체 실행은 `async_tests: true`로 — 동기 실행이 에디터를 멈춘 적이 있습니다.
    - **`DesignDriftTests`가 드리프트 감시입니다.** 일차 하한이 줄지 않고 Band4에 닿지 않는지, 그리고 **이 파일 본문에 옛 구간 경계가 남아 있는지**를 검사합니다. 여기가 깨지면 값이 아니라 **두 곳이 서로 다른 말을 하고 있다**는 뜻입니다. 결과가 크면 파일로 저장되므로 요약만 grep합니다. (옛 24장 카드의 에셋↔빌더·축 쿼터·죽은 카드 검사와 `CardScenarioTests`는 2026-10-03에 카드와 함께 지웠습니다.)
 3. 플레이 모드 확인은 근무 씬 `Assets/0. Main/01 Scene/PlayScene.unity`에서 합니다. **개발자 모드(`-` 키, 김진선님 `DevModePanel` — 64차에 옛 F3 콘솔을 합침)**로 축·시계·조우·수칙 단서·점검을 조작합니다. (옛 `_Test_AxisRig` 씬·판정 디버그 패널·`DebugAxisDriver`는 2026-10-03 폐기.)
 4. 플레이 중에는 `set_component_properties`가 안 됩니다 → `eval`. `FindAnyObjectByType`는 DontSave 오브젝트를 찾지 못합니다.
@@ -988,7 +994,7 @@ Assets/_Game/
 │   │   └── Tension/   TensionDirector · EncounterScripts · SurpriseBudget · StagePoints · DirectionEvent
 │   ├── Stats/         FearAxisSystem · BandResolver · DayFloor · DaySummary · DutyLogEntry · NightSnapshot · RestartPolicy · WarningLedger
 │   └── Editor/        NightDuty.Editor.asmdef — InspectionTargetPlacer · RuleAnchorPlacer
-├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 492개(2026-10-08 66차)
+├── Tests/EditMode/NightDuty.Tests.EditMode.asmdef   EditMode 테스트 493개(2026-10-08 66차 ②)
 ├── Resources/         NightDeckTable(빈 폴백) · CaptureCardLook(재시작 카드의 YOU DIED) · CaptureCast(붙잡힘 연출표) · FinaleCast(피날레 배역표) · DoorPolicy · CctvConfig · AmbienceConfig · DirectionSounds · DirectionScreenFx · IlluminanceTone · InspectionAnomalyProps · NightDutyLightmapScale.shader(불 꺼진 교실 블릿) · StandIns/
 └── Flow/              asmdef 없음 → Assembly-CSharp. 씬과 코어를 잇는 구동기 (§4.4)
     │                  NightRunDriver · NightDutyResultMapper · SpaceZones(공간·구역 신호) · TabletBridge · FlowAutoInstall · SpaceLights(빈 껍데기)

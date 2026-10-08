@@ -326,7 +326,7 @@ namespace NightDuty
                 // 54차: [근무 지시] — 점검 공백을 걷고·닫고·끄고·적는 업무로 메운다.
                 BeginDuties();
 
-                // 56차: 손전등 배터리 — 밤 시작 100%·예비 0, 칸 자리는 화면 쪽이 씬의 칸으로 채운다.
+                // 56차: 손전등 배터리 — 칸 자리는 화면 쪽이 씬의 칸으로 채운다. 66차: 충전량·예비는 전날에서 이어받는다(1일차는 책상 손전등 0%).
                 BeginBattery();
             }
 
@@ -723,7 +723,13 @@ namespace NightDuty
             from.RestoreParts(SnapshotParts());
             // 61차(플레이테스트: 「배터리 — 밤이 초기화되면 이어지면 안 된다」): 체크포인트에서 다시 해도 손전등은 가득 찬 채로 시작한다.
             // 예비·칸 자리는 스냅샷 그대로(주운 예비를 잃지 않게).
-            if (_battery != null) _battery.Refill();
+            if (_battery != null)
+            {
+                // 66차(민: 배터리 이월): 가득 채우지 않고 「그 밤을 시작할 때의 충전량」까지만 — 체크포인트 때가 더 많으면 그대로.
+                // 61차 「체크포인트에서 닳은 채로 이어지면 안 된다」는 지키고, 이월된 배터리를 재시작으로 공짜로 채우지 않는다. 1일차 책상 손전등은 밤 시작이 0이라 0.
+                _battery.RaiseTo(_nightStartCharge);
+            }
+
             ParadoxAfterRestore();
 
             BeginNightCore(Day, _clockMinutes, true);

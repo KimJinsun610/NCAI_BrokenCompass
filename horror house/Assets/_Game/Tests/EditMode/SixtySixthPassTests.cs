@@ -86,6 +86,18 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void 처음_손전등은_다_닳은_채로_예비로_갈아야_켜진다()
+        {
+            FlashlightBattery b = new FlashlightBattery();
+            b.StartEmpty();
+            Assert.IsTrue(b.IsEmpty, "민: 「처음 손전등은 배터리 수치가 0이게」");
+            Assert.IsFalse(b.Swap(), "예비가 없으면 못 간다");
+            Assert.IsTrue(b.TryPocket(), "책상 배터리");
+            Assert.IsTrue(b.Swap());
+            Assert.AreEqual(1f, b.Charge);
+        }
+
+        [Test]
         public void 닷새_점검표에서_같은_항목은_두_번까지()
         {
             FearAxisSystem axes = new FearAxisSystem();

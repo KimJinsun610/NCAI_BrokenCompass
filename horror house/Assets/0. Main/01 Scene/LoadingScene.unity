@@ -254,7 +254,7 @@ MonoBehaviour:
   fade: {fileID: 532523530}
   tipTable: {fileID: 11400000, guid: 23d1095ec2f4bed4d9935472e69565b1, type: 2}
   bgmSource: {fileID: 127989360}
-  minDisplayTime: 3
+  minDisplayTime: 3.5
   fadeDuration: 0.5
   gaugeFollowSpeed: 1.5
 --- !u!4 &127989362

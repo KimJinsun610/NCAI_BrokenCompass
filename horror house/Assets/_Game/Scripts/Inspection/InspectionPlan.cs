@@ -156,7 +156,7 @@ namespace NightDuty
         /// <summary>점검 공간 상한(경비실 포함).</summary>
         public const int MaxSpaces = 4;
 
-        private static readonly int[] ItemsByDay = { 5, 6, 6, 7, 7 };   // 57차(민: 「점검도 빨리빨리 안 나와서 지겨웠다 — 맵이 좁으니 스피디하게」): 5·5·6·6·7 → 5·6·7·7·8. 66차(민: 「점검은 안 겹칠수록 좋아, 필요하면 하루 점검을 줄여도 돼」): 항목 29개와 맞춰 5·6·6·7·7
+        private static readonly int[] ItemsByDay = { 4, 5, 5, 6, 6 };   // 67차(민: 「물품 점검이 비중이 더 높은데, 지시 사항과 비중이 균일했으면」): 5·6·6·7·7 → 4·5·5·6·6(근무 지시 3·3·4·4·4와 번갈아).   // 57차(민: 「점검도 빨리빨리 안 나와서 지겨웠다 — 맵이 좁으니 스피디하게」): 5·5·6·6·7 → 5·6·7·7·8. 66차(민: 「점검은 안 겹칠수록 좋아, 필요하면 하루 점검을 줄여도 돼」): 항목 29개와 맞춰 5·6·6·7·7
         private static readonly int[] AnomaliesByDay = { 2, 2, 3, 3, 3 };
 
         /// <summary>그날 점검 항목 수.</summary>
@@ -180,7 +180,7 @@ namespace NightDuty
     /// <summary>
     /// 이상 배정기(최종 기획서 「이상 배정」). 회차 동안 살아 있으며 공간을 처음 점검한 날을 기억한다.
     /// <list type="bullet">
-    /// <item>점검 수(그중 이상): 5(2) · 6(2) · 6(3) · 7(3) · 7(3)(66차). 점검 공간은 경비실 포함 4곳 이하이고, 2일차부터는 좌·우 동에 각각 하나 이상.</item>
+    /// <item>점검 수(그중 이상): 4(2) · 5(2) · 5(3) · 6(3) · 6(3)(67차). 점검 공간은 경비실 포함 4곳 이하이고, 2일차부터는 좌·우 동에 각각 하나 이상.</item>
     /// <item>1일차는 튜토리얼 고정: 복도·교실·과학실 + 경비실, 이상은 S-2 현미경 불(빛, 과학실이라 호출 2에 열림)과 C-1 화분(옮김), 첫 점검 K-1은 정상. 복도는 정상 항목 하나.</item>
     /// <item>이상의 축은 그 축의 <b>연출 구간</b>이 1 이상일 때만 고르고, 구간이 높을수록 가중치가 크다(가중치 = 구간 번호).</item>
     /// <item>공간을 처음 점검하는 날에는 그 공간에 이상을 두지 않는다(1일차 튜토리얼 제외).</item>
@@ -308,8 +308,11 @@ namespace NightDuty
             }
 
             rest.RemoveAll(x => x.Space == Day1LateSpace);   // 늦은 항목은 하나만
-            InspectionItem extra = PickFresh(rest);
-            list.Add(new InspectionAssignment(extra, false, Band.Band0, false));
+            if (list.Count < InspectionQuota.Items(1))   // 67차: 1일차 4항목이면 덧붙이지 않는다
+            {
+                InspectionItem extra = PickFresh(rest);
+                list.Add(new InspectionAssignment(extra, false, Band.Band0, false));
+            }
 
             string call1 = PickCall1(list, InspectionCatalog.FirstInspection);
             return new InspectionPlan(1, list, Day1LateSpace, call1);
@@ -350,13 +353,19 @@ namespace NightDuty
                 list.Add(new InspectionAssignment(item, true, Intensity(shown, item.Axis), false));
             }
 
-            // 2) 고른 공간마다 적어도 한 항목.
-            for (int s = 0; s < spaces.Count; s++)
+            // 2) 고른 공간마다 적어도 한 항목 — 67차: 하루 항목 수(4·5·5·6·6)를 넘기면 그 공간은 뺀다.
+            //    다만 좌·우 동이 비면 넘겨서라도 둔다(이상 셋이 한 동에 몰린 날). 비어 있는 동의 공간을 먼저 본다.
+            List<SpaceId> order = new List<SpaceId>(spaces);
+            order.Sort((x, y) => WingCovered(list, x).CompareTo(WingCovered(list, y)));
+            for (int s = 0; s < order.Count; s++)
             {
-                if (HasSpace(list, spaces[s])) continue;
-                InspectionItem item = PickFresh(InspectionCatalog.InSpace(spaces[s]));
+                if (HasSpace(list, order[s])) continue;
+                if (list.Count >= total && WingCovered(list, order[s])) continue;
+                InspectionItem item = PickFresh(InspectionCatalog.InSpace(order[s]));
                 list.Add(new InspectionAssignment(item, false, Band.Band0, false));
             }
+
+            spaces = UsedSpaces(list, spaces);
 
             // 3) 나머지는 고른 공간의 남은 항목에서 정상으로.
             List<InspectionItem> rest = new List<InspectionItem>();
@@ -593,6 +602,31 @@ namespace NightDuty
             }
 
             return false;
+        }
+
+        /// <summary>그 공간의 동(좌·우)에 이미 항목이 있는지. 가운데(복도)는 늘 참.</summary>
+        private static bool WingCovered(List<InspectionAssignment> list, SpaceId space)
+        {
+            Wing wing = SpaceIds.WingOf(space);
+            if (wing != Wing.Left && wing != Wing.Right) return true;
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (SpaceIds.WingOf(list[i].Item.Space) == wing) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>고른 공간 중 실제로 항목이 들어간 것(고른 순서 그대로).</summary>
+        private static List<SpaceId> UsedSpaces(List<InspectionAssignment> list, List<SpaceId> picked)
+        {
+            List<SpaceId> used = new List<SpaceId>();
+            for (int i = 0; i < picked.Count; i++)
+            {
+                if (HasSpace(list, picked[i])) used.Add(picked[i]);
+            }
+
+            return used;
         }
 
         private static bool HasSpace(List<InspectionAssignment> list, SpaceId space)

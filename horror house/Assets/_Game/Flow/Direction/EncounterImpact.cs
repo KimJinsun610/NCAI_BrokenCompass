@@ -158,12 +158,19 @@ public sealed class EncounterImpact : MonoBehaviour
         return encounterId == ProgramCatalog.YellowFace || encounterId == ProgramCatalog.SuitMan;
     }
 
+    /// <summary>70차: 대면 = 달려오기 시작, 점프스케어는 덮치는 순간(<see cref="MannequinRush"/>가 <see cref="Hit"/>를 부른다) — 모형 급습.</summary>
+    public static bool HitsOnArrival(string encounterId)
+    {
+        return encounterId == ProgramCatalog.ModelRush;
+    }
+
     /// <summary>덮치기 점프스케어 — 엠비언트를 순간 끊고 스팅어 + 심박 급등. 시체 낙하는 민이 준 전용 소리(<c>stinger.corpse</c>, 60차).</summary>
     public void Hit(string encounterId)
     {
         AmbiencePlayer amb = AmbiencePlayer.Active;
         if (amb != null) amb.Duck(0.1f, 0.06f);
         if (encounterId != ProgramCatalog.CeilingLegs || !PlayKey("stinger.corpse")) PlayTier(TierOf(encounterId));
+        NightDutyMixer.Spotlight(2.5f);   // 67차(민: 「연출 사운드가 다른 효과음보다 더 강조되게」)
         BodyMeter.Startle();
         _restoreAt = Time.time + MaxDuckSeconds;
     }
@@ -188,7 +195,7 @@ public sealed class EncounterImpact : MonoBehaviour
         switch (kind)
         {
             case Kind.Hit:
-                if (HitsWhenSeen(encounterId))
+                if (HitsWhenSeen(encounterId) || HitsOnArrival(encounterId))
                 {
                     if (amb != null) amb.Duck(0.3f, 0.4f);   // 60차: 조용해지기만 — 마주치는 순간에 Hit
                     break;
@@ -206,6 +213,8 @@ public sealed class EncounterImpact : MonoBehaviour
                     amb.Duck(0.04f, 0.05f);
                     amb.PlayStinger("stinger_breath", 0.9f);
                 }
+
+                NightDutyMixer.Spotlight(1.8f);   // 67차
 
                 PlayTier(TierOf(encounterId), 0.8f);
                 BodyMeter.Startle();

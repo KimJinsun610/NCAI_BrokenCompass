@@ -3,7 +3,7 @@ using NUnit.Framework;
 
 namespace NightDuty.Tests
 {
-    /// <summary>64차(2026-10-07 플레이테스트 피드백 4단계) — 고정 몹(과학실 인체 모형·사람 나무) 응시, 모형 이동, S-1 문구.</summary>
+    /// <summary>64차(2026-10-07 플레이테스트 피드백 4단계) — 고정 몹(인체 모형 — 70차부터 복도 끝 모형 · 사람 나무) 응시, 모형 이동, S-1 문구.</summary>
     public sealed class SixtyFourthPassTests
     {
         [SetUp]
@@ -31,7 +31,8 @@ namespace NightDuty.Tests
         [Test]
         public void 고정_몹은_인체_모형과_사람_나무뿐이다()
         {
-            Assert.IsTrue(FixedMobStare.IsFixedMob(FinalCues.ModelTarget));
+            Assert.IsTrue(FixedMobStare.IsFixedMob(FinalCues.HallFigureTarget));
+            Assert.IsFalse(FixedMobStare.IsFixedMob(FinalCues.ModelTarget), "70차: 과학실 모형의 응시 붙잡힘은 복도 끝 모형으로 옮겼다");
             Assert.IsTrue(FixedMobStare.IsFixedMob(FinalCues.H1Object));
             Assert.IsFalse(FixedMobStare.IsFixedMob(FinalCues.BoyTarget));
             Assert.IsFalse(FixedMobStare.IsFixedMob(string.Empty));
@@ -52,10 +53,10 @@ namespace NightDuty.Tests
         public void 유예_안에서는_오르지_않고_넘으면_오래_볼수록_빨리_오른다()
         {
             FixedMobStare s = new FixedMobStare();
-            Assert.AreEqual(0, Feed(s, FinalCues.ModelTarget, 1.5f, 3), "3일차 유예 1.5초");
+            Assert.AreEqual(0, Feed(s, FinalCues.HallFigureTarget, 1.5f, 3), "3일차 유예 1.5초");
             Assert.AreEqual(1.5f, s.Seconds, 1e-3f);
-            int first = Feed(s, FinalCues.ModelTarget, 2f, 3);    // 0~2초: 3 + 0.5t
-            int second = Feed(s, FinalCues.ModelTarget, 2f, 3);   // 2~4초
+            int first = Feed(s, FinalCues.HallFigureTarget, 2f, 3);    // 0~2초: 3 + 0.5t
+            int second = Feed(s, FinalCues.HallFigureTarget, 2f, 3);   // 2~4초
             Assert.AreEqual(7, first, "∫(3+0.5t) 0~2 = 7");
             Assert.AreEqual(9, second, "∫(3+0.5t) 2~4 = 9");
             Assert.Greater(second, first);
@@ -73,9 +74,9 @@ namespace NightDuty.Tests
         public void 잠깐_빗나간_시선은_이어서_세고_오래_떼면_처음부터()
         {
             FixedMobStare s = new FixedMobStare();
-            Feed(s, FinalCues.ModelTarget, 1f, 3);
+            Feed(s, FinalCues.HallFigureTarget, 1f, 3);
             Feed(s, string.Empty, 0.2f, 3);
-            Assert.AreEqual(FinalCues.ModelTarget, s.TargetId, "0.2초 빗나감은 끊김이 아니다");
+            Assert.AreEqual(FinalCues.HallFigureTarget, s.TargetId, "0.2초 빗나감은 끊김이 아니다");
             Assert.AreEqual(1f, s.Seconds, 1e-3f, "빗나간 동안은 세지 않는다");
 
             Feed(s, string.Empty, 0.3f, 3);
@@ -87,7 +88,7 @@ namespace NightDuty.Tests
         public void 다른_고정_몹으로_옮기면_처음부터_센다()
         {
             FixedMobStare s = new FixedMobStare();
-            Feed(s, FinalCues.ModelTarget, 2f, 3);
+            Feed(s, FinalCues.HallFigureTarget, 2f, 3);
             Feed(s, FinalCues.H1Object, 0.1f, 3);
             Assert.AreEqual(FinalCues.H1Object, s.TargetId);
             Assert.AreEqual(0.1f, s.Seconds, 1e-4f);
@@ -96,7 +97,7 @@ namespace NightDuty.Tests
         [Test]
         public void 재시작_카드는_응시_출처를_사람말로_쓴다()
         {
-            StringAssert.Contains("인체 모형", FixedMobStare.SourceName(FixedMobStare.SourcePrefix + FinalCues.ModelTarget));
+            StringAssert.Contains("인체 모형", FixedMobStare.SourceName(FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget));
             StringAssert.Contains("사람 나무", FixedMobStare.SourceName(FixedMobStare.SourcePrefix + FinalCues.H1Object));
             Assert.IsNull(FixedMobStare.SourceName("G1"));
             Assert.IsNull(FixedMobStare.SourceName(null));
@@ -113,20 +114,20 @@ namespace NightDuty.Tests
         {
             NightRun.FixedMobStareEnabled = true;
             NightRun.BeginNight(3, () => 0);
-            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.ScienceRoom));
+            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
             int before = NightRun.Axes.GetValue(FearAxis.Layout);
 
-            Gaze(FinalCues.ModelTarget, 1.5f);
+            Gaze(FinalCues.HallFigureTarget, 1.5f);
             Assert.AreEqual(before, NightRun.Axes.GetValue(FearAxis.Layout), "유예 안");
 
-            Gaze(FinalCues.ModelTarget, 2f);
+            Gaze(FinalCues.HallFigureTarget, 2f);
             Assert.AreEqual(before + 7, NightRun.Axes.GetValue(FearAxis.Layout));
-            Assert.IsTrue(NightRun.RaisedSources(FearAxis.Layout).Contains(FixedMobStare.SourcePrefix + FinalCues.ModelTarget));
+            Assert.IsTrue(NightRun.RaisedSources(FearAxis.Layout).Contains(FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget));
 
-            Gaze(FinalCues.ModelTarget, 40f);
+            Gaze(FinalCues.HallFigureTarget, 40f);
             Assert.IsTrue(NightRun.IsCaptured, "계속 보면 끝내 붙잡힌다");
             Assert.AreEqual(FearAxis.Layout, NightRun.Cause.Axis);
-            Assert.AreEqual(FixedMobStare.SourcePrefix + FinalCues.ModelTarget, NightRun.Cause.SourceId, "붙잡힘 장면이 인체 모형 컷신을 고르는 열쇠");
+            Assert.AreEqual(FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget, NightRun.Cause.SourceId, "붙잡힘 장면이 인체 모형 컷신을 고르는 열쇠");
         }
 
         [Test]
@@ -146,7 +147,7 @@ namespace NightDuty.Tests
             NightRun.BeginNight(3, () => 0);
             NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.ScienceRoom));
             int before = NightRun.Axes.GetValue(FearAxis.Layout);
-            Gaze(FinalCues.ModelTarget, 5f);
+            Gaze(FinalCues.HallFigureTarget, 5f);
             Assert.AreEqual(before, NightRun.Axes.GetValue(FearAxis.Layout));
             Assert.AreEqual(5f, NightRun.Stare.Seconds, 1e-3f, "목 꺾임은 꺼져 있어도 읽는다");
         }
@@ -155,7 +156,7 @@ namespace NightDuty.Tests
         public void 새_밤이면_응시를_처음부터_센다()
         {
             NightRun.BeginNight(3, () => 0);
-            Gaze(FinalCues.ModelTarget, 2f);
+            Gaze(FinalCues.HallFigureTarget, 2f);
             NightRun.AbandonNight();
             NightRun.BeginNight(4, () => 0);
             Assert.AreEqual(0f, NightRun.Stare.Seconds, 1e-5f);

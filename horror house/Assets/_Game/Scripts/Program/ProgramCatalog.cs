@@ -247,7 +247,7 @@ namespace NightDuty
             new EncounterDef(Footsteps, "달려오는 발소리", A, SpaceId.Corridor, "H3", 3, "footsteps", new[] { Need(A, Band.Band2) }),
             new EncounterDef(CallingVoice, "부르는 목소리", A, SpaceId.Corridor, "H4", 2, "voice", new[] { Need(A, Band.Band3) }),
             new EncounterDef(YellowFace, "노란 얼굴", I, SpaceId.Library, "L3", 3, "duck", new[] { Need(I, Band.Band1) }),
-            new EncounterDef(HallEndFigure, "복도 끝에 선 자", I, SpaceId.ScienceRoom, "S5", 3, "meatman", new[] { Need(I, Band.Band2) }),
+            new EncounterDef(HallEndFigure, "복도 끝에 선 자", I, SpaceId.ScienceRoom, "S5", 3, "dummy", new[] { Need(I, Band.Band2) }),   // 70차: 인체 모형, 모형 급습 전날(ProgramDirector 날짜 사슬)
             new EncounterDef(ModelRush, "모형 급습", I, SpaceId.ScienceRoom, "S5", 5, "dummy", new[] { Need(I, Band.Band3), Need(L, Band.Band2) }, true),
             new EncounterDef(ScienceBlackout, "과학실 소등", I, SpaceId.ScienceRoom, "S4", 3, "science.dark", new[] { Need(I, Band.Band2) }),
             new EncounterDef(ToiletBlackout, "화장실 소등", I, SpaceId.Toilet, "T3", 3, "toilet.dark", new[] { Need(I, Band.Band2) }),

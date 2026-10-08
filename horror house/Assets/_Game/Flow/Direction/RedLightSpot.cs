@@ -26,13 +26,13 @@ public sealed class RedLightSpot : MonoBehaviour
     private static RedLightSpot s_active;
 
     /// <summary>빛이 닿는 거리(m).</summary>
-    public const float LightRange = 4.2f;
+    public const float LightRange = 3.4f;   // 67차(민: 「초록색 빛 수칙 때 모델이 다 발광해서 부자연스럽다」): 4.2 → 3.4
 
     /// <summary>66차: C4 수칙 등의 색(초록). 교실 단서 물들임(DirectionStage C4)도 이 색.</summary>
-    public static readonly Color CueColor = new Color(0.12f, 1f, 0.3f);
+    public static readonly Color CueColor = new Color(0.42f, 0.95f, 0.55f);   // 67차: 순초록(0.12, 1, 0.3)은 같은 세기에서도 붉은빛보다 밝기가 세 배라 방이 야간 투시경처럼 통째로 물들었다 — 채도를 낮춘 비상등 초록
 
     /// <summary>66차: 등 재질 바탕색(어두운 초록).</summary>
-    private static readonly Color CueBase = new Color(0.04f, 0.3f, 0.08f);
+    private static readonly Color CueBase = new Color(0.08f, 0.22f, 0.11f);
 
     private object _night;
     private GameObject _root;
@@ -170,7 +170,7 @@ public sealed class RedLightSpot : MonoBehaviour
         _light.color = CueColor;
         // 53차 플레이 점검: 6.5m · 3.2는 복도 한 토막을 통째로 물들여 「붉은 불빛 아래」가 어디인지 흐려졌다 — 등 밑 웅덩이로 줄인다.
         _light.range = LightRange;
-        _base = 0.85f;   // 57차(민: 「붉은 조명은 밝기를 좀 줄여야」): 1.5 → 0.85
+        _base = 0.28f;   // 67차: 0.85 → 0.28(초록은 같은 세기에서 훨씬 밝다)   // 57차(민: 「붉은 조명은 밝기를 좀 줄여야」): 1.5 → 0.85
         _light.intensity = _base;
         // 61차: 그림자를 켠다 — 그림자 없는 점광은 벽을 뚫고 옆방(경비실)을 물들였다.
         _light.shadows = LightShadows.Soft;
@@ -232,7 +232,7 @@ public sealed class RedLightSpot : MonoBehaviour
                 {
                     m.EnableKeyword("_EMISSION");
                     m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
-                    m.SetColor("_EmissionColor", red * 1.4f);   // 57차: 3 → 1.4
+                    m.SetColor("_EmissionColor", red * 0.9f);   // 57차: 3 → 1.4 · 67차: 1.4 → 0.9
                 }
 
                 neo[i] = m;

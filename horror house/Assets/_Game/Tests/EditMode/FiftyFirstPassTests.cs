@@ -31,7 +31,7 @@ namespace NightDuty.Tests
             Assert.AreEqual("초록 불빛 아래에서는 손전등을 끄십시오.", ProgramCatalog.Rule("C4").Text, "66차: 붉은 → 초록");
             Assert.AreEqual("화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오.", ProgramCatalog.Rule("K1").Text, "원래대로");
             InspectionItem c3 = InspectionCatalog.Find("C-3");
-            Assert.AreEqual("교실 안쪽에 작은 사다리가 있는지 확인하십시오.", c3.TabletLine);
+            Assert.AreEqual("교실 안쪽에 사다리가 있는지 확인하십시오.", c3.TabletLine);   // 67차: 짧게
             Assert.AreEqual(FearAxis.Layout, c3.Axis, "이상 = 사다리 없음(배치)");
             Assert.AreEqual(AnomalyTemplate.Move, c3.Template);
         }
@@ -83,7 +83,7 @@ namespace NightDuty.Tests
         {
             DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.CeilingLegs));
             f.Director.GazeTargetReady = id => false;
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Classroom_1_3);
             for (int i = 0; i < 30; i++) f.Send(JudgeSignal.Gaze(InspectionCatalog.TargetPrefix + "C-3", 0.1f)).Wait(0.1f);
             Assert.IsFalse(f.HasPhase(ProgramCatalog.CeilingLegs, DirectionPhase.Foreshadow));
@@ -297,7 +297,7 @@ namespace NightDuty.Tests
         public void K1_조우_단서는_지금_채널을_단다()
         {
             DirectorFixture f = new DirectorFixture(3, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.CctvPerson));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.SecurityRoom);
             f.Send(JudgeSignal.Channel("cctv.ch2"));
             for (int i = 0; i < 40; i++) f.Send(JudgeSignal.CctvView("cctv.ch2", 0.1f)).Wait(0.1f);

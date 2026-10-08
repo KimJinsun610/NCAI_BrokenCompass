@@ -14,7 +14,7 @@ namespace NightDuty
     /// <item><see cref="DimBelow"/> 아래 빛이 누렇게 약해지고(세기·거리가 0%에 가까울수록 <see cref="DimIntensity"/>·<see cref="DimRange"/>배) 가끔 진짜로 깜빡인다.
     /// <see cref="LowBelow"/> 아래 깜빡임이 잦아지고 비춤 판정 거리가 <see cref="LowBeamRange"/>m.</item>
     /// <item>0%면 꺼진다(그때만 기존 「꺼짐」 판정 신호). 희미해도 판정은 「켜짐」 — 수칙 판정기는 고칠 것이 없다.</item>
-    /// <item>그날 칸에 놓이는 수 <see cref="PlacedOn"/>: 1·2일 3 · 3·4일 2 · 5일 1(5일차는 다 찾아도 모자라게).</item>
+    /// <item>그날 칸에 놓이는 수 <see cref="PlacedOn"/>: 1·2일 6 · 3·4일 5 · 5일 4(67차 — 서랍·칸 + 열린 책장·선반 위).</item>
     /// </list>
     /// </summary>
     public static class BatteryRules
@@ -23,7 +23,7 @@ namespace NightDuty
         /// 완충으로 켜 둘 수 있는 실제 초. 59차(밤 15분 → 10분, 민: 「손전등 밸런스 조절도」): 240 → 160 — 밤 길이와 같은 2/3로 줄여
         /// 「다 찾으면 1·2일 넉넉(약 1.3배) · 3·4일 빠듯(약 1배) · 5일 모자람(약 0.7배)」 비율을 그대로 둔다.
         /// </summary>
-        public const float FullSeconds = 160f;
+        public const float FullSeconds = 200f;   // 67차(밤 10분 → 12분 30초): 160 → 200 — 밤과 같은 ×1.25(56차 설계 비율 유지)
 
         /// <summary>주머니에 들 수 있는 예비 수.</summary>
         public const int PocketMax = 2;
@@ -67,9 +67,10 @@ namespace NightDuty
         /// <summary>그날 칸에 놓는 배터리 수.</summary>
         public static int PlacedOn(int day)
         {
-            if (day <= 2) return 3;
-            if (day <= 4) return 2;
-            return 1;
+            // 67차(민: 「배터리가 나오는 빈도 수와 위치를 늘려야 해 — 책장·선반에도, 1~5일차가 될수록 빈도 수 살짝 떨어지게」): 3·3·2·2·1 → 6·6·5·5·4.
+            if (day <= 2) return 6;
+            if (day <= 4) return 5;
+            return 4;
         }
 
         /// <summary>충전량(0~1)의 빛 세기 배율.</summary>

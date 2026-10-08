@@ -27,7 +27,7 @@ public sealed partial class CaptureDirector
     public bool Preview(FearAxis axis, int repeat = 1, string sourceId = null)
     {
         if (_running) return false;
-        _previewSource = sourceId;   // 64차: 개발자 모드가 「인체 모형 응시로 붙잡힘」 장면을 미리 볼 때(stare.rule.S3.model)
+        _previewSource = sourceId;   // 64차: 개발자 모드가 「인체 모형 응시로 붙잡힘」 장면을 미리 볼 때(stare.rule.S5.figure, 70차)
         StartCoroutine(PreviewRun(axis, Mathf.Max(1, repeat)));
         return true;
     }
@@ -239,7 +239,7 @@ public sealed partial class CaptureDirector
     }
 
     /// <summary>
-    /// 붙잡은 출처까지 보고 고른다. 64차(민: 「붙잡히면 인체모형 사망 컷신이 나오게」): 과학실 인체 모형을 오래 바라봐 붙잡히면(출처 <c>stare.rule.S3.model</c>, 배치 축)
+    /// 붙잡은 출처까지 보고 고른다. 64차(민: 「붙잡히면 인체모형 사망 컷신이 나오게」): 인체 모형을 오래 바라봐 붙잡히면(출처 <c>stare.rule.S5.figure</c> — 70차부터 복도 끝에 선 모형, 배치 축)
     /// 인체 모형이 나오는 김진선님 컷신(<c>DeathCutscene_Illuminance</c>)을 튼다. 그 밖의 배치 붙잡힘은 옛 연출표 장면(사람 나무 얼굴) 그대로.
     /// </summary>
     public static DeathCutscene CutscenePrefab(FearAxis axis, string sourceId)
@@ -247,7 +247,7 @@ public sealed partial class CaptureDirector
         string name = axis == FearAxis.Auditory ? DeathCutscene.ResourceName
             : axis == FearAxis.Illuminance ? DeathCutscene.ResourceNameIlluminance
             : null;
-        if (sourceId == FixedMobStare.SourcePrefix + FinalCues.ModelTarget) name = DeathCutscene.ResourceNameIlluminance;
+        if (sourceId == FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget) name = DeathCutscene.ResourceNameIlluminance;   // 70차: 복도 끝 인체 모형
         return name != null ? Resources.Load<DeathCutscene>(name) : null;
     }
 

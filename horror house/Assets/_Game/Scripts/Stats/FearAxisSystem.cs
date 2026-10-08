@@ -83,6 +83,12 @@ namespace NightDuty
         /// </summary>
         public int? SoftCap { get; set; }
 
+        /// <summary>
+        /// 71차: 지워지지 않는 상한(개발자 모드 흐름 정지의 「붙잡힘 막기」). <see cref="SoftCap"/>과 같이 감각 축을 이 값에서 멈춘다 —
+        /// <see cref="SoftCap"/>은 신호마다 다시 걸고 지우지만 이것은 직접 지울 때까지 남는다. null이면 없음.
+        /// </summary>
+        public int? HardCap { get; set; }
+
         /// <summary>값이 바뀌었다. 인자: (축, 이전 값, 새 값). 연출 연결은 <see cref="BandResolver"/>가 맡는다.</summary>
         public event Action<FearAxis, int, int> ValueChanged;
 
@@ -197,10 +203,12 @@ namespace NightDuty
             int before = _values[i];
             int raw = before + delta;
             int after = Math.Min(Bands.Max, raw);
-            bool capped = SoftCap.HasValue && IsTerminal(axis);
+            int? capAt = SoftCap;
+            if (HardCap.HasValue) capAt = capAt.HasValue ? Math.Min(capAt.Value, HardCap.Value) : HardCap;
+            bool capped = capAt.HasValue && IsTerminal(axis);
             if (capped)
             {
-                int cap = Math.Min(Bands.Max - 1, SoftCap.Value);
+                int cap = Math.Min(Bands.Max - 1, capAt.Value);
                 after = before >= cap ? before : Math.Min(after, cap);
             }
 

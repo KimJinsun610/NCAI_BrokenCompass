@@ -63,6 +63,9 @@ namespace NightDuty
 
         /// <summary>피날레 중인지.</summary>
         public bool Finale;
+
+        /// <summary>67차: 지난 지시가 근무 지시였고 점검 지시 차례다 — 새 근무 지시를 쉰다(번갈아 낸다).</summary>
+        public bool InspectionTurn;
     }
 
     /// <summary>
@@ -85,13 +88,13 @@ namespace NightDuty
         public const string Key = "duty.orders";
 
         /// <summary>점검 공백이 이만큼 이어지면 지시(실제 초 — 제안서 「게임 8분」).</summary>
-        public const float GapSeconds = 40f;   // 57차: 30 → 40(지시가 점검을 덮지 않게)
+        public const float GapSeconds = 10f;   // 57차: 30 → 40(지시가 점검을 덮지 않게) · 67차(민: 「점검과 지시 비중을 균일하게」): 40 → 10 — 점검 지시와 번갈아 낸다
 
         /// <summary>역설 문자 뒤 쉬는 초.</summary>
         public const float AfterMessage = 12f;
 
         /// <summary>지시가 끝난 뒤 다음 지시까지 최소 초.</summary>
-        public const float AfterDuty = 20f;
+        public const float AfterDuty = 12f;   // 67차: 20 → 12
 
         private readonly int _day;
         private readonly Func<SpaceId, float> _cost;
@@ -310,18 +313,16 @@ namespace NightDuty
 
             if (_active != null)
             {
-                if (_active.Kind == DutyKind.LogSign)
+                if (_active.Seconds <= 0f)
                 {
-                    if (known && minute >= NightClock.Call2)
-                    {
-                        ev = Finish(DutyOutcome.Missed);
-                        return true;
-                    }
-
+                    // 67차 ②(민: 「W2·W4·W5·W15는 시간 제한 없음 — 시간 초과 처리도 하지 않게」): 미완료 답장·경고 없이 조용히 닫는 때만 있다 —
+                    // 근무일지(W5)는 서명할 수 없게 되는 이완 끝(호출 2), 나머지는 판정 구간 끝.
+                    float closeAt = _active.Kind == DutyKind.LogSign ? NightClock.Call2 : NightClock.JudgingEnd;
+                    if (known && minute >= closeAt) CloseSilently();
                     return false;
                 }
 
-                if (!input.DirectorBusy && input.Dt > 0f) _left -= input.Dt;   // 조우 중에는 기한이 멈춘다
+                if (input.Dt > 0f) _left -= input.Dt;   // 67차 ②: 조우 중에도 흐른다 — 태블릿에 적힌 마감 시각(「02:08까지」)과 맞게
                 if (_left > 0f) return false;
                 ev = Finish(DutyOutcome.Missed);
                 return true;
@@ -340,7 +341,7 @@ namespace NightDuty
             }
 
             if (minute < NightClock.JudgingStart || minute >= NightClock.JudgingEnd) return false;
-            if (input.DirectorBusy || input.InspectionBacklog > 0 || input.SinceInspection < GapSeconds) return false;
+            if (input.DirectorBusy || input.InspectionBacklog > 0 || input.SinceInspection < GapSeconds || input.InspectionTurn) return false;
             if (Now - _lastMessage < AfterMessage || Now - _lastEnd < AfterDuty) return false;
             if (_issued >= Allowed(minute)) return false;
 
@@ -356,8 +357,61 @@ namespace NightDuty
         /// </summary>
         public int Allowed(float minute)
         {
-            int n = minute < NightClock.Call1 ? 1 : minute < NightClock.Call2 ? 2 : 4;   // 57차: 2·3·4 → 1·2·상한
+            int n = minute < NightClock.Call1 ? 2 : minute < NightClock.Call2 ? 3 : 5;   // 57차: 2·3·4 → 1·2·상한 · 67차: 2·3·상한(점검 지시와 번갈아)
             return Math.Min(DutyCatalog.DailyCap(_day), n);
+        }
+
+        /// <summary>
+        /// 67차: 지금 새 지시를 낼 수 있는지(점검 지시기가 「근무 지시 차례」를 가늠할 때) — 진행 중인 지시 없음 · 판정 구간 · 이완 아님 · 마디 상한 · 낼 지시 있음.
+        /// 점검 공백·간격은 보지 않는다(그것은 차례가 오면 Tick이 지킨다). 난수를 쓰지 않는다.
+        /// </summary>
+        public bool CanIssueSoon(float minute)
+        {
+            if (_active != null || minute < NightClock.JudgingStart || minute >= NightClock.JudgingEnd) return false;
+            if (minute >= NightClock.RelaxStart && minute < NightClock.Call2) return false;
+            if (_issued >= Allowed(minute)) return false;
+            IReadOnlyList<DutyDef> all = DutyCatalog.All;
+            for (int i = 0; i < all.Count; i++)
+            {
+                DutyDef d = all[i];
+                if (d.Kind == DutyKind.LogSign || !d.OnDay(_day) || _finished.Contains(d.Id)) continue;
+                if (d.Kind == DutyKind.DoorTidy && _openDoors.Count == 0) continue;
+                if (d.Kind == DutyKind.GazeCheck && _planned != null && _planned(d.Item)) continue;
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 68차(민: 「조기퇴근은 모든 지시가 완료됐을 때만 — 점검이 끝난 뒤에 추가 지시가 오는 문제」): 오늘 처리할 [근무 지시]가 아직 남았는지.
+        /// <list type="bullet">
+        /// <item>진행 중인 지시가 있다(제한 없는 W2·W4·W15도 끝내기 전까지는 남은 것이다).</item>
+        /// <item>근무일지(W5)를 아직 안 했고 그 시간(호출 2 전)이 지나지 않았다 — 이완 구간이 열리면 나온다.</item>
+        /// <item>판정 구간이 끝나기 전이고, 하루 상한(<see cref="DutyCatalog.DailyCap"/>)까지 덜 냈고, 낼 수 있는 지시가 남았다 — 마디 상한(<see cref="Allowed"/>)에 막혀 있어도 다음 마디에 나온다.</item>
+        /// </list>
+        /// 기한을 넘겨 놓친 지시는 끝난 것으로 본다(다시 할 수 없다). 난수를 쓰지 않는다.
+        /// </summary>
+        public bool Pending(float minute)
+        {
+            if (_active != null) return true;
+            if (minute < 0f) return false;
+
+            DutyDef log = DutyCatalog.Find("W5");
+            if (log != null && log.OnDay(_day) && !_signed && !_finished.Contains(log.Id) && minute < NightClock.Call2) return true;
+
+            if (minute >= NightClock.JudgingEnd || _issued >= DutyCatalog.DailyCap(_day)) return false;
+            IReadOnlyList<DutyDef> all = DutyCatalog.All;
+            for (int i = 0; i < all.Count; i++)
+            {
+                DutyDef d = all[i];
+                if (d.Kind == DutyKind.LogSign || !d.OnDay(_day) || _finished.Contains(d.Id)) continue;
+                if (d.Kind == DutyKind.DoorTidy && _openDoors.Count == 0) continue;   // 열어 둔 문이 없으면 정리할 것도 없다
+                if (d.Kind == DutyKind.GazeCheck && _planned != null && _planned(d.Item)) continue;
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>그날 낼 수 있고 아직 하지 않은 지시 중 지금 자리에서 가장 가까운 것.</summary>
@@ -427,6 +481,14 @@ namespace NightDuty
             else if (d.Kind == DutyKind.ExitSignCheck) _inZone = _insideNow.Contains(DutyCatalog.ExitZone);
             if (d.Kind != DutyKind.LogSign) _issued++;
             return new DutyEvent(d, DutyOutcome.Issued, false);
+        }
+
+        /// <summary>제한 없는 지시를 사건 없이 닫는다(67차 ②).</summary>
+        private void CloseSilently()
+        {
+            _finished.Add(_active.Id);
+            _active = null;
+            _lastEnd = Now;
         }
 
         private DutyEvent Finish(DutyOutcome outcome)

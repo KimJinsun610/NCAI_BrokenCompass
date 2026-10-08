@@ -28,6 +28,9 @@ namespace NightDuty
         public const string S1Center = "rule.S1.center";
         public const string Glass = "cue.glass";
         public const string ModelTarget = "rule.S3.model";
+
+        /// <summary>70차: 복도 끝에 선 인체 모형(<c>HallFigure</c>)의 조준점 — 오래 바라보면 배치 축(<c>FixedMobStare</c>)·목 꺾임.</summary>
+        public const string HallFigureTarget = "rule.S5.figure";
         public const string TapeZone = "science.tape";
         public const string ScienceBlackout = "cue.blackout.science";
         public const string ScienceDarkZone = "science.dark";
@@ -77,7 +80,7 @@ namespace NightDuty
                 case "S2": return new LeaveAfterCueJudge(FinalCues.Glass, LeaveAfterCueJudge.GraceSeconds);   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
                 case "S3": return new BeamAvoidJudge(FinalCues.ModelTarget, BeamAvoidJudge.LimitSeconds, ProgramCatalog.ModelRush);   // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」(미션처럼 읽히던 50차 문구 폐기)
                 case "S4": return new LightKeepJudge(FinalCues.ScienceBlackout, FinalCues.ScienceDarkZone, 1f, false);
-                case "S5": return new WaitInDarkJudge(FinalCues.HallEnd, 3f);
+                case "S5": return new WaitInDarkJudge(FinalCues.HallEnd, 3f, SpaceId.Corridor);   // 70차: 복도 끝에서 달려오는 급습은 복도에서 마주친다
                 case "T1": return new ExitWithinJudge(FinalCues.Flush, 8f, false);
                 case "T2": return new ZoneForbiddenJudge(FinalCues.StallOccupied, null);
                 case "T3": return new WaitInDarkJudge(FinalCues.ToiletBlackout, 3f);
@@ -698,18 +701,20 @@ namespace NightDuty
     public sealed class WaitInDarkJudge : CueEpisodeJudge
     {
         private readonly float _grace;
+        private readonly SpaceId _alsoIn;
         private bool _settledIn;
         private Vector3 _anchor;
 
-        /// <summary>만든다.</summary>
-        public WaitInDarkJudge(string cueId, float graceSeconds) : base(cueId)
+        /// <summary>만든다. <paramref name="alsoIn"/>: 수칙 공간 말고도 해당하는 공간(70차 — S5는 복도).</summary>
+        public WaitInDarkJudge(string cueId, float graceSeconds, SpaceId alsoIn = SpaceId.None) : base(cueId)
         {
             _grace = graceSeconds;
+            _alsoIn = alsoIn;
         }
 
         protected override bool OnStart(in JudgeSignal s, FinalWorld w)
         {
-            if (Def != null && Def.Space != SpaceId.None && w.Space != Def.Space) return false;
+            if (Def != null && Def.Space != SpaceId.None && w.Space != Def.Space && (_alsoIn == SpaceId.None || w.Space != _alsoIn)) return false;
             _settledIn = false;
             return true;
         }

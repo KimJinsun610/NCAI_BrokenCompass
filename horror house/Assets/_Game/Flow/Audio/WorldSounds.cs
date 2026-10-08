@@ -426,6 +426,7 @@ public sealed class WorldSounds : MonoBehaviour
         s.rolloffMode = AudioRolloffMode.Logarithmic;
         s.minDistance = 2f;
         s.maxDistance = 30f;
+        NightDutyMixer.Route(s, NightDutyMixer.Bus.World);   // 67차
         if (delay > 0f) s.PlayDelayed(delay);
         else s.Play();
         Destroy(go, delay + clip.length + 0.3f);

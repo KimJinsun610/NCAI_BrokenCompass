@@ -93,7 +93,7 @@ public sealed class DutyLogBook : MonoBehaviour
         IsReady = false;
         ReleasePrompt();
         PlaySound();
-        if (logActions) Debug.Log("[근무일지] 서명 — 02:16 체크포인트", this);
+        if (logActions) Debug.Log("[근무일지] 서명 — " + NightClock.Clock(NightClock.Call2) + " 체크포인트", this);
         return true;
     }
 

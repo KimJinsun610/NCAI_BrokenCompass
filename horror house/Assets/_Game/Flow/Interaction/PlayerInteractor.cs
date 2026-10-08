@@ -327,6 +327,7 @@ public sealed class PlayerInteractor : MonoBehaviour
         s.minDistance = 1.5f;
         s.maxDistance = 25f;
         s.pitch = Random.Range(0.95f, 1.05f);
+        NightDutyMixer.Route(s, NightDutyMixer.Bus.World);   // 67차
         s.Play();
         Destroy(go, clip.length / s.pitch + 0.2f);
     }

@@ -52,6 +52,12 @@ public sealed class StandInExit : MonoBehaviour
         get { return _dir; }
     }
 
+    /// <summary>걷기 클립 원래 속도에서의 걸음 속도(m/s). 71차: CCTV 사람(<c>CctvWalker</c>)이 같은 걷기 클립을 쓸 때 읽는다.</summary>
+    public float NaturalSpeed
+    {
+        get { return naturalSpeed; }
+    }
+
     /// <summary>빌더가 쓴다.</summary>
     public void SetNaturalSpeed(float metersPerSecond)
     {

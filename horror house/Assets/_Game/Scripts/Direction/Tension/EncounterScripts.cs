@@ -155,6 +155,12 @@ namespace NightDuty
 
         /// <summary>내 자리 뒤에 선 무언가(피날레 「봤다」 결말, 11단계) — 경비실 CRT 앞 플레이어 자리 바로 뒤에서 CRT를 본다(꺼진 화면에 비친다).</summary>
         public const string FinaleSeat = "stage.finale.seat";
+
+        /// <summary>
+        /// 70차 모형 급습 — 과학실 옆 복도 동쪽 끝, 비상구 유도등(<c>Corridors/Sign_Exit</c> (54, 3.95, 46.39)) 아래.
+        /// 씬에 놓지 않고 코드 자리(<c>DirectionStage.RushHallSpot</c> — 과학실 모형의 복도 자리와 같은 곳)를 쓴다.
+        /// </summary>
+        public const string RushHall = "stage.rush.hall";
     }
 
     /// <summary>조우 15개의 대본 표. 수치는 이 파일 한 곳.</summary>
@@ -231,17 +237,21 @@ namespace NightDuty
                 },
                 new EncounterScript
                 {
-                    Id = ProgramCatalog.HallEndFigure, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.ScienceRoom, Dwell = 10f,
+                    // 70차(민: 「복도 끝에 서 있는 자는 인체 모형으로 · 모형 급습 전날 · 급습 시작 자리와 같은 곳 · 가만히 서 있기만」):
+                    // 그 밤 내내 복도 끝 비상등 아래에 서 있는 모형(HallFigure)이 대역이다. 슬롯에 복도에 있으면 → 복도에서 알아보면 S5 단서 창.
+                    Id = ProgramCatalog.HallEndFigure, Trigger = EncounterTrigger.EnterSpace, Space = SpaceId.Corridor,
                     Cue = FinalCues.HallEnd, Window = 10f,
                     Placement = CuePlacement.AheadOfPlayer, Distance = 7f, StandIn = "mob.dummy.stand",
-                    Note = "기획서 방아쇠는 「과학실 퇴실」이지만 S5는 과학실 안에서 판정한다 — 과학실 10초 체류 뒤 문밖에 선다."
+                    StageAnchor = StageAnchors.RushHall,
+                    Note = "그 밤 내내 복도 끝 비상등 아래에 서 있는 인체 모형(HallFigure, 움직이지 않음). 슬롯에 복도에서 알아보면 S5 단서 창 — 창이 닫혀도 그대로 서 있다."
                 },
                 new EncounterScript
                 {
                     Id = ProgramCatalog.ModelRush, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.ScienceRoom, Dwell = 10f,
                     Cue = FinalCues.HallEnd, Window = 10f,
                     Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.dummy",
-                    Note = "S5 — 지키면 암전 속에서 스쳐 지나감."
+                    StageAnchor = StageAnchors.RushHall,   // 70차: 과학실 옆 복도 끝 비상등 아래에 세워 두고, 복도에서 알아보면 달려온다(MannequinRush)
+                    Note = "과학실 10초 체류 뒤 복도 끝 비상등 아래에 선다(안에서는 안 보임) → 복도에서 알아보면 달려와 덮친다. S5 — 불을 끄고 기다리면 어깨를 스치고 지나감."
                 },
                 new EncounterScript
                 {

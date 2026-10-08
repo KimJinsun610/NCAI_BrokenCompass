@@ -48,8 +48,22 @@ public sealed class DirectionWalker : MonoBehaviour
         if (dir.sqrMagnitude > 1e-4f) transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
 
         Animator a = GetComponentInChildren<Animator>();
-        if (a != null && naturalSpeed > 0.01f) a.speed = _speed / naturalSpeed;
+        if (a != null) a.speed = naturalSpeed > 0.01f ? _speed / naturalSpeed : 1f;   // 세워 둘 때 멈춰 둔 것(Hold)도 여기서 푼다
         enabled = true;
+    }
+
+    /// <summary>
+    /// 70차: 걷기 전 세워 둔 동안(Present) — 걸어갈 쪽을 향하고 걷기 첫 자세로 멈춰 선다.
+    /// 전에는 자리 방향(270°)으로 선 채 옆걸음을 제자리에서 밟다가, 걷기가 시작되면 몸이 90° 돌고 1m 튀었다.
+    /// </summary>
+    public static void Hold(GameObject go, Vector3 from, Vector3 to)
+    {
+        if (go == null) return;
+        Vector3 dir = to - from;
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 1e-4f) go.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
+        Animator a = go.GetComponentInChildren<Animator>();
+        if (a != null) a.speed = 0f;
     }
 
     private void Update()
@@ -65,5 +79,20 @@ public sealed class DirectionWalker : MonoBehaviour
         {
             foreach (Renderer r in GetComponentsInChildren<Renderer>()) r.enabled = false;
         }
+
+        if (_destroyOnArrive) Destroy(gameObject);
+    }
+
+    private bool _destroyOnArrive;
+
+    /// <summary>
+    /// 70차: 조우가 끝나 거둘 때 아직 걷는 중이면 끝점까지 마저 걷고 스스로 지운다(참을 돌려줌).
+    /// 걸음이 2.05m/0.36m/s = 5.7초인데 대응 창(6초 × 쉬움 0.8 = 4.8초)이 먼저 끝나 소녀가 칸 앞 0.3m에서 사라졌다.
+    /// </summary>
+    public bool FinishThenDestroy()
+    {
+        if (!enabled || Arrived || _length <= 0.01f) return false;
+        _destroyOnArrive = true;
+        return true;
     }
 }

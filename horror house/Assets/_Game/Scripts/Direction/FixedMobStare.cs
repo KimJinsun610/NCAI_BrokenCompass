@@ -4,7 +4,7 @@ namespace NightDuty
 {
     /// <summary>
     /// 64차(플레이테스트 2026-10-07: 「고정된 몹(인체모형, 인체나무) 계속 보면 바로 수치 계속 떨구고, 엔딩 보도록」) — 고정 몹 응시.
-    /// 과학실 인체 모형(<see cref="FinalCues.ModelTarget"/>)이나 사람 나무(<see cref="FinalCues.H1Object"/>)를 계속 바라보면
+    /// 복도 끝에 선 인체 모형(<see cref="FinalCues.HallFigureTarget"/>, 70차 — 전에는 과학실 모형)이나 사람 나무(<see cref="FinalCues.H1Object"/>)를 계속 바라보면
     /// 유예(<see cref="GraceFor"/>) 뒤부터 배치 축이 오르고, 오래 볼수록 빨리 올라 끝내 붙잡힌다(100).
     /// <list type="bullet">
     /// <item>유예는 역설 「눈으로만」 읽기(<c>ParadoxRun.EyesOnlySeconds</c> 1초)보다 길다 — 「확인하십시오」를 따른 짧은 확인은 벌하지 않는다.
@@ -52,10 +52,10 @@ namespace NightDuty
             get { return _target; }
         }
 
-        /// <summary>고정 몹인지(과학실 인체 모형·사람 나무).</summary>
+        /// <summary>고정 몹인지(복도 끝 인체 모형·사람 나무).</summary>
         public static bool IsFixedMob(string id)
         {
-            return id == FinalCues.ModelTarget || id == FinalCues.H1Object;
+            return id == FinalCues.HallFigureTarget || id == FinalCues.H1Object;   // 70차: 과학실 모형 → 복도 끝에 선 모형으로 옮김
         }
 
         /// <summary>그날의 유예(초) — 이만큼 바라본 뒤부터 오른다.</summary>
@@ -71,7 +71,7 @@ namespace NightDuty
         {
             if (string.IsNullOrEmpty(sourceId) || !sourceId.StartsWith(SourcePrefix, StringComparison.Ordinal)) return null;
             string id = sourceId.Substring(SourcePrefix.Length);
-            if (id == FinalCues.ModelTarget) return "[응시] 과학실 인체 모형을 오래 바라봄";
+            if (id == FinalCues.HallFigureTarget) return "[응시] 복도 끝 인체 모형을 오래 바라봄";
             if (id == FinalCues.H1Object) return "[응시] 복도의 사람 나무를 오래 바라봄";
             return "[응시] " + id;
         }

@@ -333,7 +333,7 @@ public sealed partial class CaptureDirector : MonoBehaviour
         _sources.text = string.Empty;
         _sources.gameObject.SetActive(false);
 
-        _sign.text = fromCheckpoint ? "마지막 서명: 02:16" : "마지막 서명: 없음 → 00:00";
+        _sign.text = fromCheckpoint ? "마지막 서명: " + NightClock.Clock(NightClock.Call2) : "마지막 서명: 없음 → 00:00";
         _hint.text = "아무 키나 눌러 계속";
         LastCard = _title.text + " | " + (died ? "YOU DIED" : _symbol.text) + " | " + (names.Count > 0 ? string.Join(" / ", names) : "—") + " | " + _sign.text;
     }

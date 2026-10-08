@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace NightDuty
@@ -160,24 +161,194 @@ namespace NightDuty
 
         private static void OrdersTick(float realSeconds)
         {
-            if (_orders == null || IsCaptured) return;
+            TickInstructionClock(realSeconds);
+            if (_orders == null || IsCaptured || _sandbox) return;   // 71차: 흐름 정지 중에는 지시를 스스로 내지 않는다(버튼으로만)
 
+            bool busy = _tension != null && _tension.Busy;
+            float minute = CurrentMinute();
             DispatchInput input = new DispatchInput
             {
-                Minute = CurrentMinute(),
+                Minute = minute,
                 Dt = realSeconds,
-                DirectorBusy = _tension != null && _tension.Busy,
+                DirectorBusy = busy,
                 Pacer = _tension != null ? _tension.Pacer : null,
-                Banned = _unavoidable.Banned
+                Banned = _unavoidable.Banned,
+                DutyActive = _duties != null && _duties.Active != null && _duties.Active.Seconds > 0f,   // 제한 없는 지시(W2·W4·W5·W15)는 점검을 막지 않는다
+                DutyTurn = DutyTurnNow(minute)
             };
 
             ReleaseToiletOrder(input.Minute);
             InspectionOrder order = _orders.Tick(input);
             if (order != null) AnnounceOrder(order);
+            TickOrderLimits(realSeconds, busy);
+        }
+
+        // ── 67차: 점검 지시와 근무 지시를 번갈아(민: 「물품 점검이 비중이 더 높은데, 지시 사항과 비중이 균일했으면」) ──
+
+        /// <summary>지난 지시가 무엇이었는지.</summary>
+        private enum LastInstruction
+        {
+            None = 0,
+            Inspection = 1,
+            Duty = 2
+        }
+
+        private static LastInstruction _lastInstruction;
+        private static float _lastInstructionAt;
+        private static float _instructionClock;
+
+        /// <summary>한쪽 차례를 이만큼(실제 초) 넘게 기다리면 다른 쪽도 낼 수 있다 — 한쪽이 낼 것이 없을 때 밤이 비지 않게.</summary>
+        public const float TurnWaitMax = 45f;
+
+        /// <summary>근무 지시 차례인지 — 지난 지시가 점검이었고, 근무 지시를 곧 낼 수 있고, 그 뒤 오래 기다리지 않았다.</summary>
+        private static bool DutyTurnNow(float minute)
+        {
+            if (_duties == null || _lastInstruction != LastInstruction.Inspection) return false;
+            if (_instructionClock - _lastInstructionAt > TurnWaitMax + DutyDispatcher.GapSeconds) return false;
+            return _duties.CanIssueSoon(minute);
+        }
+
+        /// <summary>점검 지시 차례인지 — 지난 지시가 근무 지시였고 그 뒤 오래 기다리지 않았다(근무 지시기가 쉰다).</summary>
+        private static bool InspectionTurnNow()
+        {
+            if (_orders == null || _lastInstruction != LastInstruction.Duty) return false;
+            if (_instructionClock - _lastInstructionAt > TurnWaitMax) return false;
+            return !_orders.AllIssued;
+        }
+
+        private static void NoteInstruction(bool duty)
+        {
+            _lastInstruction = duty ? LastInstruction.Duty : LastInstruction.Inspection;
+            _lastInstructionAt = _instructionClock;
+        }
+
+        private static void TickInstructionClock(float realSeconds)
+        {
+            if (realSeconds > 0f) _instructionClock += realSeconds;
+        }
+
+        // ── 67차: 점검 지시 제한시간(민: 「제한시간이 존재하고, 명시되면 좋겠어」) ──
+
+        private sealed class OrderLimit
+        {
+            public int Index;
+            public float Seconds;
+            public float IssuedMinute;
+            public float Left;
+            public bool Expired;
+            public bool Stopped;
+        }
+
+        private static readonly Dictionary<int, OrderLimit> _orderLimits = new Dictionary<int, OrderLimit>();
+
+        /// <summary>
+        /// 그 지시의 제한시간(실제 초) — 67차 ②(민: 「시간 제한이 있는 모든 점검 지시는 120초로 고정」): 늘 <see cref="DutyCatalog.LimitSeconds"/>.
+        /// 목격 뒤 변기 지시(T4)는 연출에 묶여 있어 제한이 없다(0). 조우 중에도 흐른다(태블릿 마감 시각과 맞게).
+        /// </summary>
+        public static float OrderLimitSeconds(InspectionOrder order)
+        {
+            if (order == null || order.Kind == OrderKind.Witness) return 0f;
+            return DutyCatalog.LimitSeconds;
+        }
+
+        /// <summary>그 지시의 마감 「HH:MM까지」 — 제한이 없거나 모르면 빈 문자열.</summary>
+        public static string OrderDeadlineText(int index)
+        {
+            OrderLimit l;
+            if (!_orderLimits.TryGetValue(index, out l) || l.Seconds <= 0f || l.IssuedMinute < 0f) return string.Empty;
+            return DutyCatalog.DeadlineText(l.IssuedMinute, l.Seconds);
+        }
+
+        /// <summary>그 지시의 제한시간(초) — 모르면 0.</summary>
+        public static float OrderLimitOf(int index)
+        {
+            OrderLimit l;
+            return _orderLimits.TryGetValue(index, out l) ? l.Seconds : 0f;
+        }
+
+        /// <summary>그 지시가 기한을 넘겼는지.</summary>
+        public static bool OrderExpired(int index)
+        {
+            OrderLimit l;
+            return _orderLimits.TryGetValue(index, out l) && l.Expired;
+        }
+
+        /// <summary>남은 제한시간(초) — 없거나 끝났으면 0.</summary>
+        public static float OrderTimeLeft(int index)
+        {
+            OrderLimit l;
+            return _orderLimits.TryGetValue(index, out l) && !l.Expired && !l.Stopped ? Math.Max(0f, l.Left) : 0f;
+        }
+
+        private static void StartOrderLimit(InspectionOrder order)
+        {
+            float seconds = OrderLimitSeconds(order);
+            if (seconds <= 0f) return;   // 목격 뒤 변기 지시는 연출에 묶여 있어 기한을 두지 않는다
+            _orderLimits[order.Index] = new OrderLimit { Index = order.Index, Seconds = seconds, Left = seconds, IssuedMinute = CurrentMinute() };
+        }
+
+        private static void TickOrderLimits(float realSeconds, bool busy)
+        {
+            if (_orderLimits.Count == 0 || realSeconds <= 0f || _orders == null) return;   // 67차 ②: 조우 중에도 흐른다(마감 시각과 맞게)
+            bool changed = false;
+            foreach (OrderLimit l in _orderLimits.Values)
+            {
+                if (l.Expired || l.Stopped) continue;
+                InspectionOrder order = FindOrder(l.Index);
+                if (order == null || !OrderPending(order))
+                {
+                    l.Stopped = true;
+                    continue;   // 다 보고했다 — 기한은 그대로 멈춘다
+                }
+
+                l.Left -= realSeconds;
+                if (l.Left > 0f) continue;
+                l.Expired = true;
+                changed = true;
+                AddWarning(1, "order.late." + l.Index);
+                UnityEngine.Debug.Log("[NightRun] 점검 지시 #" + l.Index + " 기한 지남(" + DutyCatalog.DeadlineText(l.IssuedMinute, l.Seconds) + ") — 경고 1");
+            }
+
+            if (changed) EventBus.RaiseTabletTextChanged();
+        }
+
+        private static InspectionOrder FindOrder(int index)
+        {
+            if (_orders == null) return null;
+            for (int i = 0; i < _orders.Orders.Count; i++)
+            {
+                if (_orders.Orders[i].Index == index) return _orders.Orders[i];
+            }
+
+            return null;
+        }
+
+        private static bool OrderPending(InspectionOrder order)
+        {
+            for (int i = 0; i < order.ItemIds.Count; i++)
+            {
+                if (Board.StateOf(order.ItemIds[i]) == InspectionState.Pending) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>재시작 — 진행 중이던 기한은 멈추고(벌하지 않음) 번갈아 낼 차례도 비운다. 이미 넘긴 기한·경고는 스냅샷이 되돌린다.</summary>
+        private static void OrdersAfterRestore()
+        {
+            List<int> drop = new List<int>();
+            foreach (OrderLimit l in _orderLimits.Values)
+            {
+                if (FindOrder(l.Index) == null) drop.Add(l.Index);
+                else if (!l.Expired) l.Stopped = true;
+            }
+
+            for (int i = 0; i < drop.Count; i++) _orderLimits.Remove(drop[i]);
+            _lastInstruction = LastInstruction.None;
         }
 
         /// <summary>61차: 변기 지시가 여자아이 슬롯보다 이만큼(게임 분) 먼저 나간다 — 지시를 읽고 화장실에 들어서면 슬롯이 열려 있다.</summary>
-        public const float ToiletOrderLeadMinutes = 4f;
+        public const float ToiletOrderLeadMinutes = 5f;   // 67차(밤 05:00): 4 → 5
 
         /// <summary>61차: T4 날 묶어 둔 변기(T-1)를 여자아이 슬롯에 맞춰 단독 지시로 낸다(한 번).</summary>
         private static void ReleaseToiletOrder(float minute)
@@ -203,6 +374,8 @@ namespace NightDuty
 
         private static void AnnounceOrder(InspectionOrder order)
         {
+            StartOrderLimit(order);
+            NoteInstruction(false);
             if (_tension != null) _tension.Pacer.Impulse(PacerImpulse.Order);
             UnityEngine.Debug.Log("[NightRun] 점검 지시 " + order + " — " + (_orders != null ? _orders.Waiting : string.Empty));
             EventBus.RaiseInspectionOrdered(order);
@@ -222,6 +395,10 @@ namespace NightDuty
         private static void ResetOrders()
         {
             _orders = null;
+            _orderLimits.Clear();
+            _lastInstruction = LastInstruction.None;
+            _lastInstructionAt = 0f;
+            _instructionClock = 0f;
         }
 
         /// <summary>디버그: 다음 점검 지시를 지금 낸다(조건 무시). 낼 것이 없으면 false.</summary>
@@ -260,6 +437,11 @@ namespace NightDuty
                     break;
             }
 
+            // 67차 ②: 마감 시각을 머리 줄에 적는다(「02:08까지」). 넘기면 「기한 지남」.
+            string due = OrderDeadlineText(order.Index);
+            if (OrderExpired(order.Index)) sb.Append(" · <color=").Append(ChecklistLateColor).Append(">기한 지남</color>");
+            else if (due.Length > 0) sb.Append(" · ").Append(due);
+
             for (int i = 0; i < order.ItemIds.Count; i++)
             {
                 InspectionAssignment a = Board.Plan.Find(order.ItemIds[i]);
@@ -288,8 +470,11 @@ namespace NightDuty
             return sb.ToString();
         }
 
-        /// <summary>마지막 지시에 붙는 안내(59차, 민: 「마지막 지시가 나오면 퇴근해도 된다는 안내문」).</summary>
-        public const string FinalOrderNotice = "오늘의 마지막 지시입니다. 보고를 마치면 경비실 전화로 퇴근할 수 있습니다.";
+        /// <summary>마지막 지시에 붙는 안내(59차, 민: 「마지막 지시가 나오면 퇴근해도 된다는 안내문」). 67차(문장은 짧게): 줄임.</summary>
+        public const string FinalOrderNotice = "마지막 지시입니다. 마치면 경비실 전화로 퇴근하십시오.";
+
+        /// <summary>67차: 기한을 넘긴 지시의 「기한 지남」 색.</summary>
+        public const string ChecklistLateColor = "#C8643C";
 
         /// <summary>
         /// 그 지시가 그날 마지막 지시인지 — 지시기가 낸 가장 최근 지시이고, 편성의 모든 항목이 지시받았다(묶어 둔 T-1이 남았으면 아직 아니다).
@@ -305,7 +490,9 @@ namespace NightDuty
                 if (!Board.IsIssued(plan.Assignments[i].Id)) return false;
             }
 
-            return true;
+            // 68차(민: 「점검이 끝나면 퇴근할 수 있는 상태가 되는데 이후에 추가 지시가 발생」): [근무 지시]가 남았으면 마지막 지시가 아니다 —
+            // 모든 지시를 마치면 따로 「모든 지시를 마쳤습니다」 문자가 간다(ShiftReadyText).
+            return !DutiesPending;
         }
 
         /// <summary>항목 줄 뒤 표시: 보고함 / 재입실 불가 / 안전한 읽기 결과.</summary>

@@ -12,14 +12,14 @@ using UnityEngine.SceneManagement;
 /// 1일차는 움직이지 않는다. 2일차부터 플레이어가 과학실을 <b>나갈 때마다</b>(보지 않을 때) 한 칸씩, 그 밤 최대 자리까지 옮긴다.</item>
 /// <item>최대 자리는 평소 2(과학실 안). <b>복도까지 나오는 밤</b>(배치 3 — 최종 기획서 「배치 3: 모형이 복도로 나올 수 있음」, 또는 그 밤 편성에 모형 급습)만 3(복도).</item>
 /// <item>모형 급습(<see cref="ProgramCatalog.ModelRush"/>)이 대면하면 이 모형은 사라지고(급습 대역이 대신 나온다) 그 밤에는 돌아오지 않는다.
-/// 복도 끝에 선 자(<see cref="ProgramCatalog.HallEndFigure"/>)가 나와 있는 동안에도 숨는다.</item>
+/// 70차 ④: 복도로 나오는 것은 날짜 사슬뿐이다 — 복도 끝에 선 자의 밤과 다음 날 급습 밤에는 이 모형이 복도 끝(<see cref="HallFigure"/>)에 나가 있어 과학실에는 없고,
+/// 그 밖의 밤에는 과학실 안(자리 0~2)에만 있다(옛 「배치 3이면 복도 자리 3」은 쓰지 않는다 — 둘이 되지 않게).</item>
 /// <item>S3 「인체 모형을 빛으로 확인하십시오」의 대상 <c>rule.S3.model</c>은 이 모형의 조준점이다 — 몸을 감싸는 단단한 응시 상자를 붙여 응시 원뿔이 잡는다.
 /// 씬의 바닥 토르소(옛 대상, 콜라이더가 없어 응시로 잡히지 않았다)는 근무 중 숨긴다. 씬 파일은 고치지 않는다.</item>
 /// <item>재시작하면 그 밤의 시작 자리로 돌아간다. 판정과 무관(S3 응시 대상 자리만 따라간다).</item>
 /// <item>64차(플레이테스트 2026-10-07 「인체모형 더 활발히 이동」): 2일차부터 ① 플레이어가 같은 곳에 있는데 모형이 화면에 보이지 않은 채 몇 초(2일 5 · 3일 3.5 · 4일~ 2.5) 지나면
 /// 플레이어 쪽으로 한 걸음(0.5 · 0.75 · 1m) 다가서서 플레이어를 본다(2.5m 안으로는 오지 않는다) ② 최대 자리에 닿은 뒤에도 과학실을 나갈 때마다 그 밤 범위의 다른 자리로 옮긴다(<see cref="ModelProgress.NextSpot"/>).</item>
-/// <item>64차(「3일차부터 오래 바라보면 목이 플레이어 방향으로 꺾이게」): 3일차부터 모형을 2.5초 이어서 바라보면(<see cref="NightRun.Stare"/>) 우두둑 소리와 함께
-/// 목(neck 35%·head 나머지)이 0.45초 만에 플레이어 쪽으로 꺾이고(좌우 130°·위아래 35°까지) 자리를 옮길 때까지 플레이어를 따라 본다. 오래 바라보면 배치 축이 오르는 것은 Core <see cref="FixedMobStare"/>.</item>
+/// <item>70차(민: 「목이 돌아가는 연출과 오래 바라보면 사망하는 연출을 복도 끝에 선 인체 모형에게 옮겨 줘」): 이 모형은 이제 목이 꺾이지도, 오래 바라봐 붙잡지도 않는다 — <see cref="HallFigure"/>로 옮겼다.</item>
 /// </list>
 /// 근무 씬에 자동으로 선다.
 /// </summary>
@@ -65,39 +65,10 @@ public sealed class ScienceModel : MonoBehaviour
     /// <summary>플레이어에게 이보다 가까이 다가오지 않는다(수평 m).</summary>
     public const float CreepMinDistance = 2.5f;
 
-    /// <summary>오래 바라보면 목이 꺾이기 시작하는 날.</summary>
-    public const int NeckFromDay = 3;
-
-    /// <summary>이만큼 이어서 바라보면 목이 꺾인다(초).</summary>
-    public const float NeckStareSeconds = 2.5f;
-
-    /// <summary>목이 다 꺾이는 데 걸리는 시간(초).</summary>
-    public const float NeckTurnSeconds = 0.45f;
-
-    public const float NeckMaxYaw = 130f;
-    public const float NeckMaxPitch = 35f;
-    private const float NeckShare = 0.35f;
-
-    /// <summary>목 꺾이는 소리(연출 소리표).</summary>
-    public const string NeckSoundKey = "model.neck";
-
     private float _unseenSince = -1f;
     private float _nextCreepCheck;
     private int _creeps;
     private bool _displaced;
-    private Transform _neck;
-    private Transform _head;
-    private Quaternion _neckRest = Quaternion.identity;
-    private Quaternion _headRest = Quaternion.identity;
-    private bool _neckTurned;
-    private float _neckSince;
-
-    /// <summary>64차: 목이 꺾여 플레이어를 보고 있는지.</summary>
-    public bool NeckTurned
-    {
-        get { return _neckTurned; }
-    }
-
     /// <summary>64차: 그 밤 보지 않는 사이 다가선 걸음 수.</summary>
     public int Creeps
     {
@@ -211,6 +182,11 @@ public sealed class ScienceModel : MonoBehaviour
         DirectionStage stage = DirectionStage.Active;
         if (stage != null)
         {
+            foreach (string id in stage.PresentedIds)
+            {
+                if (id == ProgramCatalog.ModelRush) staged = true;   // 70차: 급습 대역이 복도 끝에 서 있는 동안 — 같은 자리에 둘이 겹치지 않게
+            }
+
             foreach (string id in stage.StagedIds)
             {
                 if (id == ProgramCatalog.ModelRush)
@@ -218,17 +194,18 @@ public sealed class ScienceModel : MonoBehaviour
                     _rushed = true;
                     staged = true;
                 }
-                else if (id == ProgramCatalog.HallEndFigure)
-                {
-                    staged = true;
-                }
             }
         }
 
+        // 70차 ④(민: 「복도 끝 모형과 과학실 모형은 겹치면 안 돼. 과학실 모형이 복도에 나오고, 다음 날 급습해야 해」):
+        // 복도 끝에 선 자의 밤과 급습 밤에는 이 모형이 복도 끝(HallFigure)에 나가 있다 — 과학실은 비어 있다.
+        NightProgram program = NightRun.Program;
+        bool outside = program != null && (program.HasEncounter(ProgramCatalog.HallEndFigure) || program.HasEncounter(ProgramCatalog.ModelRush));
+
         // 64차: 인체 모형 사망 컷신(DeathCutscene_Illuminance)이 도는 동안은 컷신의 모형만 — 과학실에서 붙잡히면 둘이 겹쳐 보인다.
-        bool show = !_rushed && !staged && DeathCutscene.Playing == null;
+        bool show = !outside && !_rushed && !staged && DeathCutscene.Playing == null;
         if (_model != null && _model.activeSelf != show) _model.SetActive(show);
-        if (show && _model != null) Creep();   // 64차
+        if (show && _model != null && !NightRun.Sandbox) Creep();   // 64차 · 71차: 흐름 정지 중에는 다가오지 않는다
         else _unseenSince = -1f;
     }
 
@@ -237,6 +214,9 @@ public sealed class ScienceModel : MonoBehaviour
         Band l = NightRun.Shown != null ? NightRun.Shown.GetBand(FearAxis.Layout) : Band.Band0;   // 56차: 배치만(자리가 바뀌는 것은 배치의 언어)
         bool rush = NightRun.Program != null && NightRun.Program.HasEncounter(ProgramCatalog.ModelRush);
         ModelProgress.Spots(_day, l, rush, out _base, out _max);
+        // 70차 ④: 복도로 나오는 것은 날짜 사슬(복도 끝에 선 자 → 다음 날 급습)로만 — 과학실 모형이 따로 복도 자리(3)에 서면 둘이 된다.
+        _max = Mathf.Min(_max, ModelProgress.HallSpot - 1);
+        _base = Mathf.Min(_base, _max);
         _spot = _base;
         _rushed = false;
         _lastSpace = SpaceId.None;
@@ -270,7 +250,7 @@ public sealed class ScienceModel : MonoBehaviour
                 _door = w <= e ? WestDoor : EastDoor;
             }
         }
-        else if (_lastSpace == SpaceId.ScienceRoom && _max > _base && !_rushed)
+        else if (_lastSpace == SpaceId.ScienceRoom && _max > _base && !_rushed && !NightRun.Sandbox)   // 71차: 흐름 정지 중에는 자리를 옮기지 않는다
         {
             // 등 뒤에서 — 과학실을 나가면 한 칸. 64차: 최대 자리에 닿은 뒤에도 나갈 때마다 그 밤 범위의 다른 자리로(「더 활발히」).
             _spot = ModelProgress.NextSpot(_spot, _base, _max, Random.Range(0, 1000));
@@ -301,14 +281,12 @@ public sealed class ScienceModel : MonoBehaviour
             if (_model == null) return;
             _model.name = "과학실 인체 모형 (몬스터)";
             StandInFactory.Dress(_model, true, FinalCues.ModelTarget);
-            FindBones();
         }
         else
         {
             _model.transform.SetPositionAndRotation(at, rot);
         }
 
-        ResetNeck();
         _unseenSince = -1f;
         _displaced = false;
     }
@@ -521,87 +499,5 @@ public sealed class ScienceModel : MonoBehaviour
         }
 
         return false;
-    }
-
-    // ── 64차: 오래 바라보면 목이 꺾인다(3일차부터) ─────────────
-
-    private void LateUpdate()
-    {
-        Neck();
-    }
-
-    private void Neck()
-    {
-        if (_model == null || _head == null || !_model.activeInHierarchy) return;
-        Camera cam = Camera.main;
-        if (cam == null) return;
-
-        if (!_neckTurned && _day >= NeckFromDay && NightRun.IsNightActive)
-        {
-            FixedMobStare stare = NightRun.Stare;
-            if (stare.TargetId == FinalCues.ModelTarget && stare.Seconds >= NeckStareSeconds)
-            {
-                _neckTurned = true;
-                _neckSince = Time.time;
-                PlayNeckSound();
-                if (DirectionStage.Verbose) Debug.Log("[ScienceModel] 오래 바라봐 목이 꺾였다");
-            }
-        }
-
-        if (!_neckTurned) return;
-        float w = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.time - _neckSince) / NeckTurnSeconds));
-
-        // 쉬는 자세에서 시작해 플레이어(카메라) 쪽으로 — 모형 몸 기준 좌우·위아래로 잰다.
-        Transform body = _model.transform;
-        if (_neck != null) _neck.localRotation = _neckRest;
-        _head.localRotation = _headRest;
-        Quaternion headRest = _head.rotation;
-        Vector3 to = body.InverseTransformDirection((cam.transform.position - _head.position).normalized);
-        float yaw = Mathf.Clamp(Mathf.Atan2(to.x, to.z) * Mathf.Rad2Deg, -NeckMaxYaw, NeckMaxYaw);
-        float pitch = Mathf.Clamp(-Mathf.Asin(Mathf.Clamp(to.y, -1f, 1f)) * Mathf.Rad2Deg, -NeckMaxPitch, NeckMaxPitch);
-        Quaternion turn = body.rotation * Quaternion.Euler(pitch * w, yaw * w, 0f) * Quaternion.Inverse(body.rotation);
-        if (_neck != null) _neck.rotation = Quaternion.Slerp(Quaternion.identity, turn, NeckShare) * _neck.rotation;
-        _head.rotation = turn * headRest;
-    }
-
-    /// <summary>목을 쉬는 자세로(자리를 옮기거나 새 밤·재시작).</summary>
-    private void ResetNeck()
-    {
-        _neckTurned = false;
-        if (_neck != null) _neck.localRotation = _neckRest;
-        if (_head != null) _head.localRotation = _headRest;
-    }
-
-    private void FindBones()
-    {
-        _neck = null;
-        _head = null;
-        foreach (Transform t in _model.GetComponentsInChildren<Transform>(true))
-        {
-            string n = t.name.ToLowerInvariant();
-            if (n == "neck" && _neck == null) _neck = t;
-            else if (n == "head" && _head == null) _head = t;
-        }
-
-        if (_neck != null) _neckRest = _neck.localRotation;
-        if (_head != null) _headRest = _head.localRotation;
-    }
-
-    private void PlayNeckSound()
-    {
-        float volume;
-        AudioClip clip = DirectionSoundTableSO.FindExact(NeckSoundKey, out volume);
-        if (clip == null) return;
-        GameObject go = new GameObject("sfx 모형 목");
-        go.transform.SetParent(_head, false);
-        AudioSource s = go.AddComponent<AudioSource>();
-        s.clip = clip;
-        s.volume = volume;
-        s.spatialBlend = 1f;
-        s.minDistance = 2.5f;
-        s.maxDistance = 20f;
-        s.priority = 32;
-        s.Play();
-        Destroy(go, clip.length + 0.2f);
     }
 }

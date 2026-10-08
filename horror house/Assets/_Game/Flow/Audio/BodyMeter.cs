@@ -166,6 +166,7 @@ public sealed class BodyMeter : MonoBehaviour
         s.spatialBlend = 0f;
         s.priority = 24;
         s.volume = 0f;
+        NightDutyMixer.Route(s, NightDutyMixer.Bus.Body);   // 67차
         _targets[s] = volume;
         return s;
     }

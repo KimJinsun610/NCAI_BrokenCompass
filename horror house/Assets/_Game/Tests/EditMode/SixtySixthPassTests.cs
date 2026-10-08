@@ -126,8 +126,8 @@ namespace NightDuty.Tests
                     repeats += kv.Value - 1;
                 }
 
-                Assert.LessOrEqual(repeats, 3, "시드 " + seed + " — 31칸에 항목 29개(실측 평균 2)");
-                Assert.GreaterOrEqual(n.Count, 27, "시드 " + seed);
+                Assert.LessOrEqual(repeats, 3, "시드 " + seed + " — 67차: 26칸(4·5·5·6·6)에 항목 29개");
+                Assert.GreaterOrEqual(n.Count, 23, "시드 " + seed + " — 26칸 − 겹침 3");
             }
         }
     }

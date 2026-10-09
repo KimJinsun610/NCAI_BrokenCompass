@@ -79,6 +79,7 @@ public static class SceneFlowSetup
         AddToBuildSettings(config.GetPath(GameScene.Play), false);
 
         WireMainStartButton();
+        OpeningSceneSetup.Setup();   // 계약서 앞 오프닝(프롤로그)
         ContractSceneSetup.Setup();
 
         AssetDatabase.SaveAssets();

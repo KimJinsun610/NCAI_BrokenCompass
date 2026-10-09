@@ -17,6 +17,7 @@ MonoBehaviour:
   playScene: Assets/0. Main/01 Scene/PlayScene.unity
   resultScene: Assets/0. Main/01 Scene/ResultScene.unity
   contractScene: Assets/0. Main/01 Scene/ContractScene.unity
+  openingScene: Assets/0. Main/01 Scene/OpeningScene.unity
   mainBgm:
     clip: {fileID: 8300000, guid: f109786ccc3f96140997bcabfda24fdc, type: 3}
     volume: 0.6
@@ -40,6 +41,14 @@ MonoBehaviour:
     fadeIn: 1.5
     keepPrevious: 1
     enterSound: {fileID: 8300000, guid: 21f71e4920bfb9244b5d5bb33b0bb26f, type: 3}
+    enterVolume: 0.9
+  openingBgm:
+    clip: {fileID: 0}
+    volume: 0.6
+    loop: 1
+    fadeIn: 1.5
+    keepPrevious: 1
+    enterSound: {fileID: 0}
     enterVolume: 0.9
   resultBgm:
     clip: {fileID: 8300000, guid: 4978208248f512e49b643f769531a97a, type: 3}

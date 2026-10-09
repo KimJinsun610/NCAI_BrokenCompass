@@ -19,11 +19,14 @@ public class SceneFlowConfig : ScriptableObject
     private string resultScene;
     [ScenePath, SerializeField, Tooltip("메인의 시작 버튼 뒤, Day 1 전에 보여 주는 계약서 씬")]
     private string contractScene;
+    [ScenePath, SerializeField, Tooltip("계약서 앞에 보여 주는 오프닝 씬. 비워 두면 시작 버튼이 계약서로 바로 간다.")]
+    private string openingScene;
 
     [Header("BGM — 씬별 배경음 (Play 씬은 BGM 없음)")]
     [SerializeField] private SceneBgm mainBgm = new SceneBgm();
     [SerializeField] private SceneBgm loadingBgm = new SceneBgm { keepPrevious = true };
     [SerializeField] private SceneBgm contractBgm = new SceneBgm { keepPrevious = true };
+    [SerializeField] private SceneBgm openingBgm = new SceneBgm { keepPrevious = true };
     [SerializeField] private SceneBgm resultBgm = new SceneBgm();
     [Tooltip("BGM이 꺼지거나 다른 곡으로 넘어갈 때 앞 곡이 줄어드는 시간(초)")]
     [SerializeField, Min(0f)] private float bgmFadeOut = 1.0f;
@@ -46,6 +49,7 @@ public class SceneFlowConfig : ScriptableObject
             case GameScene.Play: return playScene;
             case GameScene.Result: return resultScene;
             case GameScene.Contract: return contractScene;
+            case GameScene.Opening: return openingScene;
             default: return null;
         }
     }
@@ -59,9 +63,13 @@ public class SceneFlowConfig : ScriptableObject
             case GameScene.Loading: return loadingBgm;
             case GameScene.Result: return resultBgm;
             case GameScene.Contract: return contractBgm;
+            case GameScene.Opening: return openingBgm;
             default: return null;
         }
     }
+
+    /// <summary>오프닝 씬이 지정돼 있는가. 비어 있으면 시작 버튼은 계약서로 바로 간다.</summary>
+    public bool HasOpening { get { return !string.IsNullOrEmpty(openingScene); } }
 
     /// <summary>씬 경로로 어느 GameScene인지 찾는다. 표에 없으면 false.</summary>
     public bool TryGetScene(string scenePath, out GameScene scene)

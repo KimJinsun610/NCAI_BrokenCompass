@@ -35,6 +35,9 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/3.2 Programmer_Kim/00 test/PlayScene_test.unity
     guid: 1acbf601ee48fe04186dda72c8599a50
+  - enabled: 1
+    path: Assets/0. Main/01 Scene/OpeningScene.unity
+    guid: c2008229adbe1f04db3ab9d420c9e905
   m_configObjects:
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

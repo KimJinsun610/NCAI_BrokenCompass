@@ -5,6 +5,8 @@
 public enum GameScene
 {
     Main,
+    /// <summary>계약서 앞에 한 번 보여 주는 오프닝(프롤로그). 지정하지 않으면 건너뛴다.</summary>
+    Opening,
     Loading,
     Play,
     Result,

@@ -120,7 +120,7 @@ public sealed class DoorReopener : MonoBehaviour
     private void Update()
     {
         if (_pending.Count == 0) return;
-        if (!NightRun.IsNightActive || NightRun.IsCaptured) return;
+        if (!NightRun.IsNightActive || NightRun.IsCaptured || NightRun.Sandbox) return;   // 71차: 흐름 정지 중에는 닫은 문이 저절로 열리지 않는다
         Camera cam = Camera.main;
         Transform player = PlayerSensors.Active != null ? PlayerSensors.Active.PlayerRoot : null;
         for (int i = _pending.Count - 1; i >= 0; i--)

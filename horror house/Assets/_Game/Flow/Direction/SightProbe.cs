@@ -26,6 +26,7 @@ public sealed class SightProbe : MonoBehaviour
 
     private string _encounterId;
     private Action _onSeen;
+    private Func<bool> _gate;   // 70차: 참일 때만 본 것으로 센다(모형 급습 = 플레이어가 복도에 있을 때)
     private float _seenFor;
     private bool _done;
     private Renderer[] _renderers;
@@ -43,12 +44,13 @@ public sealed class SightProbe : MonoBehaviour
     }
 
     /// <summary>대역에 붙인다. 알아보면 <paramref name="onSeen"/>을 부른다.</summary>
-    public static SightProbe Attach(GameObject mob, string encounterId, Action onSeen)
+    public static SightProbe Attach(GameObject mob, string encounterId, Action onSeen, Func<bool> gate = null)
     {
         SightProbe p = mob.GetComponent<SightProbe>();
         if (p == null) p = mob.AddComponent<SightProbe>();
         p._encounterId = encounterId;
         p._onSeen = onSeen;
+        p._gate = gate;
         p._seenFor = 0f;
         p._done = false;
         p._renderers = mob.GetComponentsInChildren<Renderer>(true);
@@ -61,7 +63,7 @@ public sealed class SightProbe : MonoBehaviour
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
 
-        if (Visible())
+        if ((_gate == null || _gate()) && Visible())
         {
             _seenFor += dt;
             if (_seenFor >= RecognizeSeconds)

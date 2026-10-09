@@ -66,11 +66,11 @@ namespace NightDuty.Tests
             Assert.IsNull(InspectionCatalog.Find("X-9"));
         }
 
-        [TestCase(1, 5, 2)]
-        [TestCase(2, 6, 2)]   // 57차: 점검을 하루 한 개씩 늘림(민: 「점검이 빨리빨리 안 나와서 지겨웠어」)
-        [TestCase(3, 6, 3)]   // 66차: 5·6·7·7·8 → 5·6·6·7·7(민: 「필요하면 하루 점검을 줄여도 돼」 — 29개로 닷새 겹침을 줄이려고)
-        [TestCase(4, 7, 3)]
-        [TestCase(5, 7, 3)]
+        [TestCase(1, 4, 2)]   // 67차(민: 「물품 점검이 비중이 더 높은데 지시 사항과 균일했으면」): 5·6·6·7·7 → 4·5·5·6·6
+        [TestCase(2, 5, 2)]
+        [TestCase(3, 5, 3)]
+        [TestCase(4, 6, 3)]
+        [TestCase(5, 6, 3)]
         public void 일차별_점검수와_이상수(int day, int items, int anomalies)
         {
             Assert.AreEqual(items, InspectionQuota.Items(day));
@@ -100,7 +100,7 @@ namespace NightDuty.Tests
                 AnomalyAssigner a = new AnomalyAssigner(new System.Random(seed));
                 InspectionPlan plan = a.Build(1, FixedBands.All(Band.Band0));
 
-                Assert.AreEqual(5, plan.Count, plan.ToString());
+                Assert.AreEqual(InspectionQuota.Items(1), plan.Count, plan.ToString());   // 67차: 4항목(K-1 · C-1 · S-2 · 복도 1)
                 Assert.AreEqual(2, plan.AnomalyCount, plan.ToString());
                 Assert.IsFalse(plan.Find("K-1").IsAnomaly, "첫 점검 K-1은 정상");
                 Assert.IsTrue(plan.Find("C-1").IsAnomaly, "화분(옮김)");
@@ -448,7 +448,7 @@ namespace NightDuty.Tests
         {
             UsePlan(Row("H-2", true));
             NightRun.JudgingWindowEnabled = true;
-            _clock = 220;   // 03:40 — 판정은 끝났지만 보고는 04:00까지
+            _clock = (int)NightClock.JudgingEnd + 10;   // 판정은 끝났지만 보고는 근무 끝(67차 05:00)까지
             NightRun.BeginNight(2, () => _clock);
             NightRun.DebugAddAxis(FearAxis.Layout, 93);
 
@@ -479,11 +479,11 @@ namespace NightDuty.Tests
             EventBus.InspectionStartled += (id, axis) => startled.Add(id);
             UsePlan(Row("C-2", false));
             NightRun.JudgingWindowEnabled = true;
-            _clock = 120;   // 이완
+            _clock = (int)NightClock.RelaxStart + 8;   // 이완
             NightRun.BeginNight(2, () => _clock);
 
             Assert.IsFalse(NightRun.InspectionStartle("C-2"));
-            _clock = 140;
+            _clock = (int)NightClock.Call2 + 4;
             Assert.IsTrue(NightRun.InspectionStartle("C-2"));
             CollectionAssert.AreEqual(new[] { "C-2" }, startled);
             Assert.AreEqual(Deltas.InspectionRuleViolation, NightRun.Axes.GetValue(FearAxis.Illuminance));

@@ -14,10 +14,10 @@ using UnityEngine.SceneManagement;
 /// <item>파괴될 때 밤이 아직 열려 있으면(메인으로 나가기 등) <see cref="NightRun.AbandonNight"/>.</item>
 /// </list>
 /// <para>
-/// <b>밤 시계(2026-09-30 최종 기획서).</b> 코어는 「근무 시작부터의 분, 0~240(00:00~04:00)」으로 판정 시간창을 본다(<see cref="NightClock"/>).
+/// <b>밤 시계(2026-09-30 최종 기획서).</b> 코어는 「근무 시작부터의 분, 0~300(00:00~05:00, 67차)」으로 판정 시간창을 본다(<see cref="NightClock"/>).
 /// GameTime은 자정 기준 절대 분을 주고 근무 범위도 프리팹 값(현재 02:00~05:00)을 따르므로, 여기서
-/// <c>(현재 − 시작) × 240 / (종료 − 시작)</c>으로 <b>비례 환산</b>한다 — GameTime 범위가 무엇이든 구간 비율이 기획서와 같다.
-/// <see cref="MatchDesignPace"/>가 켜져 있으면 배속도 바꿔 한 밤이 실시간 10분(59차, 전에는 15분)이 되게 한다(GameTime의 공개 API <c>SetTimeMultiplier</c>).
+/// <c>(현재 − 시작) × 300 / (종료 − 시작)</c>으로 <b>비례 환산</b>한다 — GameTime 범위가 무엇이든 구간 비율이 기획서와 같다.
+/// <see cref="MatchDesignPace"/>가 켜져 있으면 배속도 바꿔 한 밤이 실시간 12분 30초(67차 — 59차 10분, 그 전 15분)가 되게 한다(GameTime의 공개 API <c>SetTimeMultiplier</c>).
 /// 태블릿의 <b>표시 시각</b>은 GameTime 몫이라 건드리지 않는다 — 00:00~04:00 표시는 김진선님과 맞출 일이다.
 /// </para>
 /// <para>
@@ -159,6 +159,7 @@ public sealed class NightRunDriver : MonoBehaviour
 
         gameTime.ShiftEnded += OnShiftEnded;
         EventBus.NightRestarted += OnNightRestarted;
+        _tracker.HourStruck += OnHourStruck;   // 67차(민: 「1시간마다 알림」)
 
         // 최종 기획서 규칙 셋. 옛 테스트는 모두 꺼진 상태를 기준으로 쓰였으므로 코어의 기본값은 꺼 둔다.
         NightRun.JudgingWindowEnabled = true;
@@ -180,12 +181,12 @@ public sealed class NightRunDriver : MonoBehaviour
     private void Update()
     {
         if (!_begun || s_owner != this) return;
-        if (!gameTime.IsRunning || gameTime.IsEnded) return;
-
-        _tracker.Advance(NightMinute);
+        bool flowing = gameTime.IsRunning && !gameTime.IsEnded;
+        if (flowing) _tracker.Advance(NightMinute);
 
         if (!NightRun.IsNightActive) return;
-        NightRun.Tick(Time.deltaTime);
+        // 71차: 개발자 모드 흐름 정지 — 게임 시계는 멈춰 있어도 판정·연출 시간은 흐른다(직접 부른 수칙·연출이 끝까지 돌게).
+        if (flowing || (NightRun.Sandbox && !gameTime.IsEnded)) NightRun.Tick(Time.deltaTime);
     }
 
     private void OnDestroy()
@@ -212,6 +213,12 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.FixedMobStareEnabled = false;
         NightRun.BatterySeed = null;
         NightRun.DirectorAutoRun = true;
+    }
+
+    private void OnHourStruck(int hour)
+    {
+        if (s_owner != this || !NightRun.IsNightActive || NightRun.IsCaptured || NightRun.Finale.Active) return;
+        EventBus.RaiseHourStruck(hour);
     }
 
     private void OnShiftEnded()

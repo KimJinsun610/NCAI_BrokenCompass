@@ -127,7 +127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GameTime
   startHour: 0
   startMinute: 0
-  endHour: 4
+  endHour: 5
   endMinute: 0
   timeMultiplier: 30
   use12HourFormat: 0
@@ -229,6 +229,8 @@ MonoBehaviour:
   prompt: {fileID: 0}
   promptOffset: 64
   promptFontSize: 28
+  inspectBottom: 150
+  inspectFontSize: 30
 --- !u!114 &6235149446408950780
 MonoBehaviour:
   m_ObjectHideFlags: 0

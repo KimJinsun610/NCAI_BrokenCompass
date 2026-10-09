@@ -228,6 +228,51 @@ namespace NightDuty
         {
             _rng = rng ?? new Random();
             _corpseDay = RollCorpseDay();
+            ResetRushChain();
+        }
+
+        // ── 70차: 복도 끝에 선 자 → 다음 날 모형 급습 ─────────────
+
+        /// <summary>
+        /// 70차(민: 「복도 끝에 서 있는 자는 인체 모형으로, 모형 급습 전날에 배치」) — 모형 급습이 나오는 날(기본 5일차).
+        /// 그 전날(<see cref="HallFigureDay"/>)에는 복도 끝에 선 자가 같은 자리에 서 있다. 둘은 슬롯 뽑기에서 빠지고 이 날짜로만 들어간다.
+        /// </summary>
+        public const int DefaultRushDay = 5;
+
+        private int _rushDay;
+        private int _hallDay;
+
+        /// <summary>그 회차에 모형 급습이 나오는 날.</summary>
+        public int RushDay
+        {
+            get { return _rushDay; }
+        }
+
+        /// <summary>그 회차에 복도 끝에 선 자가 서는 날(모형 급습 전날).</summary>
+        public int HallFigureDay
+        {
+            get { return _hallDay; }
+        }
+
+        private void ResetRushChain()
+        {
+            _rushDay = DefaultRushDay;
+            _hallDay = DefaultRushDay - 1;
+        }
+
+        /// <summary>
+        /// 모형 급습 예약(S3 위반)은 사슬을 앞당긴다 — 아직 복도 끝에 선 자가 나오지 않았으면 오늘 세우고 급습은 내일.
+        /// 이미 섰으면(오늘이 급습 날이거나 그 뒤) 그대로 둔다. 예약 목록에서는 뺀다.
+        /// </summary>
+        private void ApplyRushReservation(int day, List<string> reserved)
+        {
+            if (!reserved.Remove(ProgramCatalog.ModelRush)) return;
+            while (reserved.Remove(ProgramCatalog.ModelRush)) { }
+            if (day < _hallDay)
+            {
+                _hallDay = day;
+                _rushDay = day + 1;
+            }
         }
 
         /// <summary>
@@ -274,6 +319,7 @@ namespace NightDuty
             _reserved.Clear();
             _reverseAssigned = 0;
             _corpseDay = RollCorpseDay();
+            ResetRushChain();
         }
 
         /// <summary>
@@ -400,6 +446,11 @@ namespace NightDuty
             // 5일차 경비실은 K4 고정.
             if (day >= 5) Place(d, ProgramCatalog.Rule(ProgramCatalog.FinaleRule), true);
 
+            // 70차: 복도 끝에 선 자(급습 전날) · 모형 급습 — 날짜로만 들어간다(예약·슬롯 뽑기보다 먼저 자리를 잡는다).
+            ApplyRushReservation(day, reserved);
+            if (day == _hallDay) PlaceChain(d, ProgramCatalog.HallEndFigure);
+            if (day == _rushDay) PlaceChain(d, ProgramCatalog.ModelRush);
+
             // 2) 강제 수칙.
             List<string> forced = new List<string>();
             if (request.ForcedRules != null) forced.AddRange(request.ForcedRules);
@@ -412,7 +463,14 @@ namespace NightDuty
                 // 조우에 묶인 수칙은 혼자 들어가면 방아쇠가 오지 않는다 — 그 조우를 함께 건다(2일차 C2 → 천장 다리).
                 if (!r.IsStandalone)
                 {
+                    if (d.Has(r.Id)) continue;   // 70차: 이미 조우가 그 수칙을 들여놓았다(S5 = 복도 끝·급습 날)
                     EncounterDef bound = ProgramCatalog.Encounter(r.BoundEncounter);
+                    if (bound != null && IsChained(bound.Id))
+                    {
+                        d.Note.Append(r.Id).Append(" 강제 편성 실패(복도 끝·급습은 정해진 날에만). ");
+                        continue;
+                    }
+
                     if (bound != null && !Chosen(d, bound.Id) && CanPlaceEncounter(d, bound))
                     {
                         PlaceEncounter(d, bound, true);
@@ -432,7 +490,7 @@ namespace NightDuty
             {
                 EncounterDef e = ProgramCatalog.Encounter(reserved[i]);
                 if (e == null) continue;
-                if (e.Id == ProgramCatalog.ModelRush && day < 3) { d.Note.Append("모형 급습 예약은 3일차부터. "); continue; }
+                if (IsChained(e.Id)) continue;   // 70차: 날짜 사슬로만
                 if (!CanPlaceEncounter(d, e)) { d.Note.Append(e.Id).Append(" 예약 편성 실패(공간 충돌). "); continue; }
                 PlaceEncounter(d, e, true);
             }
@@ -532,6 +590,7 @@ namespace NightDuty
                 EncounterDef e = all[i];
                 if (Chosen(d, e.Id)) continue;
                 if (e.Id == ProgramCatalog.CeilingLegs) continue;   // 59차: 시체 낙하는 슬롯 밖 겹침 조우(Extras)로 늘 건다
+                if (IsChained(e.Id)) continue;   // 70차: 복도 끝에 선 자·모형 급습은 날짜 사슬로만
                 if (!e.Satisfied(request.Shown)) continue;
                 if (!SpecialOk(e, day, request)) continue;
                 if (prev != null && prev.Encounter.Mob == e.Mob) continue;
@@ -690,6 +749,20 @@ namespace NightDuty
             }
 
             return true;
+        }
+
+        /// <summary>70차: 날짜 사슬로만 들어가는 조우(복도 끝에 선 자 → 다음 날 모형 급습).</summary>
+        public static bool IsChained(string encounterId)
+        {
+            return encounterId == ProgramCatalog.HallEndFigure || encounterId == ProgramCatalog.ModelRush;
+        }
+
+        private void PlaceChain(Draft d, string encounterId)
+        {
+            EncounterDef e = ProgramCatalog.Encounter(encounterId);
+            if (e == null || Chosen(d, e.Id)) return;
+            if (!CanPlaceEncounter(d, e)) { d.Note.Append(e.Id).Append(" 편성 실패(공간 충돌). "); return; }
+            PlaceEncounter(d, e, true);
         }
 
         private void PlaceEncounter(Draft d, EncounterDef e, bool reserved)

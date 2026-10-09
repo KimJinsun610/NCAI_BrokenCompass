@@ -55,7 +55,7 @@ namespace NightDuty
         /// <summary>미완료 답장.</summary>
         public readonly string Missed;
 
-        /// <summary>기한(실제 초, 조우 중에는 멈춘다). 0이면 따로 정한다(W5 = 이완 구간 끝).</summary>
+        /// <summary>기한(실제 초). 0이면 제한 없음(67차 ②: W2·W4·W5·W15). 조우 중에도 흐른다(태블릿 시계 마감과 맞게).</summary>
         public readonly float Seconds;
 
         private readonly int[] _days;
@@ -147,30 +147,30 @@ namespace NightDuty
         private static readonly List<DutyDef> s_all = new List<DutyDef>
         {
             new DutyDef("W1", DutyKind.CctvSweep, SpaceId.SecurityRoom, FearAxis.Layout,
-                "CCTV 전 채널 순회 바랍니다.", "CCTV 순회가 기록되었습니다.", "CCTV 순회 기록이 없습니다.", 75f, 1, 2, 3, 4, 5),
+                "CCTV 전 채널 순회 바랍니다.", "CCTV 순회가 기록되었습니다.", "CCTV 순회 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
             new DutyDef("W2", DutyKind.Patrol, SpaceId.Library, FearAxis.Auditory,
-                "도서관 순찰 바랍니다.", "도서관 순찰이 기록되었습니다.", "도서관 순찰 기록이 없습니다.", 150f, 1, 2, 3, 4, 5),   // 57차: 120 → 150초
+                "도서관 순찰 바랍니다.", "도서관 순찰이 기록되었습니다.", "도서관 순찰 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 57차: 120 → 150초 · 67차(민): 제한 없음
             new DutyDef("W3", DutyKind.LightsOutCheck, SpaceId.Classroom_1_3, FearAxis.Auditory,
-                "1-3 교실 소등 상태 확인 바랍니다.", "1-3 교실 이상 없음.", "1-3 교실 확인 기록이 없습니다.", 90f, 1, 2, 3, 4, 5),
+                "교실 소등 확인", "1-3 교실 이상 없음.", "1-3 교실 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
             new DutyDef("W4", DutyKind.DoorTidy, SpaceId.Corridor, FearAxis.Layout,
-                "열어 둔 문 정리 바랍니다.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 90f, 2, 3, 4, 5),
+                "열어 둔 문 정리 바랍니다.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 0f, 2, 3, 4, 5),   // 67차(민): 제한 없음
             new DutyDef("W5", DutyKind.LogSign, SpaceId.SecurityRoom, FearAxis.Auditory,
-                "근무일지 서명 바랍니다.", "근무일지 서명이 기록되었습니다.", "근무일지 서명 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),
+                "경비실 근무일지 서명", "근무일지 서명이 기록되었습니다.", "근무일지 서명 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),
             new DutyDef("W6", DutyKind.ExitSignCheck, SpaceId.Corridor, FearAxis.Auditory,
-                "복도 끝 비상구 유도등 확인 후 복귀 바랍니다.", "유도등 확인이 기록되었습니다.", "유도등 확인 기록이 없습니다.", 100f, 1, 2, 3, 4, 5),
+                "복도 끝 비상구 응시 후 경비실 복귀", "유도등 확인이 기록되었습니다.", "유도등 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
 
             // 57차(민: 「근무 지시 풀을 늘려서 다양하게」): 비품 확인 — 그날 점검에 없는 점검 대상을 1초 본다(보고 없음, 응시 대상은 씬에 이미 있다).
-            DutyDef.Gaze("W7", "H-1", FearAxis.Illuminance, "복도 소화기 압력 확인 바랍니다.", "소화기 확인이 기록되었습니다.", "소화기 확인 기록이 없습니다.", 80f, 1, 2, 3, 4, 5),
-            DutyDef.Gaze("W8", "S-2", FearAxis.Illuminance, "과학실 현미경 전원 확인 바랍니다.", "현미경 전원 확인이 기록되었습니다.", "현미경 확인 기록이 없습니다.", 90f, 1, 2, 3, 4, 5),
-            DutyDef.Gaze("W9", "C-1", FearAxis.Layout, "교실 화분 상태 확인 바랍니다.", "화분 확인이 기록되었습니다.", "화분 확인 기록이 없습니다.", 90f, 1, 2, 3, 4, 5),
-            DutyDef.Gaze("W10", "H-2", FearAxis.Layout, "복도 식수대 누수 확인 바랍니다.", "식수대 확인이 기록되었습니다.", "식수대 확인 기록이 없습니다.", 80f, 1, 2, 3, 4, 5),
-            DutyDef.Gaze("W11", "L-2", FearAxis.Illuminance, "도서관 블라인드 확인 바랍니다.", "블라인드 확인이 기록되었습니다.", "블라인드 확인 기록이 없습니다.", 100f, 2, 3, 4, 5),
-            DutyDef.Gaze("W12", "T-3", FearAxis.Illuminance, "화장실 거울 조명 확인 바랍니다.", "거울 조명 확인이 기록되었습니다.", "거울 조명 확인 기록이 없습니다.", 90f, 2, 3, 4, 5),
-            DutyDef.Gaze("W13", "L-1", FearAxis.Layout, "도서관 열람석 정리 상태 확인 바랍니다.", "열람석 확인이 기록되었습니다.", "열람석 확인 기록이 없습니다.", 100f, 2, 3, 4, 5),
-            DutyDef.Gaze("W14", "T-2", FearAxis.Auditory, "화장실 빈 칸 문 상태 확인 바랍니다.", "칸 문 확인이 기록되었습니다.", "칸 문 확인 기록이 없습니다.", 90f, 3, 4, 5),
+            DutyDef.Gaze("W7", "H-1", FearAxis.Illuminance, "복도 소화기 압력 확인 바랍니다.", "소화기 확인이 기록되었습니다.", "소화기 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+            DutyDef.Gaze("W8", "S-2", FearAxis.Illuminance, "과학실 현미경 확인 바랍니다.", "현미경 전원 확인이 기록되었습니다.", "현미경 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+            DutyDef.Gaze("W9", "C-1", FearAxis.Layout, "교실 화분 상태 확인 바랍니다.", "화분 확인이 기록되었습니다.", "화분 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+            DutyDef.Gaze("W10", "H-2", FearAxis.Layout, "복도 식수대 누수 확인 바랍니다.", "식수대 확인이 기록되었습니다.", "식수대 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+            DutyDef.Gaze("W11", "L-2", FearAxis.Illuminance, "도서관 블라인드 확인 바랍니다.", "블라인드 확인이 기록되었습니다.", "블라인드 확인 기록이 없습니다.", LimitSeconds, 2, 3, 4, 5),
+            DutyDef.Gaze("W12", "T-3", FearAxis.Illuminance, "화장실 거울 조명 확인 바랍니다.", "거울 조명 확인이 기록되었습니다.", "거울 조명 확인 기록이 없습니다.", LimitSeconds, 2, 3, 4, 5),
+            DutyDef.Gaze("W13", "L-1", FearAxis.Layout, "도서관 열람석 확인 바랍니다.", "열람석 확인이 기록되었습니다.", "열람석 확인 기록이 없습니다.", LimitSeconds, 2, 3, 4, 5),
+            DutyDef.Gaze("W14", "T-2", FearAxis.Auditory, "화장실 칸 문 확인 바랍니다.", "칸 문 확인이 기록되었습니다.", "칸 문 확인 기록이 없습니다.", LimitSeconds, 3, 4, 5),
 
             // 65차(민: 「반납 상자는 book16(2) 관련 지시로 — 도서관 안쪽 책상에 있는 biology 책을 습득하세요. 클릭해서 습득하면 완료」). 문구는 민 그대로(「~바랍니다」 예외).
-            DutyDef.Pickup("W15", LibraryBookTarget, SpaceId.Library, FearAxis.Auditory, "도서관 안쪽 책상에 있는 biology 책을 습득하세요.", "biology 책 습득이 기록되었습니다.", "biology 책 습득 기록이 없습니다.", 120f, 1, 2, 3, 4, 5),
+            DutyDef.Pickup("W15", LibraryBookTarget, SpaceId.Library, FearAxis.Auditory, "도서관 안쪽 책상에 있는 biology 책을 습득하세요.", "biology 책 습득이 기록되었습니다.", "biology 책 습득 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 67차(민): 제한 없음
         };
 
         /// <summary>전부(정의 순).</summary>
@@ -197,7 +197,45 @@ namespace NightDuty
         public static int DailyCap(int day)
         {
             // 57차(민: 「근무 지시가 많아서 귀찮다」): 날마다 4 → 1·2일차 2 · 3일차부터 3. 대신 종류를 늘려 같은 지시가 덜 겹친다.
-            return day <= 2 ? 2 : 3;
+            // 67차(민: 「물품 점검이 비중이 더 높은데, 지시 사항과 비중이 균일했으면」): 1·2일차 3 · 3일차부터 4 — 점검 4·5·5·6·6항목(지시 3~4통)과 번갈아 낸다.
+            return day <= 2 ? 3 : 4;
+        }
+
+        /// <summary>
+        /// 67차 ②(민: 「시간 제한이 있는 모든 점검 지시는 120초로 고정 — W2·W4·W5·W15는 제한 없음」): 제한이 있는 지시의 기한(실제 초).
+        /// 기한은 태블릿 시계로 「HH:MM까지」(<see cref="DeadlineText"/>) — 게임 시계가 24배라 120초 = 48분.
+        /// </summary>
+        public const float LimitSeconds = 120f;
+
+        /// <summary><see cref="LimitSeconds"/>를 게임 분으로(48분).</summary>
+        public static float LimitGameMinutes
+        {
+            get { return LimitSeconds * NightClock.GameSecondsPerRealSecond / 60f; }
+        }
+
+        /// <summary>그 게임 분에 받은 지시의 마감 「HH:MM까지」(근무 시작 00:00 기준 = 태블릿 시계).</summary>
+        public static string DeadlineText(float issuedMinute, float seconds = LimitSeconds)
+        {
+            float due = issuedMinute + seconds * NightClock.GameSecondsPerRealSecond / 60f;
+            return Clock((int)Math.Ceiling(due - 0.0001f)) + "까지";
+        }
+
+        /// <summary>67차(민: 「제한시간이 존재하고, 명시되면 좋겠어」): 「제한 1분 15초」. 0 이하면 빈 문자열.</summary>
+        public static string LimitText(float seconds)
+        {
+            if (seconds <= 0f) return string.Empty;
+            int s = (int)Math.Round(seconds);
+            int m = s / 60;
+            int r = s % 60;
+            if (m == 0) return "제한 " + r + "초";
+            return r == 0 ? "제한 " + m + "분" : "제한 " + m + "분 " + r + "초";
+        }
+
+        /// <summary>지시 문자 끝에 붙는 마감 줄(67차 ②) — 제한이 있는 지시만 「HH:MM까지」. 받은 시각을 모르면 빈 문자열.</summary>
+        public static string LimitLine(DutyDef def, float issuedMinute)
+        {
+            if (def == null || def.Seconds <= 0f || issuedMinute < 0f) return string.Empty;
+            return "\n" + DeadlineText(issuedMinute, def.Seconds);
         }
 
         /// <summary>
@@ -207,9 +245,15 @@ namespace NightDuty
         public static string OrderText(DutyDef def, int day)
         {
             if (def == null) return string.Empty;
-            if (def.Kind == DutyKind.LightsOutCheck && day >= 2) return Header + def.Order + " 1-3 교실은 소등되어 있습니다.";
+            if (def.Kind == DutyKind.LightsOutCheck && day >= 2) return Header + def.Order + "\n1-3 교실은 소등되어 있습니다.";
             if (def.Kind == DutyKind.Patrol && day == 4) return Header + "복도 순찰은 다른 근무자가 진행 중입니다. " + def.Order;
             return Header + def.Order;
+        }
+
+        /// <summary>67차: 태블릿에 실리는 지시 문자 = 지시 문장 + 마감 줄(「02:08까지」, 제한 없는 W2·W4·W5·W15는 없음).</summary>
+        public static string MessageText(DutyDef def, int day, float issuedMinute)
+        {
+            return OrderText(def, day) + LimitLine(def, issuedMinute);
         }
 
         /// <summary>완료 답장(「~이 기록되었습니다. 00:42」). 「확인되었습니다.」는 역설 답장 전용이라 쓰지 않는다.</summary>

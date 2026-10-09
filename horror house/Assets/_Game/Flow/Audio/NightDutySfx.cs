@@ -14,7 +14,7 @@ using UnityEngine.SceneManagement;
 /// <item>점검 「가까이」: 항목 자리에서 <c>inspect.&lt;항목&gt;.near</c>(3D, <c>+</c>는 0.6초 뒤 이어서) + 공용 충격음 <c>inspect.near</c>.
 /// 61차(민: 「쾅 소리가 1일차부터 너무 가까이서 들려 혼란 — 멀리서, 1~2일차엔 배정 안 했으면」): 공용 충격음은 <see cref="StartleImpactFromDay"/>일차부터만,
 /// 2D가 아니라 등 뒤 <see cref="StartleImpactDistance"/>m에서 저역만 남겨 낸다(<see cref="PlayFar"/>). 「가까이」 판정(축 +6)과 항목 소리는 그대로.</item>
-/// <item>점검 이상: 이상이 배정된 항목은 보고할 때까지 그 자리에서 <c>inspect.&lt;항목&gt;.loop</c>가 3D로 계속 난다(C-3 천장 사각거림 · H-2 식수대 · H-3 종 웅— · L-3 종이 넘김 · S-3 물방울 · T-2 휴지 뜯기).
+/// <item>점검 이상: 이상이 배정된 항목은 <b>지시받은 뒤부터</b>(67차) 보고할 때까지 그 자리에서 <c>inspect.&lt;항목&gt;.loop</c>가 3D로 계속 난다(C-3 천장 사각거림 · H-2 식수대 · H-3 종 웅— · L-3 종이 넘김 · S-3 물방울 · T-2 휴지 뜯기).
 /// 이상의 강도(구간)가 높을수록 조금 크다.</item>
 /// </list>
 /// </summary>
@@ -235,7 +235,9 @@ public sealed class NightDutySfx : MonoBehaviour
         for (int i = 0; i < rows.Count; i++)
         {
             InspectionAssignment row = rows[i];
-            bool want = row.IsAnomaly && board.StateOf(row.Id) == InspectionState.Pending;
+            // 67차(민: 「알림인지 아닌지 헷갈리는 소리 — 복도 종소리는 종 점검과 묶이게」): 이상 루프는 그 점검이 지시된 뒤에만 난다.
+            // 전에는 밤 시작부터 울려, 지시도 받기 전에 복도에서 종 웅— 소리가 나 알림처럼 들렸다.
+            bool want = row.IsAnomaly && board.StateOf(row.Id) == InspectionState.Pending && (!board.DripMode || board.IsIssued(row.Id));
             Loop loop;
             bool has = _loops.TryGetValue(row.Id, out loop);
             if (want && !has) StartLoop(row);
@@ -269,6 +271,7 @@ public sealed class NightDutySfx : MonoBehaviour
         s.priority = 64;
         s.volume = volume * Mathf.Clamp01(0.55f + 0.15f * (int)row.Intensity);
         s.timeSamples = Random.Range(0, Mathf.Max(1, clip.samples - 1));
+        NightDutyMixer.Route(s, NightDutyMixer.Bus.World);   // 67차
         s.Play();
         _loops[row.Id] = new Loop { ItemId = row.Id, Source = s };
         if (DirectionStage.Verbose) Debug.Log("[Sfx] 점검 이상 소리 " + row.Id + " ← " + clip.name + " @" + at.ToString("F1"));
@@ -326,6 +329,7 @@ public sealed class NightDutySfx : MonoBehaviour
         s.dopplerLevel = 0f;
         s.minDistance = 1.5f;
         s.maxDistance = 20f;
+        NightDutyMixer.Route(s, NightDutyMixer.Bus.World);   // 67차
         if (delay > 0f) s.PlayDelayed(delay);
         else s.Play();
         Destroy(go, delay + clip.length + 0.3f);

@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 /// <para><b>「읽는 중」 = 확대 상태</b>다. Tab 판정 신호·센서 정지(<see cref="TabletBridge"/>), CCTV·전화기 사용 금지, 알람 확인 같은 「태블릿을 펼쳤나」 판단은
 /// 모두 <see cref="Reading"/>을 읽는다 — 든 상태만으로는 판정이 멈추지 않는다. CCTV를 들여다보는 동안은 모니터를 가리지 않게 잠깐 내린다.</para>
 /// <para><b>61차 들기 제한</b>(플레이테스트 「플레이어가 태블릿을 너무 올리고 다닌다」 → 민: 「주요 연출이 나오면 강제로 내리고 끝날 때까지 못 올리고, 한 번 올리면 5초 뒤에 내려가고,
-/// 2초 후에 다시 올릴 수 있도록」, 규칙은 코어 <see cref="NightDuty.TabletLimit"/>): 「올림」 = 확대. 확대는 5초 뒤 저절로 풀리고 2초 동안 다시 못 한다.
+/// 2초 후에 다시 올릴 수 있도록」, 규칙은 코어 <see cref="NightDuty.TabletLimit"/>): 「올림」 = 확대. 푼 뒤 2초 동안 다시 못 한다(69차: 「5초 뒤 저절로 풀림」은 폐기 — 민).
 /// 주요 연출(조우의 전조·몹을 세워 둔 동안·대면·마무리 — <c>TensionDirector.Busy</c>) 동안은 확대를 풀고 손의 태블릿까지 시야 밖으로 내린다 — 끝나면 다시 든다.</para>
 /// <list type="bullet">
 /// <item>김진선님 <see cref="PlayerTablet"/>은 고치지 않는다. 실행 중에만 그 인스턴스의 <c>readInput</c>을 끄고 같은 키를 여기서 받아
@@ -165,10 +165,10 @@ public sealed class TabletZoom : MonoBehaviour
         if (!cctv && Input.GetKeyDown(_tablet.toggleKey)) Press();
         if (!_tablet.IsOpened) _zoomTarget = false;   // 다른 쪽(알람 등)이 내렸다
 
-        // 61차: 확대는 5초 뒤 풀리고, 푼 뒤 2초는 다시 못 한다(일시정지·CCTV 중에는 흐르지 않는다).
+        // 61차: 푼 뒤 2초는 다시 못 한다(일시정지·CCTV 중에는 흐르지 않는다). 69차: 「5초 뒤 풀림」은 폐기 — 연출이 나올 때만 풀린다.
         if (live && !cctv && _limit.Tick(Time.deltaTime, _zoomTarget, busy))
         {
-            if (_zoomTarget && DirectionStage.Verbose) Debug.Log("[TabletZoom] 확대를 풀었다 — " + (busy ? "연출 중" : "5초"));
+            if (_zoomTarget && DirectionStage.Verbose) Debug.Log("[TabletZoom] 확대를 풀었다 — " + (busy ? "연출 중" : "쉬는 중"));
             _zoomTarget = false;
         }
 

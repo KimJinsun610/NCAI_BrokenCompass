@@ -647,6 +647,7 @@ public sealed class AmbiencePlayer : MonoBehaviour
 
     private void ScheduleNextShot()
     {
+        if (_rng == null) _rng = new System.Random(Environment.TickCount);   // 67차: 플레이 중 스크립트를 다시 불러오면 Start 없이 Update가 돌아 매 프레임 예외가 났다
         Vector2 range = config.IntervalFor(_band);
         _shotTimer = Mathf.Lerp(range.x, range.y, (float)_rng.NextDouble());
     }

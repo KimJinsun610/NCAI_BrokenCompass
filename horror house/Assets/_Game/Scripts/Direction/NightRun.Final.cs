@@ -27,13 +27,18 @@ namespace NightDuty
         private static void BeginFinalRules()
         {
             DisposeFinalRules();
-            if (!ProgramEnabled || _program == null) return;
+            if (!ProgramEnabled || _program == null)
+            {
+                PlanCctvSpots();   // 71차: K-1 이상 사람 자리는 편성 없이도
+                return;
+            }
 
             _finalBook = new FinalRuleBook(_program.Deck, _axes);
             _finalBook.Settled += OnFinalSettled;
             _finalBook.ReverseReportArmed += OnReverseReportArmed;
             _finalBook.EncounterRequested += ReserveEncounter;
             BeginDirection();
+            PlanCctvSpots();   // 71차: CCTV 사람 자리 — 디렉터가 그 채널을 볼 때 조우를 건다
             PlanParadox();
             BuildDisplayDeck();
         }
@@ -140,7 +145,7 @@ namespace NightDuty
         public const string ChecklistMessageId = "inspect.checklist";
 
         /// <summary>점검 조작 안내(점검 지시 문자 맨 아래).</summary>
-        public const string InspectionHowTo = "항목 2m 안에서 1초 바라본 뒤 길게 누르기 — Z 정상 / X 이상";
+        public const string InspectionHowTo = "가까이서 1초 본 뒤 길게 — Z 정상 / X 이상";   // 67차(문장은 짧게)
 
         /// <summary>조작 안내 색(김진선님 태블릿의 수칙 안내 색과 같다).</summary>
         public const string ChecklistHowToColor = "#7FA6B8";
@@ -180,7 +185,7 @@ namespace NightDuty
         private static string InspectionLine(InspectionAssignment a)
         {
             string line = SpaceLabel(a.Item.Space) + " " + a.Item.Name + " — " + a.Item.TabletLine;
-            if (a.IsLate) line += " (02:16부터)";
+            if (a.IsLate) line += " (" + NightClock.Clock(NightClock.Call2) + "부터)";
             if (Board.StateOf(a.Id) != InspectionState.Pending) line += " · 보고함";
             else if (_unavoidable.Banned != SpaceId.None && SpaceIds.Canonical(a.Item.Space) == _unavoidable.Banned) line += " · 재입실 불가";
             else

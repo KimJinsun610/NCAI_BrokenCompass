@@ -70,15 +70,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
     private sealed class Walker
     {
         public GameObject Go;
-        public CctvOnlyVisible Only;
+        public CctvWalker Person;   // 71차: 걷기 동작으로 실제로 걷는다
         public int Channel = -1;
-        public Vector3 A;
-        public Vector3 B;
-        public float Speed;
-        public float Wait;
-        public float At;
-        public bool Forward = true;
-        public float NextStep;
     }
 
     /// <summary>카메라를 보는 카드. 벽에 붙은 대상에서 링이 벽에 잘리지 않게 카메라 쪽으로 조금 띄운다.</summary>
@@ -1575,73 +1568,46 @@ public sealed class InspectionAnomalies : MonoBehaviour
     {
         Walker w = look.Walker;
         CctvSystem cctv = CctvSystem.Active;
-        if (w == null || cctv == null || cctv.ChannelCount <= 0) return;
+        if (w == null || cctv == null || cctv.ChannelCount <= 0 || w.Go != null) return;
 
-        if (w.Go == null)
-        {
-            int day = NightRun.Day;
-            w.Channel = Mathf.Abs(day * 7 + 3) % cctv.ChannelCount;
-            Camera cam = cctv.ChannelCamera(w.Channel);
-            if (cam == null) return;
-            Vector3 eye = cam.transform.position;
-            Vector3 fwd = Flat(cam.transform.forward);
-            if (fwd.sqrMagnitude < 0.01f) fwd = Vector3.forward;
-            fwd.Normalize();
-            Vector3 right = Vector3.Cross(Vector3.up, fwd);
-            float dist = Mathf.Lerp(6f, 3.5f, AnomalyLook.Strength(look.Band));
-            Vector3 mid = FloorUnder(eye + fwd * dist);
-            float left = Free(mid + Vector3.up * 1f, -right, 2.4f);
-            float rightFree = Free(mid + Vector3.up * 1f, right, 2.4f);
-            // 화면을 비스듬히 가로지른다 — 안쪽 왼편에서 앞쪽 오른편으로(좁은 복도에서도 몇 초는 걸린다).
-            w.A = FloorUnder(eye + fwd * (dist + 1.8f) - right * left);
-            w.B = FloorUnder(eye + fwd * Mathf.Max(2.2f, dist - 1.2f) + right * rightFree);
-            w.Speed = 0.45f;
-            w.Go = StandInFactory.Create("mob.blackman", w.A, w.B, string.Empty);
-            if (w.Go == null) return;
-            w.Go.name = "이상 K-1 화면 속 사람";
-            foreach (Collider c in w.Go.GetComponentsInChildren<Collider>(true)) c.enabled = false;
-            w.Only = w.Go.AddComponent<CctvOnlyVisible>();
-            w.Only.Channel = w.Channel;
-            look.Objects.Add(w.Go);
-            w.At = 0f;
-            w.Wait = 0f;
-            w.NextStep = Time.time + CctvFaceScare.StepSeconds;
-            Walker owner = w;
-            // 51차: 3초 이어서 보면 얼굴 점프스케어(3일차부터, 밤당 한 번) — 끝나면 잠시 화면에서 사라진다.
-            CctvFaceScare.Register(w.Go, w.Channel, false, () =>
-            {
-                owner.Wait = 12f;
-                if (owner.Only != null) owner.Only.enabled = false;
-            });
-        }
+        // 71차(민: 「CCTV 등장 장소 다양화 · 걷는 애니메이션으로 실제로 이동」): 자리는 밤 시작에 코어가 정한 것(NightRun.CctvAnomalySpot, 자리 표 CctvSpots).
+        // 표의 자리가 그 채널 화면에 안 보이면(채널 자리를 고쳤을 때) 옛 방식 — 채널 카메라 앞 바닥을 비스듬히 가로지르는 길.
+        CctvSpot spot = NightRun.CctvAnomalySpot;
+        if (spot != null && spot.Channel >= cctv.ChannelCount) spot = null;
+        w.Channel = spot != null ? spot.Channel : Mathf.Abs(NightRun.Day * 7 + 3) % cctv.ChannelCount;
+        Camera cam = cctv.ChannelCamera(w.Channel);
+        if (cam == null) return;
+        Vector3 a, b;
+        if (!CctvWalker.TryResolve(cam, spot, out a, out b)) ScreenCrossing(cam, look.Band, out a, out b);
 
-        if (w.Wait > 0f)
+        w.Person = CctvWalker.Create(a, b, w.Channel, "이상 K-1 화면 속 사람");
+        if (w.Person == null) return;
+        w.Go = w.Person.gameObject;
+        look.Objects.Add(w.Go);
+        // 다 지나가면 화면에서 8초 사라졌다가 반대로 걷는다(끝없이).
+        w.Person.Walk(a, b, true, 8f, null);
+        CctvWalker person = w.Person;
+        // 51차: 3초 이어서 보면 얼굴 점프스케어(3일차부터, 밤당 한 번) — 끝나면 잠시 화면에서 사라진다.
+        CctvFaceScare.Register(w.Go, w.Channel, () =>
         {
-            w.Wait -= Time.deltaTime;
-            if (w.Wait <= 0f && w.Only != null) w.Only.enabled = true;
-            return;
-        }
+            if (person != null) person.HideFor(12f);
+        });
+    }
 
-        // 51차(민: 「걷는 애니 없이 서성거려 이상하다」): 걷지 않는다 — 1.5초마다 0.7m씩 툭툭(스톱모션), 늘 카메라 쪽을 본다.
-        if (Time.time < w.NextStep) return;
-        w.NextStep = Time.time + CctvFaceScare.StepSeconds;
-        float span = Mathf.Max(0.5f, Vector3.Distance(w.A, w.B));
-        w.At += CctvFaceScare.StepMeters / span;
-        Vector3 from = w.Forward ? w.A : w.B;
-        Vector3 to = w.Forward ? w.B : w.A;
-        w.Go.transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(w.At));
-        Camera eyeCam = cctv.ChannelCamera(w.Channel);
-        Vector3 dir = eyeCam != null ? Flat(eyeCam.transform.position - w.Go.transform.position) : Flat(to - from);
-        if (dir.sqrMagnitude > 0.0001f) w.Go.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
-        cctv.ForceRenderFor(0.15f);
-        if (w.At >= 1f)
-        {
-            // 다 지나가면 화면에서 사라졌다가 잠시 뒤 반대로.
-            w.At = 0f;
-            w.Forward = !w.Forward;
-            w.Wait = 8f;
-            if (w.Only != null) w.Only.enabled = false;
-        }
+    /// <summary>자리 표가 없거나 맞지 않을 때 — 채널 카메라 앞을 안쪽 왼편에서 앞쪽 오른편으로 비스듬히 가로지르는 바닥 길(41차).</summary>
+    private void ScreenCrossing(Camera cam, Band band, out Vector3 a, out Vector3 b)
+    {
+        Vector3 eye = cam.transform.position;
+        Vector3 fwd = Flat(cam.transform.forward);
+        if (fwd.sqrMagnitude < 0.01f) fwd = Vector3.forward;
+        fwd.Normalize();
+        Vector3 right = Vector3.Cross(Vector3.up, fwd);
+        float dist = Mathf.Lerp(6f, 3.5f, AnomalyLook.Strength(band));
+        Vector3 mid = FloorUnder(eye + fwd * dist);
+        float left = Free(mid + Vector3.up * 1f, -right, 2.4f);
+        float rightFree = Free(mid + Vector3.up * 1f, right, 2.4f);
+        a = FloorUnder(eye + fwd * (dist + 1.8f) - right * left);
+        b = FloorUnder(eye + fwd * Mathf.Max(2.2f, dist - 1.2f) + right * rightFree);
     }
 
     // ── 도우미 ───────────────────────────────────────────────

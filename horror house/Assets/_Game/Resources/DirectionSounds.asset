@@ -268,11 +268,11 @@ MonoBehaviour:
     hits:
     - 1.26839
   - key: door.locker.open
-    clip: {fileID: 8300000, guid: a00f1117fad2c7f46b87d3239bc478fb, type: 3}
+    clip: {fileID: 8300000, guid: f800fdf3e35d2ab46bbf917ae77fbb61, type: 3}
     more: []
-    volume: 1
+    volume: 0.7
     hits:
-    - 1.1923542
+    - 0.1566875
   - key: door.locker.close
     clip: {fileID: 8300000, guid: 112f1428a350de243afa312a2643ecfb, type: 3}
     more: []

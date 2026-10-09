@@ -263,12 +263,13 @@ namespace NightDuty.Tests
             ProgramDirector d = new ProgramDirector(new System.Random(7));
             d.Build(Request(1, FixedBands.All(Band.Band0), FixedBands.All(Band.Band0), null));
 
+            // 70차: 모형 급습 예약(S3 위반)은 사슬을 앞당긴다 — 다음 밤 복도 끝에 선 자, 그다음 밤 모형 급습.
             d.Reserve(ProgramCatalog.ModelRush);
             NightProgram day2 = d.Build(Request(2, FixedBands.All(Band.Band1), FixedBands.All(Band.Band1), null));
-            Assert.IsFalse(day2.HasEncounter(ProgramCatalog.ModelRush), "모형 급습 예약은 3일차부터");
+            Assert.IsFalse(day2.HasEncounter(ProgramCatalog.ModelRush), "급습 전날에는 복도 끝에 선 자가 먼저");
+            Assert.IsTrue(day2.HasEncounter(ProgramCatalog.HallEndFigure), day2.Report);
             Assert.AreEqual(0, d.Reserved.Count, "예약은 한 번 쓰고 비운다");
 
-            d.Reserve(ProgramCatalog.ModelRush);
             d.Reserve(ProgramCatalog.SuitMan);
             NightProgram day3 = d.Build(Request(3, FixedBands.All(Band.Band1), FixedBands.All(Band.Band1), null));
 

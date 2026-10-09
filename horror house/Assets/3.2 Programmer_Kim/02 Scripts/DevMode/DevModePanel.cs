@@ -21,6 +21,12 @@ using UnityEngine.InputSystem;
 /// - <b>⑥ 수칙</b>: 오늘 덱(방아쇠·위반) · 수칙마다 이동·단서·조우 · 덱에 추가 · 역설·회피 불가 · 정산 결과.
 /// - <b>⑦ 점검</b>: 오늘 점검표 · 순차 지시 · 항목마다 이동·정상·이상 보고.
 /// - <b>⑧ 메시지·기록</b>: 태블릿 메시지 보내기 · CSV 메시지 연출(김진선님) · 연출·수칙·점검·재시작 기록.
+/// - <b>⑨ 상호작용</b>(71차): 지금 플레이어가 무엇을 보고·비추고·어디에 서 있는지, 들어온 판정 신호·정산·축 변화를 실시간으로.
+///
+/// 71차(이성현 — 민: 「개발자 모드를 켜면 원래 게임의 흐름이 멈추고, 수칙과 연출을 내가 직접 호출하고 상호작용을 확인할 수 있게」):
+/// 패널을 열면 <b>흐름 정지</b>(<c>NightRun.Sandbox</c>)가 켜진다 — 게임 시계가 멈추고, 조우·수칙 단서·가짜 놀람·점검/근무 지시·역설 문자가 저절로 나오지 않으며,
+/// 판정은 시각과 무관하게 늘 하고, 붙잡히지 않는다(축 99에서 멈춤). 패널을 닫아도 흐름 정지는 남는다(왼쪽 위 상호작용 확인 창).
+/// 머리줄 버튼으로 흐름을 재개하면 다음에 패널을 열어도 자동으로 멈추지 않는다.
 ///
 /// 씬 파일을 고치지 않습니다. 플레이를 시작하면 DontDestroyOnLoad 오브젝트로 자동으로 생기고,
 /// 에디터와 Development Build에만 들어갑니다. 패널이 열려 있는 동안 FPController를 꺼서 시점이 돌지 않게 합니다.
@@ -31,7 +37,8 @@ public sealed partial class DevModePanel : MonoBehaviour
     private const float PanelWidth = 500f;
     private const int MaxLog = 120;
 
-    private static readonly string[] TabNames = { "① 일차", "② 시간", "③ 축", "④ 조우", "⑤ 장면", "⑥ 수칙", "⑦ 점검", "⑧ 메시지·기록" };
+    private static readonly string[] TabNames = { "① 일차", "② 시간", "③ 축", "④ 조우", "⑤ 장면", "⑥ 수칙", "⑦ 점검·지시", "⑧ 메시지·기록", "⑨ 상호작용" };
+    private const int TabsPerRow = 5;
     private static readonly float[] SpeedFactors = { 1f, 2f, 5f, 10f, 30f };
     private static readonly int[] QuickHours = { 1, 2, 3, 4, 5, 6 };
 
@@ -185,6 +192,7 @@ public sealed partial class DevModePanel : MonoBehaviour
             dayInput = GameSession.CurrentDay;
             BindGameTime();
             HoldPlayers();
+            if (autoSandbox && !NightRun.Sandbox) SetSandbox(true);   // 71차: 개발자 모드를 켜면 흐름이 멈춘다
         }
         else
         {
@@ -234,6 +242,7 @@ public sealed partial class DevModePanel : MonoBehaviour
         if (gameTime == null) return;
 
         baseMultiplier = gameTime.TimeMultiplier;
+        if (NightRun.Sandbox) gameTime.Hold(SandboxHold);   // 71차: 씬을 다시 불러와도 흐름 정지 유지
         if (!Mathf.Approximately(speedFactor, 1f))
         {
             gameTime.SetTimeMultiplier(baseMultiplier * speedFactor);
@@ -356,7 +365,7 @@ public sealed partial class DevModePanel : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!show) return;
+        if (!show && !NightRun.Sandbox && !monitorAlways) return;
         EnsureStyles();
 
         float scale = Mathf.Clamp(Screen.width * 0.36f / PanelWidth, 0.45f, 1.15f);
@@ -368,6 +377,8 @@ public sealed partial class DevModePanel : MonoBehaviour
         GUI.depth = -100;
         try
         {
+            DrawMonitorOverlay(h);   // 71차: 왼쪽 위 상호작용 확인 창(흐름 정지 중이거나 패널이 열려 있을 때)
+            if (!show) return;
             GUILayout.BeginArea(new Rect(w - PanelWidth - 10f, 10f, PanelWidth, h - 20f));
             GUILayout.BeginVertical(panelStyle);
 
@@ -386,7 +397,8 @@ public sealed partial class DevModePanel : MonoBehaviour
                     case 4: DrawSceneTab(); break;
                     case 5: DrawRulesTab(); break;
                     case 6: DrawInspectionTab(); break;
-                    default: DrawMessageTab(); break;
+                    case 7: DrawMessageTab(); break;
+                    default: DrawInteractionTab(); break;
                 }
                 GUILayout.EndScrollView();
             }
@@ -403,7 +415,15 @@ public sealed partial class DevModePanel : MonoBehaviour
     private void DrawHeader()
     {
         GUILayout.BeginHorizontal();
-        GUILayout.Label("개발자 모드", bold, GUILayout.Width(120));
+        GUILayout.Label("개발자 모드", bold, GUILayout.Width(96));
+        if (NightRun.Sandbox)
+        {
+            if (ColorButton("■ 흐름 정지 중 — 재개", ViolateColor, GUILayout.Width(170))) Later(() => SetSandbox(false));
+        }
+        else
+        {
+            if (ColorButton("▶ 흐름 진행 중 — 정지", ComplyColor, GUILayout.Width(170))) Later(() => SetSandbox(true));
+        }
         GUILayout.FlexibleSpace();
         if (GUILayout.Button(collapsed ? "펼치기" : "접기", GUILayout.Width(56))) Later(() => collapsed = !collapsed);
         if (GUILayout.Button("닫기(-)", GUILayout.Width(70))) Later(() => SetShow(false));
@@ -429,10 +449,10 @@ public sealed partial class DevModePanel : MonoBehaviour
 
     private void DrawTabs()
     {
-        for (int row = 0; row < 2; row++)
+        for (int row = 0; row * TabsPerRow < TabNames.Length; row++)
         {
             GUILayout.BeginHorizontal();
-            for (int i = row * 4; i < row * 4 + 4 && i < TabNames.Length; i++)
+            for (int i = row * TabsPerRow; i < row * TabsPerRow + TabsPerRow && i < TabNames.Length; i++)
             {
                 int index = i;
                 Color saved = GUI.backgroundColor;

@@ -63,6 +63,13 @@ public sealed class TabletBridge : MonoBehaviour
     private readonly Dictionary<string, string> _orderTexts = new Dictionary<string, string>();
     private readonly Dictionary<string, string> _dutyMessages = new Dictionary<string, string>();   // 문자 ID → 지시 ID(W1~W6)
     private AudioSource _tickSource;
+    private TabletAlarm _alarm;
+
+    /// <summary>
+    /// 67차(민: 「태블릿은 확실하게 왼쪽에서 들리게」): 태블릿 소리(알람·진동·틱)를 왼쪽으로 치우치게 한다(2D 팬, −1 = 완전히 왼쪽).
+    /// 태블릿은 늘 화면 왼쪽 아래에 들려 있다(40차). 3D로 두면 고개를 돌려도 같은 자리라 결과는 같지만, 2D 팬이 거리 감쇠 없이 또렷하다.
+    /// </summary>
+    public const float TabletPan = -0.75f;
 
     [Tooltip("비워 두면 씬에서 자동으로 찾는다.")]
     [SerializeField] private PlayerTablet tablet;
@@ -143,6 +150,7 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.NightRestarted += OnNightRestarted;
         EventBus.TabletTextChanged += OnTabletTextChanged;
         EventBus.FinalRuleSettled += OnFinalRuleSettled;
+        EventBus.HourStruck += OnHourStruck;
     }
 
     private void OnDisable()
@@ -155,6 +163,7 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.NightRestarted -= OnNightRestarted;
         EventBus.TabletTextChanged -= OnTabletTextChanged;
         EventBus.FinalRuleSettled -= OnFinalRuleSettled;
+        EventBus.HourStruck -= OnHourStruck;
 
         // 씬을 떠날 때 Tab 상태가 열린 채로 남으면 다음 씬의 센서가 영원히 침묵한다.
         PlayerSensors.SetTabOpen(false);
@@ -447,6 +456,16 @@ public sealed class TabletBridge : MonoBehaviour
         _dutyMessages[id] = message.CardId;
     }
 
+    /// <summary>67차(민: 「1시간마다 알림을 주면 좋겠어」): 정시 알림 한 통 — 「[정시] 02:00 · 근무 종료까지 3시간」. 늘 새 번호라 알람이 울린다.</summary>
+    private void OnHourStruck(int hour)
+    {
+        if (!Bind() || messages == null) return;
+        int left = NightClock.ShiftEnd / 60 - hour;
+        _messageSerial++;
+        string text = "[정시] " + hour.ToString("00") + ":00" + (left > 0 ? " · 근무 종료까지 " + left + "시간" : string.Empty);
+        messages.Add("clock.hour." + hour + "." + _messageSerial, text);
+    }
+
     private void OnMessageSent(ParadoxMessage message)
     {
         if (!Bind() || messages == null) return;
@@ -526,6 +545,8 @@ public sealed class TabletBridge : MonoBehaviour
         _tickSource = gameObject.AddComponent<AudioSource>();
         _tickSource.playOnAwake = false;
         _tickSource.spatialBlend = 0f;
+        _tickSource.panStereo = TabletPan;   // 67차: 태블릿 소리는 왼쪽
+        NightDutyMixer.Route(_tickSource, NightDutyMixer.Bus.Tablet);
     }
 
     private void StepGlitch()
@@ -545,7 +566,34 @@ public sealed class TabletBridge : MonoBehaviour
         if (messages == null) messages = tablet.GetComponentInChildren<TabletMessageList>(true);
         if (glitch == null) glitch = tablet.GetComponentInChildren<TabletGlitch>(true);
         if (gameTime == null) gameTime = FindAnyObjectByType<GameTime>();
+        if (_alarm == null) ConfigureAlarm(tablet.GetComponentInChildren<TabletAlarm>(true));
 
         return true;
+    }
+
+    /// <summary>
+    /// 67차 — 김진선님 <see cref="TabletAlarm"/>의 실행 중 인스턴스 값만 바꾼다(파일·프리팹은 그대로).
+    /// <list type="bullet">
+    /// <item>민: 「메시지란이 켜져 있을 때 알림이 오면, 안 켜놨을 때의 알림음이 한 번만 재생되게」 — 메시지 탭을 보는 중 도착음(<c>messageClip</c>)을 평소 알람(<c>alarmClip</c>)으로. 알람은 그대로 확인할 때까지 반복, 탭을 보는 중이면 한 번.</item>
+    /// <item>민: 「태블릿은 확실하게 왼쪽에서」 — 알람 소스를 왼쪽으로 팬(<see cref="TabletPan"/>), 믹서 태블릿 버스로.</item>
+    /// </list>
+    /// </summary>
+    private void ConfigureAlarm(TabletAlarm alarm)
+    {
+        if (alarm == null) return;
+        _alarm = alarm;
+        if (alarm.alarmClip != null)
+        {
+            alarm.messageClip = alarm.alarmClip;
+            alarm.messageVolume = alarm.volume;
+        }
+
+        AudioSource src = alarm.audioSource != null ? alarm.audioSource : alarm.GetComponent<AudioSource>();
+        if (src != null)
+        {
+            src.spatialBlend = 0f;
+            src.panStereo = TabletPan;
+            NightDutyMixer.Route(src, NightDutyMixer.Bus.Tablet);
+        }
     }
 }

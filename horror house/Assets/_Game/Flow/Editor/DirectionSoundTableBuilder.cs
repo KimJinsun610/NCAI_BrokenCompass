@@ -69,7 +69,7 @@ public static class DirectionSoundTableBuilder
         { "door.drawer.close", Au + "furniture/SFX_FURN_DrawerClose.mp3", "0.7" },
         { "door.cabinet.open", Au + "furniture/SFX_FURN_CabinetOpen.wav", "0.55" },
         { "door.cabinet.close", Au + "furniture/SFX_FURN_CabinetClose.wav", "0.55" },
-        { "door.locker.open", Au + "toilet/SFX_TOILET_DoorOpen.wav", "1" },   // 60차(민: 「지금 문 여는 소리가 관물대 여는 소리에 더 가깝다」) — 쇳소리 끽(원본이 -19dB라 크게)
+        { "door.locker.open", Au + "hall/SFX_HALL_LockerOpen_Swing1.wav", "0.7" },   // 67차(민 선택 「D 철문 젖힘」): HALL_LockerDoorSwing_1 앞 1.2초(끝 0.25초 줄임) — 옛 TOILET_DoorOpen(3.4초)이 길다는 피드백
         { "door.locker.close", Au + "furniture/SFX_FURN_LockerClose.wav", "0.6" },
         // 51차 점프스케어(민: 「현악기 효과음이 짜친다」) — OpenGameArt Horror Hit Soundpack 1(CC0). 약·중·강, 얼굴용 고음 겹.
         { "stinger.weak", Au + "stinger/SFX_STING_Weak_*", "0.8" },

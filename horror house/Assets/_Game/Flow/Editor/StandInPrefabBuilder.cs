@@ -901,7 +901,12 @@ public static class StandInPrefabBuilder
         AnimationClipSettings st = AnimationUtility.GetAnimationClipSettings(copy);
         st.loopTime = true;
         AnimationUtility.SetAnimationClipSettings(copy, st);
-        if (inPlace) naturalSpeed = RemoveRootDrift(copy);
+        if (inPlace)
+        {
+            naturalSpeed = RemoveRootDrift(copy);
+            BlendLoopSeam(copy, LoopSeamSeconds);   // 70차: 끝 자세 → 처음 자세로 이어지게(돌 때마다 몸이 툭 꺾이지 않게)
+        }
+
         AssetDatabase.CreateAsset(copy, clipPath);
 
         string ctrlPath = AnimDir + "/" + id + ".controller";
@@ -1109,8 +1114,14 @@ public static class StandInPrefabBuilder
         return model.StartsWith("Assets/", StringComparison.Ordinal) ? model : Creature + model;
     }
 
+    /// <summary>반복 클립의 끝을 처음 자세로 섞는 길이(초, 70차).</summary>
+    private const float LoopSeamSeconds = 0.3f;
+
     /// <summary>
     /// 맨 위 리그 뼈(경로에 '/'가 없는 것)의 위치 곡선에서 시작→끝 이동량을 선형으로 빼 제자리 걸음으로 만든다. 원래 걸음 속도(m/s, 모델 크기 1 기준)를 돌려준다.
+    /// <para>70차: 남은 곡선의 평균도 뺀다(가로·앞뒤). Thriller 6.5초는 원본에서 이미 1.5m 앞으로 걸어간 뒤라, 빼지 않으면 몸이 걷는 자리보다
+    /// 1m 남짓 앞에 그려졌다(화장실 소녀가 칸 벽 너머까지 가고, 세워 둔 자세에서 걷기로 넘어갈 때 몸이 1m 튀었다).
+    /// 선형 이동을 뺀 나머지(걸음마다 몸이 나갔다 멈추는 흔들림)는 남긴다 — 걷는 컴포넌트의 고른 이동에 더해져 원래 걸음 모양이 되므로 발이 덜 미끄러진다.</para>
     /// </summary>
     private static float RemoveRootDrift(AnimationClip clip)
     {
@@ -1122,14 +1133,19 @@ public static class StandInPrefabBuilder
             AnimationCurve c = AnimationUtility.GetEditorCurve(clip, b);
             if (c == null || c.length < 2) continue;
             float d = c.keys[c.length - 1].value - c.keys[0].value;
-            if (Mathf.Abs(d) < 0.01f) continue;
+            if (Mathf.Abs(d) < 0.01f) d = 0f;
             Keyframe[] keys = c.keys;
+            float mean = 0f;
             for (int i = 0; i < keys.Length; i++)
             {
                 keys[i].value -= d * (keys[i].time / len);
                 keys[i].inTangent -= d / len;
                 keys[i].outTangent -= d / len;
+                mean += keys[i].value;
             }
+
+            mean /= keys.Length;
+            for (int i = 0; i < keys.Length; i++) keys[i].value -= mean;
 
             AnimationUtility.SetEditorCurve(clip, b, new AnimationCurve(keys));
             if (b.propertyName.EndsWith(".x", StringComparison.Ordinal)) drift.x = d;
@@ -1137,6 +1153,85 @@ public static class StandInPrefabBuilder
         }
 
         return drift.magnitude / len;
+    }
+
+    /// <summary>
+    /// 반복 클립의 마지막 <paramref name="seconds"/>초를 첫 프레임 값으로 부드럽게 섞는다(70차). 회전은 뼈마다 사원수로 섞는다(부호 뒤집힘을 맞춰서).
+    /// 끝과 처음 자세가 달라 반복될 때마다 몸이 툭 꺾이던 것(Thriller 10.5초 → 6.5초: 몸 방향 26°·기울기 10°)을 없앤다.
+    /// </summary>
+    private static void BlendLoopSeam(AnimationClip clip, float seconds)
+    {
+        float len = clip.length;
+        if (len <= seconds * 2f) return;
+        float from = len - seconds;
+        Dictionary<string, Dictionary<string, EditorCurveBinding>> rot = new Dictionary<string, Dictionary<string, EditorCurveBinding>>();
+        foreach (EditorCurveBinding b in AnimationUtility.GetCurveBindings(clip))
+        {
+            if (b.propertyName.StartsWith("m_LocalRotation.", StringComparison.Ordinal))
+            {
+                Dictionary<string, EditorCurveBinding> set;
+                if (!rot.TryGetValue(b.path, out set)) rot[b.path] = set = new Dictionary<string, EditorCurveBinding>();
+                set[b.propertyName.Substring(b.propertyName.Length - 1)] = b;
+                continue;
+            }
+
+            AnimationCurve c = AnimationUtility.GetEditorCurve(clip, b);
+            if (c == null || c.length < 2) continue;
+            Keyframe[] keys = c.keys;
+            float first = keys[0].value;
+            for (int i = 0; i < keys.Length; i++)
+            {
+                if (keys[i].time <= from) continue;
+                keys[i].value = Mathf.Lerp(keys[i].value, first, Mathf.SmoothStep(0f, 1f, (keys[i].time - from) / seconds));
+            }
+
+            AnimationUtility.SetEditorCurve(clip, b, Smooth(keys));
+        }
+
+        foreach (KeyValuePair<string, Dictionary<string, EditorCurveBinding>> p in rot)
+        {
+            if (p.Value.Count != 4) continue;
+            string[] axes = { "x", "y", "z", "w" };
+            AnimationCurve[] cs = new AnimationCurve[4];
+            for (int k = 0; k < 4; k++) cs[k] = AnimationUtility.GetEditorCurve(clip, p.Value[axes[k]]);
+            if (cs[0] == null || cs[1] == null || cs[2] == null || cs[3] == null) continue;
+            Quaternion q0 = new Quaternion(cs[0].Evaluate(0f), cs[1].Evaluate(0f), cs[2].Evaluate(0f), cs[3].Evaluate(0f));
+            Keyframe[][] keys = new Keyframe[4][];
+            for (int k = 0; k < 4; k++) keys[k] = cs[k].keys;
+            for (int i = 0; i < keys[3].Length; i++)
+            {
+                float t = keys[3][i].time;
+                if (t <= from) continue;
+                Quaternion q = new Quaternion(cs[0].Evaluate(t), cs[1].Evaluate(t), cs[2].Evaluate(t), cs[3].Evaluate(t));
+                Quaternion target = q0;
+                if (Quaternion.Dot(q, target) < 0f) target = new Quaternion(-q0.x, -q0.y, -q0.z, -q0.w);   // 같은 쪽 반구로
+                Quaternion b = Quaternion.Slerp(q, target, Mathf.SmoothStep(0f, 1f, (t - from) / seconds));
+                float[] v = { b.x, b.y, b.z, b.w };
+                for (int k = 0; k < 4; k++)
+                {
+                    for (int j = 0; j < keys[k].Length; j++)
+                    {
+                        if (Mathf.Abs(keys[k][j].time - t) < 1e-4f) keys[k][j].value = v[k];
+                    }
+                }
+            }
+
+            for (int k = 0; k < 4; k++) AnimationUtility.SetEditorCurve(clip, p.Value[axes[k]], Smooth(keys[k]));
+        }
+
+        clip.EnsureQuaternionContinuity();
+    }
+
+    private static AnimationCurve Smooth(Keyframe[] keys)
+    {
+        AnimationCurve n = new AnimationCurve(keys);
+        for (int i = 0; i < n.length; i++)
+        {
+            AnimationUtility.SetKeyLeftTangentMode(n, i, AnimationUtility.TangentMode.ClampedAuto);
+            AnimationUtility.SetKeyRightTangentMode(n, i, AnimationUtility.TangentMode.ClampedAuto);
+        }
+
+        return n;
     }
 
     private static AnimationClip FirstClip(string path)

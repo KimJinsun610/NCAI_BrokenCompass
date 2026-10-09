@@ -34,10 +34,10 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 완충은_켜_둔_채_160초이고_다_닳는_순간을_한_번_알린다()
+        public void 완충은_켜_둔_채_200초이고_다_닳는_순간을_한_번_알린다()
         {
             FlashlightBattery b = new FlashlightBattery();
-            Assert.AreEqual(160f, BatteryRules.FullSeconds, "59차: 밤 10분에 맞춰 240 → 160");
+            Assert.AreEqual(200f, BatteryRules.FullSeconds, "67차: 밤 12분 30초에 맞춰 160 → 200");
             Assert.IsFalse(b.Drain(BatteryRules.FullSeconds - 1f));
             Assert.Greater(b.Charge, 0f);
             Assert.IsTrue(b.Drain(1.5f), "이번에 다 닳았다");
@@ -96,7 +96,7 @@ namespace NightDuty.Tests
         [Test]
         public void 일차가_지날수록_놓이는_배터리가_준다()
         {
-            int[] want = { 3, 3, 2, 2, 1 };
+            int[] want = { 6, 6, 5, 5, 4 };   // 67차: 3·3·2·2·1 → 6·6·5·5·4(책장·선반 자리 추가)
             for (int day = 1; day <= 5; day++) Assert.AreEqual(want[day - 1], BatteryRules.PlacedOn(day), day + "일차");
         }
 
@@ -107,7 +107,7 @@ namespace NightDuty.Tests
             {
                 BatteryPlan plan = new BatteryPlan(1, null, new System.Random(seed));
                 plan.Fill(Caches(12, 0, 1));
-                Assert.AreEqual(3, plan.Placed.Count);
+                Assert.AreEqual(BatteryRules.PlacedOn(1), plan.Placed.Count);
                 Assert.Contains("Interior/Classroom01/Drawer (0)", new List<string>(plan.Placed), "씨앗 " + seed);
             }
         }
@@ -115,7 +115,7 @@ namespace NightDuty.Tests
         [Test]
         public void 전날_놓였던_칸에는_다시_두지_않는다()
         {
-            List<BatteryCache> caches = Caches(8, 0);
+            List<BatteryCache> caches = Caches(16, 0);
             BatteryPlan day2 = new BatteryPlan(2, null, new System.Random(3));
             day2.Fill(caches);
             BatteryPlan day3 = new BatteryPlan(3, day2.Placed, new System.Random(4));
@@ -137,9 +137,9 @@ namespace NightDuty.Tests
         {
             NightRun.BeginNight(2, () => 30);
             Assert.IsNotNull(NightRun.Battery);
-            NightRun.FillBatteryPlan(Caches(6, 0));
+            NightRun.FillBatteryPlan(Caches(8, 0));
             BatteryPlan plan = NightRun.BatteryPlan;
-            Assert.AreEqual(3, plan.Placed.Count);
+            Assert.AreEqual(BatteryRules.PlacedOn(2), plan.Placed.Count);
             string first = plan.Placed[0];
 
             Assert.IsTrue(NightRun.TakeBattery(first));

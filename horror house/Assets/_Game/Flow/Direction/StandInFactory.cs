@@ -52,6 +52,7 @@ public static class StandInFactory
 
         go.transform.rotation = rotation;
         Dress(go, NeedsGazeCollider(id), anchorId);
+        ProceduralIdle.AttachFor(id, go);   // 71차: 노란 얼굴·창밖 남자·앉은 소년의 아주 작은 숨·머리 움직임
         return go;
     }
 

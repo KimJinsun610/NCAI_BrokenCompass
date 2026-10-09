@@ -2204,8 +2204,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: ......
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 73aefd5d08c36a242bab8ac00408c769, type: 2}
-  m_sharedMaterial: {fileID: -949029905358429269, guid: 73aefd5d08c36a242bab8ac00408c769, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 3ffc58f3cec5c8b4782bb2f4307c67e0, type: 2}
+  m_sharedMaterial: {fileID: -7694892390054288284, guid: 3ffc58f3cec5c8b4782bb2f4307c67e0, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2691,6 +2691,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15e6ac4a4b793e24f88d0b51080f48be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NightDuty.PrologueSample.UncannyVoiceFX
+  intensity: 1.2
   basePitch: 0.95
   baseDistortion: 0.38
   distortion: {fileID: 900724751}
@@ -2706,6 +2707,9 @@ MonoBehaviour:
   glitchDurationMin: 0.05
   glitchDurationMax: 0.15
   clipStartGrace: 0.45
+  enableDistortionSpikes: 0
+  enableStutter: 0
+  randomDropoutFadeMs: 15
   pitchWobbleWeight: 1
   dropoutWeight: 1
   distortionSpikeWeight: 1

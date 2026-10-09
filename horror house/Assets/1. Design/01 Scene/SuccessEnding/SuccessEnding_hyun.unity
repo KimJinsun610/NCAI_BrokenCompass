@@ -1068,7 +1068,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1387,6 +1387,7 @@ GameObject:
   - component: {fileID: 241909271}
   - component: {fileID: 241909270}
   - component: {fileID: 241909269}
+  - component: {fileID: 241909272}
   m_Layer: 0
   m_Name: EndingCamera
   m_TagString: MainCamera
@@ -1468,6 +1469,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &241909272
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 241909268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &367795914
 GameObject:
   m_ObjectHideFlags: 0
@@ -2045,6 +2090,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15e6ac4a4b793e24f88d0b51080f48be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NightDuty.PrologueSample.UncannyVoiceFX
+  intensity: 1.2
   basePitch: 0.95
   baseDistortion: 0.38
   distortion: {fileID: 492699448}
@@ -2060,6 +2106,9 @@ MonoBehaviour:
   glitchDurationMin: 0.05
   glitchDurationMax: 0.15
   clipStartGrace: 0.45
+  enableDistortionSpikes: 0
+  enableStutter: 0
+  randomDropoutFadeMs: 15
   pitchWobbleWeight: 1
   dropoutWeight: 1
   distortionSpikeWeight: 1
@@ -3848,7 +3897,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -4049,6 +4098,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15e6ac4a4b793e24f88d0b51080f48be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NightDuty.PrologueSample.UncannyVoiceFX
+  intensity: 1.2
   basePitch: 0.97
   baseDistortion: 0
   distortion: {fileID: 0}
@@ -4064,6 +4114,9 @@ MonoBehaviour:
   glitchDurationMin: 0.05
   glitchDurationMax: 0.15
   clipStartGrace: 0.45
+  enableDistortionSpikes: 0
+  enableStutter: 0
+  randomDropoutFadeMs: 15
   pitchWobbleWeight: 1
   dropoutWeight: 1
   distortionSpikeWeight: 1
@@ -4986,31 +5039,6 @@ MonoBehaviour:
     breakAtVoiceTime: -1
     breakCutAtVoiceTime: -1
     breakTextIndex: -1
-  - id: 6
-    text: "\uAC10\uC0AC\uD569\uB2C8\uB2E4."
-    mode: 0
-    duration: 2
-    extendToVoice: 1
-    voices:
-    - {fileID: 8300000, guid: e88cd27e4f671ff4782d98f209bb562c, type: 3}
-    voiceStagger: 0
-    voiceVolume: 0.9
-    voiceRoute: 0
-    hideBeforeEnd: 0.2
-    copies: 1
-    spawnSpread: 0
-    preferEdges: 0
-    flood: 0
-    alsoPlayEarlierCrowdVoices: 0
-    driveBuildUpAudio: 0
-    lineNoise: 0.35
-    staticNoise: 0
-    heartbeatInterval: 0
-    heartbeatVolume: 0.8
-    tensionVolume: 0
-    breakAtVoiceTime: -1
-    breakCutAtVoiceTime: -1
-    breakTextIndex: -1
   buildUpLines:
   - id: 7
     text: "\uB4A4\uB97C \uB3CC\uC544\uBCF4\uC9C0 \uB9C8\uC2ED\uC2DC\uC624."
@@ -5368,6 +5396,80 @@ MonoBehaviour:
   blackoutClip: {fileID: 8300000, guid: 5bb657f219b36e7429bb4007719c03a8, type: 3}
   blackoutVolume: 0.35
   blackoutDelay: 0.5
+  useDeathSoundDesign: 1
+  deathNotificationClip: {fileID: 0}
+  deathHeartbeatClip: {fileID: 0}
+  deathBreathClip: {fileID: 0}
+  deathBodyFallClip: {fileID: 0}
+  deathFlashlightClip: {fileID: 0}
+  deathNotificationVolume: 1
+  deathBuildUpDuration: 2.6
+  deathHeartbeatVolume: {x: 0.35, y: 1}
+  deathHeartbeatPitch: {x: 1, y: 1.06}
+  deathBreathVolume: {x: 0.15, y: 0.95}
+  deathBreathPitch: {x: 1, y: 1.25}
+  deathBreathStart: 0.1
+  deathGlitchVolume: 0.45
+  deathFoleyDelay: 0.3
+  deathBodyFallVolume: 1
+  deathFlashlightDelay: 0.95
+  deathFlashlightVolume: 0.8
+  deathRollTime: {x: 0.75, y: 1.9}
+  deathRollPan: {x: -0.3, y: 0.65}
+  deathHitDuck: 0.45
+  deathHitEnd: 2.6
+  deathTinnitusVolume: 0.5
+  deathTinnitusAloneAt: 3.2
+  deathTinnitusFade: 2
+  deathSilence: 2.5
+  deathRingCount: 2
+  deathRingVolume: 0.3
+  deathRingLowPass: 1000
+  deathRingCutAfter: 1.2
+  deathEndSilence: 1
+  useDepartureTail: 1
+  departureLeadSilence: 1.8
+  departureText: "\uCCA0\uAC70\uB294 \uC608\uC815\uB300\uB85C \uC9C4\uD589\uB418\uC5C8\uC2B5\uB2C8\uB2E4."
+  departureTextDuration: 2.8
+  departureGap: 0.6
+  headcountPrefix: "\uD1F4\uADFC \uD655\uC778: "
+  headcountBefore: "1\uBA85"
+  headcountAfter: "2\uBA85"
+  headcountBeforeHold: 1.5
+  headcountGlitchDuration: 1
+  headcountGlitchVolume: 0.45
+  headcountAfterHold: 2.6
+  outsideClip: {fileID: 8300000, guid: c3519088f2742de47b7b22eb99ceec59, type: 3}
+  outsideVolume: 0.5
+  outsideLead: 2.6
+  footstepClip: {fileID: 8300000, guid: 82488b9603bf1004f95bcdc04fa8ea59, type: 3}
+  stepTimes:
+  - 0
+  - 0.5
+  - 1.05
+  - 1.67
+  - 2.38
+  - 3.2
+  - 4.15
+  - 5.5
+  stepVolume: 0.8
+  stepPitch: 1
+  stepPan: -0.35
+  followTimes:
+  - 0.16
+  - 0.7
+  - 1.19
+  - 1.9
+  - 2.5
+  - 3.46
+  - 4.33
+  - 7.7
+  followVolume: 0.85
+  followPitch: 0.78
+  followPan: 0.4
+  stepFadeEnd: 0.25
+  afterLastStepCut: 0.5
+  departureEndBlack: 3.5
   playOnStart: 1
   onEndingFinished:
     m_PersistentCalls:

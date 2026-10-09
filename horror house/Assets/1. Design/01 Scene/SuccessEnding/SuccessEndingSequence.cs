@@ -335,6 +335,50 @@ namespace NightDuty.SuccessEnding
         [Tooltip("벨이 끊긴 뒤 무음(초) → onEndingFinished.")]
         public float deathEndSilence = 1f;
 
+        [Header("Timeline 20~: 무시 엔딩 꼬리 (퇴근) — 「고생하셨습니다.」 뒤는 TTS 없이 글자와 소리만")]
+        [Tooltip("켜면 「고생하셨습니다.」 뒤를 통화 끊김·태블릿·사망 사운드 대신 퇴근 꼬리(철거 문장 → 퇴근 확인 1명→2명 → 바깥 소리·발소리)로 재생합니다.")]
+        public bool useDepartureTail = true;
+        [Tooltip("「고생하셨습니다.」(마지막 TTS)가 끝난 뒤 철거 문장이 뜨기까지의 무음(초).")]
+        public float departureLeadSilence = 1.8f;
+        [TextArea(1, 2)] public string departureText = "철거는 예정대로 진행되었습니다.";
+        public float departureTextDuration = 2.8f;
+        [Tooltip("철거 문장이 사라진 뒤 퇴근 확인이 뜨기까지(초).")]
+        public float departureGap = 0.6f;
+        public string headcountPrefix = "퇴근 확인: ";
+        public string headcountBefore = "1명";
+        [Tooltip("1명이 흔들리고 깨지다가 이 글자로 바뀝니다(「저희는 규칙을… 보낸 적이 없…」의 깨짐 방식).")]
+        public string headcountAfter = "2명";
+        public float headcountBeforeHold = 1.5f;
+        [Tooltip("1명 → 2명으로 바뀌는 깨짐 연출 길이(초).")]
+        public float headcountGlitchDuration = 1.0f;
+        [Tooltip("깨짐 동안 깔리는 글리치 소리 볼륨(tabletGlitchClip 사용). 0이면 소리 없음.")]
+        [Range(0, 1)] public float headcountGlitchVolume = 0.45f;
+        public float headcountAfterHold = 1.8f;
+        [Tooltip("검은 화면에서 들리는 바깥 소리(바람 등).")]
+        public AudioClip outsideClip;
+        [Range(0, 1)] public float outsideVolume = 0.5f;
+        [Tooltip("바깥 소리가 먼저 들리고 첫 발소리가 나기까지(초).")]
+        public float outsideLead = 1.2f;
+        public AudioClip footstepClip;
+        [Header("발소리 두 사람 (같은 보폭으로 걷는 둘: 한 사람이 먼저, 다른 사람이 한 박 늦게)")]
+        [Tooltip("첫 번째 사람의 발소리 시각(초).")]
+        public float[] stepTimes = new float[] { 0f, 0.55f, 1.1f, 1.65f };
+        [Range(0, 1)] public float stepVolume = 0.8f;
+        public float stepPitch = 1f;
+        [Range(-1, 1)] public float stepPan = -0.35f;
+        [Tooltip("두 번째 사람(따라오는 쪽)의 발소리 시각(초). 첫 사람보다 한 박 늦게, 같은 간격으로.")]
+        public float[] followTimes = new float[] { 0.27f, 0.82f, 1.37f, 1.92f };
+        [Range(0, 1)] public float followVolume = 0.75f;
+        [Tooltip("따라오는 사람은 발소리가 더 낮고 무겁게.")]
+        public float followPitch = 0.78f;
+        [Range(-1, 1)] public float followPan = 0.4f;
+        [Tooltip("마지막 발소리의 볼륨 배율. 첫 발소리는 1(그대로)에서 시작해 마지막으로 갈수록 서서히 이 값까지 작아집니다(멀어지는 느낌). 1이면 줄어들지 않음.")]
+        [Range(0f, 1f)] public float stepFadeEnd = 0.08f;
+        [Tooltip("마지막 발소리 뒤 모든 소리를 끊기까지(초).")]
+        public float afterLastStepCut = 0.35f;
+        [Tooltip("소리가 끊긴 뒤 완전한 암전(초) → onEndingFinished.")]
+        public float departureEndBlack = 1.5f;
+
         [Header("End (27: 크레딧)")]
         public bool playOnStart = true;
         [Tooltip("엔딩이 끝나면 호출됩니다. 크레딧 씬 로드 등을 여기에 연결하세요.")]
@@ -393,7 +437,7 @@ namespace NightDuty.SuccessEnding
         private float tabletGlitchStopAt = -1f, flashStart = -1f, shakeEnd = -1f, tailStart = -1f;
         private bool blackoutStarted;
         // 사망 사운드 런타임 소스 (Awake에서 생성, 씬에는 저장되지 않음)
-        private AudioSource dNotify, dHeart, dBreath, dBody, dFlash, dRing;
+        private AudioSource dNotify, dHeart, dBreath, dBody, dFlash, dRing, dWind, dStep, dFollow;
         private bool deathBuildActive; private float deathBuildStart;
         private float deathClimaxAt = -1f, deathFlashStart = -1f, deathTinnitusStart = -1f;
         private bool deathBodyStarted, deathFlashStarted;
@@ -460,6 +504,9 @@ namespace NightDuty.SuccessEnding
             dBody = DeathSource(root, "D_BodyFall");
             dFlash = DeathSource(root, "D_FlashlightRoll");
             dRing = DeathSource(root, "D_DistantRing");
+            dWind = DeathSource(root, "D_OutsideWind");
+            dStep = DeathSource(root, "D_Footstep");
+            dFollow = DeathSource(root, "D_FootstepFollow");
             var lp = dRing.gameObject.AddComponent<AudioLowPassFilter>();
             lp.cutoffFrequency = deathRingLowPass; lp.lowpassResonanceQ = 1f;
             var rv = dRing.gameObject.AddComponent<AudioReverbFilter>();
@@ -476,6 +523,7 @@ namespace NightDuty.SuccessEnding
         private IEnumerable<AudioSource> DeathSources()
         {
             yield return dNotify; yield return dHeart; yield return dBreath; yield return dBody; yield return dFlash; yield return dRing;
+            yield return dWind; yield return dStep; yield return dFollow;
         }
 
         private void Start()
@@ -511,70 +559,137 @@ namespace NightDuty.SuccessEnding
             while (seqTime < clock) yield return null;
         }
 
+        // 에디터에서 확인할 때 원하는 단계부터 바로 재생합니다(재생 중에도 가능). 게임 진행에는 쓰지 않습니다.
+        public enum EndingJumpPoint { Start = 0, Call = 1, BuildUp = 2, After = 3, Clean = 4, Tail = 5 }
+        private int jumpLevel;
+
+        public void PlayFrom(EndingJumpPoint point)
+        {
+            StopAllCoroutines();
+            ResetForJump();
+            jumpLevel = (int)point;
+            StartCoroutine(Run());
+        }
+
+        // 하드 컷과 같은 정리를 하되(소리 정지, 글자 지움) 컷 직후 처리(cutPending)는 일으키지 않는다.
+        private void ResetForJump()
+        {
+            buildUpActive = false;
+            foreach (var c in spawners) if (c != null) StopCoroutine(c);
+            spawners.Clear();
+            foreach (var s in AllSources()) if (s != null) s.Stop();
+            foreach (var ds in DeathSources()) if (ds != null) ds.Stop();
+            if (randomTextLayer != null)
+                for (int i = randomTextLayer.childCount - 1; i >= 0; i--)
+                {
+                    var child = randomTextLayer.GetChild(i).gameObject;
+                    child.SetActive(false);
+                    Destroy(child);
+                }
+            spawned.Clear(); popping.Clear();
+            if (centerText != null) { centerText.text = ""; centerText.rectTransform.anchoredPosition = centerBasePos; }
+            if (finalText != null) { finalText.text = ""; finalText.rectTransform.anchoredPosition = finalBasePos; finalText.rectTransform.localScale = Vector3.one; }
+            if (flashOverlay != null) { var c = flashOverlay.color; c.a = 0f; flashOverlay.color = c; }
+            typing = false; cursorActive = false; deathBuildActive = false;
+            nextBeat = -1f; callFadeStart = -1f; tabletGlitchStopAt = -1f;
+            tailStart = -1f; flashStart = -1f; shakeEnd = -1f;
+            StopCallAudio();
+        }
+
         private IEnumerator Run()
         {
+            int jump = jumpLevel; jumpLevel = 0;
             Finished = false;
             startTime = clock = seqTime;
             deathBuildActive = false; deathClimaxAt = -1f; deathFlashStart = -1f; deathTinnitusStart = -1f; notifyCheckFrames = -1;
             NotificationWasPlaying = false; DeathLog = "";
             foreach (var ds in DeathSources()) if (ds != null) ds.Stop();
 
-            // 1. 완전 무음
-            SetStage("1_Silence");
-            yield return WaitCursor(openingSilence);
-
-            // 2. 전화벨
-            SetStage("2_Ringing");
-            float ringLen = phoneRing != null ? phoneRing.length : 0f;
-            float interval = Mathf.Max(ringBlock / Mathf.Max(1, ringCount), ringLen);
-            for (int i = 0; i < ringCount; i++)
+            if (jump == 0)
             {
-                if (phoneRing != null) effects.PlayOneShot(phoneRing);
-                bool last = i == ringCount - 1;
-                yield return WaitCursor(last ? Mathf.Max(ringBlock - interval * (ringCount - 1), ringLen) : interval);
-            }
+                // 1. 완전 무음
+                SetStage("1_Silence");
+                yield return WaitCursor(openingSilence);
 
-            // 3. 연결음 → 회선 소리
-            SetStage("3_Connect");
-            if (callConnect != null) effects.PlayOneShot(callConnect);
-            float connectLen = Mathf.Min(callConnect != null ? callConnect.length : 0f, connectBlock);
-            yield return WaitCursor(connectLen);
-            StartCallLine(callLineVolume, 0f);
-            yield return WaitCursor(connectBlock - connectLen);
+                // 2. 전화벨
+                SetStage("2_Ringing");
+                float ringLen = phoneRing != null ? phoneRing.length : 0f;
+                float interval = Mathf.Max(ringBlock / Mathf.Max(1, ringCount), ringLen);
+                for (int i = 0; i < ringCount; i++)
+                {
+                    if (phoneRing != null) effects.PlayOneShot(phoneRing);
+                    bool last = i == ringCount - 1;
+                    yield return WaitCursor(last ? Mathf.Max(ringBlock - interval * (ringCount - 1), ringLen) : interval);
+                }
+
+                // 3. 연결음 → 회선 소리
+                SetStage("3_Connect");
+                if (callConnect != null) effects.PlayOneShot(callConnect);
+                float connectLen = Mathf.Min(callConnect != null ? callConnect.length : 0f, connectBlock);
+                yield return WaitCursor(connectLen);
+                StartCallLine(callLineVolume, 0f);
+                yield return WaitCursor(connectBlock - connectLen);
+            }
+            else if (jump <= 2)
+            {
+                // 에디터 이동: 연결음 이후 회선 소리만 켠 상태에서 시작
+                StartCallLine(callLineVolume, 0f);
+            }
 
             // 4~6. 통화
-            foreach (var line in callLines) { SetStage("Call_" + line.id); yield return PlayLine(line); }
+            if (jump <= 1)
+                foreach (var line in callLines) { SetStage("Call_" + line.id); yield return PlayLine(line); }
 
-            // 7~14. 몰아치기
-            BeginBuildUp();
-            for (int i = 0; i < buildUpLines.Count; i++)
+            if (jump <= 2)
             {
-                var line = buildUpLines[i];
-                SetStage("BuildUp_" + line.id + (line.flood ? "_Flood" : ""));
-                yield return PlayLine(line, i);
+                // 7~14. 몰아치기
+                BeginBuildUp();
+                for (int i = 0; i < buildUpLines.Count; i++)
+                {
+                    var line = buildUpLines[i];
+                    SetStage("BuildUp_" + line.id + (line.flood ? "_Flood" : ""));
+                    yield return PlayLine(line, i);
+                }
+                if (floodDuration > 0f)
+                {
+                    SetStage("BuildUp_Flood");
+                    yield return SustainFlood();
+                }
+
+                // 15. 하드 컷: 같은 프레임에 글자와 소리를 전부 끊는다
+                HardCut();
+                SetStage("15_Cut");
+                yield return WaitCursor(cutSilence);
             }
-            if (floodDuration > 0f)
+
+            if (jump <= 3)
             {
-                SetStage("BuildUp_Flood");
-                yield return SustainFlood();
+                // 16~17. 회선 소리가 작게 돌아온다 (17은 '보낸'부터 깨지고 '없…'에서 전부 끊김)
+                StartCallLine(returnCallLineVolume, returnCallLineFadeIn);
+                foreach (var line in afterLines) { SetStage("After_" + line.id); yield return PlayLine(line); }
             }
 
-            // 15. 하드 컷: 같은 프레임에 글자와 소리를 전부 끊는다
-            HardCut();
-            SetStage("15_Cut");
-            yield return WaitCursor(cutSilence);
+            if (jump <= 4)
+            {
+                // 18. 회선 소리까지 완전 무음
+                SetStage("18_Silence");
+                StopCallAudio();
+                yield return WaitCursor(preCleanSilence);
 
-            // 16~17. 회선 소리가 작게 돌아온다 (17은 '보낸'부터 깨지고 '없…'에서 전부 끊김)
-            StartCallLine(returnCallLineVolume, returnCallLineFadeIn);
-            foreach (var line in afterLines) { SetStage("After_" + line.id); yield return PlayLine(line); }
+                // 19. '고생하셨습니다.' 같은 목소리지만 회선 잡음·필터 없이 너무 깨끗하게
+                foreach (var line in cleanLines) { SetStage("Clean_" + line.id); yield return PlayLine(line); }
+            }
 
-            // 18. 회선 소리까지 완전 무음
-            SetStage("18_Silence");
-            StopCallAudio();
-            yield return WaitCursor(preCleanSilence);
-
-            // 19. '고생하셨습니다.' 같은 목소리지만 회선 잡음·필터 없이 너무 깨끗하게
-            foreach (var line in cleanLines) { SetStage("Clean_" + line.id); yield return PlayLine(line); }
+            // 20~. 무시 엔딩 꼬리: TTS는 「고생하셨습니다.」까지, 이후는 글자와 소리만
+            if (useDepartureTail)
+            {
+                yield return DepartureTail();
+                SetStage("27_Credits");
+                Finished = true;
+                Debug.Log("[SuccessEnding] 무시 엔딩 종료 — onEndingFinished를 호출합니다.", this);
+                onEndingFinished?.Invoke();
+                yield break;
+            }
 
             // 20. 통화 끊김 (Call_connect_1 재사용)
             SetStage("20_HangUp");
@@ -654,6 +769,116 @@ namespace NightDuty.SuccessEnding
             Finished = true;
             Debug.Log("[SuccessEnding] 성공 엔딩 종료 — onEndingFinished(크레딧)을 호출합니다.", this);
             onEndingFinished?.Invoke();
+        }
+
+        // 무시 엔딩 꼬리: 철거 문장 → 퇴근 확인 1명 → 2명(소리 없이 정정) → 검은 화면 + 바깥 소리 + 발소리(한 쌍, 한 박 늦게 하나) → 끊김
+        private IEnumerator DepartureTail()
+        {
+            StopCallAudio();
+
+            SetStage("19b_Gap");
+            yield return WaitCursor(departureLeadSilence);
+
+            SetStage("20_Departure");
+            ShowCentered(departureText);
+            yield return WaitCursor(departureTextDuration);
+            if (centerText != null) centerText.text = "";
+            typing = false;
+            yield return WaitCursor(departureGap);
+
+            SetStage("21_Headcount");
+            ShowCentered(headcountPrefix + headcountBefore);
+            yield return WaitCursor(headcountBeforeHold);
+            SetStage("21b_HeadcountGlitch");
+            yield return HeadcountGlitch();
+            yield return WaitCursor(headcountAfterHold);
+            if (centerText != null) centerText.text = "";
+            typing = false;
+
+            SetStage("22_OutsideSteps");
+            if (dWind != null && outsideClip != null)
+            { dWind.clip = outsideClip; dWind.volume = outsideVolume; dWind.loop = false; dWind.time = 0f; dWind.Play(); }
+            yield return WaitCursor(outsideLead);
+
+            // 두 사람의 발소리: 먼저 걷는 쪽(왼쪽, 보통 높이)과 한 박 늦게 따라오는 쪽(오른쪽, 낮고 무겁게)을 시각순으로 섞어 낸다
+            var steps = new List<(float time, bool follow)>();
+            if (stepTimes != null) foreach (var t in stepTimes) steps.Add((t, false));
+            if (followTimes != null) foreach (var t in followTimes) steps.Add((t, true));
+            steps.Sort((a, b) => a.time.CompareTo(b.time));
+            float span = steps.Count > 0 ? steps[steps.Count - 1].time : 0f;
+            float last = 0f;
+            foreach (var st in steps)
+            {
+                yield return WaitCursor(Mathf.Max(0f, st.time - last));
+                last = st.time;
+                var src = st.follow ? dFollow : dStep;
+                if (src != null && footstepClip != null)
+                {
+                    // 끝으로 갈수록 서서히 작아진다(멀어지는 느낌): 첫 발소리 1배 → 마지막 발소리 stepFadeEnd배
+                    float fade = span > 0f ? Mathf.Lerp(1f, stepFadeEnd, st.time / span) : 1f;
+                    src.pitch = st.follow ? followPitch : stepPitch;
+                    src.panStereo = st.follow ? followPan : stepPan;
+                    src.PlayOneShot(footstepClip, (st.follow ? followVolume : stepVolume) * fade);
+                }
+            }
+            yield return WaitCursor(afterLastStepCut);
+
+            SetStage("23_DepartureCut");
+            foreach (var s in DeathSources()) if (s != null) s.Stop();
+            yield return WaitCursor(departureEndBlack);
+        }
+
+        // 퇴근 확인 1명 → 2명: 「저희는 규칙을… 보낸 적이 없…」처럼 자막이 흔들리고 글자가 깨지다가 바뀐다.
+        // 앞 절반은 1명이, 뒤 절반은 2명이 깨지며, 마지막에 2명으로 정착한다.
+        private IEnumerator HeadcountGlitch()
+        {
+            float dur = Mathf.Max(0.1f, headcountGlitchDuration);
+            float start = seqTime, end = clock + dur;
+            clock = end;
+            if (headcountGlitchVolume > 0f && tabletGlitch != null && tabletGlitchClip != null)
+            {
+                tabletGlitch.clip = tabletGlitchClip; tabletGlitch.loop = false; tabletGlitch.volume = headcountGlitchVolume; tabletGlitch.time = 0f;
+                tabletGlitch.Play();
+                tabletGlitchStopAt = seqTime + Mathf.Min(dur, Mathf.Max(0.05f, tabletGlitchLength));
+            }
+            var sb = new System.Text.StringBuilder();
+            float nextCorrupt = 0f;
+            while (seqTime < end)
+            {
+                float q = Mathf.Clamp01((seqTime - start) / dur);
+                if (centerText != null)
+                {
+                    float amp = Mathf.Lerp(breakShake.x, breakShake.y, q);
+                    centerText.rectTransform.anchoredPosition = centerBasePos + new Vector2(Range(-amp, amp), Range(-amp, amp) * .6f);
+                    if (seqTime >= nextCorrupt)
+                    {
+                        nextCorrupt = seqTime + 0.06f;
+                        string body = q < 0.5f ? headcountBefore : headcountAfter;
+                        float chance = q < 0.5f ? Mathf.Lerp(0.15f, 0.7f, q * 2f) : Mathf.Lerp(0.7f, 0.1f, (q - 0.5f) * 2f);
+                        sb.Length = 0;
+                        sb.Append(headcountPrefix);
+                        foreach (char ch0 in body)
+                        {
+                            char ch = ch0;
+                            if (!char.IsWhiteSpace(ch) && !string.IsNullOrEmpty(breakGlyphs) && rng.NextDouble() < chance)
+                                ch = breakGlyphs[rng.Next(breakGlyphs.Length)];
+                            sb.Append(ch);
+                        }
+                        centerText.maxVisibleCharacters = 99999;
+                        typing = false;
+                        centerText.text = sb.ToString();
+                    }
+                }
+                yield return null;
+            }
+            if (tabletGlitch != null) { tabletGlitch.Stop(); tabletGlitchStopAt = -1f; }
+            if (centerText != null)
+            {
+                centerText.rectTransform.anchoredPosition = centerBasePos;
+                centerText.text = headcountPrefix + headcountAfter;
+                centerText.maxVisibleCharacters = 99999;
+            }
+            typing = false;
         }
 
         // 24~26 사망 암시 사운드 (죽음은 소리로만, 화면은 검은 화면/글자만)

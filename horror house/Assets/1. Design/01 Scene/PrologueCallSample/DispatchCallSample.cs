@@ -15,8 +15,8 @@ namespace NightDuty.PrologueSample
             "이번 현장은 철거를 닷새 앞둔 폐교입니다.",
             "사전에 안내드린 대로, 철거 전 시설 점검이 필요한 장소입니다.",
             "철거 전까지 야간에 건물 상태를 점검하고 기록할 인원이 필요합니다.",
-            "이전 근무자는 개인 사정으로 근무를 이어 가지 못하게 되어서요.",
-            "자정부터 네 시까지 1층을 순찰하고, 지정된 대상을 점검해 태블릿으로 보고해 주시면 됩니다.",
+            "이전 근무자는 개인 사정으로 근무를 이어가지 못하게 되었습니다.",
+            "자정부터 1층을 순찰하고, 지정된 대상을 점검해 태블릿으로 보고해 주시면 됩니다.",
             "근무 중에는 태블릿으로 점검표와 문자가 전달됩니다.",
             "계약서를 보내드리겠습니다.",
             "단순 점검 업무라 어려운 일은 없으실 겁니다.",
@@ -62,10 +62,26 @@ namespace NightDuty.PrologueSample
             StartCoroutine(Call());
         }
 
+        // 에디터에서 확인할 때 원하는 줄부터 바로 재생합니다(전화벨·연결음 생략, 재생 중에도 가능). 게임 진행에는 쓰지 않습니다.
+        private int jumpLine = -1;
+
+        public void PlayFromLine(int index)
+        {
+            StopAllCoroutines();
+            if (voice != null) voice.Stop();
+            if (effects != null) effects.Stop();
+            if (ambience != null) ambience.Stop();
+            jumpLine = Mathf.Clamp(index, 0, Lines.Length - 1);
+            StartCoroutine(Call());
+        }
+
         private IEnumerator Call()
         {
+            bool skipIntro = jumpLine >= 0;
+            int firstLine = Mathf.Max(0, jumpLine);
+            jumpLine = -1;
             Stage = "Ringing";
-            yield return Fade(1, .4f);
+            if (!skipIntro) yield return Fade(1, .4f);
             titlePanel.SetActive(false);
             callPanel.SetActive(true);
             callGroup.alpha = 1;
@@ -74,19 +90,27 @@ namespace NightDuty.PrologueSample
             counter.text = "현장관리팀 · 파견 담당자";
             actionButton.gameObject.SetActive(false);
             skipButton.gameObject.SetActive(false);
-            yield return Fade(0, .6f);
-            for (int i = 0; i < 2; i++)
+            if (!skipIntro)
             {
-                if (ring != null) effects.PlayOneShot(ring);
-                yield return new WaitForSecondsRealtime(ring != null ? ring.length + .15f : 1.9f);
+                yield return Fade(0, .6f);
+                for (int i = 0; i < 2; i++)
+                {
+                    if (ring != null) effects.PlayOneShot(ring);
+                    yield return new WaitForSecondsRealtime(ring != null ? ring.length + .15f : 1.9f);
+                }
+                if (pickup != null) effects.PlayOneShot(pickup);
+                yield return new WaitForSecondsRealtime(.5f);
             }
-            if (pickup != null) effects.PlayOneShot(pickup);
-            yield return new WaitForSecondsRealtime(.5f);
+            else
+            {
+                fade.alpha = 0;
+                fade.blocksRaycasts = false;
+            }
             ambience.Play();
             Stage = "Talking";
             stateText.text = "통화 연결됨";
             actionButton.gameObject.SetActive(false);
-            for (int i = 0; i < Lines.Length; i++)
+            for (int i = firstLine; i < Lines.Length; i++)
             {
                 CurrentLine = i;
                 subtitle.text = Lines[i];

@@ -407,15 +407,17 @@ MonoBehaviour:
   effects: {fileID: 893011133}
   ambience: {fileID: 2000767416}
   voiceClips:
-  - {fileID: 8300000, guid: 0d15a3c476a6819448f11da25a781703, type: 3}
-  - {fileID: 8300000, guid: ff7c78d030eaadd47b76e805982666cb, type: 3}
-  - {fileID: 8300000, guid: c04ea87f401a6ac4282412c8698c464f, type: 3}
-  - {fileID: 8300000, guid: eba50a52439c752408d14c3adc4a7644, type: 3}
-  - {fileID: 8300000, guid: abf4e04f990ebc540aafade280f97892, type: 3}
-  - {fileID: 8300000, guid: f8fdb4380f4825d4b9a7740c024c0064, type: 3}
-  - {fileID: 8300000, guid: 4e415f1f4112e514787c70a47c643d7d, type: 3}
-  - {fileID: 8300000, guid: 08b91520e9c189946a8c020774616ed5, type: 3}
-  - {fileID: 8300000, guid: 0fc9eac190b82cf4980070b17cf338be, type: 3}
+  - {fileID: 8300000, guid: 08fe6c352fa75ea40b05eb6f5c19e396, type: 3}
+  - {fileID: 8300000, guid: 6f0306704f32c4f4e8528583784eb270, type: 3}
+  - {fileID: 8300000, guid: 79ba4eea2e73e1247babd2651591da88, type: 3}
+  - {fileID: 8300000, guid: bdb2da0279503734896e56e518525cc4, type: 3}
+  - {fileID: 8300000, guid: a16cdc15db5e4c34f98181006148c2bc, type: 3}
+  - {fileID: 8300000, guid: 7cf73f6c3818e3047b4094c6c984de56, type: 3}
+  - {fileID: 8300000, guid: 96e025f7eebf1184e872e94c894ec54a, type: 3}
+  - {fileID: 8300000, guid: 0703fa197356b1943b5f5c70eef7ad00, type: 3}
+  - {fileID: 8300000, guid: 35db85f6e873808488c5bd33596dd4fd, type: 3}
+  - {fileID: 8300000, guid: fd7f1109603a0124f991ba37d6a589c2, type: 3}
+  - {fileID: 8300000, guid: 669acc0a63d8c73459b755936522b79e, type: 3}
 --- !u!4 &112618268
 Transform:
   m_ObjectHideFlags: 0
@@ -1125,7 +1127,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC2DC\uC124\uAD00\uB9AC\uD300 \xB7 \uD30C\uACAC \uB2F4\uB2F9\uC790"
+  m_text: "\uD604\uC7A5\uAD00\uB9AC\uD300 \xB7 \uD30C\uACAC \uB2F4\uB2F9\uC790"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37e2d78c661ea5641ba4d05c0fb5f253, type: 2}
   m_sharedMaterial: {fileID: 930985168012099338, guid: 37e2d78c661ea5641ba4d05c0fb5f253, type: 2}
@@ -2202,14 +2204,14 @@ MonoBehaviour:
       m_Calls: []
   m_text: ......
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 37e2d78c661ea5641ba4d05c0fb5f253, type: 2}
-  m_sharedMaterial: {fileID: 930985168012099338, guid: 37e2d78c661ea5641ba4d05c0fb5f253, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 3ffc58f3cec5c8b4782bb2f4307c67e0, type: 2}
+  m_sharedMaterial: {fileID: -7694892390054288284, guid: 3ffc58f3cec5c8b4782bb2f4307c67e0, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4292269782
   m_fontColor: {r: 0.84, g: 0.84, b: 0.84, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -2222,7 +2224,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -2494,6 +2496,9 @@ GameObject:
   m_Component:
   - component: {fileID: 900724749}
   - component: {fileID: 900724746}
+  - component: {fileID: 900724752}
+  - component: {fileID: 900724751}
+  - component: {fileID: 900724750}
   - component: {fileID: 900724748}
   - component: {fileID: 900724747}
   m_Layer: 0
@@ -2517,7 +2522,7 @@ AudioSource:
   m_Resource: {fileID: 0}
   m_PlayOnAwake: 0
   m_Volume: 0.85
-  m_Pitch: 1
+  m_Pitch: 0.95
   Loop: 0
   Mute: 0
   Spatialize: 0
@@ -2633,7 +2638,7 @@ AudioHighPassFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 900724745}
   m_Enabled: 1
-  m_CutoffFrequency: 260
+  m_CutoffFrequency: 300
   m_HighpassResonanceQ: 1
 --- !u!4 &900724749
 Transform:
@@ -2650,6 +2655,70 @@ Transform:
   m_Children: []
   m_Father: {fileID: 112618268}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!166 &900724750
+AudioChorusFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900724745}
+  m_Enabled: 1
+  m_DryMix: 0.8
+  m_WetMix1: 0.25
+  m_WetMix2: 0.2
+  m_WetMix3: 0
+  m_Delay: 24
+  m_Rate: 0.6
+  m_Depth: 0.08
+--- !u!170 &900724751
+AudioDistortionFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900724745}
+  m_Enabled: 1
+  m_DistortionLevel: 0.38
+--- !u!114 &900724752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900724745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15e6ac4a4b793e24f88d0b51080f48be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NightDuty.PrologueSample.UncannyVoiceFX
+  intensity: 1.2
+  basePitch: 0.95
+  baseDistortion: 0.38
+  distortion: {fileID: 900724751}
+  doublingEnabled: 1
+  doublingRatio: 0.72
+  doublingMix: 0.32
+  doublingWindowMs: 70
+  ringModFrequency: 42
+  ringModMix: 0.14
+  glitchesEnabled: 1
+  glitchIntervalMin: 2.2
+  glitchIntervalMax: 5.5
+  glitchDurationMin: 0.05
+  glitchDurationMax: 0.15
+  clipStartGrace: 0.45
+  enableDistortionSpikes: 0
+  enableStutter: 0
+  randomDropoutFadeMs: 15
+  pitchWobbleWeight: 1
+  dropoutWeight: 1
+  distortionSpikeWeight: 1
+  stutterWeight: 0.8
+  pitchWobbleDepth: 0.12
+  pitchWobbleRate: 28
+  dropoutLevel: 0.12
+  distortionSpikeLevel: 0.85
+  stutterSliceMs: 40
 --- !u!1 &907231872
 GameObject:
   m_ObjectHideFlags: 0
@@ -4144,7 +4213,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\uC2DC\uC124\uAD00\uB9AC\uD300"
+  m_text: "\uD604\uC7A5\uAD00\uB9AC\uD300"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 37e2d78c661ea5641ba4d05c0fb5f253, type: 2}
   m_sharedMaterial: {fileID: 930985168012099338, guid: 37e2d78c661ea5641ba4d05c0fb5f253, type: 2}
@@ -6971,6 +7040,7 @@ GameObject:
   - component: {fileID: 2105890392}
   - component: {fileID: 2105890391}
   - component: {fileID: 2105890390}
+  - component: {fileID: 2105890393}
   m_Layer: 0
   m_Name: SampleCamera
   m_TagString: MainCamera
@@ -7052,6 +7122,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2105890393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2105890389}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &2111297443
 GameObject:
   m_ObjectHideFlags: 0

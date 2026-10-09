@@ -77,6 +77,7 @@ namespace NightDuty
         private static void UnavoidableObserve(in JudgeSignal signal, bool judging)
         {
             if (!judging || IsCaptured || _unavoidable.Def == null) return;
+            if (_sandbox && !_unavoidable.Staged) return;   // 71차: 흐름 정지 중에는 스스로 걸지 않는다
             UnavoidableApply(_unavoidable.Observe(signal, _currentSpace, IssuedSpacePending, IssuedItemPending));   // 50차: 지시받은 점검만
         }
 

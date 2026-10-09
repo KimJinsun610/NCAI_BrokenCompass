@@ -39,42 +39,42 @@ namespace NightDuty.Tests
         }
     }
 
-    /// <summary>밤 시계 표(실시간 10분 = 00:00~04:00, 59차 — 전에는 15분).</summary>
+    /// <summary>밤 시계 표(실시간 12분 30초 = 00:00~05:00, 67차 — 59차 10분·그 전 15분).</summary>
     public sealed class NightClockTests
     {
         [Test]
-        public void 실시간10분이_게임240분이다()
+        public void 실시간_12분30초가_게임300분이다()
         {
             Assert.AreEqual(24f, NightClock.GameSecondsPerRealSecond, 0.0001f);
-            Assert.AreEqual(600f, NightClock.RealSecondsAt(NightClock.ShiftEnd), 0.001f);
-            Assert.AreEqual(40f, NightClock.RealSecondsAt(NightClock.JudgingStart), 0.001f, "출근은 실시간 40초");
-            Assert.AreEqual(150f, NightClock.RealSecondsAt(NightClock.Call1), 0.001f, "호출 1은 실시간 2:30");
-            Assert.AreEqual(340f, NightClock.RealSecondsAt(NightClock.Call2), 0.001f, "호출 2는 실시간 5:40");
+            Assert.AreEqual(750f, NightClock.RealSecondsAt(NightClock.ShiftEnd), 0.001f);
+            Assert.AreEqual(50f, NightClock.RealSecondsAt(NightClock.JudgingStart), 0.001f, "출근은 실시간 50초");
+            Assert.AreEqual(187.5f, NightClock.RealSecondsAt(NightClock.Call1), 0.001f, "호출 1(01:15)은 실시간 3:07.5");
+            Assert.AreEqual(425f, NightClock.RealSecondsAt(NightClock.Call2), 0.001f, "호출 2(02:50)는 실시간 7:05");
         }
 
         [TestCase(0f, NightPhase.Arrival)]
-        [TestCase(15.9f, NightPhase.Arrival)]
-        [TestCase(16f, NightPhase.LowTension)]
-        [TestCase(60f, NightPhase.SlotA)]
-        [TestCase(111.9f, NightPhase.SlotA)]
-        [TestCase(112f, NightPhase.Relax)]
-        [TestCase(136f, NightPhase.SlotB)]
-        [TestCase(188f, NightPhase.SlotC)]
-        [TestCase(210f, NightPhase.Wrap)]
-        [TestCase(240f, NightPhase.Ended)]
+        [TestCase(19.9f, NightPhase.Arrival)]
+        [TestCase(20f, NightPhase.LowTension)]
+        [TestCase(75f, NightPhase.SlotA)]
+        [TestCase(139.9f, NightPhase.SlotA)]
+        [TestCase(140f, NightPhase.Relax)]
+        [TestCase(170f, NightPhase.SlotB)]
+        [TestCase(235f, NightPhase.SlotC)]
+        [TestCase(265f, NightPhase.Wrap)]
+        [TestCase(300f, NightPhase.Ended)]
         public void 시각별_구간(float minute, NightPhase expected)
         {
             Assert.AreEqual(expected, NightClock.PhaseAt(minute));
         }
 
         [TestCase(0f, false)]
-        [TestCase(16f, true)]
-        [TestCase(100f, true)]
-        [TestCase(120f, false)]
-        [TestCase(136f, true)]
-        [TestCase(209f, true)]
-        [TestCase(210f, false)]
-        public void 판정은_출근과_이완과_03시30분_이후에_멈춘다(float minute, bool judging)
+        [TestCase(20f, true)]
+        [TestCase(130f, true)]
+        [TestCase(150f, false)]
+        [TestCase(170f, true)]
+        [TestCase(264f, true)]
+        [TestCase(265f, false)]
+        public void 판정은_출근과_이완과_04시25분_이후에_멈춘다(float minute, bool judging)
         {
             Assert.AreEqual(judging, NightClock.IsJudging(minute));
         }
@@ -82,19 +82,19 @@ namespace NightDuty.Tests
         [Test]
         public void 중간서명은_이완구간에만_된다()
         {
-            Assert.IsFalse(NightClock.CanSignCheckpoint(100f));
-            Assert.IsTrue(NightClock.CanSignCheckpoint(120f));
-            Assert.IsFalse(NightClock.CanSignCheckpoint(136f));
+            Assert.IsFalse(NightClock.CanSignCheckpoint(130f));
+            Assert.IsTrue(NightClock.CanSignCheckpoint(150f));
+            Assert.IsFalse(NightClock.CanSignCheckpoint(170f));
         }
 
         [Test]
         public void 조우는_슬롯에서만_새로_건다()
         {
-            Assert.IsFalse(NightClock.CanStartEncounter(40f), "저긴장");
-            Assert.IsTrue(NightClock.CanStartEncounter(70f), "슬롯 A");
-            Assert.IsFalse(NightClock.CanStartEncounter(120f), "이완");
-            Assert.IsTrue(NightClock.CanStartEncounter(200f), "슬롯 C");
-            Assert.IsFalse(NightClock.CanStartEncounter(215f), "03:30 이후");
+            Assert.IsFalse(NightClock.CanStartEncounter(50f), "저긴장");
+            Assert.IsTrue(NightClock.CanStartEncounter(90f), "슬롯 A");
+            Assert.IsFalse(NightClock.CanStartEncounter(150f), "이완");
+            Assert.IsTrue(NightClock.CanStartEncounter(250f), "슬롯 C");
+            Assert.IsFalse(NightClock.CanStartEncounter(270f), "04:25 이후");
         }
 
         [Test]
@@ -107,20 +107,36 @@ namespace NightDuty.Tests
             tracker.ResidualAlert += () => log.Add("잔여");
             tracker.ShiftEnded += () => log.Add("종료");
             tracker.PhaseChanged += (a, b) => log.Add(a + ">" + b);
-
             tracker.Reset(0f);
-            tracker.Advance(150f);
+            tracker.Advance(180f);
 
             CollectionAssert.AreEqual(
                 new[] { "Arrival>LowTension", "LowTension>SlotA", "호출1", "SlotA>Relax", "Relax>SlotB", "호출2" },
                 log);
 
             log.Clear();
-            tracker.Advance(140f);   // 뒤로 가면 무시한다
+            tracker.Advance(175f);   // 뒤로 가면 무시한다
             Assert.AreEqual(0, log.Count);
 
-            tracker.Advance(240f);
+            tracker.Advance(300f);
             CollectionAssert.AreEqual(new[] { "SlotB>SlotC", "SlotC>Wrap", "잔여", "Wrap>Ended", "종료" }, log);
+        }
+
+        [Test]
+        public void 정시_알림은_01시부터_04시까지_한_번씩_순서대로()
+        {
+            NightClockTracker tracker = new NightClockTracker();
+            List<int> hours = new List<int>();
+            tracker.HourStruck += h => hours.Add(h);
+            tracker.Reset(0f);
+            tracker.Advance(59.9f);
+            Assert.AreEqual(0, hours.Count);
+            tracker.Advance(130f);
+            CollectionAssert.AreEqual(new[] { 1, 2 }, hours);
+            tracker.Reset(NightClock.Call2);   // 체크포인트 재시작 — 지난 정시는 다시 알리지 않는다
+            tracker.Advance(300f);
+            CollectionAssert.AreEqual(new[] { 1, 2, 3, 4 }, hours, "05:00은 근무 종료라 정시 알림이 없다");
+            Assert.AreEqual("02:50", NightClock.Clock(NightClock.Call2));
         }
 
         [Test]
@@ -131,9 +147,9 @@ namespace NightDuty.Tests
             tracker.Call2 += () => call2++;
 
             tracker.Reset(0f);
-            tracker.Advance(170f);
+            tracker.Advance(200f);
             tracker.Reset(NightClock.Call2);   // 체크포인트 재시작
-            tracker.Advance(160f);
+            tracker.Advance(190f);
 
             Assert.AreEqual(1, call2);
             Assert.AreEqual(NightPhase.SlotB, tracker.Phase);
@@ -294,7 +310,7 @@ namespace NightDuty.Tests
             Violate();
             Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Auditory), "출근 중에는 판정하지 않는다");
 
-            _clock = 120;   // 이완
+            _clock = (int)NightClock.RelaxStart + 8;   // 이완
             Violate();
             Assert.AreEqual(0, NightRun.Axes.GetValue(FearAxis.Auditory), "이완 중에는 판정하지 않는다");
 
@@ -448,12 +464,12 @@ namespace NightDuty.Tests
             Assert.IsFalse(NightRun.SignCheckpoint(), "이완 구간이 아니면 서명할 수 없다");
 
             Violate();   // 청각 12
-            _clock = 120;
+            _clock = (int)NightClock.RelaxStart + 8;
             Assert.IsTrue(NightRun.SignCheckpoint());
             Assert.IsFalse(NightRun.SignCheckpoint(), "밤당 한 번");
             Assert.AreEqual(Deltas.RuleViolation, NightRun.Checkpoint.Value(FearAxis.Auditory));
 
-            _clock = 150;
+            _clock = (int)NightClock.Call2 + 10;
             NightRun.DebugForceCapture(FearAxis.Auditory);
             RestartResult r = NightRun.RestartAfterCapture();
 

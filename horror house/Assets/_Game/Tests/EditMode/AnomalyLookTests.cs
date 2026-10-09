@@ -88,7 +88,7 @@ namespace NightDuty.Tests
                 if (AnomalyLook.HasLook(item)) looks++;
             }
 
-            Assert.AreEqual(12, looks, "16개 중 [소리] 4개를 뺀 12개(51차: C-3 사다리가 [옮김] — 사다리 없음)");
+            Assert.AreEqual(25, looks, "29개 중 [소리] 4개(H-3·H-5·S-3·T-2)를 뺀 25개(51차: C-3 사다리가 [옮김] · 65차: L-3 → H-4 쓰레기통 · 66차: 13개 더함, [소리]는 H-5 스피커뿐)");
             Assert.IsFalse(AnomalyLook.HasLook(null));
         }
 
@@ -118,7 +118,7 @@ namespace NightDuty.Tests
                 string id = e.FindPropertyRelative("itemId").stringValue;
                 InspectionItem item = InspectionCatalog.Find(id);
                 Assert.IsNotNull(item, id);
-                Assert.AreEqual(AnomalyTemplate.Move, item.Template, id + "는 [옮김]이 아니다");
+                Assert.IsTrue(item.Template == AnomalyTemplate.Move || id == "S-4", id + "는 [옮김]이 아니다(66차: S-4 지구본만 예외 — 정적 배칭이라 대역이 돈다)");
                 Assert.IsNotNull(e.FindPropertyRelative("prefab").objectReferenceValue, id + " 프리팹 없음");
                 ids.Add(id);
             }

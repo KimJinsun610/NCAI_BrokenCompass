@@ -135,7 +135,7 @@ namespace NightDuty.Tests
                 string[] parts = key.Split('.');
                 Assert.AreEqual(3, parts.Length, key);
                 Assert.IsNotNull(InspectionCatalog.Find(parts[1]), key + " — 없는 점검 항목");
-                Assert.That(parts[2] == "loop" || parts[2] == "near" || parts[2] == "near+", key);
+                Assert.That(parts[2] == "loop" || parts[2] == "near" || parts[2] == "near+" || parts[2] == "kick", key);   // 65차: kick = H-4 쓰레기통이 걷어차이는 한 번
             }
         }
 

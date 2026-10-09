@@ -122,7 +122,7 @@ public sealed partial class CaptureDirector
     private IEnumerator PreCapture(FearAxis axis, int count)
     {
         // 김진선님 사망 컷신이 있는 축은 컷신이 제 빌드업(흔들림·소리·먹먹해짐)을 가진다 — 흔들림 구간을 두 번 겹치지 않는다(46차).
-        if (CutscenePrefab(axis) != null) yield break;
+        if (CutsceneFor(axis) != null) yield break;
         float seconds = count <= 1 ? riseSeconds : riseRepeatSeconds;
         if (seconds <= 0f) yield break;
 

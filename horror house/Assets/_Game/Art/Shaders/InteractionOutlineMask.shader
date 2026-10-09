@@ -10,7 +10,8 @@ Shader "NightDuty/InteractionOutlineMask"
             Name "OutlineMask"
             Tags { "LightMode" = "SRPDefaultUnlit" }
 
-            Cull Back
+            // 67차: 앞뒤 모두 — 벽의 세계 지도처럼 화면 쪽이 뒷면인 판은 마스크가 비어 외곽선 색이 판 전체를 덮었다.
+            Cull Off
             ZWrite Off
             ZTest LEqual
             ColorMask 0

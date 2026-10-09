@@ -10,7 +10,7 @@ namespace NightDuty.Tests
         {
             public readonly TensionDirector Director;
             public readonly List<DirectionEvent> Events = new List<DirectionEvent>();
-            public float Minute = 70f;
+            public float Minute = NightClock.Call1 + 10f;
 
             public Rig(params string[] slotEncounters)
             {
@@ -116,10 +116,11 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 밤은_실시간_10분()
+        public void 밤은_실시간_12분_30초()
         {
-            Assert.AreEqual(600f, NightClock.RealSecondsPerNight);
-            Assert.AreEqual(600f, NightClock.RealSecondsAt(NightClock.ShiftEnd), 0.001f);
+            // 67차(민: 「하루 시간도 5시까지 · 실제 길이도 늘릴거야」): 10분 → 12분 30초(게임 시계 24배 그대로).
+            Assert.AreEqual(750f, NightClock.RealSecondsPerNight);
+            Assert.AreEqual(750f, NightClock.RealSecondsAt(NightClock.ShiftEnd), 0.001f);
         }
 
         [Test]

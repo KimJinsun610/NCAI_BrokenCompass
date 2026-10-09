@@ -26,6 +26,16 @@ public sealed class InspectionAnomalyPropsSO : ScriptableObject
     [Tooltip("항목별 이상 연출 프리팹(김진선님 HorrorEvent — 예: H-2 피 식수대). 있으면 절차 연출 대신 그 자리에 세운다.")]
     [SerializeField] private Entry[] events = new Entry[0];
 
+    [Tooltip("66차 L-4 칠판 분필 글씨 글꼴(한글 손글씨). 빌더가 채운다. 없으면 TMP 기본 글꼴.")]
+    [SerializeField] private TMPro.TMP_FontAsset chalkFont;
+
+    /// <summary>66차: 칠판 분필 글씨 글꼴.</summary>
+    public TMPro.TMP_FontAsset ChalkFont
+    {
+        get { return chalkFont; }
+        set { chalkFont = value; }
+    }
+
     /// <summary>표 전체.</summary>
     public Entry[] Entries
     {

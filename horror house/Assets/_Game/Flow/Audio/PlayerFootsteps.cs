@@ -190,14 +190,14 @@ public sealed class PlayerFootsteps : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             delay += EchoGap * spread * (1f + 0.35f * i);
-            float v = volume * 0.42f * Mathf.Pow(0.62f, i);
+            float v = volume * 0.7f * Mathf.Pow(0.62f, i);   // 61차(민: 「축 소리들이 티가 안 남」) 0.42 → 0.7
             EchoAt(clip, transform.position + back * (2f + 1.5f * i) + Vector3.up * 0.2f, v, delay, 0.97f - 0.02f * i, 2600f - 500f * i);
         }
 
         // 층 4: 한 박 늦은 발소리가 등 뒤에서 따라 걷는다(작아지지 않는다).
         if (BodyRules.EchoLate(tier))
         {
-            EchoAt(clip, transform.position + back * 2.2f, volume * 0.55f, Mathf.Clamp(_stepInterval, 0.35f, 0.8f), 0.94f, 4000f);
+            EchoAt(clip, transform.position + back * 2.2f, volume * 0.85f, Mathf.Clamp(_stepInterval, 0.35f, 0.8f), 0.94f, 4000f);
         }
     }
 

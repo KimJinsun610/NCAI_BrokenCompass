@@ -7,7 +7,8 @@ using UnityEngine.SceneManagement;
 /// <summary>
 /// 51차 CCTV 얼굴 점프스케어(민: 「CCTV 사람이 걷는 애니 없이 서성거려 이상하다 — 그 채널에서 사람이 움직이는 걸 3초 이상 보면 CCTV 화면 코앞에 얼굴이 확대되게」).
 /// <list type="bullet">
-/// <item>화면 속 사람(K1 조우의 사람 · K-1 이상의 사람)을 등록받는다. 등록된 사람은 걷지 않고 <see cref="StepSeconds"/>초마다 <see cref="StepMeters"/>m씩 툭툭 카메라 쪽으로 다가온다(스톱모션).</item>
+/// <item>화면 속 사람(K1 조우의 사람 · K-1 이상의 사람)을 등록받는다. 71차부터 사람은 <see cref="CctvWalker"/>가 걷기 동작으로 실제로 걷게 한다
+/// (옛 「1.5초마다 0.7m 툭툭(스톱모션)」 폐기 — 민: 「순간이동하듯 위치가 바뀌는 방식을 수정해 줘」).</item>
 /// <item>그 채널을 <see cref="WatchSeconds"/>초 이어서 보면(틈 0.2초 허용) 얼굴이 카메라 코앞으로 — 3일차부터, 밤당 한 번.</item>
 /// <item>회차 세기: 첫 번째 0.6초 + 강 스팅어 + 지직 소리 · 두 번째 0.25초 소리 없이 · 세 번째부터는 그 자리에서 카메라를 올려다보기만.</item>
 /// </list>
@@ -19,15 +20,6 @@ public sealed class CctvFaceScare : MonoBehaviour
     /// <summary>이만큼 이어서 보면 얼굴이 온다(초).</summary>
     public const float WatchSeconds = 3f;
 
-    /// <summary>스톱모션 한 걸음 사이(초).</summary>
-    public const float StepSeconds = 1.5f;
-
-    /// <summary>스톱모션 한 걸음(m).</summary>
-    public const float StepMeters = 0.7f;
-
-    /// <summary>카메라에 이보다 가까이 다가오지 않는다(m, 바닥 거리).</summary>
-    public const float NearestMeters = 2f;
-
     /// <summary>얼굴 점프스케어가 시작되는 일차.</summary>
     public const int FirstDay = 3;
 
@@ -35,12 +27,6 @@ public sealed class CctvFaceScare : MonoBehaviour
     {
         public GameObject Go;
         public int Channel;
-        public bool Approach;
-        public bool Cross;
-        public Vector3 A;
-        public Vector3 B;
-        public float At;
-        public float NextStep;
         public System.Action OnScared;
     }
 
@@ -71,27 +57,15 @@ public sealed class CctvFaceScare : MonoBehaviour
     }
 
     /// <summary>
-    /// 화면 속 사람을 등록한다. <paramref name="approach"/>면 스톱모션으로 카메라 쪽으로 다가온다(K1 조우).
+    /// 화면 속 사람을 등록한다(움직임은 그 사람의 <see cref="CctvWalker"/>가 한다).
     /// <paramref name="onScared"/>는 얼굴 점프스케어가 끝난 뒤 불린다(사람을 거두거나 잠시 숨긴다).
     /// </summary>
-    public static void Register(GameObject person, int channel, bool approach, System.Action onScared = null)
+    public static void Register(GameObject person, int channel, System.Action onScared = null)
     {
         if (person == null) return;
         CctvFaceScare s = Ensure();
         s._people.RemoveAll(p => p.Go == null || p.Go == person);
-        s._people.Add(new Person { Go = person, Channel = channel, Approach = approach, NextStep = Time.time + StepSeconds, OnScared = onScared });
-    }
-
-    /// <summary>
-    /// 화면을 가로지르는 사람을 등록한다(52차 K1 「화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오.」) — 걷지 않고 <paramref name="from"/>에서 <paramref name="to"/>로 툭툭 옮겨 가고,
-    /// 끝에 닿으면 화면에서 사라진다(<paramref name="onPassed"/>). 3초 이어서 보면 얼굴 점프스케어는 같다.
-    /// </summary>
-    public static void RegisterCrossing(GameObject person, int channel, Vector3 from, Vector3 to, System.Action onPassed)
-    {
-        if (person == null) return;
-        CctvFaceScare s = Ensure();
-        s._people.RemoveAll(p => p.Go == null || p.Go == person);
-        s._people.Add(new Person { Go = person, Channel = channel, Cross = true, A = from, B = to, NextStep = Time.time + StepSeconds, OnScared = onPassed });
+        s._people.Add(new Person { Go = person, Channel = channel, OnScared = onScared });
     }
 
     /// <summary>등록을 푼다.</summary>
@@ -110,15 +84,6 @@ public sealed class CctvFaceScare : MonoBehaviour
         _people.RemoveAll(p => p.Go == null);
         CctvSystem cctv = CctvSystem.Active;
         if (cctv == null) return;
-
-        for (int i = 0; i < _people.Count; i++)
-        {
-            Person p = _people[i];
-            if ((!p.Approach && !p.Cross) || _busy || Time.time < p.NextStep) continue;
-            p.NextStep = Time.time + StepSeconds;
-            if (p.Cross) StepAcross(p, cctv);
-            else Step(p, cctv);
-        }
 
         if (_busy) return;
         Person seen = Watched(cctv);
@@ -155,40 +120,6 @@ public sealed class CctvFaceScare : MonoBehaviour
         return null;
     }
 
-    private static void Step(Person p, CctvSystem cctv)
-    {
-        Camera cam = cctv.ChannelCamera(p.Channel);
-        if (cam == null) return;
-        Vector3 pos = p.Go.transform.position;
-        Vector3 to = cam.transform.position - pos;
-        to.y = 0f;
-        float d = to.magnitude;
-        if (d <= NearestMeters + 0.05f) return;
-        Vector3 next = pos + to / d * Mathf.Min(StepMeters, d - NearestMeters);
-        p.Go.transform.SetPositionAndRotation(next, Quaternion.LookRotation(to / d, Vector3.up));
-        cctv.ForceRenderFor(0.15f);   // 툭 — 다음 프레임에 바로 보이게
-    }
-
-    private static void StepAcross(Person p, CctvSystem cctv)
-    {
-        if (p.At >= 1f) return;
-        float span = Mathf.Max(0.5f, Vector3.Distance(p.A, p.B));
-        p.At = Mathf.Min(1f, p.At + StepMeters / span);
-        Vector3 pos = Vector3.Lerp(p.A, p.B, p.At);
-        Camera cam = cctv.ChannelCamera(p.Channel);
-        Vector3 look = cam != null ? cam.transform.position - pos : p.B - p.A;
-        look.y = 0f;
-        p.Go.transform.SetPositionAndRotation(pos, look.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(look.normalized, Vector3.up) : p.Go.transform.rotation);
-        cctv.ForceRenderFor(0.15f);
-        if (p.At >= 1f && p.OnScared != null)
-        {
-            // 다 지나갔다 — 화면에서 사라진다.
-            System.Action done = p.OnScared;
-            p.OnScared = null;
-            done();
-        }
-    }
-
     private IEnumerator Scare(Person p, CctvSystem cctv, int count)
     {
         _busy = true;
@@ -200,6 +131,8 @@ public sealed class CctvFaceScare : MonoBehaviour
             yield break;
         }
 
+        CctvWalker walker = p.Go.GetComponent<CctvWalker>();
+        if (walker != null) walker.Paused = true;   // 71차: 점프스케어 동안 걷기를 멈춘다
         Vector3 oldPos = t.position;
         Quaternion oldRot = t.rotation;
         Vector3 toCam = cam.transform.position - t.position;
@@ -211,6 +144,8 @@ public sealed class CctvFaceScare : MonoBehaviour
             // 세 번째부터: 그 자리에서 고개를 들어 카메라를 본다(가장 조용한 것이 가장 오래 남는다).
             t.rotation = faceCam;
             cctv.ForceRenderFor(0.3f);
+            yield return new WaitForSeconds(1.2f);   // 71차: 멈춰 서서 잠깐 올려다보다가 다시 걷는다
+            if (walker != null) walker.Paused = false;
             _busy = false;
             yield break;
         }
@@ -249,6 +184,7 @@ public sealed class CctvFaceScare : MonoBehaviour
             cctv.ForceRenderFor(0.15f);
         }
 
+        if (walker != null) walker.Paused = false;
         if (p.OnScared != null)
         {
             try { p.OnScared(); }

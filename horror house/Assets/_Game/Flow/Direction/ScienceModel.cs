@@ -12,10 +12,14 @@ using UnityEngine.SceneManagement;
 /// 1일차는 움직이지 않는다. 2일차부터 플레이어가 과학실을 <b>나갈 때마다</b>(보지 않을 때) 한 칸씩, 그 밤 최대 자리까지 옮긴다.</item>
 /// <item>최대 자리는 평소 2(과학실 안). <b>복도까지 나오는 밤</b>(배치 3 — 최종 기획서 「배치 3: 모형이 복도로 나올 수 있음」, 또는 그 밤 편성에 모형 급습)만 3(복도).</item>
 /// <item>모형 급습(<see cref="ProgramCatalog.ModelRush"/>)이 대면하면 이 모형은 사라지고(급습 대역이 대신 나온다) 그 밤에는 돌아오지 않는다.
-/// 복도 끝에 선 자(<see cref="ProgramCatalog.HallEndFigure"/>)가 나와 있는 동안에도 숨는다.</item>
+/// 70차 ④: 복도로 나오는 것은 날짜 사슬뿐이다 — 복도 끝에 선 자의 밤과 다음 날 급습 밤에는 이 모형이 복도 끝(<see cref="HallFigure"/>)에 나가 있어 과학실에는 없고,
+/// 그 밖의 밤에는 과학실 안(자리 0~2)에만 있다(옛 「배치 3이면 복도 자리 3」은 쓰지 않는다 — 둘이 되지 않게).</item>
 /// <item>S3 「인체 모형을 빛으로 확인하십시오」의 대상 <c>rule.S3.model</c>은 이 모형의 조준점이다 — 몸을 감싸는 단단한 응시 상자를 붙여 응시 원뿔이 잡는다.
 /// 씬의 바닥 토르소(옛 대상, 콜라이더가 없어 응시로 잡히지 않았다)는 근무 중 숨긴다. 씬 파일은 고치지 않는다.</item>
 /// <item>재시작하면 그 밤의 시작 자리로 돌아간다. 판정과 무관(S3 응시 대상 자리만 따라간다).</item>
+/// <item>64차(플레이테스트 2026-10-07 「인체모형 더 활발히 이동」): 2일차부터 ① 플레이어가 같은 곳에 있는데 모형이 화면에 보이지 않은 채 몇 초(2일 5 · 3일 3.5 · 4일~ 2.5) 지나면
+/// 플레이어 쪽으로 한 걸음(0.5 · 0.75 · 1m) 다가서서 플레이어를 본다(2.5m 안으로는 오지 않는다) ② 최대 자리에 닿은 뒤에도 과학실을 나갈 때마다 그 밤 범위의 다른 자리로 옮긴다(<see cref="ModelProgress.NextSpot"/>).</item>
+/// <item>70차(민: 「목이 돌아가는 연출과 오래 바라보면 사망하는 연출을 복도 끝에 선 인체 모형에게 옮겨 줘」): 이 모형은 이제 목이 꺾이지도, 오래 바라봐 붙잡지도 않는다 — <see cref="HallFigure"/>로 옮겼다.</item>
 /// </list>
 /// 근무 씬에 자동으로 선다.
 /// </summary>
@@ -53,6 +57,23 @@ public sealed class ScienceModel : MonoBehaviour
     private bool _rushed;
     private SpaceId _lastSpace = SpaceId.None;
     private Vector3 _door = WestDoor;
+
+    // 64차
+    /// <summary>보지 않을 때 다가오기 시작하는 날.</summary>
+    public const int CreepFromDay = 2;
+
+    /// <summary>플레이어에게 이보다 가까이 다가오지 않는다(수평 m).</summary>
+    public const float CreepMinDistance = 2.5f;
+
+    private float _unseenSince = -1f;
+    private float _nextCreepCheck;
+    private int _creeps;
+    private bool _displaced;
+    /// <summary>64차: 그 밤 보지 않는 사이 다가선 걸음 수.</summary>
+    public int Creeps
+    {
+        get { return _creeps; }
+    }
 
     /// <summary>지금 근무 씬의 것. 없으면 null.</summary>
     public static ScienceModel Active { get; private set; }
@@ -161,6 +182,11 @@ public sealed class ScienceModel : MonoBehaviour
         DirectionStage stage = DirectionStage.Active;
         if (stage != null)
         {
+            foreach (string id in stage.PresentedIds)
+            {
+                if (id == ProgramCatalog.ModelRush) staged = true;   // 70차: 급습 대역이 복도 끝에 서 있는 동안 — 같은 자리에 둘이 겹치지 않게
+            }
+
             foreach (string id in stage.StagedIds)
             {
                 if (id == ProgramCatalog.ModelRush)
@@ -168,15 +194,19 @@ public sealed class ScienceModel : MonoBehaviour
                     _rushed = true;
                     staged = true;
                 }
-                else if (id == ProgramCatalog.HallEndFigure)
-                {
-                    staged = true;
-                }
             }
         }
 
-        bool show = !_rushed && !staged;
+        // 70차 ④(민: 「복도 끝 모형과 과학실 모형은 겹치면 안 돼. 과학실 모형이 복도에 나오고, 다음 날 급습해야 해」):
+        // 복도 끝에 선 자의 밤과 급습 밤에는 이 모형이 복도 끝(HallFigure)에 나가 있다 — 과학실은 비어 있다.
+        NightProgram program = NightRun.Program;
+        bool outside = program != null && (program.HasEncounter(ProgramCatalog.HallEndFigure) || program.HasEncounter(ProgramCatalog.ModelRush));
+
+        // 64차: 인체 모형 사망 컷신(DeathCutscene_Illuminance)이 도는 동안은 컷신의 모형만 — 과학실에서 붙잡히면 둘이 겹쳐 보인다.
+        bool show = !outside && !_rushed && !staged && DeathCutscene.Playing == null;
         if (_model != null && _model.activeSelf != show) _model.SetActive(show);
+        if (show && _model != null && !NightRun.Sandbox) Creep();   // 64차 · 71차: 흐름 정지 중에는 다가오지 않는다
+        else _unseenSince = -1f;
     }
 
     private void NewNight()
@@ -184,9 +214,13 @@ public sealed class ScienceModel : MonoBehaviour
         Band l = NightRun.Shown != null ? NightRun.Shown.GetBand(FearAxis.Layout) : Band.Band0;   // 56차: 배치만(자리가 바뀌는 것은 배치의 언어)
         bool rush = NightRun.Program != null && NightRun.Program.HasEncounter(ProgramCatalog.ModelRush);
         ModelProgress.Spots(_day, l, rush, out _base, out _max);
+        // 70차 ④: 복도로 나오는 것은 날짜 사슬(복도 끝에 선 자 → 다음 날 급습)로만 — 과학실 모형이 따로 복도 자리(3)에 서면 둘이 된다.
+        _max = Mathf.Min(_max, ModelProgress.HallSpot - 1);
+        _base = Mathf.Min(_base, _max);
         _spot = _base;
         _rushed = false;
         _lastSpace = SpaceId.None;
+        _creeps = 0;
         Place();
         if (DirectionStage.Verbose) Debug.Log("[ScienceModel] " + _day + "일차 모형 자리 " + _spot + "(최대 " + _max + ")");
     }
@@ -216,12 +250,17 @@ public sealed class ScienceModel : MonoBehaviour
                 _door = w <= e ? WestDoor : EastDoor;
             }
         }
-        else if (_lastSpace == SpaceId.ScienceRoom && _spot < _max && !_rushed)
+        else if (_lastSpace == SpaceId.ScienceRoom && _max > _base && !_rushed && !NightRun.Sandbox)   // 71차: 흐름 정지 중에는 자리를 옮기지 않는다
         {
-            // 등 뒤에서 — 과학실을 나가면 한 칸.
-            _spot++;
+            // 등 뒤에서 — 과학실을 나가면 한 칸. 64차: 최대 자리에 닿은 뒤에도 나갈 때마다 그 밤 범위의 다른 자리로(「더 활발히」).
+            _spot = ModelProgress.NextSpot(_spot, _base, _max, Random.Range(0, 1000));
             Place();
             if (DirectionStage.Verbose) Debug.Log("[ScienceModel] 모형이 움직였다 → 자리 " + _spot);
+        }
+        else if (_lastSpace == SpaceId.ScienceRoom && _displaced && _spot < ModelProgress.HallSpot)
+        {
+            // 64차: 다가섰던 모형은 플레이어가 나가면 제 자리로 — 다음에 들어올 때 문간을 막고 서 있지 않게.
+            Place();
         }
 
         _lastSpace = now;
@@ -247,6 +286,9 @@ public sealed class ScienceModel : MonoBehaviour
         {
             _model.transform.SetPositionAndRotation(at, rot);
         }
+
+        _unseenSince = -1f;
+        _displaced = false;
     }
 
     private void Pose(int spot, out Vector3 at, out Quaternion rot)
@@ -337,5 +379,125 @@ public sealed class ScienceModel : MonoBehaviour
         _hiddenRenderers = new Renderer[0];
         _hiddenColliders = new Collider[0];
         _sceneTarget = null;
+    }
+
+    // ── 64차: 보지 않을 때 다가옴 ─────────────────────────────
+
+    /// <summary>
+    /// 2일차부터, 플레이어가 모형과 같은 곳(과학실 — 복도 자리면 복도)에 있고 모형이 화면에 보이지 않은 채 <see cref="CreepDelay"/>초가 지나면
+    /// 플레이어 쪽으로 한 걸음(<see cref="CreepStep"/>) 다가서서 플레이어를 본다. <see cref="CreepMinDistance"/>m 안으로는 오지 않는다.
+    /// </summary>
+    private void Creep()
+    {
+        if (_day < CreepFromDay || _rushed)
+        {
+            _unseenSince = -1f;
+            return;
+        }
+
+        if (Time.time < _nextCreepCheck) return;
+        _nextCreepCheck = Time.time + 0.2f;
+
+        Camera cam = Camera.main;
+        Transform root = PlayerSensors.Active != null ? PlayerSensors.Active.PlayerRoot : null;
+        if (cam == null || root == null || !SameArea())
+        {
+            _unseenSince = -1f;
+            return;
+        }
+
+        if (UnseenDespawn.VisibleTo(_model, cam))
+        {
+            _unseenSince = -1f;
+            return;
+        }
+
+        if (_unseenSince < 0f) _unseenSince = Time.time;
+        if (Time.time - _unseenSince < CreepDelay(_day)) return;
+        _unseenSince = Time.time;   // 다음 걸음은 다시 기다린다
+        if (TryStep(root.position) && DirectionStage.Verbose) Debug.Log("[ScienceModel] 보지 않는 사이 다가섰다 → " + _model.transform.position);
+    }
+
+    /// <summary>플레이어가 모형과 같은 곳에 있는지 — 과학실 자리면 과학실, 복도 자리면 복도.</summary>
+    private bool SameArea()
+    {
+        SpaceId now = SpaceIds.Canonical(NightRun.CurrentSpace);
+        return _spot >= ModelProgress.HallSpot ? now == SpaceId.Corridor : now == SpaceId.ScienceRoom;
+    }
+
+    /// <summary>그날 보이지 않은 채 몇 초 지나면 한 걸음 다가오는지.</summary>
+    public static float CreepDelay(int day)
+    {
+        if (day <= 2) return 5f;
+        if (day == 3) return 3.5f;
+        return 2.5f;
+    }
+
+    /// <summary>그날 한 걸음(m).</summary>
+    public static float CreepStep(int day)
+    {
+        if (day <= 2) return 0.5f;
+        if (day == 3) return 0.75f;
+        return 1f;
+    }
+
+    private bool TryStep(Vector3 playerFeet)
+    {
+        Vector3 from = _model.transform.position;
+        Vector3 to = playerFeet - from;
+        to.y = 0f;
+        float dist = to.magnitude;
+        if (dist <= CreepMinDistance + 0.05f) return false;
+        Vector3 dir = to / dist;
+        float step = Mathf.Min(CreepStep(_day), dist - CreepMinDistance);
+
+        float[] turns = { 0f, 35f, -35f, 70f, -70f };
+        for (int i = 0; i < turns.Length; i++)
+        {
+            Vector3 d = Quaternion.Euler(0f, turns[i], 0f) * dir;
+            Vector3 p = from + d * step;
+            if (!InsideArea(p) || Blocked(p)) continue;
+            p.y = FloorY(p);
+            Vector3 face = playerFeet - p;
+            face.y = 0f;
+            Quaternion rot = face.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(face.normalized, Vector3.up) : _model.transform.rotation;
+            _model.transform.SetPositionAndRotation(p, rot);
+            _creeps++;
+            _displaced = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>모형의 자리 공간 상자 안(벽에서 0.35m)인지. 상자를 모르면 참.</summary>
+    private bool InsideArea(Vector3 p)
+    {
+        if (_zones == null) _zones = FindFirstObjectByType<SpaceZones>();
+        if (_zones == null) return true;
+        Bounds box;
+        SpaceId area = _spot >= ModelProgress.HallSpot ? SpaceId.Corridor : SpaceId.ScienceRoom;
+        if (!_zones.TryGetSpaceBox(area, out box)) return true;
+        box.Expand(new Vector3(-0.7f, 0f, -0.7f));
+        return p.x >= box.min.x && p.x <= box.max.x && p.z >= box.min.z && p.z <= box.max.z;
+    }
+
+    /// <summary>그 자리에 모형 몸(반지름 0.3 캡슐, 발목 위)이 들어갈 수 없는지 — 자기·플레이어 콜라이더와 트리거는 빼고.</summary>
+    private bool Blocked(Vector3 p)
+    {
+        float y = FloorY(p);
+        Vector3 a = new Vector3(p.x, y + 0.4f, p.z);
+        Vector3 b = new Vector3(p.x, y + 1.6f, p.z);
+        Transform player = PlayerSensors.Active != null ? PlayerSensors.Active.PlayerRoot : null;
+        Collider[] hits = Physics.OverlapCapsule(a, b, 0.3f, ~0, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < hits.Length; i++)
+        {
+            Transform t = hits[i].transform;
+            if (t.IsChildOf(_model.transform)) continue;
+            if (player != null && t.IsChildOf(player)) continue;
+            return true;
+        }
+
+        return false;
     }
 }

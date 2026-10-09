@@ -50,6 +50,7 @@ public sealed class FlashlightPower : MonoBehaviour
     {
         get
         {
+            if (!NightRun.HasFlashlight) return false;   // 66차: 1일차는 경비실 책상의 손전등을 주워야 켤 수 있다
             FlashlightBattery b = NightRun.Battery;
             if (b == null || !NightRun.IsNightActive) return true;
             if (b.IsEmpty) return false;
@@ -160,7 +161,7 @@ public sealed class FlashlightPower : MonoBehaviour
             if (Swapping && Time.time >= _swapUntil) FinishSwap(relay, b);
             else if (!Swapping && ReadSwapInput()) BeginSwap();
 
-            if (relay.IsOn && !Swapping)
+            if (relay.IsOn && !Swapping && !NightRun.BatteryFrozen)   // 71차: 개발자 모드 흐름 정지 중 배터리 무한
             {
                 if (b.Drain(Time.deltaTime) || b.IsEmpty)
                 {
@@ -299,7 +300,14 @@ public sealed class FlashlightPower : MonoBehaviour
     {
         FlashlightRelay relay = FlashlightRelay.Active;
         if (relay == null) return;
+        if (!NightRun.HasFlashlight)
+        {
+            DeskStarterKit.ShowNoFlashlight();   // 66차: 손이 비어 있다 — 딸깍도 없다
+            return;
+        }
+
         PlayClick(0.55f, 1.15f);
+        DeskStarterKit.ShowEmptyHint();   // 66차: 다 닳은 손전등 — R 또는 책상 배터리 안내
         if (Swapping || relay.Root == null || NightRun.Battery == null || !NightRun.Battery.IsEmpty) return;
         // 다 닳은 손전등 — 0.2초 희미한 빛(판정 신호 없음).
         relay.Root.SetActive(true);

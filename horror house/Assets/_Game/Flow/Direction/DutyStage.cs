@@ -41,6 +41,10 @@ public sealed class DutyStage : MonoBehaviour
     public static readonly Vector3 LogBookFallback = new Vector3(31.82f, 2.12f, 47.47f);
 
     private readonly List<GameObject> _targets = new List<GameObject>();
+    private DutyPickupItem _book;
+
+    /// <summary>65차 W15 줍기 대상 — 도서관 안쪽 책상 위 biology 책.</summary>
+    public const string LibraryBookPath = "Interior/Library/Book16 (2)";
     private bool _built;
     private bool _bookBuilt;
 
@@ -55,6 +59,8 @@ public sealed class DutyStage : MonoBehaviour
         }
 
         _targets.Clear();
+        if (_book != null) Destroy(_book);
+        _book = null;
         _built = false;
         _bookBuilt = false;
     }
@@ -88,6 +94,15 @@ public sealed class DutyStage : MonoBehaviour
 
         FinalRuleRelay.SetRuntimeZone(DutyCatalog.ClassroomDoorZone, ClassroomDoor);
         FinalRuleRelay.SetRuntimeZone(DutyCatalog.ExitZone, ExitEnd);
+
+        GameObject book = GameObject.Find("/" + LibraryBookPath);
+        if (book != null)
+        {
+            _book = book.GetComponent<DutyPickupItem>();
+            if (_book == null) _book = book.AddComponent<DutyPickupItem>();
+            _book.Setup(DutyCatalog.LibraryBookTarget, "W15", "[E] biology 책 줍기");
+        }
+        else Debug.LogWarning("[DutyStage] 도서관 biology 책을 찾지 못했습니다(W15): " + LibraryBookPath);
 
         Renderer lamp = ClassroomLamp();
         if (lamp != null) AddTarget(DutyCatalog.ClassroomLightTarget, lamp.bounds, 1.15f);

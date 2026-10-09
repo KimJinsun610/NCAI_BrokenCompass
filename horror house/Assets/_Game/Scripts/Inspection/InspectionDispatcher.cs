@@ -78,6 +78,12 @@ namespace NightDuty
 
         /// <summary>회피 불가 역설로 당일 재입실이 금지된 공간.</summary>
         public SpaceId Banned;
+
+        /// <summary>67차: [근무 지시]가 진행 중인지 — 평소 지시는 기다린다(호출·따라잡기·목격은 그대로).</summary>
+        public bool DutyActive;
+
+        /// <summary>67차(민: 「점검 지시와 근무 지시의 비중이 균일하게」): 지난 지시가 점검이었고 근무 지시 차례다 — 평소 지시는 기다린다.</summary>
+        public bool DutyTurn;
     }
 
     /// <summary>
@@ -141,7 +147,7 @@ namespace NightDuty
         public const float LullRange = 20f;
 
         /// <summary>먼저 열릴 항목을 모두 낼 시각(01:40) — 시간표의 끝. 51차(민: 「초반 3개는 괜찮은데 이후 2개가 너무 늦다」): 03:00 → 01:40.</summary>
-        public const int EarlyDeadline = 100;
+        public const int EarlyDeadline = 125;   // 67차(밤 05:00): 100 → 125(×1.25, 02:05)
 
         /// <summary>남은 지시가 있으면 지난 지시 뒤 이 시간(실제 초, 게임 30분) 안에 다음 지시를 낸다(밀린 지시 1 이하일 때).</summary>
         public const float MaxQuiet = 47f;   // 57차: 112 → 70 · 59차(밤 10분): 70 → 47(게임 약 19분)
@@ -153,7 +159,7 @@ namespace NightDuty
         public const float NextAfterReport = 4f;
 
         /// <summary>여유를 재는 끝(03:45) — 04:00 전에 다 끝낼 수 있어야 한다.</summary>
-        public const int WorkDeadline = 225;
+        public const int WorkDeadline = 280;   // 67차(밤 05:00): 225 → 280(04:40)
 
         /// <summary>따라잡기 여유 기준(초).</summary>
         public const float SlackMin = 60f;
@@ -165,7 +171,7 @@ namespace NightDuty
         public const float SecondsPerItem = 27f;
 
         /// <summary>조우가 곧 열린다고 보는 게임 분.</summary>
-        public const float ArmedLeadMinutes = 8f;
+        public const float ArmedLeadMinutes = 10f;   // 67차: 8 → 10(게임 분 ×1.25)
 
         /// <summary>복도 중심선 z.</summary>
         public const float CorridorZ = 44f;
@@ -473,6 +479,8 @@ namespace NightDuty
             }
 
             if (input.DirectorBusy) return Hold("조우 중");
+            if (input.DutyActive) return Hold("근무 지시 진행 중");
+            if (input.DutyTurn) return Hold("근무 지시 차례");
             if (Now - _busyEndedAt < AfterBusy) return Hold("조우 직후");
             if (Now - _lastMessage < AfterMessage) return Hold("문자 직후");
             bool quick = reason == QuickReason;   // 53차: 보고 뒤 바로 — 지시 간격·긴장 미룸을 건너뛴다
@@ -907,6 +915,12 @@ namespace NightDuty
         private bool HasEarlyUnissued(float minute, SpaceId banned, bool includeReserved)
         {
             return EarlyUnissued(minute, banned, includeReserved).Count > 0;
+        }
+
+        /// <summary>67차: 낼 점검이 더 없다(모두 지시했거나 보고함) — 「점검 지시 차례」를 접을 때.</summary>
+        public bool AllIssued
+        {
+            get { return AllIssuedOrReported(); }
         }
 
         private bool AllIssuedOrReported()

@@ -80,7 +80,7 @@ namespace NightDuty.Tests
             r.Backlog = 0;
             r.Minute = 10f;   // 출근
             r.Wait(1f);
-            r.Minute = 215f;  // 03:30 뒤
+            r.Minute = NightClock.JudgingEnd + 5f;  // 판정 끝(67차 04:25) 뒤
             r.Wait(1f);
             Assert.AreEqual(0, r.Events.Count);
         }
@@ -135,7 +135,7 @@ namespace NightDuty.Tests
             Assert.IsNotNull(r.D.Active);
             r.Gaze(DutyCatalog.ClassroomLightTarget, 0.5f);
             Assert.AreEqual(DutyOutcome.Done, r.Last.Outcome);
-            Assert.AreEqual("[근무 지시] 1-3 교실 소등 상태 확인 바랍니다. 1-3 교실은 소등되어 있습니다.", DutyCatalog.OrderText(r.Last.Def, 2));
+            Assert.AreEqual("[근무 지시] 교실 소등 확인\n1-3 교실은 소등되어 있습니다.", DutyCatalog.OrderText(r.Last.Def, 2));   // 67차 ② 민 문구
         }
 
         [Test]
@@ -153,7 +153,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void W5_이완_구간이_열리면_근무일지_서명하면_완료_못하면_미완료()
+        public void W5_이완_구간이_열리면_근무일지_서명하면_완료_못하면_조용히_닫힌다()
         {
             Rig r = new Rig(3);
             r.Minute = NightClock.RelaxStart + 1f;
@@ -165,12 +165,15 @@ namespace NightDuty.Tests
             Assert.AreEqual(DutyOutcome.Done, ev.Outcome);
 
             Rig late = new Rig(3);
+            late.Since = 0f;   // 닫힌 뒤 다른 지시가 바로 나오지 않게
             late.Minute = NightClock.RelaxStart + 1f;
             late.Wait(0.2f);
             late.Minute = NightClock.Call2;
             late.Wait(0.2f);
-            Assert.AreEqual(DutyOutcome.Missed, late.Last.Outcome);
-            Assert.AreEqual("W5", late.Last.Def.Id);
+            // 67차 ②(민: 「W5는 시간 제한 없음 — 시간 초과 처리도 하지 않게」): 미완료 답장·경고 없이 조용히 닫힌다.
+            Assert.AreEqual(1, late.Events.Count, "지시 한 통뿐 — 미완료 사건 없음");
+            Assert.IsNull(late.D.Active);
+            Assert.IsTrue(late.D.Finished("W5"));
         }
 
         [Test]
@@ -187,17 +190,34 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 기한을_넘기면_미완료이고_조우_중에는_기한이_멈춘다()
+        public void 기한을_넘기면_미완료이고_조우_중에도_기한은_흐른다()
         {
+            // 67차 ②: 기한은 태블릿에 「HH:MM까지」로 적히므로 조우 중에도 흐른다(전에는 멈췄다).
             Rig r = new Rig(1);
             r.Wait(0.2f);
             DutyDef w1 = r.D.Active;
+            Assert.AreEqual(DutyCatalog.LimitSeconds, w1.Seconds);
             r.Busy = true;
-            r.Wait(w1.Seconds + 5f);
-            Assert.IsNotNull(r.D.Active, "조우 중에는 기한이 흐르지 않는다");
-            r.Busy = false;
-            r.Wait(w1.Seconds + 1f);
+            r.Wait(w1.Seconds - 5f);
+            Assert.IsNotNull(r.D.Active);
+            r.Wait(6f);
             Assert.AreEqual(DutyOutcome.Missed, r.Last.Outcome);
+        }
+
+        [Test]
+        public void 제한_없는_지시는_기한이_지나도_미완료가_아니다()
+        {
+            foreach (string id in new[] { "W2", "W4", "W5", "W15" }) Assert.AreEqual(0f, DutyCatalog.Find(id).Seconds, id);
+            Rig r = new Rig(1, SpaceId.Library);
+            r.Wait(0.2f);
+            Assert.AreEqual(0f, r.D.Active.Seconds, r.D.Active.Id + " — 도서관 가까이(W2 또는 W15)");
+            r.Wait(400f);
+            Assert.IsNotNull(r.D.Active, "제한 없음");
+            Assert.AreEqual(1, r.Events.Count);
+            r.Minute = NightClock.JudgingEnd;
+            r.Wait(0.2f);
+            Assert.IsNull(r.D.Active, "판정 구간 끝에 조용히 닫힌다");
+            Assert.AreEqual(1, r.Events.Count);
         }
 
         [Test]
@@ -210,7 +230,7 @@ namespace NightDuty.Tests
             r.Send(JudgeSignal.OfSpace(SignalKind.SpaceExited, SpaceId.Library));
             Assert.IsTrue(r.Last.Tainted, "지시는 수칙 위반을 면책하지 않는다");
 
-            Assert.AreEqual(1, r.D.Allowed(r.Minute), "00:30에는 하나뿐(57차: 01:00 전 하나)");
+            Assert.AreEqual(2, r.D.Allowed(r.Minute), "00:30에는 둘(67차: 호출 1 전 둘 — 점검 지시와 번갈아)");
             r.Minute = NightClock.Call1;
             r.Wait(DutyDispatcher.AfterDuty - 1f);
             Assert.AreEqual(2, r.Events.Count, "지시 사이 20초");
@@ -219,30 +239,35 @@ namespace NightDuty.Tests
             Assert.AreNotEqual("W2", r.Last.Def.Id, "한 번 한 것은 다시 내지 않는다");
             r.Wait(r.D.Active.Seconds + 1f);   // 미완료
             r.Wait(DutyDispatcher.AfterDuty + 5f);
-            Assert.AreEqual(DutyCatalog.DailyCap(1), r.D.IssuedToday, "1일차 상한 둘");
-            Assert.IsNull(r.D.Active);
+            for (int k = 0; k < 6 && r.D.Active != null; k++)   // 67차: 1일차 상한 셋
+            {
+                if (r.D.Active.Seconds <= 0f) break;   // 67차 ②: 제한 없는 지시(W2·W4·W5·W15)는 기한으로 끝나지 않는다 — 무한 대기 금지
+                r.Wait(r.D.Active.Seconds + 1f);
+                r.Wait(DutyDispatcher.AfterDuty + 5f);
+            }
 
+            Assert.LessOrEqual(r.D.IssuedToday, DutyCatalog.DailyCap(1), "1일차 상한 셋");
             r.Minute = 200f;
             r.Wait(DutyDispatcher.AfterDuty + 5f);
-            Assert.IsNull(r.D.Active, "상한을 채웠으면 03:20에도 더 내지 않는다");
-            Assert.AreEqual(DutyCatalog.DailyCap(1), r.D.IssuedToday);
+            Assert.LessOrEqual(r.D.IssuedToday, DutyCatalog.DailyCap(1), "상한을 넘겨 내지 않는다");
         }
 
         [Test]
         public void 지시는_판정_구간에_고르게_퍼진다()
         {
             // 57차(민: 「근무 지시가 많아서 귀찮고」): 하루 상한 1~2일차 둘·3일차부터 셋, 01:00 전 하나 → 02:16 전 둘 → 그 뒤 상한까지.
-            Assert.AreEqual(2, DutyCatalog.DailyCap(1));
-            Assert.AreEqual(2, DutyCatalog.DailyCap(2));
-            Assert.AreEqual(3, DutyCatalog.DailyCap(3));
+            // 67차(민: 「점검과 지시 비중을 균일하게」): 상한 1·2일차 셋 · 3일차부터 넷, 호출 1 전 둘 → 호출 2 전 셋 → 그 뒤 상한까지.
+            Assert.AreEqual(3, DutyCatalog.DailyCap(1));
+            Assert.AreEqual(3, DutyCatalog.DailyCap(2));
+            Assert.AreEqual(4, DutyCatalog.DailyCap(3));
             DutyDispatcher d = new DutyDispatcher(2, null, 5);
-            Assert.AreEqual(1, d.Allowed(30f), "호출 1 전 하나");
-            Assert.AreEqual(2, d.Allowed(NightClock.Call1), "01:00~02:16 하나 더");
-            Assert.AreEqual(2, d.Allowed(NightClock.Call2), "2일차 상한 둘");
-            Assert.AreEqual(DutyCatalog.DailyCap(2), d.Allowed(209f));
+            Assert.AreEqual(2, d.Allowed(30f), "호출 1 전 둘");
+            Assert.AreEqual(3, d.Allowed(NightClock.Call1), "호출 1~2 사이 하나 더");
+            Assert.AreEqual(3, d.Allowed(NightClock.Call2), "2일차 상한 셋");
+            Assert.AreEqual(DutyCatalog.DailyCap(2), d.Allowed(NightClock.JudgingEnd - 1f));
             DutyDispatcher d3 = new DutyDispatcher(3, null, 5);
-            Assert.AreEqual(2, d3.Allowed(NightClock.Call2 - 1f));
-            Assert.AreEqual(3, d3.Allowed(NightClock.Call2), "3일차 02:16 뒤 셋째");
+            Assert.AreEqual(3, d3.Allowed(NightClock.Call2 - 1f));
+            Assert.AreEqual(4, d3.Allowed(NightClock.Call2), "3일차 호출 2 뒤 넷째");
         }
 
         [Test]
@@ -369,7 +394,7 @@ namespace NightDuty.Tests
                 Assert.IsTrue(NightRun.CanSignCheckpointNow, "01:53");
                 Assert.IsTrue(NightRun.SignCheckpoint());
                 Assert.IsNotNull(NightRun.Checkpoint);
-                Assert.AreEqual("근무일지 서명이 기록되었습니다. 01:53", texts[texts.Count - 1]);
+                Assert.AreEqual("근무일지 서명이 기록되었습니다. " + NightClock.Clock(NightClock.RelaxStart + 1), texts[texts.Count - 1]);
                 Assert.IsFalse(NightRun.CanSignCheckpointNow, "한 번만");
                 Assert.IsFalse(NightRun.SignCheckpoint());
 

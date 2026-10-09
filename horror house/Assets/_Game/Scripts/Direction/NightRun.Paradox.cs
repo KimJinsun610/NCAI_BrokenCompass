@@ -95,6 +95,7 @@ namespace NightDuty
         private static void ParadoxObserve(in JudgeSignal signal, bool judging)
         {
             if (!judging || IsCaptured || _finalBook == null || _paradox.RuleId == null) return;
+            if (_sandbox && !_paradox.Sent) return;   // 71차: 흐름 정지 중에는 스스로 보내지 않는다(보낸 뒤의 안전한 읽기는 센다)
             FinalJudge judge = _finalBook.Judge(_paradox.RuleId);
             ParadoxApply(_paradox.Observe(signal, _currentSpace, judge != null && judge.Violated));
         }

@@ -123,12 +123,19 @@ namespace NightDuty
 
         /// <summary>
         /// 경비실 전화로 근무를 일찍 끝낼 수 있는가(2026-10-03 민): 밤이 진행 중이고 붙잡히지 않았으며,
-        /// 오늘 점검표가 있고 <b>전부 보고했을 때</b>. 끝내는 길은 04:00과 같은 <see cref="RequestEndNight"/>다 —
+        /// 오늘 점검표가 있고 <b>전부 보고했고</b>, 68차(민: 「점검 완료가 아니라 모든 지시의 완료 여부로」) <b>[근무 지시]도 남지 않았을 때</b>
+        /// (<see cref="DutiesPending"/> — 진행 중이거나 앞으로 나올 지시). 끝내는 길은 근무 종료 시각과 같은 <see cref="RequestEndNight"/>다 —
         /// 남은 카드 정산·조우 이월이 그대로 돈다(미완료 점검이 없으니 경고는 붙지 않는다).
         /// </summary>
         public static bool CanEndShiftEarly
         {
-            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCount == 0; }
+            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCount == 0 && !DutiesPending; }
+        }
+
+        /// <summary>68차: 조기 퇴근을 막는 지시가 남았는지 — 보고하지 않은 점검 또는 남은 [근무 지시]. 전화기 안내 「지시가 아직 끝나지 않았습니다.」가 읽는다.</summary>
+        public static bool InstructionsPending
+        {
+            get { return IsNightActive && (Board.RemainingCount > 0 || DutiesPending); }
         }
 
         /// <summary>
@@ -177,7 +184,7 @@ namespace NightDuty
         {
             get
             {
-                if (!JudgingWindowEnabled)
+                if (!JudgingWindowEnabled || _sandbox)   // 71차: 개발자 모드 흐름 정지 중에는 늘 판정
                 {
                     return true;
                 }
@@ -241,6 +248,7 @@ namespace NightDuty
             }
 
             _axes = new FearAxisSystem();
+            ApplySandboxCap();   // 71차: 개발자 모드 흐름 정지 중이면 새 축도 붙잡히지 않게
             _bands = new BandResolver(_axes);
             _axes.ValueChanged += _bands.OnValueChanged;
             _axes.Raised += OnAxisRaised;
@@ -259,6 +267,7 @@ namespace NightDuty
             ClearRaised();
             ResetExtensions(false);
             ResetOrders();
+            ResetCctv(true);   // 71차
             ViolationMinutesToday.Clear();
             _lastSummary = default;
         }
@@ -289,6 +298,7 @@ namespace NightDuty
             ViolationMinutesToday.Clear();
             ClearRaised();
             ResetTabletState();
+            _stare.Reset();
 
             // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
@@ -325,7 +335,7 @@ namespace NightDuty
                 // 54차: [근무 지시] — 점검 공백을 걷고·닫고·끄고·적는 업무로 메운다.
                 BeginDuties();
 
-                // 56차: 손전등 배터리 — 밤 시작 100%·예비 0, 칸 자리는 화면 쪽이 씬의 칸으로 채운다.
+                // 56차: 손전등 배터리 — 칸 자리는 화면 쪽이 씬의 칸으로 채운다. 66차: 충전량·예비는 전날에서 이어받는다(1일차는 책상 손전등 0%).
                 BeginBattery();
             }
 
@@ -377,6 +387,7 @@ namespace NightDuty
             if (_duties != null) parts.Add(_duties);
             if (_battery != null) parts.Add(_battery);
             if (_batteryPlan != null) parts.Add(_batteryPlan);
+            if (_deskKit != null) parts.Add(_deskKit);   // 66차
             return parts.ToArray();
         }
 
@@ -401,6 +412,7 @@ namespace NightDuty
             // 점검 지시도 판정 정지 구간에 흐른다(출근 직후 첫 지시, 호출 2는 이완이 끝나는 순간).
             OrdersTick(judgeSeconds);
             DutiesTick(judgeSeconds);
+            ShiftReadyTick();
 
             if (!IsJudgingNow)
             {
@@ -436,6 +448,7 @@ namespace NightDuty
                 return;
             }
 
+            ObserveSignalForDebug(signal);   // 71차: 개발자 모드 「상호작용 확인」
             if (AbsorbTabSignal(signal))
             {
                 return;
@@ -459,6 +472,7 @@ namespace NightDuty
                     FinalDispatch(signal, judging);
                     ParadoxObserve(signal, judging);
                     UnavoidableObserve(signal, judging);
+                    StareObserve(signal, judging);   // 64차: 고정 몹 응시
                 }
 
                 DirectionObserve(signal);
@@ -718,7 +732,18 @@ namespace NightDuty
             _bands.RestoreReached(from.ReachedCopy());
             _ledger.RestoreFromSnapshot(from);
             from.RestoreParts(SnapshotParts());
+            // 61차(플레이테스트: 「배터리 — 밤이 초기화되면 이어지면 안 된다」): 체크포인트에서 다시 해도 손전등은 가득 찬 채로 시작한다.
+            // 예비·칸 자리는 스냅샷 그대로(주운 예비를 잃지 않게).
+            if (_battery != null)
+            {
+                // 66차(민: 배터리 이월): 가득 채우지 않고 「그 밤을 시작할 때의 충전량」까지만 — 체크포인트 때가 더 많으면 그대로.
+                // 61차 「체크포인트에서 닳은 채로 이어지면 안 된다」는 지키고, 이월된 배터리를 재시작으로 공짜로 채우지 않는다. 1일차 책상 손전등은 밤 시작이 0이라 0.
+                _battery.RaiseTo(_nightStartCharge);
+            }
+
             ParadoxAfterRestore();
+            OrdersAfterRestore();
+            _shiftReadyAnnounced = false;   // 68차: 되돌린 밤에서 다시 다 끝내면 다시 알린다(옛 알림 문자는 TabletBridge가 지운다)
 
             BeginNightCore(Day, _clockMinutes, true);
             DirectionRestart(k, from.StartMinute);
@@ -921,12 +946,18 @@ namespace NightDuty
         /// <summary>디버그: 지정 축을 100으로 올려 포획 경로를 시험한다(신뢰는 100이 돼도 포획되지 않는다). 에디터·디버그 빌드에서만 쓴다.</summary>
         public static void DebugForceCapture(FearAxis axis)
         {
+            DebugForceCapture(axis, "debug");
+        }
+
+        /// <summary>디버그: 출처를 정해 붙잡는다 — 붙잡힘 장면이 출처를 보고 고를 때(64차: <c>stare.rule.S5.figure</c> = 인체 모형 컷신, 70차부터 복도 끝 모형). 에디터·디버그 빌드에서만 쓴다.</summary>
+        public static void DebugForceCapture(FearAxis axis, string sourceId)
+        {
             EnsureRun();
             int remain = Bands.Max - _axes.GetValue(axis);
             SpaceId space = CurrentSpace;
             int? cap = _axes.SoftCap;
             _axes.SoftCap = null;
-            _axes.Apply(axis, remain, "debug", space);
+            _axes.Apply(axis, remain, string.IsNullOrEmpty(sourceId) ? "debug" : sourceId, space);
             _axes.SoftCap = cap;
             CloseIfCaptured();
         }
@@ -1026,8 +1057,12 @@ namespace NightDuty
             _lastCaptureSources = new List<string>();
             ClearRaised();
             ResetExtensions(true);
+            ResetSandbox();   // 71차
+            ResetCctv(true);   // 71차
             ResetOrders();
             ResetDuties();
+            _stare.Reset();
+            FixedMobStareEnabled = false;
             InspectionDripEnabled = false;
             ViolationMinutesToday.Clear();
             Board.Begin(InspectionPlan.Empty(0));

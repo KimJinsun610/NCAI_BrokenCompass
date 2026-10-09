@@ -286,7 +286,7 @@ namespace NightDuty.Tests
             Assert.IsFalse(r.Board.IsIssued("S-1"), "과학실은 호출 1 몫");
             Assert.IsTrue(r.Board.IsIssued("C-1"));
 
-            r.Minute = 60f;
+            r.Minute = NightClock.Call1;
             r.Wait(10f);
             InspectionOrder last = r.Orders[r.Orders.Count - 1];
             Assert.AreEqual(OrderKind.Call1, last.Kind);
@@ -400,7 +400,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(4, r.Board.IssuedCount, "53차: 보고하면 다음 — 먼저 열릴 네 공간이 다 나왔다");
             Assert.AreEqual(4, r.Orders.Count, "한 공간씩 따로따로");
 
-            r.Minute = 150f;
+            r.Minute = NightClock.Call2 + 14f;
             r.Wait(300f);
             Assert.AreEqual(5, r.Board.IssuedCount, "02:30이면 시간표가 거의 다 허락하고 호출 2도 나갔다");
         }
@@ -469,8 +469,10 @@ namespace NightDuty.Tests
             Assert.AreEqual(OrderKind.Call1, r.Orders[r.Orders.Count - 1].Kind);
             r.Wait(10f);
 
-            r.Minute = 160f;   // 03:45까지 244초 — 일곱 개를 돌기에 빠듯하다
-            Assert.Less(r.D.Slack(160f, SpaceId.None), InspectionDispatcher.SlackMin);
+            float tight = InspectionDispatcher.WorkDeadline - 65f;   // 67차: 마감까지 게임 65분(실시간 약 160초) — 일곱 개를 돌기에 빠듯하다
+            Assert.Greater(tight, NightClock.Call2);
+            r.Minute = tight;
+            Assert.Less(r.D.Slack(tight, SpaceId.None), InspectionDispatcher.SlackMin);
             r.Wait(0.2f);
             Assert.AreEqual(OrderKind.Call2, r.Orders[r.Orders.Count - 1].Kind);
             int before = r.Orders.Count;

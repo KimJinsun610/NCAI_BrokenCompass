@@ -26,7 +26,7 @@ namespace NightDuty
         {
             if (!_nightOpen || IsCaptured || Day < FinaleWatch.Day || _finale.Active) return false;
             _finale.Begin();
-            Debug.Log("[NightRun] 피날레 시작(5일차 04:00) — K4: 경비실을 나가지 않기");
+            Debug.Log("[NightRun] 피날레 시작(5일차 05:00) — K4: 경비실을 나가지 않기");
             return true;
         }
 

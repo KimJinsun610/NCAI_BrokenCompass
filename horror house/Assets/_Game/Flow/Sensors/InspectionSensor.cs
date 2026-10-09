@@ -338,11 +338,20 @@ public sealed class InspectionSensor : MonoBehaviour
         {
             _readiness.Remove(id);
             SetFocus(string.Empty);
-            _lastResult = (anomaly ? "[이상]" : "[정상]") + (revising ? "으로 바꿈" : " 보고함");
+            _lastResult = "[" + ReportWord(id, anomaly) + "]" + (revising ? "으로 바꿈" : " 보고함");
             _lastResultUntil = Time.unscaledTime + 1.5f;
         }
 
         return report;
+    }
+
+    /// <summary>
+    /// 65차(민: 「사다리 없는 자리에서 없다고 보고할 수 있도록」): 보고 키의 이름 — 「있는지 확인」 항목(C-3 사다리)은 [있음]/[없음], 나머지는 [정상]/[이상].
+    /// 판정은 그대로다([없음] = 이상).
+    /// </summary>
+    public static string ReportWord(string itemId, bool anomaly)
+    {
+        return InspectionCatalog.ReportWord(itemId, anomaly);
     }
 
     private void SetFocus(string id)
@@ -377,9 +386,11 @@ public sealed class InspectionSensor : MonoBehaviour
                 InspectionItem item = InspectionCatalog.Find(_focus);
                 string name = item != null ? item.Name : _focus;
                 InspectionState st = NightRun.Inspections != null ? NightRun.Inspections.StateOf(_focus) : InspectionState.Pending;
-                if (st == InspectionState.Pending) text = name + "    [" + normalKey + "] 정상   [" + anomalyKey + "] 이상";
-                else if (st == InspectionState.ReportedAnomaly) text = name + " — [이상] 보고함    [" + normalKey + "] 정상으로 바꾸기";   // 60차 정정
-                else text = name + " — [정상] 보고함    [" + anomalyKey + "] 이상으로 바꾸기";
+                string ok = ReportWord(_focus, false);
+                string bad = ReportWord(_focus, true);
+                if (st == InspectionState.Pending) text = name + "    [" + normalKey + "] " + ok + "   [" + anomalyKey + "] " + bad;
+                else if (st == InspectionState.ReportedAnomaly) text = name + " — [" + bad + "] 보고함    [" + normalKey + "] " + ok + "으로 바꾸기";   // 60차 정정
+                else text = name + " — [" + ok + "] 보고함    [" + anomalyKey + "] " + bad + "으로 바꾸기";
                 progress = _hold > 0f ? HoldProgress : 0f;
             }
             else if (Time.unscaledTime < _lastResultUntil)

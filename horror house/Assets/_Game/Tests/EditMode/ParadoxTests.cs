@@ -360,7 +360,7 @@ namespace NightDuty.Tests
 
                 InspectionAssignment first = plan.Assignments[0];
                 NightRun.ReportInspection(first.Id, false);
-                StringAssert.Contains(first.Item.TabletLine + (first.IsLate ? " (02:16부터)" : string.Empty) + " · 보고함", NightRun.ChecklistMessage);
+                StringAssert.Contains(first.Item.TabletLine + (first.IsLate ? " (" + NightClock.Clock(NightClock.Call2) + "부터)" : string.Empty) + " · 보고함", NightRun.ChecklistMessage);
             }
             finally
             {
@@ -650,7 +650,7 @@ namespace NightDuty.Tests
                 InspectionReport report = NightRun.ReportInspection(pending.Id, false);
                 Assert.IsFalse(report.Accepted);
                 Assert.AreEqual(ReportRejection.SpaceClosed, report.Rejection);
-                StringAssert.Contains(pending.Item.TabletLine + (pending.IsLate ? " (02:16부터)" : string.Empty) + " · 재입실 불가", NightRun.ChecklistMessage);
+                StringAssert.Contains(pending.Item.TabletLine + (pending.IsLate ? " (" + NightClock.Clock(NightClock.Call2) + "부터)" : string.Empty) + " · 재입실 불가", NightRun.ChecklistMessage);
             }
             finally
             {

@@ -60,8 +60,8 @@ MonoBehaviour:
     - Ambience/OneShots/os_knock_2b
     roomVolume: 1
   - label: "\uD654\uC7A5\uC2E4"
-    roomClip: Ambience/Rooms/AMB_TOILET_Low
-    roomClipHigh: Ambience/Rooms/AMB_TOILET_High
+    roomClip: Ambience/Rooms/AMB_TOILET_Low_Loud
+    roomClipHigh: Ambience/Rooms/AMB_TOILET_High_Loud
     box:
       m_Center: {x: 1.45, y: 3.4, z: 35.65}
       m_Extent: {x: 4.55, y: 2, z: 4.3500004}
@@ -84,7 +84,6 @@ MonoBehaviour:
     space: 1
     oneShots:
     - Ambience/OneShots/os_floor_creak_c
-    - Ambience/OneShots/os_thud_upstairs
     - Ambience/OneShots/os_knock_1a
     - Ambience/OneShots/os_electric_pop
     roomVolume: 1
@@ -98,7 +97,6 @@ MonoBehaviour:
     space: 1
     oneShots:
     - Ambience/OneShots/os_floor_creak_c
-    - Ambience/OneShots/os_thud_upstairs
     - Ambience/OneShots/os_knock_1a
     - Ambience/OneShots/os_electric_pop
     roomVolume: 1

@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 442d9c1a830af4c47b83cf95110273e2, type: 3}
+  m_Name: HorrorPresets
+  m_EditorClassIdentifier: Assembly-CSharp::HorrorPresetsSO
+  entries:
+  - name: HorrorEvent_CabinetCreak
+    prefab: {fileID: 5051533873158649990, guid: 5a639cd10b522c6479feef2f20b7418f, type: 3}
+  - name: HorrorEvent_CabinetBang
+    prefab: {fileID: 5051533873158649990, guid: b949fbc0c1233844f8cc3cfc5491c344, type: 3}
+  - name: HorrorEvent_CabinetRampage
+    prefab: {fileID: 7911460217643541263, guid: 5be9acf6223a6144ba70cc102696b8e4, type: 3}
+  - name: HorrorEvent_DrawerRampage
+    prefab: {fileID: 2520754822557015498, guid: fd3f49b801671984099ac2f6eb3b3777, type: 3}
+  - name: HorrorEvent_DoorSlam
+    prefab: {fileID: 6115908019858654500, guid: 7a9a517b7a6f87644b1fc24dd30d62bb, type: 3}
+  - name: HorrorEvent_OpenDoorSlam
+    prefab: {fileID: 6115908019858654500, guid: e8f35a515908d7342a27297af57f0caf, type: 3}

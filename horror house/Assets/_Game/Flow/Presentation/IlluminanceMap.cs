@@ -16,6 +16,7 @@ using UnityEngine.SceneManagement;
 /// <item><b>소등</b>: 복도 구간만큼 <b>좌측 복도 끝부터</b>(x 오름차순) 형광등을 끄고, 3구간부터 <b>과학실 앞 복도</b> 등도 끈다. 발광(LampFluo)도 함께
 /// (<see cref="MaterialPropertyBlock"/> — 공유 머티리얼은 그대로). 조우 소등(<see cref="LightGroup"/>)이 다시 켜도 다음 프레임에 맞춘다.</item>
 /// <item><b>화장실 조명이 붉어짐</b>: 화장실 구간 2부터.</item>
+/// <item><b>모든 천장 등이 미세하게 붉어짐</b>(66차 민: 「조도 축이 오르면 전체 조명이 미세하게 붉어지고」): 등마다 제 공간 구간의 <see cref="IlluminanceTint.Amount"/>만큼 빛 색을 붉은 쪽으로(4초에 걸쳐). 다른 연출이 물들인 등(C4 단서 · 화장실 붉은 등)은 건드리지 않는다.</item>
 /// </list>
 /// 옛 SpaceLights(구간마다 등 8/6/4/2/0개 + 등 색온도)는 9.20V·최종 기획서와 달라 이 컴포넌트로 대신한다.
 /// 근무 씬이면 스스로 설치된다(씬 파일을 고치지 않는다).
@@ -61,6 +62,21 @@ public sealed class IlluminanceMap : MonoBehaviour
         public bool Red;
     }
 
+    private sealed class Tintable
+    {
+        public Light Light;
+        public Color Base;
+        public SpaceId Space;
+    }
+
+    /// <summary>66차: 조도가 오를 때 천장 등이 옮겨 가는 붉은 색.</summary>
+    public static readonly Color RedTint = new Color(IlluminanceTint.R, IlluminanceTint.G, IlluminanceTint.B);
+
+    private const float TintSeconds = 4f;
+
+    /// <summary>66차: 화면 색 필터가 옮겨 가는 붉은 쪽(4구간 36%면 (1, 0.93, 0.91) 정도).</summary>
+    private static readonly Color FilterRed = new Color(1f, 0.8f, 0.76f);
+
     private static IlluminanceMap s_active;
 
     /// <summary>조도 구간 때문에 등 하나가 막 꺼졌다(인자: 등 위치). 소리(형광등이 지직이다 꺼짐)용 — 판정과 무관.</summary>
@@ -77,6 +93,11 @@ public sealed class IlluminanceMap : MonoBehaviour
     private readonly List<Lamp> _left = new List<Lamp>();
     private readonly List<Lamp> _scienceFront = new List<Lamp>();
     private readonly List<Lamp> _toilet = new List<Lamp>();
+    private readonly List<Tintable> _tintable = new List<Tintable>();
+    private readonly HashSet<Light> _redLamps = new HashSet<Light>();
+    private readonly Dictionary<SpaceId, float> _tintWant = new Dictionary<SpaceId, float>();
+    private readonly Dictionary<SpaceId, float> _tintNow = new Dictionary<SpaceId, float>();
+    private readonly List<KeyValuePair<SpaceId, Bounds>> _tintRooms = new List<KeyValuePair<SpaceId, Bounds>>();
     private IlluminanceToneSO _table;
     private MaterialPropertyBlock _block;
     private float _baseSaturation;
@@ -122,6 +143,19 @@ public sealed class IlluminanceMap : MonoBehaviour
     public bool ToiletRed
     {
         get { return _toilet.Count > 0 && _toilet[0].Red; }
+    }
+
+    /// <summary>66차: 그 공간 천장 등이 지금 붉은 쪽으로 옮겨 간 정도(0~1). 시험용.</summary>
+    public float TintOf(SpaceId space)
+    {
+        float v;
+        return _tintNow.TryGetValue(space, out v) ? v : 0f;
+    }
+
+    /// <summary>66차: 붉게 물들이는 천장 등 수. 시험용.</summary>
+    public int TintableCount
+    {
+        get { return _tintable.Count; }
     }
 
     /// <summary>모은 등 수(좌측 복도, 과학실 앞, 화장실). 시험용.</summary>
@@ -308,6 +342,13 @@ public sealed class IlluminanceMap : MonoBehaviour
                 if (zones.TryGetSpaceBox(roomIds[i], out b)) rooms.Add(Wide(b));
             }
 
+            SpaceId[] tintIds = { SpaceId.Classroom_1_1, SpaceId.Classroom_1_3, SpaceId.ScienceRoom, SpaceId.Toilet, SpaceId.Library, SpaceId.SecurityRoom };
+            for (int i = 0; i < tintIds.Length; i++)
+            {
+                Bounds b;
+                if (zones.TryGetSpaceBox(tintIds[i], out b)) _tintRooms.Add(new KeyValuePair<SpaceId, Bounds>(tintIds[i], Wide(b)));
+            }
+
             hasScience = zones.TryGetSpaceBox(SpaceId.ScienceRoom, out science);
             hasToilet = zones.TryGetSpaceBox(SpaceId.Toilet, out toilet);
             hasCorridor = zones.TryGetSpaceBox(SpaceId.Corridor, out corridor);
@@ -320,6 +361,7 @@ public sealed class IlluminanceMap : MonoBehaviour
             if (lamp == null || !lamp.name.StartsWith("LampFluo")) continue;
             if (l.GetComponentInParent<FlashlightRelay>() != null || l.GetComponentInParent<CctvSystem>() != null) continue;
             Vector3 p = l.transform.position;
+            _tintable.Add(new Tintable { Light = l, Base = l.color, Space = TintSpaceOf(p) });
 
             if (hasToilet && Wide(toilet).Contains(p))
             {
@@ -342,6 +384,16 @@ public sealed class IlluminanceMap : MonoBehaviour
         }
 
         _left.Sort((a, b) => a.Light.transform.position.x.CompareTo(b.Light.transform.position.x));
+    }
+
+    private SpaceId TintSpaceOf(Vector3 p)
+    {
+        for (int i = 0; i < _tintRooms.Count; i++)
+        {
+            if (_tintRooms[i].Value.Contains(p)) return _tintRooms[i].Key;
+        }
+
+        return SpaceId.Corridor;
     }
 
     private static Bounds Wide(Bounds box)
@@ -408,6 +460,32 @@ public sealed class IlluminanceMap : MonoBehaviour
 
         if (night) _snapped = true;
         EnforceLamps();
+        TintLamps(dt);
+    }
+
+    /// <summary>66차: 천장 등 빛 색을 공간 구간만큼 붉은 쪽으로(다른 연출이 물들인 등은 그대로).</summary>
+    private void TintLamps(float dt)
+    {
+        List<SpaceId> keys = new List<SpaceId>(_tintWant.Keys);
+        for (int i = 0; i < keys.Count; i++)
+        {
+            float now;
+            _tintNow.TryGetValue(keys[i], out now);
+            _tintNow[keys[i]] = Mathf.MoveTowards(now, _tintWant[keys[i]], dt / TintSeconds);
+        }
+
+        for (int i = 0; i < _tintable.Count; i++)
+        {
+            Tintable t = _tintable[i];
+            if (t.Light == null || LightGroup.IsLightTinted(t.Light) || _redLamps.Contains(t.Light)) continue;
+            float k;
+            _tintNow.TryGetValue(t.Space, out k);
+            // 등 색이 세기를 겸한 회색(0.4 등)이라 밝기는 그대로 두고 색만 — 붉은 쪽 목표 = 붉은 색 × 바탕 색의 가장 큰 성분.
+            Color target = RedTint * Mathf.Max(t.Base.r, Mathf.Max(t.Base.g, t.Base.b));
+            target.a = t.Base.a;
+            Color c = Color.Lerp(t.Base, target, k);
+            if (t.Light.color != c) t.Light.color = c;
+        }
     }
 
     private void Poll()
@@ -420,6 +498,8 @@ public sealed class IlluminanceMap : MonoBehaviour
         }
 
         _corridorBand = NightRun.ShownBand(SpaceId.Corridor, FearAxis.Illuminance);
+        SpaceId[] tintSpaces = { SpaceId.Corridor, SpaceId.Classroom_1_1, SpaceId.Classroom_1_3, SpaceId.ScienceRoom, SpaceId.Toilet, SpaceId.Library, SpaceId.SecurityRoom };
+        for (int i = 0; i < tintSpaces.Length; i++) _tintWant[tintSpaces[i]] = IlluminanceTint.Amount(NightRun.ShownBand(tintSpaces[i], FearAxis.Illuminance));
         _toiletBand = NightRun.ShownBand(SpaceId.Toilet, FearAxis.Illuminance);
     }
 
@@ -451,7 +531,9 @@ public sealed class IlluminanceMap : MonoBehaviour
         t.White.temperature.value = r.temperature;
         t.White.tint.value = r.tint;
         t.Color.saturation.value = Mathf.Clamp(_baseSaturation + r.saturation, -100f, 100f);
-        t.Color.colorFilter.value = _baseFilter * r.colorFilter;
+        float red;
+        _tintNow.TryGetValue(t.Space, out red);
+        t.Color.colorFilter.value = _baseFilter * r.colorFilter * Color.Lerp(Color.white, FilterRed, red);   // 66차: 베이크된 빛까지 「전체가 미세하게」 — 화면 필터도 같은 만큼
         t.Vignette.intensity.value = Mathf.Max(_baseVignette, r.vignette);
         t.Vignette.color.value = r.vignette > _baseVignette ? r.vignetteColor : _baseVignetteColor;
     }
@@ -527,6 +609,7 @@ public sealed class IlluminanceMap : MonoBehaviour
             {
                 lamp.Light.color = _table.toiletRed;
                 lamp.Light.intensity = lamp.BaseIntensity * _table.toiletRedIntensity;
+                _redLamps.Add(lamp.Light);
             }
 
             for (int i = 0; i < lamp.Glow.Length; i++)
@@ -544,6 +627,7 @@ public sealed class IlluminanceMap : MonoBehaviour
 
         if (!lamp.Red) return;
         lamp.Red = false;
+        _redLamps.Remove(lamp.Light);
         lamp.Light.color = lamp.BaseColor;
         lamp.Light.intensity = lamp.BaseIntensity;
         for (int i = 0; i < lamp.Glow.Length; i++)
@@ -559,6 +643,12 @@ public sealed class IlluminanceMap : MonoBehaviour
         all.AddRange(_scienceFront);
         for (int i = 0; i < all.Count; i++) SetOff(all[i], false);
         for (int i = 0; i < _toilet.Count; i++) SetRed(_toilet[i], false);
+        for (int i = 0; i < _tintable.Count; i++)
+        {
+            if (_tintable[i].Light != null && !LightGroup.IsLightTinted(_tintable[i].Light)) _tintable[i].Light.color = _tintable[i].Base;
+        }
+
+        _tintNow.Clear();
     }
 
     private Tone Find(SpaceId space)

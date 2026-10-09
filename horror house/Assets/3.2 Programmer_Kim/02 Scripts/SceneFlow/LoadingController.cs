@@ -35,7 +35,7 @@ public class LoadingController : MonoBehaviour
 
     [Header("TIMING")]
     [Tooltip("로딩이 빨라도 최소 이 시간(초) 동안 게이지를 채운다. 안내 문구를 읽을 시간.")]
-    [SerializeField, Min(0f)] private float minDisplayTime = 3f;
+    [SerializeField, Min(0f)] private float minDisplayTime = 3.5f;
     [SerializeField, Min(0.01f)] private float fadeDuration = 0.5f;
     [Tooltip("게이지가 목표값을 따라가는 속도 (초당 비율)")]
     [SerializeField, Min(0.1f)] private float gaugeFollowSpeed = 1.5f;

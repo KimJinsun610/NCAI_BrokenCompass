@@ -207,11 +207,20 @@ public sealed class AmbienceConfigSO : ScriptableObject
             Make("화장실", "TOILET", Box(-3.1f, 6.0f, 31.3f, 40.0f, Y, H), BandSource.Space, SpaceId.Toilet,
                 "os_drip_a", "os_drip_b", "os_pipe_clank_b", "os_knock_4a", "os_metal_groan_b"),
             // 도서관은 ㄱ자라 상자 둘. 판정 공간(SpaceId)이 아직 없어 옆 복도의 청각 구간을 따른다.
+            // 61차(민: 「도서관에서 고정적으로 등장하는 쾅 소리 제거」): 도서관 원샷에서 os_thud_upstairs를 뺐다.
             Make("도서관", "LIBRARY", Box(2.0f, 14.4f, 40.0f, 56.0f, Y, H), BandSource.Space, SpaceId.Corridor,
-                "os_floor_creak_c", "os_thud_upstairs", "os_knock_1a", "os_electric_pop"),
+                "os_floor_creak_c", "os_knock_1a", "os_electric_pop"),
             Make("도서관", "LIBRARY", Box(14.4f, 18.0f, 48.5f, 56.0f, Y, H), BandSource.Space, SpaceId.Corridor,
-                "os_floor_creak_c", "os_thud_upstairs", "os_knock_1a", "os_electric_pop"),
+                "os_floor_creak_c", "os_knock_1a", "os_electric_pop"),
         };
+
+        // 61차(「화장실 엠비언스가 너무 작다」): 화장실 방 소리는 +7dB 판(Rooms/AMB_TOILET_*_Loud).
+        Zone toilet = zones.Find(z => z.label == "화장실");
+        if (toilet != null)
+        {
+            toilet.roomClip += "_Loud";
+            toilet.roomClipHigh += "_Loud";
+        }
 
         defaultZone = Make("복도", "HALL", new Bounds(), BandSource.Space, SpaceId.Corridor,
             "os_knock_1a", "os_knock_2a", "os_knock_2b", "os_knock_4a", "os_door_slam", "os_thud_upstairs",

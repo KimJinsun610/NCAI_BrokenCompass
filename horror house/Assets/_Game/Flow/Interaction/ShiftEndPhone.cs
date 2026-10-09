@@ -5,7 +5,7 @@ using UnityEngine;
 /// 경비실 전화기 — <b>근무를 일찍 끝내는 곳</b>(2026-10-03 민 요청). 근무는 기획서의 종료 시각(04:00)에 저절로 끝나지만,
 /// 오늘 점검을 전부 보고했다면 경비실로 돌아와 이 전화로 먼저 끝낼 수 있다.
 /// <list type="bullet">
-/// <item><b>조건</b>은 코어가 정한다 — <see cref="NightRun.CanEndShiftEarly"/>(밤 진행 중 · 붙잡히지 않음 · 점검표 전부 보고).</item>
+/// <item><b>조건</b>은 코어가 정한다 — <see cref="NightRun.CanEndShiftEarly"/>(밤 진행 중 · 붙잡히지 않음 · 점검표 전부 보고 · 68차: 남은 [근무 지시] 없음).</item>
 /// <item><b>끝내는 길은 04:00과 같다</b> — <see cref="NightRun.RequestEndNight"/> → <see cref="EventBus.DayEnded"/> → 결과창(<c>PlayResultRouter</c>).
 /// 남은 카드 정산·조우 이월이 그대로 돈다.</item>
 /// <item><b>두 번 눌러야 끝난다.</b> [E]를 누르면 3초 동안 「한 번 더」를 기다린다. 다른 곳을 보면 취소.</item>
@@ -83,7 +83,7 @@ public sealed class ShiftEndPhone : MonoBehaviour
         {
             _armedUntil = -1f;
             InteractionOutline.Request(transform, LockedOutline);   // 겨누면 늘 보이게 — 아직 못 쓰니 흐리게.
-            ClaimPrompt(NightRun.Inspections.RemainingCount > 0 ? LockedLine : string.Empty, false);
+            ClaimPrompt(NightRun.InstructionsPending ? LockedLine : string.Empty, false);   // 68차: 점검만이 아니라 [근무 지시]도
             return;
         }
 

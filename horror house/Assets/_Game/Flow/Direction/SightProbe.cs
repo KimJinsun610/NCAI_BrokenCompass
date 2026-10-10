@@ -82,26 +82,35 @@ public sealed class SightProbe : MonoBehaviour
 
     private bool Visible()
     {
+        return VisibleNow(transform, _renderers);
+    }
+
+    /// <summary>
+    /// 그 몹이 지금 화면에 보이는지 — 몸통 가운데·머리 중 하나가 화면 안쪽(가장자리 <see cref="ScreenMargin"/> 제외)·<see cref="MaxDistance"/>m 안·가림 없음.
+    /// CCTV를 들여다보는 중이면 false. 2026-10-10: 피날레 창밖 남자 「봤다」 판정도 이것을 쓴다(<c>FinaleDirector</c>).
+    /// </summary>
+    public static bool VisibleNow(Transform root, Renderer[] renderers)
+    {
         Camera cam = Camera.main;
-        if (cam == null || !cam.isActiveAndEnabled) return false;
+        if (root == null || cam == null || !cam.isActiveAndEnabled) return false;
         CctvSystem cctv = CctvSystem.Active;
         if (cctv != null && cctv.IsViewing) return false;
 
         Bounds b;
-        if (!TryBounds(out b)) return false;
+        if (!TryBounds(renderers, out b)) return false;
         Vector3 chest = b.center;
         Vector3 head = b.center + Vector3.up * (b.extents.y * 0.65f);
-        return PointVisible(cam, head) || PointVisible(cam, chest);
+        return PointVisible(cam, head, root) || PointVisible(cam, chest, root);
     }
 
-    private bool TryBounds(out Bounds b)
+    private static bool TryBounds(Renderer[] renderers, out Bounds b)
     {
         b = default(Bounds);
         bool has = false;
-        if (_renderers == null) return false;
-        for (int i = 0; i < _renderers.Length; i++)
+        if (renderers == null) return false;
+        for (int i = 0; i < renderers.Length; i++)
         {
-            Renderer r = _renderers[i];
+            Renderer r = renderers[i];
             if (r == null || !r.enabled || !r.gameObject.activeInHierarchy) continue;
             if (r is ParticleSystemRenderer || r is LineRenderer || r is TrailRenderer) continue;
             if (!has)
@@ -118,7 +127,7 @@ public sealed class SightProbe : MonoBehaviour
         return has;
     }
 
-    private bool PointVisible(Camera cam, Vector3 p)
+    private static bool PointVisible(Camera cam, Vector3 p, Transform root)
     {
         Vector3 v = cam.WorldToViewportPoint(p);
         if (v.z <= 0.1f || v.z > MaxDistance) return false;
@@ -133,7 +142,7 @@ public sealed class SightProbe : MonoBehaviour
         foreach (RaycastHit h in Physics.RaycastAll(from, dir, dist, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
         {
             Transform t = h.collider.transform;
-            if (t == transform || t.IsChildOf(transform)) continue;
+            if (t == root || t.IsChildOf(root)) continue;
             if (player != null && t.IsChildOf(player)) continue;
             if (dist - h.distance < 1f && IsGlass(t)) continue;   // 창밖 남자 — 대역 앞 유리·창틀
             return false;

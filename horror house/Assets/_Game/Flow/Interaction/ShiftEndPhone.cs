@@ -7,7 +7,7 @@ using UnityEngine;
 /// <list type="bullet">
 /// <item><b>조건</b>은 코어가 정한다 — <see cref="NightRun.CanEndShiftEarly"/>(밤 진행 중 · 붙잡히지 않음 · 점검표 전부 보고 · 68차: 남은 [근무 지시] 없음).</item>
 /// <item><b>끝내는 길은 04:00과 같다</b> — <see cref="NightRun.RequestEndNight"/> → <see cref="EventBus.DayEnded"/> → 결과창(<c>PlayResultRouter</c>).
-/// 남은 카드 정산·조우 이월이 그대로 돈다.</item>
+/// 남은 카드 정산·조우 이월이 그대로 돈다. <b>5일차는 결과창 대신 피날레</b>(<see cref="FinaleDirector.Begin"/> — 05:00과 같은 길, 2026-10-11).</item>
 /// <item><b>두 번 눌러야 끝난다.</b> [E]를 누르면 3초 동안 「한 번 더」를 기다린다. 다른 곳을 보면 취소.</item>
 /// <item>겨누면 외곽선(<see cref="InteractionOutline"/>) — 끝낼 수 있으면 진하게·밝은 조준선, 점검이 남았으면 흐리게(0.35)·「지시가 아직 끝나지 않았습니다.」(59차 민 — 전에는 「점검을 모두 마쳐야 … 남은 점검 n건」).</item>
 /// </list>
@@ -79,6 +79,14 @@ public sealed class ShiftEndPhone : MonoBehaviour
             return;
         }
 
+        // 2026-10-10: 5일차 피날레 중에는 평소 조기 퇴근을 받지 않는다 — 「창을 보지 않음」 결말의 퇴근 안내 뒤에만 퇴근(FinaleDirector.Checkout).
+        // 2026-10-11: 조기 퇴근으로 피날레를 막 시작한 강제 복귀 컷(BeginFinale 전)도 피날레로 본다 — 「근무 종료 보고」가 다시 뜨지 않게.
+        if (NightRun.Finale.Active || FinaleStarting())
+        {
+            UpdateFinaleCheckout();
+            return;
+        }
+
         if (!NightRun.CanEndShiftEarly)
         {
             _armedUntil = -1f;
@@ -106,12 +114,63 @@ public sealed class ShiftEndPhone : MonoBehaviour
 #endif
     }
 
+    /// <summary>피날레 퇴근 대기 — 연출이 안내를 띄운 뒤에만 [E] 두 번으로 퇴근한다. 그 전에는 겨누어도 아무것도 띄우지 않는다.</summary>
+    private void UpdateFinaleCheckout()
+    {
+        FinaleDirector finale = FinaleDirector.Active;
+        if (finale == null || !finale.AwaitingCheckout)
+        {
+            _armedUntil = -1f;
+            ReleasePrompt();
+            return;
+        }
+
+        IsReady = true;
+        InteractionOutline.Request(transform);
+        ClaimPrompt(IsArmed ? "[E] 한 번 더 — 퇴근합니다" : "[E] 퇴근하기", true);
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+        if (Input.GetKeyDown(interactKey))
+        {
+            if (!IsArmed)
+            {
+                _armedUntil = Time.unscaledTime + ConfirmSeconds;
+                return;
+            }
+
+            if (finale.Checkout())
+            {
+                if (logActions) Debug.Log("[전화기] 피날레 퇴근 → 성공 엔딩", this);
+                _ended = true;
+                _armedUntil = -1f;
+                ReleasePrompt();
+            }
+        }
+#endif
+    }
+
     /// <summary>
     /// 근무를 끝낸다(확인 없이). 끝낼 수 없으면 false. 디버그·시험이 부른다 — 플레이어는 [E] 두 번.
     /// </summary>
     public bool EndShift()
     {
-        if (_ended || !NightRun.CanEndShiftEarly) return false;
+        if (_ended || NightRun.Finale.Active || FinaleStarting() || !NightRun.CanEndShiftEarly) return false;
+
+        // 2026-10-11 김진선님: 5일차는 일찍 끝내도 결과창이 아니라 피날레(엔딩)로 — 05:00과 같은 길(FinaleDirector.Begin).
+        // _ended를 세우지 않는다 — 피날레의 「창을 보지 않음」 결말에서 이 전화로 다시 퇴근해야 한다.
+        FinaleDirector finale = FinaleDirector.Active;
+        if (NightRun.Day >= FinaleWatch.Day && finale != null)
+        {
+            bool started = finale.Begin();
+            if (logActions) Debug.Log("[전화기] 5일차 근무 종료 보고 → " + (started ? "피날레로" : "거절됨"), this);
+            if (started)
+            {
+                _armedUntil = -1f;
+                ReleasePrompt();
+            }
+
+            return started;
+        }
 
         bool ok = NightRun.RequestEndNight();
         if (logActions) Debug.Log("[전화기] 근무 종료 보고 → " + (ok ? "결과창으로" : "거절됨"), this);
@@ -123,6 +182,13 @@ public sealed class ShiftEndPhone : MonoBehaviour
         }
 
         return ok;
+    }
+
+    /// <summary>피날레 연출이 돌기 시작했는지(강제 복귀 컷 동안은 아직 <c>NightRun.Finale.Active</c>가 거짓이다).</summary>
+    private static bool FinaleStarting()
+    {
+        FinaleDirector finale = FinaleDirector.Active;
+        return finale != null && finale.IsRunning;
     }
 
     private bool IsAimed()

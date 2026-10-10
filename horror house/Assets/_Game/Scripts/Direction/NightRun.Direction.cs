@@ -165,7 +165,8 @@ namespace NightDuty
 
             int highest = _axes.GetValue(HighestSensory());
             Band auditory = _bands.Shown.GetBand(FearAxis.Auditory);
-            if (DirectorAutoRun && !_sandbox)   // 71차: 개발자 모드 흐름 정지 — 새 조우·단서·가짜 놀람을 스스로 걸지 않는다
+            // 71차: 개발자 모드 흐름 정지 — 새 조우·단서·가짜 놀람을 스스로 걸지 않는다. 피날레 중(2026-10-11, 조기 퇴근으로 일찍 열려도)도 같다.
+            if (DirectorAutoRun && !_sandbox && !_finale.Active)
             {
                 _tension.Tick(CurrentMinute(), realSeconds, highest, auditory, IsCaptured);
             }

@@ -11,4 +11,6 @@ public enum GameScene
     Play,
     Result,
     Contract,
+    /// <summary>5일차 피날레에서 창밖 남자를 보지 않고 전화로 퇴근했을 때의 엔딩(성공 엔딩 → 크레딧 → 메인).</summary>
+    SuccessEnding,
 }

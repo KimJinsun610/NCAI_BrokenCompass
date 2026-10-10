@@ -827,17 +827,17 @@ public sealed partial class DevModePanel
     {
         FinaleDirector fd = FinaleDirector.Active;
         FinaleWatch fw = NightRun.Finale;
-        string state = fd != null && fd.IsRunning ? fd.Phase + " · 시도 " + fw.Attempt + " · 봤다 " + (fw.Seen ? "예" : "아니오") + " · CCTV " + fw.ChannelsSeen + "채널" : "대기";
+        string state = fd != null && fd.IsRunning
+            ? fd.Phase + " · 시도 " + fw.Attempt + " · 응시 " + fw.GazeTotal.ToString("0.0") + "/" + FinaleWatch.GazeSeconds.ToString("0.0") + "초" + (fw.GazeWindowOpen ? "(판정 중)" : string.Empty) + " · 봤다 " + (fw.Seen ? "예" : "아니오") + (fd.AwaitingCheckout ? " · 전화 퇴근 대기" : string.Empty)
+            : "대기";
         if (NightRun.LastFinaleEnding != FinaleEnding.None) state += " · 지난 결말 " + NightRun.LastFinaleEnding;
         BeginSection("피날레 (5일차)", state);
         GUILayout.BeginHorizontal();
         if (GUILayout.Button("5일차로 다시 열기")) Later(() => ReopenAsDay(FinaleWatch.Day));
         if (GUILayout.Button("피날레 시작")) Later(() => Note(fd != null && fd.Begin() ? "피날레 시작" : "피날레를 열 수 없음(5일차 밤이 아님·진행 중)"));
-        if (GUILayout.Button("CCTV 건너뛰기")) Later(() =>
-        {
-            if (fd != null) fd.DebugSkipCctv();
-        });
-        if (GUILayout.Button("창을 봤다(비춤)")) Later(() => NightRun.Send(JudgeSignal.Beam(FinaleWatch.WindowTarget, 0.1f)));
+        // 2026-10-10: 「들여보내줘」 판정 창 안에서만 센다 — 창이 닫혀 있으면 아무 일도 없다(B안: 화면에 보인 시간).
+        if (GUILayout.Button("응시 1.5초(봤다)")) Later(() => NightRun.Finale.FeedSight(true, FinaleWatch.GazeSeconds));
+        if (GUILayout.Button("전화로 퇴근")) Later(() => Note(fd != null && fd.Checkout() ? "퇴근" : "퇴근 안내 전"));
         GUILayout.EndHorizontal();
 
         DirectionStage stage = DirectionStage.Active;

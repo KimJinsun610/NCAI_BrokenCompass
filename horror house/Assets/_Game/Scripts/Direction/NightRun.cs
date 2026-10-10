@@ -184,6 +184,12 @@ namespace NightDuty
         {
             get
             {
+                // 2026-10-11: 피날레 중에는 판정하지 않는다 — 5일차 조기 퇴근으로 03:30 전에 열려도(K3 경비실 머무름 등이 걸리지 않게). K4는 FinaleWatch가 따로 본다.
+                if (_finale.Active)
+                {
+                    return false;
+                }
+
                 if (!JudgingWindowEnabled || _sandbox)   // 71차: 개발자 모드 흐름 정지 중에는 늘 판정
                 {
                     return true;
@@ -410,9 +416,13 @@ namespace NightDuty
             }
 
             // 점검 지시도 판정 정지 구간에 흐른다(출근 직후 첫 지시, 호출 2는 이완이 끝나는 순간).
-            OrdersTick(judgeSeconds);
-            DutiesTick(judgeSeconds);
-            ShiftReadyTick();
+            // 피날레 중에는 새 지시를 내지 않는다(5일차 조기 퇴근으로 일찍 열린 피날레).
+            if (!_finale.Active)
+            {
+                OrdersTick(judgeSeconds);
+                DutiesTick(judgeSeconds);
+                ShiftReadyTick();
+            }
 
             if (!IsJudgingNow)
             {

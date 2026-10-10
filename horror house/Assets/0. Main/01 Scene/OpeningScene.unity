@@ -1036,7 +1036,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 188249512}
   - {fileID: 2009700155}
@@ -1735,11 +1735,17 @@ MonoBehaviour:
   fade: {fileID: 659854804}
   skipHint: {fileID: 1537958972}
   skipGauge: {fileID: 986241382}
+  phoneRing: {fileID: 0}
+  phonePickup: {fileID: 0}
+  ringCount: 2
+  ringGapSeconds: 0.15
+  afterPickupSeconds: 0.5
+  phoneVolume: 1
   fadeSeconds: 0.8
   leadSeconds: 1
   tailSeconds: 1.2
   afterVoiceSeconds: 1.1
-  voiceSpeed: 1.1
+  voiceSpeed: 1
   glitchSeconds: 0.45
   glitchShift: 28
   glitchSplit: 0.28
@@ -1825,8 +1831,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 73aefd5d08c36a242bab8ac00408c769, type: 2}
-  m_sharedMaterial: {fileID: -949029905358429269, guid: 73aefd5d08c36a242bab8ac00408c769, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4a78f016907f53f4f9d74cd782fee09c, type: 2}
+  m_sharedMaterial: {fileID: -61843943705842388, guid: 4a78f016907f53f4f9d74cd782fee09c, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1850,8 +1856,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 34
-  m_fontSizeBase: 34
+  m_fontSize: 36
+  m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2260,8 +2266,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "F\uD0A4 \uB20C\uB7EC\uC11C \uAC74\uB108\uB6F0\uAE30"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 42be26844565ea044a627229645b0fe2, type: 2}
-  m_sharedMaterial: {fileID: 870466219640010663, guid: 42be26844565ea044a627229645b0fe2, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4a78f016907f53f4f9d74cd782fee09c, type: 2}
+  m_sharedMaterial: {fileID: -61843943705842388, guid: 4a78f016907f53f4f9d74cd782fee09c, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

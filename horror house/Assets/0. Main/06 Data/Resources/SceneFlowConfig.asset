@@ -18,12 +18,14 @@ MonoBehaviour:
   resultScene: Assets/0. Main/01 Scene/ResultScene.unity
   contractScene: Assets/0. Main/01 Scene/ContractScene.unity
   openingScene: Assets/0. Main/01 Scene/OpeningScene.unity
+  successEndingScene: Assets/0. Main/01 Scene/SuccessEnding.unity
   mainBgm:
     clip: {fileID: 8300000, guid: f109786ccc3f96140997bcabfda24fdc, type: 3}
     volume: 0.6
     loop: 1
     fadeIn: 1.5
     keepPrevious: 0
+    keepVolumeScale: 0
     enterSound: {fileID: 0}
     enterVolume: 0.9
   loadingBgm:
@@ -32,6 +34,7 @@ MonoBehaviour:
     loop: 1
     fadeIn: 1.5
     keepPrevious: 1
+    keepVolumeScale: 0
     enterSound: {fileID: 0}
     enterVolume: 0.9
   contractBgm:
@@ -40,6 +43,7 @@ MonoBehaviour:
     loop: 1
     fadeIn: 1.5
     keepPrevious: 1
+    keepVolumeScale: 0.2
     enterSound: {fileID: 8300000, guid: 21f71e4920bfb9244b5d5bb33b0bb26f, type: 3}
     enterVolume: 0.9
   openingBgm:
@@ -48,6 +52,7 @@ MonoBehaviour:
     loop: 1
     fadeIn: 1.5
     keepPrevious: 1
+    keepVolumeScale: 0.2
     enterSound: {fileID: 0}
     enterVolume: 0.9
   resultBgm:
@@ -56,6 +61,7 @@ MonoBehaviour:
     loop: 1
     fadeIn: 1.5
     keepPrevious: 0
+    keepVolumeScale: 0
     enterSound: {fileID: 8300000, guid: a9aa2bc13cb90ce478027d35608cd7d6, type: 3}
     enterVolume: 0.9
   bgmFadeOut: 1

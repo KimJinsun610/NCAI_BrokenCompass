@@ -26,7 +26,8 @@ namespace NightDuty
         {
             if (!_nightOpen || IsCaptured || Day < FinaleWatch.Day || _finale.Active) return false;
             _finale.Begin();
-            Debug.Log("[NightRun] 피날레 시작(5일차 05:00) — K4: 경비실을 나가지 않기");
+            DirectionAbort("피날레");   // 2026-10-11: 조기 퇴근으로 일찍 열리면 진행 중이던 조우·단서가 있을 수 있다 — 끝 단서 없이 거둔다
+            Debug.Log("[NightRun] 피날레 시작(5일차) — K4: 경비실을 나가지 않기");
             return true;
         }
 
@@ -45,7 +46,7 @@ namespace NightDuty
             bool seen = _finale.Seen;
             _finale.End();
             LastFinaleEnding = seen ? FinaleEnding.ShiftChange : FinaleEnding.ShiftOver;
-            if (_finalBook != null) _finalBook.NoteExternal(ProgramCatalog.FinaleRule, false, seen ? "결말: 창을 봄(근무 교대)" : "결말: 창을 보지 않음(근무 종료)");
+            if (_finalBook != null) _finalBook.NoteExternal(ProgramCatalog.FinaleRule, false, seen ? "결말: 창을 봄(인수인계)" : "결말: 창을 보지 않음(전화로 퇴근)");
             Debug.Log("[NightRun] 피날레 결말 — " + LastFinaleEnding);
             return RequestEndNight();
         }

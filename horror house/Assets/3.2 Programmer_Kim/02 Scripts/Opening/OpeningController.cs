@@ -6,6 +6,9 @@ using UnityEngine.UI;
 /// <summary>
 /// 오프닝(프롤로그) 씬: 나레이션에 맞춰 그림·자막을 한 장씩 넘기고 끝나면 계약서로 간다.
 ///
+/// <para>첫 장면 앞에는 검은 화면 그대로 전화벨이 울리고(기본 2번) 받는 소리가 난 뒤 첫 장면이 떠오른다 —
+/// 프롤로그 샘플(PrologueCallSample_hyun)의 「벨 → 연결음 → 통화」 순서.</para>
+///
 /// <para>그림이 <b>바뀌는 순간에만</b> 지직거리는 전환(색분리 · 가로 찢김 · 잡음)을 넣는다 —
 /// 같은 그림으로 자막만 넘어갈 때는 조용히 지나간다.</para>
 ///
@@ -35,6 +38,19 @@ public class OpeningController : MonoBehaviour
     [SerializeField] private CanvasGroup skipHint;
     [Tooltip("길게 누르는 동안 차오르는 막대(Image Type = Filled).")]
     [SerializeField] private Image skipGauge;
+
+    [Header("전화 (첫 장면 앞, 검은 화면)")]
+    [Tooltip("전화벨. 비우면 Resources/PhoneAudio/Phone_ring_3(프롤로그 샘플과 같은 소리)을 쓴다.")]
+    [SerializeField] private AudioClip phoneRing;
+    [Tooltip("받는 소리(연결음). 비우면 Resources/PhoneAudio/Call_connect_1.")]
+    [SerializeField] private AudioClip phonePickup;
+    [Tooltip("전화벨을 몇 번 울릴지. 0이면 전화 없이 바로 첫 장면.")]
+    [Min(0)] [SerializeField] private int ringCount = 2;
+    [Tooltip("벨과 벨 사이 쉬는 시간(초) — 벨 한 번의 길이 뒤에 더한다.")]
+    [Min(0f)] [SerializeField] private float ringGapSeconds = 0.15f;
+    [Tooltip("받는 소리 뒤 첫 장면이 떠오르기까지(초).")]
+    [Min(0f)] [SerializeField] private float afterPickupSeconds = 0.5f;
+    [Range(0f, 1f)] [SerializeField] private float phoneVolume = 1f;
 
     [Header("시간")]
     [Tooltip("처음 나타나고 마지막에 사라지는 데 걸리는 시간(초).")]
@@ -73,7 +89,11 @@ public class OpeningController : MonoBehaviour
     [Tooltip("안내가 나타나고 사라지는 데 걸리는 시간(초).")]
     [Min(0f)] [SerializeField] private float hintFadeSeconds = 0.5f;
 
+    private const string RingResource = "PhoneAudio/Phone_ring_3";
+    private const string PickupResource = "PhoneAudio/Call_connect_1";
+
     private AudioSource _voice;
+    private AudioSource _phone;   // 전화 소리 전용 — 나레이션 소스는 재생 속도(voiceSpeed)가 걸려 있어 벨 소리 높이가 바뀐다
     private Texture2D _noiseTex;
     private bool _skipped;
     private float _openedAt;
@@ -106,6 +126,15 @@ public class OpeningController : MonoBehaviour
         _voice.playOnAwake = false;
         _voice.spatialBlend = 0f;
         _voice.pitch = voiceSpeed;
+
+        _phone = gameObject.AddComponent<AudioSource>();
+        _phone.playOnAwake = false;
+        _phone.spatialBlend = 0f;
+        _phone.pitch = 1f;
+        _phone.volume = phoneVolume;
+        if (phoneRing == null) phoneRing = Resources.Load<AudioClip>(RingResource);
+        if (phonePickup == null) phonePickup = Resources.Load<AudioClip>(PickupResource);
+        if (ringCount > 0 && phoneRing == null) Debug.LogWarning("[Opening] 전화벨을 찾지 못했습니다: Resources/" + RingResource, this);
 
         SetupNoise();
         StartCoroutine(Run());
@@ -215,6 +244,7 @@ public class OpeningController : MonoBehaviour
         if (skipGauge != null) skipGauge.fillAmount = 1f;
         if (skipHint != null) skipHint.alpha = 0f;
         if (_voice != null) _voice.Stop();
+        if (_phone != null) _phone.Stop();
         StopAllCoroutines();
         StartCoroutine(Leave());
     }
@@ -234,6 +264,9 @@ public class OpeningController : MonoBehaviour
         }
 
         if (leadSeconds > 0f) yield return new WaitForSecondsRealtime(leadSeconds);
+
+        // 검은 화면 그대로 전화가 울리고 받는다(프롤로그 샘플 PrologueCallSample_hyun과 같은 순서) → 그다음 첫 장면이 떠오른다.
+        yield return PhoneCall();
 
         for (int i = 0; i < slides.Length; i++)
         {
@@ -270,6 +303,21 @@ public class OpeningController : MonoBehaviour
         }
 
         yield return Leave();
+    }
+
+    /// <summary>전화벨 <see cref="ringCount"/>번 → 받는 소리 → <see cref="afterPickupSeconds"/>. 그동안 화면은 검다.</summary>
+    private IEnumerator PhoneCall()
+    {
+        if (_phone == null || ringCount <= 0 || phoneRing == null) yield break;
+
+        for (int i = 0; i < ringCount; i++)
+        {
+            _phone.PlayOneShot(phoneRing);
+            yield return new WaitForSecondsRealtime(phoneRing.length + ringGapSeconds);
+        }
+
+        if (phonePickup != null) _phone.PlayOneShot(phonePickup);
+        if (afterPickupSeconds > 0f) yield return new WaitForSecondsRealtime(afterPickupSeconds);
     }
 
     /// <summary>그림이 바뀌는 지직거림. 가운데에서 그림·자막·소리가 한꺼번에 넘어간다.</summary>

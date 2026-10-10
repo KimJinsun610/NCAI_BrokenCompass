@@ -62,6 +62,18 @@ public class PlayResultRouter : MonoBehaviour
 
     private void OnDayEnded(DaySummary summary)
     {
+        // 5일차 피날레로 끝났으면 근무일지(결과창)를 건너뛰고 결말별로 보낸다(2026-10-10 기획 가이드).
+        // 피날레 연출이 이미 화면을 검게 덮었으므로 페이드 없이 바로 옮긴다.
+        if (NightRun.LastFinaleEnding != FinaleEnding.None)
+        {
+            if (finished) return;
+            finished = true;
+            GameSession.SetResult(NightDutyResultMapper.From(summary, gameTime));
+            bool sawWindow = NightRun.LastFinaleEnding == FinaleEnding.ShiftChange;
+            SceneFlow.GoTo(sawWindow ? GameScene.Main : GameScene.SuccessEnding, false);   // 봤다 → 메인 · 안 봤다(전화 퇴근) → 성공 엔딩
+            return;
+        }
+
         Finish(NightDutyResultMapper.From(summary, gameTime));
     }
 

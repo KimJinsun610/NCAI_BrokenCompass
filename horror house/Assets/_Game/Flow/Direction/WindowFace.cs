@@ -37,6 +37,14 @@ public sealed class WindowFace : MonoBehaviour
     private object _program;
     private bool _debug;
     private bool _fled;
+    private bool _follow;
+    private Vector3 _pane;
+    private Vector3 _outward;
+    private Vector3 _tangent;
+    private static Vector3 s_pane, s_outward, s_tangent;
+
+    /// <summary>94차: 눈길을 따라 옆으로 비켜 서는 빠르기(m/초).</summary>
+    public const float FollowSpeed = 1.2f;
 
     /// <summary>지금 근무 씬의 것. 없으면 null.</summary>
     public static WindowFace Active { get; private set; }
@@ -153,6 +161,34 @@ public sealed class WindowFace : MonoBehaviour
         }
 
         FacePlayer();
+        FollowEye();
+    }
+
+    /// <summary>
+    /// 94차(민: 「창밖에 노란 얼굴이 확인이 안 되네」): 서쪽 벽이 2m 두께라 유리 칸으로 보이는 각이 좁다 — 세울 때의 눈 한 번으로 정한 자리는
+    /// 플레이어가 움직이면 문설주·벽 뒤로 숨었다. 이제 늘 지금 눈에서 그 칸 가운데를 지나는 눈길 끝으로 천천히 비켜 선다(±<see cref="MaxSlide"/>m).
+    /// </summary>
+    private void FollowEye()
+    {
+        if (!_follow) return;
+        Camera cam = Camera.main;
+        if (cam == null) return;
+        Vector3 look = _pane - cam.transform.position;
+        look.y = 0f;
+        if (look.sqrMagnitude < 0.01f) return;
+        look.Normalize();
+        float dot = Vector3.Dot(look, _outward);
+        if (dot < 0.2f) return;   // 창 바깥쪽에 있다 — 그대로
+        float side = Mathf.Clamp(Vector3.Dot(look * (OutsideDistance / Mathf.Max(0.35f, dot)), _tangent), -MaxSlide, MaxSlide);
+        Vector3 want = _pane + _outward * OutsideDistance + _tangent * side;
+        Vector3 now = _figure.transform.position;
+        want.y = now.y;
+        Vector3 next = Vector3.MoveTowards(now, want, FollowSpeed * Time.deltaTime);
+        Vector3 delta = next - now;
+        if (delta.sqrMagnitude < 1e-8f) return;
+        _figure.transform.position = next;
+        _aimAt += delta;
+        if (_aim != null) _aim.position = _aimAt;
     }
 
     /// <summary>플레이어 쪽으로 몸을 천천히 돌린다(수평, 창 정면에서 ±<see cref="MaxTurnDegrees"/>°).</summary>
@@ -199,15 +235,37 @@ public sealed class WindowFace : MonoBehaviour
     public const float FeetBelowBlind = 3.47f;
 
     /// <summary>머리 꼭대기가 블라인드 아랫단보다 이만큼(m) 위(음수 = 아래) — 블라인드 앞에 선 눈높이에서 블라인드 아래 유리 칸 가운데에 얼굴이 들어온다.</summary>
-    public const float HeadAboveBlindBottom = -0.2f;
+    public const float HeadAboveBlindBottom = -0.02f;   // 94차: −0.2는 얼굴이 유리 칸 아랫단(창턱)에 걸려 반쯤 가렸다 — 칸 가운데로
 
-    /// <summary>창 가운데(문설주)에서 한 칸 가운데까지(m) — 블라인드 폭 1.3m의 1/4.</summary>
-    public const float PaneOffset = 0.33f;
+    /// <summary>창 가운데에서 유리 칸 가운데까지(m). 94차: 0 — PlayScene 실측으로 블라인드마다 아래 유리 칸은 하나(폭 0.8m, 블라인드 가운데)였다. 옛 0.33은 칸 가장자리(창틀 뒤)에 세워 얼굴이 거의 보이지 않았다.</summary>
+    public const float PaneOffset = 0f;
 
     /// <summary>눈길을 따라 옆으로 비켜 서는 최대(m) — 벽 속으로 들어가지 않게.</summary>
     public const float MaxSlide = 0.6f;
 
     private static float s_blindBottom = float.NaN;
+
+    /// <summary>94차(민: 「창밖에 노란 얼굴이 확인이 안 되네」): 원본 색(<see cref="TrueColor"/>, 노출을 덜어 낸 색)에 곱하는 밝기 — 창 너머 어둠에서도 얼굴을 알아보게.</summary>
+    public const float Brightness = 2.4f;
+
+    /// <summary>그 아래 렌더러의 기본 색을 <paramref name="k"/>배로(이 인스턴스만 — 재질 블록).</summary>
+    private static void Brighten(GameObject go, float k)
+    {
+        MaterialPropertyBlock mpb = new MaterialPropertyBlock();
+        foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true))
+        {
+            Material[] mats = r.sharedMaterials;
+            for (int i = 0; i < mats.Length; i++)
+            {
+                Material m = mats[i];
+                if (m == null || !m.HasProperty("_BaseColor")) continue;
+                Color c = m.GetColor("_BaseColor");
+                r.GetPropertyBlock(mpb, i);
+                mpb.SetColor("_BaseColor", new Color(c.r * k, c.g * k, c.b * k, c.a));
+                r.SetPropertyBlock(mpb, i);
+            }
+        }
+    }
 
     private void Place()
     {
@@ -228,6 +286,10 @@ public sealed class WindowFace : MonoBehaviour
 
         bool blind = !float.IsNaN(s_blindBottom);
         _baseRotation = rot;
+        _follow = blind;
+        _pane = s_pane;
+        _outward = s_outward;
+        _tangent = s_tangent;
         _figure = StandInFactory.Create(StandInId, pos, rot, FinalCues.WindowFaceTarget);
         if (_figure == null) return;
         _aim = null;
@@ -239,6 +301,7 @@ public sealed class WindowFace : MonoBehaviour
 
         else if (at != null && at.GazeProxy != null) StandInFactory.ApplyGazeProxy(_figure, at.GazeProxy);
         TrueColor.Apply(_figure);   // 어두운 창 밖에서도 노란 얼굴이 원래 색으로(사망·놀람 얼굴과 같은 처리)
+        Brighten(_figure, Brightness);   // 94차: 창 너머 어둠 속이라 놀람 얼굴보다 밝게 — 알아볼 수 있게
         _figure.name = "창밖 노란 얼굴";
         if (DirectionStage.Verbose) Debug.Log("[WindowFace] 창밖에 노란 얼굴을 세움 @" + pos.ToString("F1"));
     }
@@ -371,6 +434,9 @@ public sealed class WindowFace : MonoBehaviour
         }
 
         // 그 칸 가운데를 지나는 눈길 끝에 선다(문설주 뒤에 숨지 않게).
+        s_pane = bestPane;
+        s_outward = outward;
+        s_tangent = tangent;
         pos = bestPane + outward * OutsideDistance;
         Vector3 look = bestPane - inside;
         look.y = 0f;

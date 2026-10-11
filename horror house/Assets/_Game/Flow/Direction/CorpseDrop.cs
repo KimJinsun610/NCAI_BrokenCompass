@@ -89,6 +89,9 @@ public sealed class CorpseDrop : MonoBehaviour
         return c;
     }
 
+    /// <summary>92차: 먼지 재질(Resources).</summary>
+    public const string DustMaterialPath = "Fx/CorpseDust";
+
     /// <summary>
     /// 전조 먼지 — 천장 점에서 가는 먼지가 떨어진다. <paramref name="seconds"/> 뒤 스스로 거둔다.
     /// </summary>
@@ -123,13 +126,17 @@ public sealed class CorpseDrop : MonoBehaviour
         shape.scale = new Vector3(0.6f, 0.6f, 0.02f);
 
         ParticleSystemRenderer r = go.GetComponent<ParticleSystemRenderer>();
-        Shader sh = Shader.Find("Universal Render Pipeline/Particles/Unlit");
-        if (sh == null) sh = Shader.Find("Sprites/Default");
-        Material m = new Material(sh);
-        Color dust = new Color(0.6f, 0.57f, 0.52f, 0.9f);
-        if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", dust);
-        if (m.HasProperty("_Color")) m.SetColor("_Color", dust);
+        // 92차(민: 「시체 낙하의 하얀 파티클이 나오는 문제」): 옛 재질은 조명을 받지 않는 불투명 사각형이라 실내 노출(+2.5EV)에서 하얀 네모로 보였다.
+        // 이제 조명을 받는 반투명 둥근 먼지(Resources/Fx/CorpseDust — URP Particles/Lit, 기본 파티클 원형) — 어둠 속에선 거의 안 보이고 손전등에 희미하게 비친다.
+        Material m = Resources.Load<Material>(DustMaterialPath);
+        if (m == null)
+        {
+            Destroy(go);
+            return null;   // 재질이 없으면 먼지 없이(하얀 네모보다 낫다)
+        }
+
         r.sharedMaterial = m;
+        main.startColor = new Color(0.5f, 0.47f, 0.42f, 0.55f);
         r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
 
         ps.Play();

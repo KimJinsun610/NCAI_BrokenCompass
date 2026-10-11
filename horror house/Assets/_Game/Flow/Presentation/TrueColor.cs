@@ -11,6 +11,50 @@ public static class TrueColor
 {
     private const string UnlitShader = "Universal Render Pipeline/Unlit";
 
+    /// <summary>
+    /// 94차(민: 「놀람 연출에 나오는 모델들이 너무 밝아」): 빛을 받지 않는 원본 색은 실내 노출 보정(+EV)을 그대로 받아 몇 배로 밝아졌다 —
+    /// 노출만큼 미리 덜어 낸다(2^−EV). 그 위에 이 배율(1 = 노출 뒤 원본 색 그대로, 작을수록 어둡게 — 어둠 속 몹답게 조금 어둡게).
+    /// </summary>
+    public const float Brightness = 0.8f;
+
+    /// <summary>지금 화면 노출(색 조정 Post Exposure, EV)을 덜어 낸 배율 × <see cref="Brightness"/>.</summary>
+    public static float Gain()
+    {
+        return Mathf.Clamp(Mathf.Pow(2f, -ExposureAt(Camera.main != null ? Camera.main.transform.position : Vector3.zero)), 0.05f, 1f) * Brightness;
+    }
+
+    /// <summary>
+    /// 그 자리에 걸리는 노출(EV) — 색 조정의 Post Exposure를 덮어쓰는 볼륨 중 그 자리에 닿는 것(전역, 또는 콜라이더 안) 가운데 우선순위가 가장 높은 것.
+    /// (VolumeManager의 스택은 카메라를 그릴 때만 채워져 여기서 읽으면 0이다.)
+    /// </summary>
+    public static float ExposureAt(Vector3 at)
+    {
+        float ev = 0f;
+        float best = float.NegativeInfinity;
+        foreach (UnityEngine.Rendering.Volume v in Object.FindObjectsByType<UnityEngine.Rendering.Volume>(FindObjectsSortMode.None))
+        {
+            if (v == null || !v.isActiveAndEnabled || v.weight <= 0f || v.sharedProfile == null) continue;
+            UnityEngine.Rendering.Universal.ColorAdjustments ca;
+            if (!v.sharedProfile.TryGet(out ca) || !ca.active || !ca.postExposure.overrideState) continue;
+            if (!v.isGlobal)
+            {
+                bool inside = false;
+                foreach (Collider c in v.GetComponents<Collider>())
+                {
+                    if (c.enabled && c.bounds.Contains(at)) inside = true;
+                }
+
+                if (!inside) continue;
+            }
+
+            if (v.priority < best) continue;
+            best = v.priority;
+            ev = ca.postExposure.value;
+        }
+
+        return ev;
+    }
+
     private static readonly Dictionary<Material, Material> Cache = new Dictionary<Material, Material>();
 
     /// <summary><paramref name="root"/> 아래 렌더러를 원본 색 재질로. <paramref name="skinnedOnly"/>면 스킨드 메시(몹)만.</summary>
@@ -55,7 +99,8 @@ public static class TrueColor
         Material m = new Material(unlit);
         m.name = src.name + " (원본 색)";
         m.SetTexture("_BaseMap", map);
-        m.SetColor("_BaseColor", color);
+        float gain = Gain();   // 94차: 노출만큼 덜어 냄
+        m.SetColor("_BaseColor", new Color(color.r * gain, color.g * gain, color.b * gain, color.a));
         string st = src.HasProperty("_BaseMap") ? "_BaseMap" : "_MainTex";
         if (map != null && src.HasProperty(st))
         {

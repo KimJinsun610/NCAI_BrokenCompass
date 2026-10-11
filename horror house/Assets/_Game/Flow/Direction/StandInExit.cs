@@ -64,13 +64,52 @@ public sealed class StandInExit : MonoBehaviour
         naturalSpeed = Mathf.Max(0f, metersPerSecond);
     }
 
+    /// <summary>
+    /// 91차(민: 「노란 얼굴도 연출이 끝나고 도망갈 때 복도에서 갑자기 사라지지 않게 끝까지 뛰어갔다가 없어지게」): 켜면 <see cref="Leave"/>가 가장 길게 트인 쪽(좌·우·뒤, 최대 <see cref="FarProbe"/>m)으로
+    /// 벽 앞까지 달려간 뒤 사라진다(최대 <see cref="FarMaxSeconds"/>초). 그 전에 화면 밖이 되면 그때 지운다(보는 앞에서 사라지지 않는다). 문간 노란 얼굴(<see cref="DoorDuck"/>)이 켠다.
+    /// </summary>
+    public bool RunFar { get; set; }
+
+    /// <summary>91차: 멀리 달아날 때 트인 거리를 재는 최대(m).</summary>
+    public const float FarProbe = 40f;
+
+    /// <summary>91차: 멀리 달아나는 최대 시간(초).</summary>
+    public const float FarMaxSeconds = 10f;
+
     /// <summary>걸어 나가기 시작한다. 이미 나가는 중이면 그대로. 이 오브젝트는 스스로 지워진다.</summary>
     public void Leave()
     {
         if (_leaving) return;
         float clear;
+        if (RunFar)
+        {
+            Vector3 far = FarSide(out clear);
+            BeginMove(far, Mathf.Clamp((clear - 0.6f) / Speed, 0.5f, FarMaxSeconds));
+            return;
+        }
+
         Vector3 dir = OpenSide(out clear);
         BeginMove(dir, Mathf.Clamp((clear - 0.4f) / Speed, 0.35f, MaxSeconds));
+    }
+
+    /// <summary>91차: 좌·우·뒤 중 가장 길게 트인 쪽.</summary>
+    private Vector3 FarSide(out float clear)
+    {
+        Vector3 right = Flat(transform.right);
+        Vector3[] dirs = { right, -right, Flat(-transform.forward) };
+        Vector3 best = dirs[0];
+        clear = -1f;
+        for (int i = 0; i < dirs.Length; i++)
+        {
+            float c = Clear(dirs[i], FarProbe);
+            if (c > clear)
+            {
+                clear = c;
+                best = dirs[i];
+            }
+        }
+
+        return best;
     }
 
     /// <summary>
@@ -128,11 +167,11 @@ public sealed class StandInExit : MonoBehaviour
         return back;
     }
 
-    private float Clear(Vector3 d)
+    private float Clear(Vector3 d, float max = 6f)
     {
         Vector3 waist = transform.position + Vector3.up * 0.9f;
-        float dist = 6f;
-        foreach (RaycastHit h in Physics.SphereCastAll(waist, 0.25f, d, 6f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        float dist = max;
+        foreach (RaycastHit h in Physics.SphereCastAll(waist, 0.25f, d, max, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
         {
             if (h.collider.transform.IsChildOf(transform) || h.collider.GetComponentInParent<CharacterController>() != null) continue;
             dist = Mathf.Min(dist, h.distance);

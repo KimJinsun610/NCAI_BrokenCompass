@@ -81,6 +81,13 @@ public sealed class DeskStarterKit : MonoBehaviour
         else if (NightRun.DeskKit != null && NightRun.DeskKit.BatteryOnDesk) Notice("손전등 배터리가 비어 있습니다 — 책상 위 배터리를 주우십시오");
     }
 
+    /// <summary>102차: 충전량이 넉넉한데 R을 눌렀다 — 예비를 쓰지 않고 잠깐 안내.</summary>
+    public static void ShowStillCharged()
+    {
+        FlashlightBattery b = NightRun.Battery;
+        Notice("배터리가 아직 충분합니다" + (b != null ? " (" + Mathf.RoundToInt(b.Charge * 100f) + "%)" : string.Empty));
+    }
+
     private static void Notice(string text)
     {
         s_notice = text;

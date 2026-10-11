@@ -187,7 +187,8 @@ namespace NightDuty
                 "열어 둔 문들을 정리 해주십시오.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 0f, 2, 3, 4, 5),   // 67차(민): 제한 없음
             new DutyDef("W5", DutyKind.LogSign, SpaceId.SecurityRoom, FearAxis.Auditory,
                 "경비실 근무일지에 서명해주십시오.", "근무일지 서명이 기록되었습니다.", "근무일지 서명 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),
-            // 92차(민: 「복도 끝 비상구를 응시 후 경비실에 복귀하십시오 <- 이건 폐지해줘」): W6 비상구 응시 폐기. ID W6은 다시 쓰지 않는다(ExitSignCheck 처리 코드는 남겨 둠).
+            new DutyDef("W6", DutyKind.ExitSignCheck, SpaceId.Corridor, FearAxis.Auditory,
+                "복도 끝 비상구를 응시 후 경비실에 복귀하십시오.", "유도등 확인이 기록되었습니다.", "유도등 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
 
             // 77차(민: 「지시 문구들은 점검 지시들과 너무 겹쳐서」): 57차 비품 확인 W7~W14(점검 대상을 1초 보기) 폐기. ID W7~W14는 다시 쓰지 않는다.
 

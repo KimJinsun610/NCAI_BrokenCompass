@@ -66,17 +66,8 @@ public sealed class TabletBridge : MonoBehaviour
     private readonly Dictionary<string, string> _dutyIssuedText = new Dictionary<string, string>();   // 74차: 지시 문자 ID → 본문
     private TabletMessageList _hooked;
 
-    /// <summary>시각 없음(TabletMessageList: -1). 74차(민: 「타임라인도 지워줘」)에 모든 문자에 썼으나 92차(민: 「근무 메시지에서 타임스탬프는 찍혀있도록」)부터 점검표에만.</summary>
+    /// <summary>74차(민: 「메시지 란에 있는 타임라인이 가독성이 떨어져. 타임라인도 지워줘」): 문자 앞 수신 시각을 적지 않는다(TabletMessageList: -1이면 시각 없음).</summary>
     public const int NoTime = -1;
-
-    private GameTime _clock;
-
-    /// <summary>92차: 지금 게임 시각(분, 근무 시작 00:00 기준) — 문자 앞에 찍는 받은 시각. 시계를 못 찾으면 시각 없음.</summary>
-    private int Now()
-    {
-        if (_clock == null) _clock = FindAnyObjectByType<GameTime>();
-        return _clock != null ? Mathf.Max(0, _clock.CurrentMinutes) : NoTime;
-    }
     private AudioSource _tickSource;
     private TabletAlarm _alarm;
 
@@ -367,7 +358,7 @@ public sealed class TabletBridge : MonoBehaviour
             if (!Contains(id))
             {
                 if (finale) continue;
-                messages.Add(id, text, Now());
+                messages.Add(id, text, NoTime);
                 _orderTexts[id] = text;
                 continue;
             }
@@ -375,7 +366,7 @@ public sealed class TabletBridge : MonoBehaviour
             string old;
             if (_orderTexts.TryGetValue(id, out old) && old == text) continue;
             _orderTexts[id] = text;
-            messages.Add(id, text, Now());   // 같은 ID면 본문만 고친다(받은 시각은 처음 그대로)
+            messages.Add(id, text, NoTime);
         }
     }
 
@@ -482,7 +473,7 @@ public sealed class TabletBridge : MonoBehaviour
 
         _messageSerial++;
         string id = message.ParadoxId + "." + _messageSerial;
-        messages.Add(id, message.Text, Now());
+        messages.Add(id, message.Text, NoTime);
         _dutyMessages[id] = message.CardId;
         if (pid.EndsWith("." + DutyOutcome.Issued) && message.CardId != null)
         {
@@ -497,9 +488,8 @@ public sealed class TabletBridge : MonoBehaviour
         if (!Bind() || messages == null) return;
         int left = NightClock.ShiftEnd / 60 - hour;
         _messageSerial++;
-        // 92차: 받은 시각이 앞에 찍히므로 본문에서 시각은 뺀다(「02:00  [정시] 근무 종료까지 2시간」).
-        string text = "[정시] " + (left > 0 ? "근무 종료까지 " + left + "시간" : "근무 종료");
-        messages.Add("clock.hour." + hour + "." + _messageSerial, text, hour * 60);
+        string text = "[정시] " + hour.ToString("00") + ":00" + (left > 0 ? " · 근무 종료까지 " + left + "시간" : string.Empty);
+        messages.Add("clock.hour." + hour + "." + _messageSerial, text, NoTime);
     }
 
     private void OnMessageSent(ParadoxMessage message)
@@ -509,8 +499,8 @@ public sealed class TabletBridge : MonoBehaviour
 
         _messageSerial++;
         string id = "paradox." + message.ParadoxId + "." + _messageSerial;
-        // 92차(민: 「근무 메시지에서 타임스탬프는 찍혀있도록」): 받은 시각을 앞에 찍는다(74차 「시각 없음」을 되돌림).
-        messages.Add(id, message.Text, Now());
+        // 74차: 수신 시각은 적지 않는다(NoTime).
+        messages.Add(id, message.Text, NoTime);
 
         if (glitch != null)
         {
@@ -598,8 +588,7 @@ public sealed class TabletBridge : MonoBehaviour
     /// </summary>
     private void OnAnyMessage(TabletMessageList.Message m)
     {
-        // 92차: 시각은 다시 찍는다 — 점검표(맨 위 고정 목록)만 시각 없이.
-        if (m == null || m.receivedMinutes < 0 || messages == null || m.id != NightRun.ChecklistMessageId) return;
+        if (m == null || m.receivedMinutes < 0 || messages == null) return;
         m.receivedMinutes = NoTime;
         messages.Add(m.id, m.text, NoTime, m.color);
     }

@@ -286,17 +286,7 @@ public sealed class DirectionStage : MonoBehaviour
         Func<bool> gate = null;
         if (id == ProgramCatalog.ModelRush || id == ProgramCatalog.HallEndFigure) gate = () => SpaceIds.Canonical(NightRun.CurrentSpace) == SpaceId.Corridor;
         else if (id == ProgramCatalog.SuitMan) gate = () => SpaceIds.Canonical(NightRun.CurrentSpace) == SpaceId.Library;   // 84차: 도서관 안에서 창밖을 알아봐야
-        if (id == ProgramCatalog.YellowFace && pre.Go != null)
-        {
-            // 92차(민: 「플레이어가 도서관 문 쪽으로 시야를 돌릴 때 조우 연출이 진행되도록」): 도서관 안에서 문간(대역 자리) 쪽을 보면 대면 — 그때 몇 걸음 들어온다(DoorDuck).
-            SightProbe.AttachLookToward(pre.Go, id, () => NightRun.EncounterSeen(id), pre.At + Vector3.up * 1.5f, DoorLookAngle,
-                () => SpaceIds.Canonical(NightRun.CurrentSpace) == SpaceId.Library);
-        }
-        else
-        {
-            SightProbe.Attach(pre.Go, id, () => NightRun.EncounterSeen(id), gate);
-        }
-
+        SightProbe.Attach(pre.Go, id, () => NightRun.EncounterSeen(id), gate);
         if (Verbose) Debug.Log("[Direction] 대역을 세움(보기를 기다림) — " + id + " @" + pre.At.ToString("F1"));
     }
 
@@ -352,7 +342,6 @@ public sealed class DirectionStage : MonoBehaviour
         if (pre != null) st.Undo.AddRange(pre.Holder.Undo);
         Vector3 player = PlayerFeet();
         Vector3 point = PointOr(e.Point, script.Distance > 0f ? script.Distance : 3f);
-        GameObject gazeTarget = null;   // 92차: 이것을 똑바로 봐야 대면 소리·화면 효과
 
         if (script.LightsOff != SpaceId.None)
         {
@@ -393,7 +382,6 @@ public sealed class DirectionStage : MonoBehaviour
             CorpseDrop body = CorpseDrop.Spawn(spot, player, ceilingY, script.AnchorId);
             UnseenDespawn.Mark(body.gameObject);   // 62차
             st.Objects.Add(body.gameObject);
-            gazeTarget = body.gameObject;
             point = spot;
             StartCoroutine(CorpseRoaches(spot, RoachDelay));   // 60차(민: 「시체 등장할 때 바닥에 바퀴벌레가 — 내가 올린 효과음과 함께」)
             if (Verbose) Debug.Log("[Direction] 시체 낙하 — 플레이어 앞 " + spot.ToString("F1"));
@@ -423,10 +411,8 @@ public sealed class DirectionStage : MonoBehaviour
                 {
                     if (lunge)
                     {
-                        // 91차(민: 「플레이어를 뚫고 쌩 지나가도록 · 지나가면 플레이어가 넘어졌다가 일어나게」): 몸을 뚫는 순간 점프스케어 + 뒤로 나자빠졌다 일어남.
                         if (Impact() != null) Impact().Hit(rushId);
-                        BodyMeter.Jolt(3f);
-                        ViolationScare.Knockdown(rushId, true);
+                        BodyMeter.Jolt(1.6f);
                     }
                     else if (rusher != null)
                     {
@@ -438,14 +424,9 @@ public sealed class DirectionStage : MonoBehaviour
             if (cue == null) cue = go.AddComponent<DirectionCue>();
             cue.Play(new CueContext { Intensity = e.Intensity, Anchor = at, EncounterId = e.SourceId });
             st.Objects.Add(go);
-            gazeTarget = go;
             // 80차 위반 놀람(민): 칸으로 걸어 들어가는 소녀에게 다가가면 · 문 밖 노란 얼굴에 너무 가까이 가면 — 덮치고, 소녀는 칸 안으로 빠르게 / 오리는 원래대로 걸어 나간다.
             if (e.SourceId == ProgramCatalog.ToiletGirl) ScareOnApproach.Attach(go, GirlScareRadius, true, "mob.girl.stand", e.SourceId, ViolationScare.GirlFlee);
-            else if (e.SourceId == ProgramCatalog.YellowFace)
-            {
-                ScareOnApproach.Attach(go, DuckScareRadius, false, "mob.duck", e.SourceId, ViolationScare.DuckFlee);
-                DoorDuck.Attach(go);   // 91차: 달아나기 전까지 고개만 돌려 플레이어를 바라봄 · 끝까지 달아남
-            }
+            else if (e.SourceId == ProgramCatalog.YellowFace) ScareOnApproach.Attach(go, DuckScareRadius, false, "mob.duck", e.SourceId, ViolationScare.DuckFlee);
             if (EncounterImpact.HitsWhenSeen(e.SourceId))
             {
                 // 60차: 도서관 조우(노란 얼굴·창밖 남자)는 마주치는 순간 점프스케어.
@@ -487,84 +468,10 @@ public sealed class DirectionStage : MonoBehaviour
             }
         }
 
-        string id = e.SourceId;
-        Vector3 soundAt = point;
-        Action strike = () =>
-        {
-            Staged now;
-            if (!_staged.TryGetValue(id, out now) || !ReferenceEquals(now, st)) return;   // 그사이 연출이 끝났다
-            ApplyScreenFx(id, st);
-            if (Impact() != null) Impact().Confront(id);
-            // 대면 소리는 가깝고 크게(최소 거리 6m, 75%만 3D) — 4~8m 앞 몹의 소리가 PlayClipAtPoint(최소 1m)로 묻혔다(44차).
-            PlaySound(id + ".confront", soundAt, ConfrontMinDistance, ConfrontSpatial);
-        };
-
-        // 92차(민: 「조우 연출에서 플레이어가 해당 대상을 완전히 응시해야만 소리와 화면 효과가 나오도록」): 대상이 있는 조우는
-        // 화면 가운데 <see cref="GazeAngle"/>° 안에 가림 없이 <see cref="GazeHold"/>초 들어와야 소리·화면 효과가 난다. 대상이 없는 조우(소리·소등뿐)는 곧바로.
-        if (gazeTarget != null) StartCoroutine(AfterGaze(gazeTarget, strike));
-        else strike();
-    }
-
-    /// <summary>92차: 노란 얼굴 — 도서관 안에서 문간 쪽을 이 각(°) 안으로 보면 대면.</summary>
-    public const float DoorLookAngle = 25f;
-
-    /// <summary>92차: 대면 소리·화면 효과를 내려면 대상이 화면 가운데에서 이 각(°) 안이어야 한다.</summary>
-    public const float GazeAngle = 12f;
-
-    /// <summary>92차: 그 응시가 이어져야 하는 시간(초).</summary>
-    public const float GazeHold = 0.2f;
-
-    /// <summary>92차: 대상을 똑바로 볼 때까지 기다렸다가 <paramref name="fire"/>. 대상이 사라지면 그만둔다.</summary>
-    private IEnumerator AfterGaze(GameObject target, Action fire)
-    {
-        float held = 0f;
-        while (target != null)
-        {
-            if (Gazed(target)) held += Time.deltaTime;
-            else held = 0f;
-            if (held >= GazeHold)
-            {
-                fire();
-                yield break;
-            }
-
-            yield return null;
-        }
-    }
-
-    /// <summary>92차: 카메라가 그 대상(렌더러 묶음 가운데)을 화면 가운데 <see cref="GazeAngle"/>° 안에서 가림 없이 보는가.</summary>
-    public static bool Gazed(GameObject target)
-    {
-        Camera cam = Camera.main;
-        if (cam == null || target == null) return false;
-        Bounds b = new Bounds(target.transform.position + Vector3.up, Vector3.zero);
-        bool any = false;
-        foreach (Renderer r in target.GetComponentsInChildren<Renderer>())
-        {
-            if (!r.enabled || r is ParticleSystemRenderer) continue;
-            if (!any) b = r.bounds;
-            else b.Encapsulate(r.bounds);
-            any = true;
-        }
-
-        // 몸 어느 부분이든 화면 가운데 각 안에 들어오면 — 시선 줄기에서 가장 가까운 몸(묶음 상자) 위의 점, 그것을 몸 가운데 쪽으로 조금 당긴 곳까지의 각.
-        Vector3 eye = cam.transform.position;
-        Vector3 fwd = cam.transform.forward;
-        float along = Mathf.Max(0.1f, Vector3.Dot(b.center - eye, fwd));
-        Vector3 aim = b.ClosestPoint(eye + fwd * along);
-        aim = Vector3.Lerp(aim, b.center, 0.25f);
-        Vector3 to = aim - eye;
-        float dist = to.magnitude;
-        if (dist < 0.01f) return true;
-        if (Vector3.Angle(fwd, to) > GazeAngle) return false;
-        foreach (RaycastHit h in Physics.RaycastAll(cam.transform.position, to / dist, dist - 0.2f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
-        {
-            if (h.transform.IsChildOf(target.transform)) continue;
-            if (h.collider.GetComponentInParent<Rigidbody>() != null && h.collider.GetComponentInParent<FPController>() != null) continue;   // 플레이어 몸
-            return false;
-        }
-
-        return true;
+        ApplyScreenFx(e.SourceId, st);
+        if (Impact() != null) Impact().Confront(e.SourceId);
+        // 대면 소리는 가깝고 크게(최소 거리 6m, 75%만 3D) — 4~8m 앞 몹의 소리가 PlayClipAtPoint(최소 1m)로 묻혔다(44차).
+        PlaySound(e.SourceId + ".confront", point, ConfrontMinDistance, ConfrontSpatial);
     }
 
     private Vector3 _corpseSpot;
@@ -1537,8 +1444,7 @@ public sealed class DirectionStage : MonoBehaviour
     {
         if (bang == null) return;
         GameObject boy = bang.gameObject;
-        // 91차(민: 「놀래킨 다음 화면이 암전됐다가 일어설 때 다시 떠지는 걸」): 넘어진 동안 암전 → 일어서며 눈을 뜬다(그사이 소년은 증발).
-        ViolationScare.Play(boy, "mob.boy.stand", ProgramCatalog.BoyBang, () => ViolationScare.BoyFlee(boy), true);
+        ViolationScare.Play(boy, "mob.boy.stand", ProgramCatalog.BoyBang, () => ViolationScare.BoyFlee(boy));
     }
 
     private void OnRuleSettled(FinalRuleResult r)

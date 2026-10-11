@@ -340,7 +340,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 스냅샷은_한도와_가까이와_보고를_되돌린다()
+        public void 스냅샷은_한도와_가까이를_되돌리고_보고는_남긴다()
         {
             InspectionBoard board = Board(Row("H-2", true), Row("S-1", true), Row("C-1", false));
             FearAxisSystem axes = new FearAxisSystem();
@@ -355,7 +355,7 @@ namespace NightDuty.Tests
 
             Assert.AreEqual(0, board.ReliefUsed(FearAxis.Layout), "한도 사용량은 스냅샷으로");
             Assert.IsFalse(board.WasStartled("C-1"));
-            Assert.AreEqual(InspectionState.Pending, board.StateOf("H-2"), "92차: 스냅샷 뒤의 보고도 되돌린다");
+            Assert.AreEqual(InspectionState.ReportedAnomaly, board.StateOf("H-2"), "이미 한 보고는 「보고됨」으로 남는다");
         }
     }
 
@@ -504,7 +504,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 재시작하면_보고와_한도가_스냅샷으로_돌아간다()
+        public void 재시작해도_보고는_남고_한도는_스냅샷으로_돌아간다()
         {
             UsePlan(Row("H-2", true), Row("S-1", true), Row("C-1", true));
             NightRun.DebugAddAxis(FearAxis.Layout, 45);
@@ -518,10 +518,11 @@ namespace NightDuty.Tests
             NightRun.RestartAfterCapture();
 
             Assert.AreEqual(40, NightRun.Axes.GetValue(FearAxis.Layout), "스냅샷 45 → max(min(45,40), 45−10)");
-            // 92차(민: 「죽고 재시작할 때, 전에 보고했던 상태가 남아있는 오류」): 밤 시작 뒤의 보고는 지워진다 — 다시 보고해야 한다.
-            Assert.AreEqual(InspectionState.Pending, NightRun.Inspections.StateOf("H-2"));
+            Assert.AreEqual(InspectionState.ReportedAnomaly, NightRun.Inspections.StateOf("H-2"));
+            Assert.AreEqual(ReportRejection.AlreadyReported, NightRun.ReportInspection("H-2", true).Rejection, "델타를 다시 적용하지 않는다");
             Assert.AreEqual(0, NightRun.Inspections.ReliefUsed(FearAxis.Layout), "한도 사용량은 밤 시작 스냅샷으로");
-            Assert.AreEqual(ReportRejection.None, NightRun.ReportInspection("H-2", true).Rejection, "다시 보고할 수 있다");
+
+            NightRun.ReportInspection("C-1", true);
             Assert.AreEqual(35, NightRun.Axes.GetValue(FearAxis.Layout));
         }
 

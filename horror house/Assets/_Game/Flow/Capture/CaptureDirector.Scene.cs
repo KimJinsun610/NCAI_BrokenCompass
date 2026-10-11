@@ -140,7 +140,7 @@ public sealed partial class CaptureDirector
         _faceLayer = e.darkWorld ? FreeLayer() : -1;
         if (usePrefab) scene = SpawnScene(e, cam, player, count);
         else if (cam != null) scene = SpawnFace(e, cam, flashlight, out lamp, out faceDist);
-        LastScene = CaptureCastSO.Label(axis) + " · " + (usePrefab ? "프리팹 " + e.prefab.name : "기본 얼굴 " + LastFaceId);
+        LastScene = CaptureCastSO.Label(axis) + " · " + (usePrefab ? "프리팹 " + e.prefab.name : "기본 얼굴 " + e.fallbackFace);
 
         bool skipped = false;
         yield return Wait(e.silenceSeconds, skippable, () => skipped = true);
@@ -190,7 +190,6 @@ public sealed partial class CaptureDirector
                 while (t < seconds)
                 {
                     t += Time.unscaledDeltaTime;
-                    DimFlashlightForFace(cam, e.flashlightOff ? FaceFlashlightDimRevealed : 0f);
                     if (e.pullDistance > 0f)
                     {
                         // 가지 사이로 끌려 들어간다
@@ -232,7 +231,7 @@ public sealed partial class CaptureDirector
     // ── 김진선님 사망 컷신 ─────────────────────────────────────
 
     /// <summary>
-    /// 그 축의 김진선님 사망 컷신 프리팹(청각 <c>Resources/DeathCutscene_Auditory</c> · 조도 <c>DeathCutscene_Illuminance</c>). 배치·신뢰 축은 없다 — null이면 연출표 장면.
+    /// 그 축의 김진선님 사망 컷신 프리팹(<c>Resources/DeathCutscene_Auditory</c> · <c>DeathCutscene_Illuminance</c>). 배치 축은 아직 없다 — null이면 연출표 장면.
     /// </summary>
     public static DeathCutscene CutscenePrefab(FearAxis axis)
     {
@@ -240,15 +239,15 @@ public sealed partial class CaptureDirector
     }
 
     /// <summary>
-    /// 97차(민: 「인체 모형 붙잡힘 연출은 없애 주고, 배치 사망 연출은 인체 모형으로」): 출처는 더 보지 않는다 — 64·70차 「복도 끝 인체 모형을 오래 바라봐 붙잡힘 → 이 컷신」 갈래는 없앴다
-    /// (92차부터 그 응시로는 붙잡히지 않는다). 98차(민: 「배치 사망 연출은 구도와 초반 흐름이 달랐는데 조도와 똑같아졌어 — 이전 배치 사망 연출로, 모델만 인체 모형」):
-    /// 배치 축은 다시 연출표 장면(돌아봄 · 어둠 속 얼굴 · 끌려 들어감)이고 얼굴만 인체 모형(<see cref="LayoutFace"/>).
+    /// 붙잡은 출처까지 보고 고른다. 64차(민: 「붙잡히면 인체모형 사망 컷신이 나오게」): 인체 모형을 오래 바라봐 붙잡히면(출처 <c>stare.rule.S5.figure</c> — 70차부터 복도 끝에 선 모형, 배치 축)
+    /// 인체 모형이 나오는 김진선님 컷신(<c>DeathCutscene_Illuminance</c>)을 튼다. 그 밖의 배치 붙잡힘은 옛 연출표 장면(사람 나무 얼굴) 그대로.
     /// </summary>
     public static DeathCutscene CutscenePrefab(FearAxis axis, string sourceId)
     {
         string name = axis == FearAxis.Auditory ? DeathCutscene.ResourceName
             : axis == FearAxis.Illuminance ? DeathCutscene.ResourceNameIlluminance
             : null;
+        if (sourceId == FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget) name = DeathCutscene.ResourceNameIlluminance;   // 70차: 복도 끝 인체 모형
         return name != null ? Resources.Load<DeathCutscene>(name) : null;
     }
 
@@ -264,9 +263,7 @@ public sealed partial class CaptureDirector
         FitDummyFace(cs.transform);   // 64차: 인체 모형 컷신 — 얼굴이 카메라 높이에 오게
         // 58차(민: 「scream을 붙잡힘 장면으로 쓰자」): 청각 컷신의 소년이 Hit 소리에 맞춰 비명 지르며 덮쳐 온다 — 이 인스턴스의 바인딩만 바꾼다(Play 전).
         bool scream = axis == FearAxis.Auditory && CutsceneScream.Attach(cs.gameObject);
-        // 96차(민: 「같은 방식으로 — 구도는 그대로, 소년 → 화장실 소녀, 인체모형 → 노란 얼굴」): 이 인스턴스의 몹만 바꾸고(머리 크기·자리 맞춤),
-        // 81차 원본 색(빛 무시) 대신 95차 놀람 얼굴처럼 빛을 받게 — 손전등 줄임 · 아래 옆 빛 · 피사계 심도(CutsceneFace).
-        CutsceneFace.Attach(cs);
+        TrueColor.Apply(cs.gameObject, true);   // 81차(민: 「사망 연출이 너무 하얗게」): 손전등을 붙잡는 김진선님 컷신의 몹만 원본 텍스처 색(이 인스턴스 재질만)
         bool finished = false;
         cs.Finished += () =>
         {
@@ -286,7 +283,7 @@ public sealed partial class CaptureDirector
         float t = 0f;
         while (!finished && t < 30f)
         {
-            t += Mathf.Min(Time.unscaledDeltaTime, 0.1f);   // 96차: 에디터 일시정지·끊김 한 번에 안전 시한(30초)이 다 차서 컷신이 잘리지 않게
+            t += Time.unscaledDeltaTime;
             if (skippable && t > 0.3f && Input.anyKeyDown)
             {
                 SetBlack(1f);
@@ -516,8 +513,7 @@ public sealed partial class CaptureDirector
     {
         lamp = null;
         distance = faceDistance;
-        // 96차: 소년 → 화장실 소녀 · 인체 모형 → 노란 얼굴. 98차: 배치 축은 사람 나무 대신 인체 모형(구도·흐름은 그대로).
-        string id = e.axis == FearAxis.Layout ? LayoutFace : CutsceneFace.Replace(e.fallbackFace);
+        string id = e.fallbackFace;
         Vector3 eye = cam.transform.position;
         Vector3 ground = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up);
         if (ground.sqrMagnitude < 0.0001f) ground = cam.transform.root.forward;
@@ -527,16 +523,15 @@ public sealed partial class CaptureDirector
         GameObject go = StandInFactory.Create(id, eye + ground * 1f - Vector3.up * 1.6f, eye, null);
         if (go == null) return null;
         go.name = "capture " + id;
-        // 96차: 81차 원본 색(빛 무시 — 종이처럼 납작) 대신 95차 놀람 얼굴처럼 빛을 받는다. 코앞 얼굴의 그림자가 화면을 덮지 않게 그림자만 끈다.
-        foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        TrueColor.Apply(go);   // 81차: 붙잡힘 얼굴은 빛과 무관하게 원본 텍스처 색
         foreach (Collider col in go.GetComponentsInChildren<Collider>(true)) col.enabled = false;
         if (_faceLayer >= 0)
         {
             foreach (Transform child in go.GetComponentsInChildren<Transform>(true)) child.gameObject.layer = _faceLayer;
         }
 
-        Vector3 aimAt = FaceAim(go, id, cam);
-        Vector3 offset = aimAt - go.transform.position;
+        Transform aim = StandInFactory.Aim(go);
+        Vector3 offset = aim.position - go.transform.position;
 
         // 조준점보다 카메라 쪽으로 튀어나온 부분(손·가지)이 근평면을 뚫지 않을 만큼은 띄운다.
         float protrude = 0f;
@@ -546,7 +541,7 @@ public sealed partial class CaptureDirector
             for (int i = 0; i < 8; i++)
             {
                 Vector3 corner = b.center + Vector3.Scale(b.extents, new Vector3((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f));
-                protrude = Mathf.Max(protrude, Vector3.Dot(aimAt - corner, fwd));
+                protrude = Mathf.Max(protrude, Vector3.Dot(aim.position - corner, fwd));
             }
         }
 
@@ -557,66 +552,15 @@ public sealed partial class CaptureDirector
         // 조도는 다시 켜진 손전등이 비춘다. 손전등이 없거나 다른 축이면 작은 등을 하나 둔다.
         if (e.flashlightOff && flashlight != null) return go;
 
-        // 96차: 위 앞에서 비추던 등(원본 색 시절 1.2) 대신 95차처럼 아래 옆 작은 빛 — 이목구비에 그늘이 진다.
         lamp = new GameObject("capture lamp");
-        lamp.transform.SetParent(cam.transform, false);
-        lamp.transform.localPosition = new Vector3(0.22f, -0.32f, 0.05f);
+        lamp.transform.position = eye + fwd * (distance * 0.4f) + Vector3.up * 0.25f;
         Light light = lamp.AddComponent<Light>();
         light.type = LightType.Point;
         light.range = distance + 1.5f;
-        light.intensity = CaptureLampIntensity;
-        light.color = new Color(1f, 0.9f, 0.78f);
+        light.intensity = e.flashlightOff ? 0.5f : 1.2f;
+        light.color = new Color(0.85f, 0.9f, 1f);
         light.shadows = LightShadows.None;
         return go;
-    }
-
-    /// <summary>
-    /// 화면 가운데에 올 점. 98차: 인체 모형은 대역 조준점(응시 판정용)이 아니라 눈 높이 — 머리뼈(목·머리 이음매)에서 위로 <see cref="LayoutEyeLift"/>.
-    /// 선 모형은 고개를 숙이고 있어 정수리를 보였다 — 고개를 카메라 쪽으로 든다(<see cref="ScareFace.Stare"/>, 동작 위에 덧붙임). 그 밖은 대역 조준점 그대로.
-    /// </summary>
-    private static Vector3 FaceAim(GameObject go, string id, Camera cam)
-    {
-        if (id == LayoutFace)
-        {
-            Transform head = null;
-            foreach (Transform t in go.GetComponentsInChildren<Transform>(true))
-            {
-                if (t.name == "head") head = t;
-            }
-
-            if (head != null)
-            {
-                if (cam != null) ScareFace.Stare.Attach(go, head, cam);
-                return head.position + Vector3.up * LayoutEyeLift * go.transform.lossyScale.y;
-            }
-        }
-
-        return StandInFactory.Aim(go).position;
-    }
-
-    /// <summary>98차: 배치 축 붙잡힘 장면의 얼굴(옛 사람 나무 <c>mob.tree</c> 대신) — 복도 끝에 서 있던 그 인체 모형.</summary>
-    public const string LayoutFace = "mob.dummy.stand";
-
-    /// <summary>98차: 인체 모형 눈 높이 = 머리뼈에서 위로 이만큼(m, 대역 크기 1 기준).</summary>
-    public const float LayoutEyeLift = 0.09f;
-
-    /// <summary>기본 얼굴 장면의 아래 옆 빛 세기(96차).</summary>
-    public const float CaptureLampIntensity = 0.12f;
-
-    /// <summary>기본 얼굴 장면에서 다시 켠 손전등(조도 — 손전등이 비춰 드러나는 얼굴)의 밝기 배율(96차). 다른 축은 0(아래 옆 빛만).</summary>
-    public const float FaceFlashlightDimRevealed = 0.3f;
-
-    /// <summary>
-    /// 96차: 빛을 받는 얼굴이 0.4~0.7m 앞 손전등에 하얗게 날지 않게 이번 프레임 손전등 세기를 줄인다(PlayScene 실측 — 켠 채로는 사람 나무 얼굴이 흰 석고가 됐다).
-    /// 손전등 세기는 <see cref="FlashlightPower"/>가 매 Update 다시 쓰므로 Update 뒤(코루틴)에 곱하기만 한다 — 장면이 끝나면 다음 프레임 저절로 돌아온다.
-    /// </summary>
-    private static void DimFlashlightForFace(Camera cam, float dim)
-    {
-        if (cam == null) return;
-        foreach (Light l in cam.GetComponentsInChildren<Light>())
-        {
-            if (l.type == LightType.Spot) l.intensity *= dim;
-        }
     }
 
     /// <summary>이름 없는 사용자 층 하나(장면만 그릴 때 쓴다). 없으면 -1 — 그때는 세상과 함께 그린다.</summary>

@@ -98,7 +98,7 @@ namespace NightDuty.Tests
             EncounterScript s = EncounterScripts.Find(ProgramCatalog.ModelRush);
             Assert.IsNotNull(s);
             Assert.AreEqual(StageAnchors.RushHall, s.StageAnchor);
-            Assert.AreEqual("mob.dummy.stand", s.StandIn);   // 91차: 선 모형
+            Assert.AreEqual("mob.dummy", s.StandIn);
         }
     }
 }

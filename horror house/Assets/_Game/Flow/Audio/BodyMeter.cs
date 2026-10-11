@@ -7,7 +7,7 @@ using UnityEngine.UI;
 /// <summary>
 /// 몸 계기(2′단계, 2026-10-04 37차) — 생존 수치를 몸 소리로 들려준다. HUD는 없다. 규칙(층·주기·경계)은 코어 <see cref="BodyRules"/>.
 /// <list type="bullet">
-/// <item><b>청각 = 심박</b>(저음·가운데): 층마다 심박 루프가 62 → 72 → 86 → 104로 바뀌고, 층 2부터 귀 먹먹함, 층 3부터 이명이 더해진다(93차: 이명은 25~45초 쉬고 3.5~5.5초 울림).
+/// <item><b>청각 = 심박</b>(저음·가운데): 층마다 심박 루프가 62 → 72 → 86 → 104로 바뀌고, 층 2부터 귀 먹먹함, 층 3부터 이명이 더해진다.
 /// 층 4는 화면이 박동에 맞춰 흔들린다(<see cref="ScreenShakeEnabled"/>로 끔 — 접근성). 플레이어가 한자리에 머뭇거리면 멀리서 누군가의 숨(53차 「먼 숨」, 56차에 조도에서 옮겨 옴 — 숨은 소리다).</item>
 /// <item><b>조도 = 눈</b>(56차, 민: 「축의 컨셉에 맞게」): 층이 오를수록 잦아지는 짧은 눈 깜빡임(화면 0.12초 감김, <see cref="BlinkEnabled"/>로 끔 — 접근성).</item>
 /// <item><b>배치 = 내 발소리의 에코</b>: <see cref="PlayerFootsteps"/>가 <see cref="TierOf"/>를 읽어 낸다.</item>
@@ -37,19 +37,6 @@ public sealed class BodyMeter : MonoBehaviour
     private AudioSource[] _heart = new AudioSource[5];
     private AudioSource _ear;
     private AudioSource _tinnitus;
-
-    /// <summary>93차(민: 「청각 축이 올라가면 이명이 가끔만 들리도록 — 계속 들리니까 너무 귀가 아프네」): 이명은 이만큼(초, 무작위) 쉬었다가</summary>
-    public static readonly Vector2 TinnitusGap = new Vector2(25f, 45f);
-
-    /// <summary>93차: 이만큼(초, 무작위) 울린다(앞뒤로 1.5초씩 서서히).</summary>
-    public static readonly Vector2 TinnitusBurst = new Vector2(3.5f, 5.5f);
-
-    /// <summary>93차: 층 3에 처음 들어선 뒤 첫 이명까지(초) — 들어선 걸 알려 준다.</summary>
-    public const float TinnitusFirstDelay = 2f;
-
-    private bool _tinnitusTier;
-    private float _tinnitusNext;
-    private float _tinnitusUntil;
     private AudioSource _oneShot;
     private readonly Dictionary<AudioSource, float> _targets = new Dictionary<AudioSource, float>();
 
@@ -204,7 +191,7 @@ public sealed class BodyMeter : MonoBehaviour
 
         for (int i = 1; i < _heart.Length; i++) Fade(_heart[i], i == hear, dt);
         Fade(_ear, BodyRules.EarPressure(hear), dt);
-        Fade(_tinnitus, TinnitusNow(BodyRules.Tinnitus(hear)), dt);   // 93차: 계속이 아니라 가끔
+        Fade(_tinnitus, BodyRules.Tinnitus(hear), dt);
 
         if (live) Boundaries();
         Breath(hear, dt);   // 56차: 먼 숨은 청각
@@ -215,35 +202,6 @@ public sealed class BodyMeter : MonoBehaviour
     private void LateUpdate()
     {
         ApplyShake();
-    }
-
-    /// <summary>93차: 이명 층이면 쉼(<see cref="TinnitusGap"/>)과 울림(<see cref="TinnitusBurst"/>)을 번갈아 — 지금 울릴 차례인지.</summary>
-    private bool TinnitusNow(bool tier)
-    {
-        float now = Time.unscaledTime;
-        if (!tier)
-        {
-            _tinnitusTier = false;
-            return false;
-        }
-
-        if (!_tinnitusTier)
-        {
-            _tinnitusTier = true;
-            _tinnitusNext = now + TinnitusFirstDelay;
-            _tinnitusUntil = 0f;
-        }
-
-        if (now < _tinnitusUntil) return true;
-        if (now >= _tinnitusNext)
-        {
-            float burst = Random.Range(TinnitusBurst.x, TinnitusBurst.y);
-            _tinnitusUntil = now + burst;
-            _tinnitusNext = _tinnitusUntil + Random.Range(TinnitusGap.x, TinnitusGap.y);
-            return true;
-        }
-
-        return false;
     }
 
     private void Fade(AudioSource s, bool on, float dt)

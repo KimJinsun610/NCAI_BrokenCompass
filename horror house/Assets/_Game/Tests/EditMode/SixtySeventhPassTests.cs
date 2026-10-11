@@ -33,7 +33,7 @@ namespace NightDuty.Tests
             // 88차(민: 「그냥 지시 문구만 나오게」): 머리글 「[근무 지시] 」도 마감 줄도 붙이지 않는다.
             Assert.AreEqual("교실의 상태를 확인해주십시오.", DutyCatalog.MessageText(w3, 1, 80f));
             Assert.AreEqual("경비실 근무일지에 서명해주십시오.", DutyCatalog.MessageText(DutyCatalog.Find("W5"), 1, 145f));
-            Assert.IsNull(DutyCatalog.Find("W6"), "92차 W6 폐지");
+            Assert.AreEqual("복도 끝 비상구를 응시 후 경비실에 복귀하십시오.", DutyCatalog.MessageText(DutyCatalog.Find("W6"), 1, 20f));
             foreach (DutyDef d in DutyCatalog.All)
             {
                 bool free = d.Id == "W2" || d.Id == "W4" || d.Id == "W5" || d.Id == "W15";

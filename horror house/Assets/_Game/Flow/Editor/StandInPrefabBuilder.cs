@@ -94,7 +94,7 @@ public static class StandInPrefabBuilder
             new Spec { Id = "mob.boy.stand", Model = NewBoy, Height = 1.35f, LoopClipModel = NewBoy, ExitWalk = true, Note = "선 소년 = 새 skirtboy 숨쉬기(멀리 보이는 몹 — 59차: 사라질 때 사각지대로 달려감)" },
             new Spec { Id = "mob.legs", Model = NewBoy, Height = 1.35f, Pose = PoseHanging, Pivot = Pivot.Hanging, GazeBox = true, Note = "천장 다리·시체 낙하 = 새 skirtboy, 팔은 천장 속·다리만 보임" },
             new Spec { Id = "mob.windowman", Model = NewDuck, Height = 1.85f, LoopClipModel = NewDuck, ExitWalk = true, GazeBox = true, HeadBox = new Vector3(0.6f, 0.55f, 0.45f), Note = "창밖 남자 = 새 business duck(숨쉬기)" },
-            new Spec { Id = "mob.duck", Model = NewDuck, Height = 1.85f, LoopClipModel = NewDuck, ExitWalk = true, Note = "노란 얼굴 = 새 business duck(숨쉬기) — 94차(민): 92차 A안(쓰러짐 첫 프레임) 되돌림" },
+            new Spec { Id = "mob.duck", Model = NewDuck, Height = 1.85f, LoopClipModel = NewDuck, ExitWalk = true, Note = "노란 얼굴 = 새 business duck(숨쉬기)" },
             // 61차(민: 「키가 높아짐에 따라 인체 모형(몬스터)도 스케일을 살짝 올려 줘」): 인체모형 1.7 → 1.9m(플레이어 1.95m·눈 1.70m보다 머리 하나 위).
             new Spec { Id = "mob.dummy.stand", Model = "m_humandummy/humman dummy_default_motion.fbx", BindHeight = 1.07f, Height = 1.9f, PoseClipModel = "m_humandummy/humman dummy_default_motion.fbx", PoseTime = 0f, Note = "복도 끝에 선 자 = 인체모형(팔을 내린 선 자세)" },
             new Spec { Id = "mob.dummy", Model = "m_humandummy/humman dummy_wake_motion.fbx", BindHeight = 1.07f, Height = 1.9f, PoseClipModel = "m_humandummy/humman dummy_wake_motion.fbx", PoseTime = 6.6f, Note = "모형 급습 = 인체모형(일어선 직후 구부정한 자세)" },

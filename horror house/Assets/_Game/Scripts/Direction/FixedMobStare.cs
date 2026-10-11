@@ -58,15 +58,6 @@ namespace NightDuty
             return id == FinalCues.HallFigureTarget || id == FinalCues.H1Object;   // 70차: 과학실 모형 → 복도 끝에 선 모형으로 옮김
         }
 
-        /// <summary>
-        /// 오래 바라보면 축이 올라 붙잡히는 고정 몹인지. 92차(민: 「인체 모형이 복도에 서있는 연출에서, 오래 쳐다보면 죽는 걸 빼줘」):
-        /// 복도 끝 인체 모형은 빠졌다 — 사람 나무만. 모형은 바라본 시간(<see cref="Seconds"/>)만 센다(목 꺾임 연출이 읽는다).
-        /// </summary>
-        public static bool Punishes(string id)
-        {
-            return id == FinalCues.H1Object;
-        }
-
         /// <summary>그날의 유예(초) — 이만큼 바라본 뒤부터 오른다.</summary>
         public static float GraceFor(int day)
         {
@@ -109,7 +100,6 @@ namespace NightDuty
             _away = 0f;
             float before = _seconds;
             _seconds += dt;
-            if (!Punishes(gazeId)) return 0;   // 92차: 복도 끝 인체 모형은 바라본 시간만 센다(목 꺾임) — 축은 오르지 않는다
             float grace = GraceFor(day);
             float over = _seconds - grace;
             if (over <= 0f) return 0;

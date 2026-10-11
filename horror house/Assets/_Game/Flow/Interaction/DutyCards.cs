@@ -8,10 +8,7 @@ using UnityEngine.SceneManagement;
 /// 「열쇠함은 경비실의 LibraryCardCatalogB에 열려있는 서랍에 두는 걸로 · 카드키 모델로 결정」).
 /// <list type="bullet">
 /// <item><b>카드</b>: 지시가 나가면 카드키(얇은 플라스틱 판 · 파란 띠 · 금색 칩, 신규 에셋 없이 만든다)를 세운다 — W16은 과학실 교탁 위(그날마다 다른 교탁),
-/// W17은 교실 교탁 서랍 안(서랍에 붙어 서랍과 함께 열린다). 플레이어 눈에 보이는 자리면 보이지 않을 때까지 기다렸다가 세운다.</item>
-/// <item><b>92차 교실 교탁 서랍</b>(민: 「교탁 서랍 수칙이 교탁 서랍이 구현이 안되어 있어서 깰 수가 없어」): 80차의 1-1 교실은 쓰지 않는 잠긴 교실(21차)이라 닿을 수 없었고,
-/// 쓰는 교실(1-3, <c>Classroom02</c>)의 교탁은 서랍 없는 정적 모델이다. 근무 씬이 열리면 그 정적 교탁을 숨기고(렌더러·콜라이더만 끔) 같은 자리에
-/// 서랍 달린 교탁(벤더 <c>TeacherTable</c> 프리팹, 대역 <see cref="DrawerTablePrefab"/> — 서랍 열기 동작 포함)을 세운다 — 서랍은 교사 쪽(칠판 쪽)으로 열린다. 카드는 이 서랍 안.</item>
+/// W17은 교실(1-1) 교탁 서랍 안(서랍에 붙어 서랍과 함께 열린다). 플레이어 눈에 보이는 자리면 보이지 않을 때까지 기다렸다가 세운다.</item>
 /// <item><b>집기</b>: 겨누고 [E] — 「[E] 출입 카드 줍기」. 카드는 사라지고 손에 든 것으로 친다(<see cref="NightRun.TakeDutyCard"/>).</item>
 /// <item><b>넣기</b>: 들고 있으면 경비실 LibraryCardCatalogB에서 가장 많이 열린 서랍이 겨눌 수 있게 된다 — 「[E] 출입 카드 넣기」.
 /// 넣으면 카드가 그 서랍 위에 놓이고 완료 답장(<see cref="NightRun.DeliverDutyCard"/>). 놓인 카드는 그 밤 내내 남는다.</item>
@@ -25,17 +22,8 @@ public sealed class DutyCards : MonoBehaviour
     /// <summary>경비실 열쇠함(카드 목록함) — 씬 경로.</summary>
     public const string KeyBoxPath = "Interior/Corridors/FloorCorridors_1st/LibraryCardCatalogB";
 
-    /// <summary>서랍 달린 교탁 대역(Resources) — 벤더 <c>TeacherTable</c> 프리팹(서랍 열기 동작 포함)을 감쌈. 92차: 씬의 1-1 교탁은 정적 배칭이라 복제하면 메시가 엉뚱한 데 그려진다.</summary>
-    public const string DrawerTablePrefab = "StandIns/prop.teachertable.drawer";
-
-    /// <summary>쓰는 교실(1-3)의 서랍 없는 정적 교탁 — 씬 경로. 92차: 숨기고 그 자리에 서랍 교탁.</summary>
-    public const string ClassroomStaticTablePath = "Interior/Classroom02/TeacherTable02_static (1)";
-
-    /// <summary>쓰는 교실에 세운 서랍 교탁의 서랍(없으면 null).</summary>
-    public static Transform ClassroomDrawer { get; private set; }
-
-    private GameObject _classroomTable;
-    private bool _classroomTableTried;
+    /// <summary>W17 교실 교탁 서랍 — 씬 경로.</summary>
+    public const string ClassroomDrawerPath = "Interior/Classroom01/TeacherTable/Drawer";
 
     /// <summary>W16 카드를 두는 과학실 교탁들의 부모.</summary>
     public const string ScienceRoomPath = "Interior/science classroom";
@@ -127,17 +115,6 @@ public sealed class DutyCards : MonoBehaviour
         ClearAll();
         if (_slot != null) Destroy(_slot);
         _slot = null;
-        if (_classroomTable != null) Destroy(_classroomTable);
-        _classroomTable = null;
-        ClassroomDrawer = null;
-        if (_hiddenTable != null)
-        {
-            foreach (Renderer r in _hiddenTable.GetComponentsInChildren<Renderer>(true)) r.enabled = true;
-            foreach (Collider c in _hiddenTable.GetComponentsInChildren<Collider>(true)) c.enabled = true;
-        }
-
-        _hiddenTable = null;
-        _classroomTableTried = false;
         if (Active == this) Active = null;
     }
 
@@ -145,7 +122,6 @@ public sealed class DutyCards : MonoBehaviour
 
     private void Update()
     {
-        if (!_classroomTableTried) EnsureClassroomTable();
         DutyDispatcher duties = NightRun.IsNightActive ? NightRun.Duties : null;
         if (!ReferenceEquals(duties, _seen))
         {
@@ -262,7 +238,7 @@ public sealed class DutyCards : MonoBehaviour
         parent = null;
         if (card == DutyCatalog.ClassroomCardTarget)
         {
-            GameObject drawer = ClassroomDrawer != null ? ClassroomDrawer.gameObject : null;
+            GameObject drawer = GameObject.Find("/" + ClassroomDrawerPath);
             if (drawer == null) return false;
             Renderer r = drawer.GetComponentInChildren<Renderer>();
             Bounds b = r != null ? r.bounds : new Bounds(drawer.transform.position, new Vector3(0.4f, 0.12f, 0.3f));
@@ -392,76 +368,6 @@ public sealed class DutyCards : MonoBehaviour
         }
 
         r.sharedMaterial = m;
-    }
-
-    // ── 쓰는 교실의 서랍 교탁(92차) ─────────────────────────────
-
-    /// <summary>쓰는 교실(1-3)의 정적 교탁을 숨기고 그 자리에 서랍 교탁을 세운다(한 번). 디버그·시험도 부른다.</summary>
-    public bool EnsureClassroomTable()
-    {
-        _classroomTableTried = true;
-        if (_classroomTable != null) return true;
-        GameObject source = Resources.Load<GameObject>(DrawerTablePrefab);
-        GameObject old = GameObject.Find("/" + ClassroomStaticTablePath);
-        if (source == null || old == null)
-        {
-            Debug.LogWarning("[DutyCards] 교실 서랍 교탁을 세우지 못했습니다(원본 " + (source != null) + " · 정적 교탁 " + (old != null) + ").");
-            return false;
-        }
-
-        Bounds ob;
-        if (!TryBounds(old, out ob)) return false;
-        // 정적 교탁의 앞(학생 쪽) 반대가 교사 쪽 — 원본 교탁은 앞(forward)으로 서랍이 열린다. 정적 교탁은 forward가 교사 쪽이 아니면 뒤집는다.
-        Vector3 teacher = TeacherSide(old.transform, ob.center);
-        Quaternion rot = Quaternion.LookRotation(teacher, Vector3.up);
-        GameObject table = Instantiate(source, ob.center, rot, old.transform.parent);
-        table.name = "교탁(서랍) 1-3";   // 안의 벤더 교탁 이름은 TeacherTable 그대로 — 여닫는 수납(DoorPolicySO Storage)으로 친다
-        Bounds nb;
-        if (TryBounds(table, out nb)) table.transform.position += new Vector3(ob.center.x - nb.center.x, ob.min.y - nb.min.y, ob.center.z - nb.center.z);
-
-        foreach (Renderer r in old.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
-        foreach (Collider c in old.GetComponentsInChildren<Collider>(true)) c.enabled = false;
-        _classroomTable = table;
-        _hiddenTable = old;
-        Transform inner = table.transform.Find("TeacherTable");
-        Transform drawer = inner != null ? inner.Find("Drawer") : null;
-        ClassroomDrawer = drawer;
-        if (DirectionStage.Verbose) Debug.Log("[DutyCards] 교실(1-3) 교탁을 서랍 교탁으로 바꿈 @ " + table.transform.position.ToString("F2") + " 서랍 쪽 " + teacher.ToString("F1"));
-        return drawer != null;
-    }
-
-    private GameObject _hiddenTable;
-
-    /// <summary>교사 쪽(수평 단위 벡터) — 교탁에서 교실 안 학생 책상이 적은 쪽(칠판 쪽). 판단이 안 서면 정적 교탁의 forward.</summary>
-    private static Vector3 TeacherSide(Transform table, Vector3 center)
-    {
-        Vector3 f = table.forward;
-        f.y = 0f;
-        f = f.sqrMagnitude > 1e-4f ? f.normalized : Vector3.forward;
-        // 학생 책상(이름에 Desk)이 많은 쪽의 반대.
-        int front = 0, back = 0;
-        foreach (Collider c in Physics.OverlapSphere(center, 6f, ~0, QueryTriggerInteraction.Ignore))
-        {
-            if (c.name.IndexOf("Desk", System.StringComparison.OrdinalIgnoreCase) < 0) continue;
-            if (Vector3.Dot(c.bounds.center - center, f) > 0f) front++;
-            else back++;
-        }
-
-        return front > back ? -f : f;
-    }
-
-    private static bool TryBounds(GameObject go, out Bounds b)
-    {
-        b = new Bounds();
-        bool any = false;
-        foreach (Renderer r in go.GetComponentsInChildren<Renderer>())
-        {
-            if (!any) b = r.bounds;
-            else b.Encapsulate(r.bounds);
-            any = true;
-        }
-
-        return any;
     }
 
     // ── 열쇠함 ───────────────────────────────────────────────

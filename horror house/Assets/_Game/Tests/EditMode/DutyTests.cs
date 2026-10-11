@@ -196,11 +196,16 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void W6_비상구_응시_지시는_폐지됐다()
+        public void W6_복도_끝에서_유도등을_보고_경비실로_돌아오면_완료()
         {
-            // 92차(민: 「복도 끝 비상구를 응시 후 경비실에 복귀하십시오 <- 이건 폐지해줘」).
-            Assert.IsNull(DutyCatalog.Find("W6"));
-            foreach (DutyDef d in DutyCatalog.All) Assert.AreNotEqual(DutyKind.ExitSignCheck, d.Kind, d.Id);
+            Rig r = new Rig(2, SpaceId.Corridor);
+            r.Wait(0.2f);
+            Assert.AreEqual("W6", r.D.Active.Id);
+            Assert.IsFalse(r.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.SecurityRoom)), "유도등 전");
+            r.Send(JudgeSignal.Target(SignalKind.ZoneEntered, DutyCatalog.ExitZone));
+            r.Gaze(DutyCatalog.ExitSignTarget, 1.1f);
+            Assert.IsTrue(r.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.SecurityRoom)));
+            Assert.AreEqual(DutyOutcome.Done, r.Last.Outcome);
         }
 
         [Test]
@@ -410,12 +415,12 @@ namespace NightDuty.Tests
             Assert.IsTrue(NightRun.DebugIssueDuty("W5"));
             Assert.IsTrue(NightRun.SignCheckpoint());
             Assert.IsTrue(NightRun.DutyRecordStands("W5"));
-            Assert.IsTrue(NightRun.DebugIssueDuty("W21"));
+            Assert.IsTrue(NightRun.DebugIssueDuty("W6"));
 
             NightRun.DebugForceCapture(FearAxis.Auditory);
             Assert.AreEqual(RestartKind.FromCheckpoint, NightRun.RestartAfterCapture().Kind);
             Assert.IsTrue(NightRun.DutyRecordStands("W5"), "서명은 체크포인트에 담겼다");
-            Assert.IsFalse(NightRun.DutyRecordStands("W21"), "서명 뒤에 낸 지시는 되돌린다");
+            Assert.IsFalse(NightRun.DutyRecordStands("W6"), "서명 뒤에 낸 지시는 되돌린다");
             Assert.IsNull(NightRun.Duties.Active);
         }
     }

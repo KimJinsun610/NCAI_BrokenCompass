@@ -517,8 +517,7 @@ namespace NightDuty
                 Reverse = new List<string>(_reverse),
                 Issued = new List<string>(_issued),
                 Held = new List<string>(_held),
-                Applied = new Dictionary<string, Applied>(_applied, StringComparer.Ordinal),
-                States = new Dictionary<string, InspectionState>(_states, StringComparer.Ordinal)
+                Applied = new Dictionary<string, Applied>(_applied, StringComparer.Ordinal)
             };
         }
 
@@ -534,19 +533,7 @@ namespace NightDuty
             _reverse.Clear();
             _reverse.UnionWith(s.Reverse);
 
-            // 92차(민: 「죽고 재시작할 때, 전에 보고했던 상태가 남아있는 오류」): 보고도 스냅샷으로 되돌린다 — 체크포인트(서명) 뒤·밤 시작 뒤의 보고는 지워지고
-            // 그 전 보고만 남는다(옛: 「보고는 되돌리지 않는다」). 스냅샷에 없는 항목은 그대로(옛 스냅샷 호환).
-            if (s.States != null)
-            {
-                List<string> keys = new List<string>(_states.Keys);
-                for (int i = 0; i < keys.Count; i++)
-                {
-                    InspectionState was;
-                    if (s.States.TryGetValue(keys[i], out was)) _states[keys[i]] = was;
-                }
-            }
-
-            // 지시는 스냅샷으로 돌아가되, (스냅샷 때) 이미 보고한 항목은 지시받은 채로 남는다.
+            // 지시는 스냅샷으로 돌아가되, 이미 보고한 항목은 지시받은 채로 남는다(보고는 되돌리지 않는다).
             _issued.Clear();
             if (s.Issued != null) _issued.UnionWith(s.Issued);
             _held.Clear();
@@ -602,7 +589,6 @@ namespace NightDuty
             public List<string> Issued;
             public List<string> Held;
             public Dictionary<string, Applied> Applied;
-            public Dictionary<string, InspectionState> States;   // 92차
         }
     }
 }

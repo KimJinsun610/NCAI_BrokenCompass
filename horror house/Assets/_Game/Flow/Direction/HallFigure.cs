@@ -11,7 +11,8 @@ using UnityEngine.SceneManagement;
 /// <item>그 밤 편성에 <see cref="ProgramCatalog.HallEndFigure"/>가 있으면(<c>ProgramDirector</c> 날짜 사슬 — 모형 급습 전날) 밤 내내
 /// 과학실 옆 복도 동쪽 끝, 비상구 유도등 아래(<see cref="DirectionStage.RushHallSpot"/> — 다음 날 모형 급습이 달려 나오는 자리)에
 /// 인체 모형(<c>mob.dummy.stand</c>)이 복도(서쪽)를 보고 서 있다. 움직이지 않는다.</item>
-/// <item>오래 바라보면 — 조준점 <see cref="FinalCues.HallFigureTarget"/>을 Core <see cref="FixedMobStare"/>가 센다. 92차(민): 축이 올라 붙잡히는 것(사망)은 뺐다 — 2.5초 이어 보면 우두둑 소리와 함께 목이 0.45초 만에 플레이어 쪽으로 꺾이고 계속 따라 본다
+/// <item>오래 바라보면 — 조준점 <see cref="FinalCues.HallFigureTarget"/>을 Core <see cref="FixedMobStare"/>가 세어 배치 축이 오르고 끝내 붙잡힌다
+/// (인체 모형 사망 컷신 <c>DeathCutscene_Illuminance</c>). 2.5초 이어 보면 우두둑 소리와 함께 목이 0.45초 만에 플레이어 쪽으로 꺾이고 계속 따라 본다
 /// (64차 과학실 모형에서 옮겨 옴 — 과학실 모형은 이제 목이 꺾이지도, 응시로 붙잡지도 않는다).</item>
 /// <item>S5 단서 창(슬롯)에서 긴장 디렉터가 이 모형을 대역으로 쓴다(<see cref="DirectionStage"/> — 지우지 않는다). 창이 닫혀도 그대로 서 있다.</item>
 /// <item>재시작하면 목만 쉬는 자세로. 사망 컷신이 도는 동안은 숨는다(컷신의 모형과 겹치지 않게).</item>

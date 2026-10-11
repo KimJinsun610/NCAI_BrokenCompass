@@ -62,7 +62,29 @@ public sealed class TabletBridge : MonoBehaviour
     private InspectionDispatcher _ordersFor;
     private readonly Dictionary<string, string> _orderTexts = new Dictionary<string, string>();
     private readonly Dictionary<string, string> _dutyMessages = new Dictionary<string, string>();   // 문자 ID → 지시 ID(W1~W6)
+    private readonly Dictionary<string, string> _dutyIssued = new Dictionary<string, string>();   // 74차: 지시 ID → 그 지시 문자 ID(완료하면 그 문자에 취소선)
+    private readonly Dictionary<string, string> _dutyIssuedText = new Dictionary<string, string>();   // 74차: 지시 문자 ID → 본문
+    private TabletMessageList _hooked;
+
+    /// <summary>시각 없음(TabletMessageList: -1). 74차(민: 「타임라인도 지워줘」)에 모든 문자에 썼으나 92차(민: 「근무 메시지에서 타임스탬프는 찍혀있도록」)부터 점검표에만.</summary>
+    public const int NoTime = -1;
+
+    private GameTime _clock;
+
+    /// <summary>92차: 지금 게임 시각(분, 근무 시작 00:00 기준) — 문자 앞에 찍는 받은 시각. 시계를 못 찾으면 시각 없음.</summary>
+    private int Now()
+    {
+        if (_clock == null) _clock = FindAnyObjectByType<GameTime>();
+        return _clock != null ? Mathf.Max(0, _clock.CurrentMinutes) : NoTime;
+    }
     private AudioSource _tickSource;
+    private TabletAlarm _alarm;
+
+    /// <summary>
+    /// 67차(민: 「태블릿은 확실하게 왼쪽에서 들리게」): 태블릿 소리(알람·진동·틱)를 왼쪽으로 치우치게 한다(2D 팬, −1 = 완전히 왼쪽).
+    /// 태블릿은 늘 화면 왼쪽 아래에 들려 있다(40차). 3D로 두면 고개를 돌려도 같은 자리라 결과는 같지만, 2D 팬이 거리 감쇠 없이 또렷하다.
+    /// </summary>
+    public const float TabletPan = -0.75f;
 
     [Tooltip("비워 두면 씬에서 자동으로 찾는다.")]
     [SerializeField] private PlayerTablet tablet;
@@ -143,6 +165,7 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.NightRestarted += OnNightRestarted;
         EventBus.TabletTextChanged += OnTabletTextChanged;
         EventBus.FinalRuleSettled += OnFinalRuleSettled;
+        EventBus.HourStruck += OnHourStruck;
     }
 
     private void OnDisable()
@@ -155,6 +178,9 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.NightRestarted -= OnNightRestarted;
         EventBus.TabletTextChanged -= OnTabletTextChanged;
         EventBus.FinalRuleSettled -= OnFinalRuleSettled;
+        EventBus.HourStruck -= OnHourStruck;
+        if (_hooked != null) _hooked.MessageReceived -= OnAnyMessage;
+        _hooked = null;
 
         // 씬을 떠날 때 Tab 상태가 열린 채로 남으면 다음 씬의 센서가 영원히 침묵한다.
         PlayerSensors.SetTabOpen(false);
@@ -309,7 +335,7 @@ public sealed class TabletBridge : MonoBehaviour
 
         if (!force && present && text == _checklistText) return;
         _checklistText = text;
-        messages.Add(NightRun.ChecklistMessageId, text);
+        messages.Add(NightRun.ChecklistMessageId, text, NoTime);
     }
 
     /// <summary>
@@ -341,7 +367,7 @@ public sealed class TabletBridge : MonoBehaviour
             if (!Contains(id))
             {
                 if (finale) continue;
-                messages.Add(id, text);
+                messages.Add(id, text, Now());
                 _orderTexts[id] = text;
                 continue;
             }
@@ -349,7 +375,7 @@ public sealed class TabletBridge : MonoBehaviour
             string old;
             if (_orderTexts.TryGetValue(id, out old) && old == text) continue;
             _orderTexts[id] = text;
-            messages.Add(id, text);
+            messages.Add(id, text, Now());   // 같은 ID면 본문만 고친다(받은 시각은 처음 그대로)
         }
     }
 
@@ -441,10 +467,39 @@ public sealed class TabletBridge : MonoBehaviour
     {
         if (!Bind() || messages == null) return;
         if (string.IsNullOrEmpty(message.Text)) return;
+        // 74차(민: 「완료가 된 지시들은 줄이 그어지는 걸로만 완료 표시」): 완료 답장(「~이 기록되었습니다」)을 따로 보내지 않고 그 지시 문자에 취소선을 긋는다.
+        string pid = message.ParadoxId ?? string.Empty;
+        if (pid.EndsWith("." + DutyOutcome.Done))
+        {
+            string issued, issuedText;
+            if (message.CardId != null && _dutyIssued.TryGetValue(message.CardId, out issued) && _dutyIssuedText.TryGetValue(issued, out issuedText) && Contains(issued))
+            {
+                messages.Add(issued, NightRun.StrikeOpen + issuedText + NightRun.StrikeClose, NoTime);   // 같은 ID — 본문만 고친다(알람 없음)
+            }
+
+            return;
+        }
+
         _messageSerial++;
         string id = message.ParadoxId + "." + _messageSerial;
-        messages.Add(id, message.Text);
+        messages.Add(id, message.Text, Now());
         _dutyMessages[id] = message.CardId;
+        if (pid.EndsWith("." + DutyOutcome.Issued) && message.CardId != null)
+        {
+            _dutyIssued[message.CardId] = id;
+            _dutyIssuedText[id] = message.Text;
+        }
+    }
+
+    /// <summary>67차(민: 「1시간마다 알림을 주면 좋겠어」): 정시 알림 한 통 — 「[정시] 02:00 · 근무 종료까지 3시간」. 늘 새 번호라 알람이 울린다.</summary>
+    private void OnHourStruck(int hour)
+    {
+        if (!Bind() || messages == null) return;
+        int left = NightClock.ShiftEnd / 60 - hour;
+        _messageSerial++;
+        // 92차: 받은 시각이 앞에 찍히므로 본문에서 시각은 뺀다(「02:00  [정시] 근무 종료까지 2시간」).
+        string text = "[정시] " + (left > 0 ? "근무 종료까지 " + left + "시간" : "근무 종료");
+        messages.Add("clock.hour." + hour + "." + _messageSerial, text, hour * 60);
     }
 
     private void OnMessageSent(ParadoxMessage message)
@@ -454,8 +509,8 @@ public sealed class TabletBridge : MonoBehaviour
 
         _messageSerial++;
         string id = "paradox." + message.ParadoxId + "." + _messageSerial;
-        // ParadoxMessage.Minute는 「근무 시작부터의 분」이고 메시지함은 「자정 기준 분」이다 — 받는 순간의 게임 시계로 적는다.
-        messages.Add(id, message.Text);
+        // 92차(민: 「근무 메시지에서 타임스탬프는 찍혀있도록」): 받은 시각을 앞에 찍는다(74차 「시각 없음」을 되돌림).
+        messages.Add(id, message.Text, Now());
 
         if (glitch != null)
         {
@@ -526,6 +581,8 @@ public sealed class TabletBridge : MonoBehaviour
         _tickSource = gameObject.AddComponent<AudioSource>();
         _tickSource.playOnAwake = false;
         _tickSource.spatialBlend = 0f;
+        _tickSource.panStereo = TabletPan;   // 67차: 태블릿 소리는 왼쪽
+        NightDutyMixer.Route(_tickSource, NightDutyMixer.Bus.Tablet);
     }
 
     private void StepGlitch()
@@ -536,6 +593,17 @@ public sealed class TabletBridge : MonoBehaviour
         if (glitch != null) glitch.SetIntensity(0f);
     }
 
+    /// <summary>
+    /// 74차: 다른 곳(김진선님 메시지 이벤트 등)이 시각을 붙여 넣은 문자도 시각을 지운다 — 같은 ID로 다시 넣어 화면을 다시 그리게 한다(알람은 울리지 않는다).
+    /// </summary>
+    private void OnAnyMessage(TabletMessageList.Message m)
+    {
+        // 92차: 시각은 다시 찍는다 — 점검표(맨 위 고정 목록)만 시각 없이.
+        if (m == null || m.receivedMinutes < 0 || messages == null || m.id != NightRun.ChecklistMessageId) return;
+        m.receivedMinutes = NoTime;
+        messages.Add(m.id, m.text, NoTime, m.color);
+    }
+
     /// <summary>태블릿은 씬 어디에 있어도 되고 늦게 나타날 수도 있으므로 매번 가볍게 확인한다.</summary>
     private bool Bind()
     {
@@ -543,9 +611,42 @@ public sealed class TabletBridge : MonoBehaviour
         if (tablet == null) return false;
 
         if (messages == null) messages = tablet.GetComponentInChildren<TabletMessageList>(true);
+        if (messages != null && !ReferenceEquals(_hooked, messages))
+        {
+            if (_hooked != null) _hooked.MessageReceived -= OnAnyMessage;
+            _hooked = messages;
+            _hooked.MessageReceived += OnAnyMessage;
+        }
         if (glitch == null) glitch = tablet.GetComponentInChildren<TabletGlitch>(true);
         if (gameTime == null) gameTime = FindAnyObjectByType<GameTime>();
+        if (_alarm == null) ConfigureAlarm(tablet.GetComponentInChildren<TabletAlarm>(true));
 
         return true;
+    }
+
+    /// <summary>
+    /// 67차 — 김진선님 <see cref="TabletAlarm"/>의 실행 중 인스턴스 값만 바꾼다(파일·프리팹은 그대로).
+    /// <list type="bullet">
+    /// <item>민: 「메시지란이 켜져 있을 때 알림이 오면, 안 켜놨을 때의 알림음이 한 번만 재생되게」 — 메시지 탭을 보는 중 도착음(<c>messageClip</c>)을 평소 알람(<c>alarmClip</c>)으로. 알람은 그대로 확인할 때까지 반복, 탭을 보는 중이면 한 번.</item>
+    /// <item>민: 「태블릿은 확실하게 왼쪽에서」 — 알람 소스를 왼쪽으로 팬(<see cref="TabletPan"/>), 믹서 태블릿 버스로.</item>
+    /// </list>
+    /// </summary>
+    private void ConfigureAlarm(TabletAlarm alarm)
+    {
+        if (alarm == null) return;
+        _alarm = alarm;
+        if (alarm.alarmClip != null)
+        {
+            alarm.messageClip = alarm.alarmClip;
+            alarm.messageVolume = alarm.volume;
+        }
+
+        AudioSource src = alarm.audioSource != null ? alarm.audioSource : alarm.GetComponent<AudioSource>();
+        if (src != null)
+        {
+            src.spatialBlend = 0f;
+            src.panStereo = TabletPan;
+            NightDutyMixer.Route(src, NightDutyMixer.Bus.Tablet);
+        }
     }
 }

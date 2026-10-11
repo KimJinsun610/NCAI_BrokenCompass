@@ -14,10 +14,10 @@ using UnityEngine.SceneManagement;
 /// <item>파괴될 때 밤이 아직 열려 있으면(메인으로 나가기 등) <see cref="NightRun.AbandonNight"/>.</item>
 /// </list>
 /// <para>
-/// <b>밤 시계(2026-09-30 최종 기획서).</b> 코어는 「근무 시작부터의 분, 0~240(00:00~04:00)」으로 판정 시간창을 본다(<see cref="NightClock"/>).
+/// <b>밤 시계(2026-09-30 최종 기획서).</b> 코어는 「근무 시작부터의 분, 0~300(00:00~05:00, 67차)」으로 판정 시간창을 본다(<see cref="NightClock"/>).
 /// GameTime은 자정 기준 절대 분을 주고 근무 범위도 프리팹 값(현재 02:00~05:00)을 따르므로, 여기서
-/// <c>(현재 − 시작) × 240 / (종료 − 시작)</c>으로 <b>비례 환산</b>한다 — GameTime 범위가 무엇이든 구간 비율이 기획서와 같다.
-/// <see cref="MatchDesignPace"/>가 켜져 있으면 배속도 바꿔 한 밤이 실시간 10분(59차, 전에는 15분)이 되게 한다(GameTime의 공개 API <c>SetTimeMultiplier</c>).
+/// <c>(현재 − 시작) × 300 / (종료 − 시작)</c>으로 <b>비례 환산</b>한다 — GameTime 범위가 무엇이든 구간 비율이 기획서와 같다.
+/// <see cref="MatchDesignPace"/>가 켜져 있으면 배속도 바꿔 한 밤이 실시간 12분 30초(67차 — 59차 10분, 그 전 15분)가 되게 한다(GameTime의 공개 API <c>SetTimeMultiplier</c>).
 /// 태블릿의 <b>표시 시각</b>은 GameTime 몫이라 건드리지 않는다 — 00:00~04:00 표시는 김진선님과 맞출 일이다.
 /// </para>
 /// <para>
@@ -131,10 +131,39 @@ public sealed class NightRunDriver : MonoBehaviour
 
         if (clock == null) return;   // 근무 씬이 아니다(메인·로딩·결과·시험 씬).
 
+        MatchShiftEnd(clock);   // 88차: 다른 컴포넌트의 Start(태블릿 근무 줄 「00:00 - 04:00」)보다 먼저
         GameObject go = new GameObject("NightRunDriver (auto)");
         SceneManager.MoveGameObjectToScene(go, scene);
         NightRunDriver driver = go.AddComponent<NightRunDriver>();
         driver.gameTime = clock;
+    }
+
+    /// <summary>
+    /// 88차(민: 「게임 하루 시간을 4시간으로 줄여줘」): 게임 시계(<see cref="GameTime"/>)의 끝을 근무 시작 + <see cref="NightClock.ShiftEnd"/>분(04:00)에 맞춘다.
+    /// 김진선님 <c>PlaySystems</c> 프리팹(김진선님 폴더)은 끝 05:00이라 프리팹은 그대로 두고 런타임에 비공개 필드 <c>endSeconds</c>·<c>endHour</c>·<c>endMinute</c>를 고친다
+    /// (<c>Awake</c>가 계산을 마친 뒤). 이미 같으면 아무것도 하지 않는다. 고쳤으면 true.
+    /// </summary>
+    public static bool MatchShiftEnd(GameTime clock)
+    {
+        if (clock == null) return false;
+        int want = clock.StartMinutes + NightClock.ShiftEnd;
+        if (clock.EndMinutes == want) return false;
+
+        const System.Reflection.BindingFlags Flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        System.Reflection.FieldInfo end = typeof(GameTime).GetField("endSeconds", Flags);
+        if (end == null || end.FieldType != typeof(float))
+        {
+            Debug.LogWarning("[NightRunDriver] GameTime.endSeconds를 찾지 못해 근무 끝을 " + NightClock.Clock(NightClock.ShiftEnd) + "로 맞추지 못했습니다.", clock);
+            return false;
+        }
+
+        end.SetValue(clock, want * 60f);
+        System.Reflection.FieldInfo hour = typeof(GameTime).GetField("endHour", Flags);
+        System.Reflection.FieldInfo minute = typeof(GameTime).GetField("endMinute", Flags);
+        if (hour != null && hour.FieldType == typeof(int)) hour.SetValue(clock, (want / 60) % 24);
+        if (minute != null && minute.FieldType == typeof(int)) minute.SetValue(clock, want % 60);
+        Debug.Log("[NightRunDriver] 근무 끝 " + clock.EndTimeText + "(NightClock " + NightClock.Clock(NightClock.ShiftEnd) + ")", clock);
+        return true;
     }
 
     private void Start()
@@ -147,18 +176,20 @@ public sealed class NightRunDriver : MonoBehaviour
             return;
         }
 
+        MatchShiftEnd(gameTime);   // 88차(씬에 미리 놓인 구동기)
         if (MatchDesignPace)
         {
             int span = gameTime.EndMinutes - gameTime.StartMinutes;
             if (span > 0)
             {
-                // 게임 초 / 실제 초. 02:00~05:00(180분)이면 18배속 → 실시간 10분.
+                // 게임 초 / 실제 초. 00:00~04:00(240분)이면 24배속 → 실시간 10분(88차).
                 gameTime.SetTimeMultiplier(span * 60f / NightClock.RealSecondsPerNight);
             }
         }
 
         gameTime.ShiftEnded += OnShiftEnded;
         EventBus.NightRestarted += OnNightRestarted;
+        _tracker.HourStruck += OnHourStruck;   // 67차(민: 「1시간마다 알림」)
 
         // 최종 기획서 규칙 셋. 옛 테스트는 모두 꺼진 상태를 기준으로 쓰였으므로 코어의 기본값은 꺼 둔다.
         NightRun.JudgingWindowEnabled = true;
@@ -180,12 +211,12 @@ public sealed class NightRunDriver : MonoBehaviour
     private void Update()
     {
         if (!_begun || s_owner != this) return;
-        if (!gameTime.IsRunning || gameTime.IsEnded) return;
-
-        _tracker.Advance(NightMinute);
+        bool flowing = gameTime.IsRunning && !gameTime.IsEnded;
+        if (flowing) _tracker.Advance(NightMinute);
 
         if (!NightRun.IsNightActive) return;
-        NightRun.Tick(Time.deltaTime);
+        // 71차: 개발자 모드 흐름 정지 — 게임 시계는 멈춰 있어도 판정·연출 시간은 흐른다(직접 부른 수칙·연출이 끝까지 돌게).
+        if (flowing || (NightRun.Sandbox && !gameTime.IsEnded)) NightRun.Tick(Time.deltaTime);
     }
 
     private void OnDestroy()
@@ -212,6 +243,12 @@ public sealed class NightRunDriver : MonoBehaviour
         NightRun.FixedMobStareEnabled = false;
         NightRun.BatterySeed = null;
         NightRun.DirectorAutoRun = true;
+    }
+
+    private void OnHourStruck(int hour)
+    {
+        if (s_owner != this || !NightRun.IsNightActive || NightRun.IsCaptured || NightRun.Finale.Active) return;
+        EventBus.RaiseHourStruck(hour);
     }
 
     private void OnShiftEnded()

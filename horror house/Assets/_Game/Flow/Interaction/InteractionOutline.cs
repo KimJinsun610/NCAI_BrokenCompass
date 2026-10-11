@@ -30,13 +30,23 @@ public sealed class InteractionOutline : MonoBehaviour
     private readonly List<Transform> _scratch = new List<Transform>();
     private readonly Dictionary<SkinnedMeshRenderer, Mesh> _baked = new Dictionary<SkinnedMeshRenderer, Mesh>();
     private readonly Dictionary<MeshRenderer, int[]> _submeshes = new Dictionary<MeshRenderer, int[]>();
+    private readonly Dictionary<Renderer, bool> _flat = new Dictionary<Renderer, bool>();
     private MaterialPropertyBlock _block;
+    private MaterialPropertyBlock _flatBlock;
     private Material _material;
+    private Material _radial;
     private Material _mask;
     private bool _missingWarned;
 
     private static readonly int AlphaId = Shader.PropertyToID("_Alpha");
+    private static readonly int CenterId = Shader.PropertyToID("_CenterWS");
 
+    /// <summary>
+    /// 67차(민: 「추가된 점검 물품 중 외곽선이 이상한 경우가 있어 — 과학실 세계지도」): 얇은 판(가장 얇은 변 / 가운데 변이 이것보다 작음 — 벽에 붙은 지도(0.19 / 0.94 — 말린 귀퉁이 두께)·칠판)은
+    /// 뒤집은 껍질로는 선이 생기지 않는다(앞면뿐인 판은 뒷면이 없고, 법선이 모두 화면 쪽이라 옆으로 밀리지 않는다).
+    /// 그런 판은 화면에서 판 가운데로부터 바깥쪽으로 민 앞뒤 면을 그린다(<c>_Radial</c>).
+    /// </summary>
+    public const float FlatRatio = 0.25f;
     /// <summary>
     /// 이 프레임에 <paramref name="target"/>(과 그 자식)의 외곽선을 그려 달라고 한다. null이면 무시.
     /// <paramref name="strength"/>(0~1)는 선의 진하기 — 겨누었지만 아직 쓸 수 없는 것(점검이 남은 전화기)은 흐리게.
@@ -97,11 +107,32 @@ public sealed class InteractionOutline : MonoBehaviour
             if (m != null) Destroy(m);
         }
 
+        if (_radial != null) Destroy(_radial);
+
         _baked.Clear();
+    }
+
+    private void Awake()
+    {
+        if (s_active == null) s_active = this;
     }
 
     private void LateUpdate()
     {
+        // 67차: 플레이 중 스크립트를 다시 불러오면 옛 것과 새 것이 함께 남아 요청을 서로 지웠다 — 하나만 남긴다.
+        if (s_active != this)
+        {
+            if (s_active == null)
+            {
+                s_active = this;
+            }
+            else
+            {
+                Destroy(gameObject);
+                return;
+            }
+        }
+
         float step = Time.unscaledDeltaTime / FadeSeconds;
 
         // 페이드: 요청된 것은 1로, 아닌 것은 0으로.
@@ -157,6 +188,7 @@ public sealed class InteractionOutline : MonoBehaviour
         };
 
         if (_block == null) _block = new MaterialPropertyBlock();
+        if (_flatBlock == null) _flatBlock = new MaterialPropertyBlock();
 
         foreach (KeyValuePair<Transform, float> kv in _alpha)
         {
@@ -175,7 +207,24 @@ public sealed class InteractionOutline : MonoBehaviour
             for (int i = 0; i < rends.Length; i++)
             {
                 Draw(maskRp, rends[i], true);   // 스킨 메시는 여기서 한 번 굽는다. 렌더 큐가 앞(+49)이라 모든 껍질보다 먼저 그려진다.
-                Draw(rp, rends[i], false);
+                if (_radial != null && rends[i] != null && IsFlat(rends[i]))
+                {
+                    _flatBlock.SetFloat(AlphaId, kv.Value);
+                    _flatBlock.SetVector(CenterId, rends[i].bounds.center);
+                    RenderParams flatRp = new RenderParams(_radial)
+                    {
+                        camera = cam,
+                        layer = 0,
+                        shadowCastingMode = ShadowCastingMode.Off,
+                        receiveShadows = false,
+                        matProps = _flatBlock,
+                    };
+                    Draw(flatRp, rends[i], false);
+                }
+                else
+                {
+                    Draw(rp, rends[i], false);
+                }
             }
         }
     }
@@ -309,11 +358,44 @@ public sealed class InteractionOutline : MonoBehaviour
         return cached;
     }
 
+    /// <summary>얇은 판인가(<see cref="FlatRatio"/>). 렌더러마다 한 번 잰다.</summary>
+    private bool IsFlat(Renderer r)
+    {
+        bool flat;
+        if (_flat.TryGetValue(r, out flat)) return flat;
+        Vector3 size;
+        MeshFilter mf = r.GetComponent<MeshFilter>();
+        if (!r.isPartOfStaticBatch && mf != null && mf.sharedMesh != null)
+        {
+            Vector3 local = mf.sharedMesh.bounds.size;
+            Vector3 sc = r.transform.lossyScale;
+            size = new Vector3(Mathf.Abs(local.x * sc.x), Mathf.Abs(local.y * sc.y), Mathf.Abs(local.z * sc.z));
+        }
+        else
+        {
+            size = r.bounds.size;
+        }
+
+        // 가장 얇은 변을 가운데 변과 견준다 — 가장 긴 변과 견주면 막대(손전등)도 판으로 잡힌다.
+        float[] d = { size.x, size.y, size.z };
+        System.Array.Sort(d);
+        flat = d[2] > 0.05f && d[0] < d[1] * FlatRatio;
+        _flat[r] = flat;
+        return flat;
+    }
+
     private Material ResolveMaterial()
     {
         if (_material != null && _mask != null) return _material;
         _material = Resources.Load<Material>(MaterialPath);
         _mask = Resources.Load<Material>(MaskMaterialPath);
+        if (_material != null && _radial == null && _material.HasProperty("_Radial"))
+        {
+            _radial = new Material(_material) { name = "InteractionOutline (판)" };
+            _radial.SetFloat("_Radial", 1f);
+            _radial.SetFloat("_Cull", (float)CullMode.Off);
+        }
+
         if ((_material == null || _mask == null) && !_missingWarned)
         {
             _missingWarned = true;

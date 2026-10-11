@@ -99,6 +99,8 @@ public sealed class LightGroup
             _block.SetColor(EmissionId, Color.black);
             r.SetPropertyBlock(_block);
         }
+
+        RoomDarkness.SetBlackout(Space, true);   // 86차: 구운 빛(라이트맵·프로브)도 — 실시간 등만 끄면 방이 밝은 채
     }
 
     /// <summary>다시 켠다.</summary>
@@ -115,6 +117,8 @@ public sealed class LightGroup
         {
             if (_lamps[i] != null) _lamps[i].SetPropertyBlock(null);
         }
+
+        RoomDarkness.SetBlackout(Space, false);   // 86차
     }
 
     /// <summary>붉게 물들인다(C4 「붉은 불빛」).</summary>

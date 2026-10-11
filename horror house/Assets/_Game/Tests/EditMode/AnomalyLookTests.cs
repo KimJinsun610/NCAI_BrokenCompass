@@ -88,7 +88,7 @@ namespace NightDuty.Tests
                 if (AnomalyLook.HasLook(item)) looks++;
             }
 
-            Assert.AreEqual(25, looks, "29개 중 [소리] 4개(H-3·H-5·S-3·T-2)를 뺀 25개(51차: C-3 사다리가 [옮김] · 65차: L-3 → H-4 쓰레기통 · 66차: 13개 더함, [소리]는 H-5 스피커뿐)");
+            Assert.AreEqual(23, looks, "27개 중 [소리] 4개(H-3·H-5·S-3·T-2)를 뺀 23개(81차: T-4 세면대 폐기 · 80차: L-4 칠판 폐기 · 51차: C-3 사다리가 [옮김] · 65차: L-3 → H-4 쓰레기통 · 66차: 13개 더함, [소리]는 H-5 스피커뿐)");
             Assert.IsFalse(AnomalyLook.HasLook(null));
         }
 

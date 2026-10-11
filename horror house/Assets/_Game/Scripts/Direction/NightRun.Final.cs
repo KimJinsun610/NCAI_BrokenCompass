@@ -27,13 +27,18 @@ namespace NightDuty
         private static void BeginFinalRules()
         {
             DisposeFinalRules();
-            if (!ProgramEnabled || _program == null) return;
+            if (!ProgramEnabled || _program == null)
+            {
+                PlanCctvSpots();   // 71차: K-1 이상 사람 자리는 편성 없이도
+                return;
+            }
 
             _finalBook = new FinalRuleBook(_program.Deck, _axes);
             _finalBook.Settled += OnFinalSettled;
             _finalBook.ReverseReportArmed += OnReverseReportArmed;
             _finalBook.EncounterRequested += ReserveEncounter;
             BeginDirection();
+            PlanCctvSpots();   // 71차: CCTV 사람 자리 — 디렉터가 그 채널을 볼 때 조우를 건다
             PlanParadox();
             BuildDisplayDeck();
         }
@@ -123,6 +128,13 @@ namespace NightDuty
                 _displayDeck.Add(DisplayCard(def.Id, def.Space, RuleCardText(def, paradox), string.Empty));
             }
 
+            // 79차(민: 가짜 수칙 「2일차부터 하나씩」 · 「따로 더해」): 판정 없는 한 줄을 날마다 다른 자리에 끼운다 — 하루 수칙 수에 세지 않는다.
+            string fake = FakeRuleCatalog.ForDay(Day);
+            if (fake != null)
+            {
+                _displayDeck.Insert(FakeRuleCatalog.SlotFor(Day, _displayDeck.Count), DisplayCard(FakeRuleCatalog.IdForDay(Day), SpaceId.None, fake, string.Empty));
+            }
+
             // 5일차: 판정 없는 G3(빈칸)을 공통 수칙 뒤에 보인다 — 피날레에서 「당신」으로 채운다(FillFinaleBlank).
             if (Day >= FinaleWatch.Day)
             {
@@ -139,10 +151,9 @@ namespace NightDuty
         /// <summary>점검 지시 문자의 ID(태블릿 메시지함). 같은 ID로 다시 넣으면 본문만 바뀌고 알람은 울리지 않는다.</summary>
         public const string ChecklistMessageId = "inspect.checklist";
 
-        /// <summary>점검 조작 안내(점검 지시 문자 맨 아래).</summary>
-        public const string InspectionHowTo = "항목 2m 안에서 1초 바라본 뒤 길게 누르기 — Z 정상 / X 이상";
+        // 72차(민: 「지시 메시지에서 조작법 문구는 지워줘」): 옛 조작 안내 줄(InspectionHowTo 「… Z 정상 / X 이상」)은 지웠다 — 조작은 화면 아래 점검 안내 띠가 알려 준다.
 
-        /// <summary>조작 안내 색(김진선님 태블릿의 수칙 안내 색과 같다).</summary>
+        /// <summary>안내 줄 색(김진선님 태블릿의 수칙 안내 색과 같다) — 지금은 「마지막 지시」 안내에 쓴다.</summary>
         public const string ChecklistHowToColor = "#7FA6B8";
 
         /// <summary>보고한 줄의 색(흐리게).</summary>
@@ -167,12 +178,11 @@ namespace NightDuty
                     InspectionAssignment a = plan.Assignments[i];
                     bool done = Board.StateOf(a.Id) != InspectionState.Pending;
                     sb.Append('\n');
-                    if (done) sb.Append("<color=").Append(ChecklistDoneColor).Append('>');
+                    if (done) sb.Append(StrikeOpen);   // 74차: 보고한 줄은 취소선만
                     sb.Append(i + 1).Append(". ").Append(InspectionLine(a));
-                    if (done) sb.Append("</color>");
+                    if (done) sb.Append(StrikeClose);
                 }
 
-                sb.Append("\n<color=").Append(ChecklistHowToColor).Append('>').Append(InspectionHowTo).Append("</color>");
                 return sb.ToString();
             }
         }
@@ -180,14 +190,8 @@ namespace NightDuty
         private static string InspectionLine(InspectionAssignment a)
         {
             string line = SpaceLabel(a.Item.Space) + " " + a.Item.Name + " — " + a.Item.TabletLine;
-            if (a.IsLate) line += " (02:16부터)";
-            if (Board.StateOf(a.Id) != InspectionState.Pending) line += " · 보고함";
-            else if (_unavoidable.Banned != SpaceId.None && SpaceIds.Canonical(a.Item.Space) == _unavoidable.Banned) line += " · 재입실 불가";
-            else
-            {
-                SafeReadReveal? reveal = RevealOf(a.Item.Space);   // 안전한 읽기(10단계) — 공간 단위로 드러난다.
-                if (reveal.HasValue) line += " · " + reveal.Value.Label;
-            }
+            if (a.IsLate) line += " (" + NightClock.Clock(NightClock.Call2) + "부터)";
+            // 74차: 「· 보고함」 대신 취소선(ChecklistMessage). 77차(민): 꼬리 「· 재입실 불가 / · 확인 필요 / · 이상 없음」 폐기.
 
             return line;
         }

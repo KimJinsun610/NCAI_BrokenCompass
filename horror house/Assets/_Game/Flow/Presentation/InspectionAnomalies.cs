@@ -70,15 +70,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
     private sealed class Walker
     {
         public GameObject Go;
-        public CctvOnlyVisible Only;
+        public CctvWalker Person;   // 71차: 걷기 동작으로 실제로 걷는다
         public int Channel = -1;
-        public Vector3 A;
-        public Vector3 B;
-        public float Speed;
-        public float Wait;
-        public float At;
-        public bool Forward = true;
-        public float NextStep;
     }
 
     /// <summary>카메라를 보는 카드. 벽에 붙은 대상에서 링이 벽에 잘리지 않게 카메라 쪽으로 조금 띄운다.</summary>
@@ -409,8 +402,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
     private Look Build(string itemId, Band band)
     {
         InspectionItem item = InspectionCatalog.Find(itemId);
-        // 57차: S-3 개수대는 [소리] 틀이지만 물줄기도 보인다(민: 「시각적으로 확인할 수 있게」) — 판정·HasLook은 그대로.
-        if (!AnomalyLook.HasLook(item) && itemId != FaucetItem) return null;
+        // 81차(민: 「세면대 물 퀄리티가 부족 — S-3은 물줄기만 제거」): S-3 개수대는 다시 [소리]만 — 보이는 물(FaucetWater) 폐기.
+        if (!AnomalyLook.HasLook(item)) return null;
 
         Look look = new Look { ItemId = itemId, Band = band };
         if (itemId == "K-1")
@@ -505,9 +498,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 Hair(look, prop, b, band);
                 break;
             }
-            case FaucetItem:
-                Faucet(look, prop, jt.transform, b, band);   // 57차: 잠겼어야 할 수도에서 물이 떨어진다
-                break;
             case "C-3":
                 ok = HideProp(look, prop, jt.transform);   // 51차: 사다리가 없다(점검 기준점만 남는다)
                 if (ok) EmptyMark(look, prop, b);   // 65차(민: 「사다리 없는 자리에서 없다고 보고할 수 있도록」): 빈자리에 자국 — 외곽선이 그려지고 [없음]으로 보고
@@ -543,14 +533,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
             case "S-5":
                 ok = GlowFlasks(look, glow, band);   // 선반 플라스크 유리가 붉게 빛나며 깜빡임
                 break;
-            case "T-4":
-                ok = SinkRunning(look, band);   // 세면대 넷 중 하나에서 물이 흐른다
-                break;
             case "T-5":
                 ok = FallToFloor(look, prop, jt.transform, b, 0.55f);   // 수건이 바닥에 떨어져 있다
-                break;
-            case "L-4":
-                ok = ChalkWriting(look, prop, b, band);   // 도서관 칠판에 분필 글씨
                 break;
             case "L-5":
                 ok = StandUp(look, prop, jt.transform, b);   // 쓰러져 있던 쓰레기통이 세워져 있다(66차 플레이 점검: 씬의 도서관 쓰레기통은 원래 누워 있다)
@@ -573,38 +557,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
         }
 
         return look;
-    }
-
-    /// <summary>[소리] 틀이지만 눈에 보이는 물도 세우는 항목(57차).</summary>
-    public const string FaucetItem = "S-3";
-
-    /// <summary>과학실 개수대(Laboratory_Sink) 수도꼭지 입 — 소품 로컬 좌표(모형 축척 77.9·x 270°). 57차 레이 측정: 월드 (51.30, 2.40, 40.465).</summary>
-    private static readonly Vector3 FaucetMouthLocal = new Vector3(-0.00013f, 0.00096f, 0.01155f);
-
-    /// <summary>
-    /// S-3 물 — 수도꼭지 입에서 개수대 바닥까지 물방울(구간 1)·물줄기(구간 2+)·파문(<see cref="FaucetWater"/>).
-    /// 입은 소품 로컬 좌표, 소품 크기가 바뀌어 상자 밖이면 상자 윗부분 가운데. 바닥은 입 아래로 쏜 레이가 맞는 그 소품의 면.
-    /// </summary>
-    private static void Faucet(Look look, Transform prop, Transform inspect, Bounds b, Band band)
-    {
-        Vector3 mouth = prop.TransformPoint(FaucetMouthLocal);
-        Bounds grown = b;
-        grown.Expand(0.05f);
-        if (!grown.Contains(mouth)) mouth = new Vector3(b.center.x, b.min.y + b.size.y * 0.88f, b.center.z);
-
-        float basin = mouth.y - 0.34f;
-        float best = float.MaxValue;
-        foreach (RaycastHit h in Physics.RaycastAll(mouth + Vector3.down * 0.02f, Vector3.down, 1.2f, ~0, QueryTriggerInteraction.Ignore))
-        {
-            if (h.collider == null || h.collider.transform.IsChildOf(inspect) || !h.collider.transform.IsChildOf(prop)) continue;
-            if (h.distance < best)
-            {
-                best = h.distance;
-                basin = h.point.y;
-            }
-        }
-
-        look.Objects.Add(FaucetWater.Create("이상 " + look.ItemId + " 물", mouth, basin, Mathf.Max(1, (int)band), Ring(), Dot()));
     }
 
     /// <summary>[옮김·없음] 소품을 통째로 감춘다 — 렌더러·콜라이더를 끄고(점검 기준점 아래는 남김) 거둘 때 되돌린다.</summary>
@@ -667,15 +619,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
     private static readonly float[] TiltDegreesByBand = { 0f, 35f, 90f, 150f, 180f };
     private static readonly float[] SpinDegreesByBand = { 0f, 25f, 40f, 65f, 100f };
     private static readonly float[] BenchDegreesByBand = { 0f, 25f, 40f, 55f, 70f };
-
-    private static readonly string[] ChalkLinesByBand =
-    {
-        "",
-        "보고 있어",
-        "보고 있어\n뒤에",
-        "보고하지 마\n뒤에 있어",
-        "보고하지 마\n보고하지 마\n뒤에 있어"
-    };
 
     private static int BandIndex(Band band)
     {
@@ -773,42 +716,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
         return true;
     }
 
-    /// <summary>T-4: 세면대 넷 중 그날 하나 — 수도꼭지(벽 쪽 윗면)에서 물이 흐른다(S-3과 같은 물).</summary>
-    private bool SinkRunning(Look look, Band band)
-    {
-        int n = RuntimeInspectTargets.PropCount(look.ItemId);
-        Transform sink = RuntimeInspectTargets.Prop(look.ItemId, PoolIndex(look.ItemId + ".sink", n));
-        if (sink == null) return false;
-        Bounds sb = PropBounds(sink, null);
-        Vector3 wall = WallDirection(sb.center, sink);
-        float reach = Mathf.Abs(wall.x) * sb.extents.x + Mathf.Abs(wall.z) * sb.extents.z;
-        Vector3 side = Vector3.Cross(Vector3.up, wall);   // 앞에서 봐서 오른쪽 수도꼭지(66차 플레이 점검: 두 꼭지 사이에서 흘렀다)
-        Vector3 mouth = new Vector3(sb.center.x, sb.max.y - SinkMouthDrop, sb.center.z) + wall * Mathf.Max(0.05f, reach - SinkMouthInset) + side * SinkMouthSide;
-        float basin = sb.center.y;
-        float best = float.MaxValue;
-        foreach (RaycastHit h in Physics.RaycastAll(mouth + Vector3.down * 0.03f, Vector3.down, 1f, ~0, QueryTriggerInteraction.Ignore))
-        {
-            if (h.collider == null || h.collider.name.StartsWith("Inspect ")) continue;
-            if (h.distance < best)
-            {
-                best = h.distance;
-                basin = h.point.y;
-            }
-        }
-
-        look.Objects.Add(FaucetWater.Create("이상 " + look.ItemId + " 물", mouth, basin, Mathf.Max(1, (int)band), Ring(), Dot()));
-        return true;
-    }
-
-    /// <summary>세면대 수도꼭지 입: 윗면에서 아래로(m).</summary>
-    public static float SinkMouthDrop = 0.1f;
-
-    /// <summary>세면대 수도꼭지 입: 벽면에서 안쪽으로(m).</summary>
-    public static float SinkMouthInset = 0.17f;
-
-    /// <summary>세면대 수도꼭지 입: 가운데에서 오른쪽 꼭지까지(m).</summary>
-    public static float SinkMouthSide = 0.09f;
-
     /// <summary>C-4 시계 · T-5 수건: 벽에 걸려 있던 것이 벽 아래 바닥에 떨어져 누워 있다(벽에서 <paramref name="pullOut"/>m).</summary>
     private bool FallToFloor(Look look, Transform prop, Transform judge, Bounds b, float pullOut)
     {
@@ -864,31 +771,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
         if (Vector3.Dot(swung - far, -wall) < 0f) deg = -deg;
         Transform moved;
         return TurnAround(look, prop, judge, pivot, Vector3.up, deg, out moved);
-    }
-
-    /// <summary>L-4: 도서관 칠판(트인 쪽 면)에 분필 글씨 — 구간이 높을수록 줄이 늘어난다.</summary>
-    private bool ChalkWriting(Look look, Transform prop, Bounds b, Band band)
-    {
-        Vector3 n = b.size.x < b.size.z ? Vector3.right : Vector3.forward;
-        if (FreeDistance(b.center, -n, prop, 8f) > FreeDistance(b.center, n, prop, 8f)) n = -n;
-        float thick = Mathf.Abs(n.x) * b.extents.x + Mathf.Abs(n.z) * b.extents.z;
-        float width = Mathf.Abs(n.x) > 0.5f ? b.size.z : b.size.x;
-        if (_props == null) _props = Resources.Load<InspectionAnomalyPropsSO>(InspectionAnomalyPropsSO.ResourcePath);
-        TMPro.TMP_FontAsset font = _props != null ? _props.ChalkFont : null;
-
-        GameObject go = new GameObject("이상 " + look.ItemId + " 분필 글씨");
-        float tilt = PoolIndex(look.ItemId + ".tilt", 2) == 0 ? -4f : 5f;
-        go.transform.SetPositionAndRotation(b.center + n * (thick + 0.008f) + Vector3.down * 0.05f, Quaternion.LookRotation(-n, Vector3.up) * Quaternion.Euler(0f, 0f, tilt));
-        TMPro.TextMeshPro tmp = go.AddComponent<TMPro.TextMeshPro>();
-        if (font != null) tmp.font = font;
-        tmp.text = ChalkLinesByBand[BandIndex(band)];
-        tmp.fontSize = 3.8f;
-        tmp.alignment = TMPro.TextAlignmentOptions.Center;
-        tmp.enableWordWrapping = false;
-        tmp.color = new Color(0.93f, 0.93f, 0.88f, 0.82f);
-        tmp.rectTransform.sizeDelta = new Vector2(width * 0.85f, b.size.y * 0.9f);
-        look.Objects.Add(go);
-        return true;
     }
 
     /// <summary>66차: 그 점 아래 위를 보는 면 중 <paramref name="below"/>보다 낮은 가장 높은 것(8m까지). 없으면 NaN.</summary>
@@ -1575,73 +1457,46 @@ public sealed class InspectionAnomalies : MonoBehaviour
     {
         Walker w = look.Walker;
         CctvSystem cctv = CctvSystem.Active;
-        if (w == null || cctv == null || cctv.ChannelCount <= 0) return;
+        if (w == null || cctv == null || cctv.ChannelCount <= 0 || w.Go != null) return;
 
-        if (w.Go == null)
-        {
-            int day = NightRun.Day;
-            w.Channel = Mathf.Abs(day * 7 + 3) % cctv.ChannelCount;
-            Camera cam = cctv.ChannelCamera(w.Channel);
-            if (cam == null) return;
-            Vector3 eye = cam.transform.position;
-            Vector3 fwd = Flat(cam.transform.forward);
-            if (fwd.sqrMagnitude < 0.01f) fwd = Vector3.forward;
-            fwd.Normalize();
-            Vector3 right = Vector3.Cross(Vector3.up, fwd);
-            float dist = Mathf.Lerp(6f, 3.5f, AnomalyLook.Strength(look.Band));
-            Vector3 mid = FloorUnder(eye + fwd * dist);
-            float left = Free(mid + Vector3.up * 1f, -right, 2.4f);
-            float rightFree = Free(mid + Vector3.up * 1f, right, 2.4f);
-            // 화면을 비스듬히 가로지른다 — 안쪽 왼편에서 앞쪽 오른편으로(좁은 복도에서도 몇 초는 걸린다).
-            w.A = FloorUnder(eye + fwd * (dist + 1.8f) - right * left);
-            w.B = FloorUnder(eye + fwd * Mathf.Max(2.2f, dist - 1.2f) + right * rightFree);
-            w.Speed = 0.45f;
-            w.Go = StandInFactory.Create("mob.blackman", w.A, w.B, string.Empty);
-            if (w.Go == null) return;
-            w.Go.name = "이상 K-1 화면 속 사람";
-            foreach (Collider c in w.Go.GetComponentsInChildren<Collider>(true)) c.enabled = false;
-            w.Only = w.Go.AddComponent<CctvOnlyVisible>();
-            w.Only.Channel = w.Channel;
-            look.Objects.Add(w.Go);
-            w.At = 0f;
-            w.Wait = 0f;
-            w.NextStep = Time.time + CctvFaceScare.StepSeconds;
-            Walker owner = w;
-            // 51차: 3초 이어서 보면 얼굴 점프스케어(3일차부터, 밤당 한 번) — 끝나면 잠시 화면에서 사라진다.
-            CctvFaceScare.Register(w.Go, w.Channel, false, () =>
-            {
-                owner.Wait = 12f;
-                if (owner.Only != null) owner.Only.enabled = false;
-            });
-        }
+        // 71차(민: 「CCTV 등장 장소 다양화 · 걷는 애니메이션으로 실제로 이동」): 자리는 밤 시작에 코어가 정한 것(NightRun.CctvAnomalySpot, 자리 표 CctvSpots).
+        // 표의 자리가 그 채널 화면에 안 보이면(채널 자리를 고쳤을 때) 옛 방식 — 채널 카메라 앞 바닥을 비스듬히 가로지르는 길.
+        CctvSpot spot = NightRun.CctvAnomalySpot;
+        if (spot != null && spot.Channel >= cctv.ChannelCount) spot = null;
+        w.Channel = spot != null ? spot.Channel : Mathf.Abs(NightRun.Day * 7 + 3) % cctv.ChannelCount;
+        Camera cam = cctv.ChannelCamera(w.Channel);
+        if (cam == null) return;
+        Vector3 a, b;
+        if (!CctvWalker.TryResolve(cam, spot, out a, out b)) ScreenCrossing(cam, look.Band, out a, out b);
 
-        if (w.Wait > 0f)
+        w.Person = CctvWalker.Create(a, b, w.Channel, "이상 K-1 화면 속 사람");
+        if (w.Person == null) return;
+        w.Go = w.Person.gameObject;
+        look.Objects.Add(w.Go);
+        // 다 지나가면 화면에서 8초 사라졌다가 반대로 걷는다(끝없이).
+        w.Person.Walk(a, b, true, 8f, null);
+        CctvWalker person = w.Person;
+        // 51차: 3초 이어서 보면 얼굴 점프스케어(3일차부터, 밤당 한 번) — 끝나면 잠시 화면에서 사라진다.
+        CctvFaceScare.Register(w.Go, w.Channel, () =>
         {
-            w.Wait -= Time.deltaTime;
-            if (w.Wait <= 0f && w.Only != null) w.Only.enabled = true;
-            return;
-        }
+            if (person != null) person.HideFor(12f);
+        });
+    }
 
-        // 51차(민: 「걷는 애니 없이 서성거려 이상하다」): 걷지 않는다 — 1.5초마다 0.7m씩 툭툭(스톱모션), 늘 카메라 쪽을 본다.
-        if (Time.time < w.NextStep) return;
-        w.NextStep = Time.time + CctvFaceScare.StepSeconds;
-        float span = Mathf.Max(0.5f, Vector3.Distance(w.A, w.B));
-        w.At += CctvFaceScare.StepMeters / span;
-        Vector3 from = w.Forward ? w.A : w.B;
-        Vector3 to = w.Forward ? w.B : w.A;
-        w.Go.transform.position = Vector3.Lerp(from, to, Mathf.Clamp01(w.At));
-        Camera eyeCam = cctv.ChannelCamera(w.Channel);
-        Vector3 dir = eyeCam != null ? Flat(eyeCam.transform.position - w.Go.transform.position) : Flat(to - from);
-        if (dir.sqrMagnitude > 0.0001f) w.Go.transform.rotation = Quaternion.LookRotation(dir.normalized, Vector3.up);
-        cctv.ForceRenderFor(0.15f);
-        if (w.At >= 1f)
-        {
-            // 다 지나가면 화면에서 사라졌다가 잠시 뒤 반대로.
-            w.At = 0f;
-            w.Forward = !w.Forward;
-            w.Wait = 8f;
-            if (w.Only != null) w.Only.enabled = false;
-        }
+    /// <summary>자리 표가 없거나 맞지 않을 때 — 채널 카메라 앞을 안쪽 왼편에서 앞쪽 오른편으로 비스듬히 가로지르는 바닥 길(41차).</summary>
+    private void ScreenCrossing(Camera cam, Band band, out Vector3 a, out Vector3 b)
+    {
+        Vector3 eye = cam.transform.position;
+        Vector3 fwd = Flat(cam.transform.forward);
+        if (fwd.sqrMagnitude < 0.01f) fwd = Vector3.forward;
+        fwd.Normalize();
+        Vector3 right = Vector3.Cross(Vector3.up, fwd);
+        float dist = Mathf.Lerp(6f, 3.5f, AnomalyLook.Strength(band));
+        Vector3 mid = FloorUnder(eye + fwd * dist);
+        float left = Free(mid + Vector3.up * 1f, -right, 2.4f);
+        float rightFree = Free(mid + Vector3.up * 1f, right, 2.4f);
+        a = FloorUnder(eye + fwd * (dist + 1.8f) - right * left);
+        b = FloorUnder(eye + fwd * Mathf.Max(2.2f, dist - 1.2f) + right * rightFree);
     }
 
     // ── 도우미 ───────────────────────────────────────────────

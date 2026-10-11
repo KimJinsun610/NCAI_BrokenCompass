@@ -13,9 +13,7 @@ namespace NightDuty.Tests
         [TestCase("S-4", SpaceId.ScienceRoom, AnomalyTemplate.Switch)]
         [TestCase("S-5", SpaceId.ScienceRoom, AnomalyTemplate.Light)]
         [TestCase("S-6", SpaceId.ScienceRoom, AnomalyTemplate.Move)]
-        [TestCase("T-4", SpaceId.Toilet, AnomalyTemplate.Switch)]
         [TestCase("T-5", SpaceId.Toilet, AnomalyTemplate.Move)]
-        [TestCase("L-4", SpaceId.Library, AnomalyTemplate.Switch)]
         [TestCase("L-5", SpaceId.Library, AnomalyTemplate.Move)]
         [TestCase("K-2", SpaceId.SecurityRoom, AnomalyTemplate.Move)]
         [TestCase("K-3", SpaceId.SecurityRoom, AnomalyTemplate.Move)]
@@ -38,8 +36,8 @@ namespace NightDuty.Tests
         [Test]
         public void 도서관_쓰레기통은_원래_쓰러져_있다()
         {
-            StringAssert.Contains("쓰러져", InspectionCatalog.Find("L-5").TabletLine, "씬의 도서관 쓰레기통은 누워 있다 — 이상이면 누가 세워 놓았다");
-            StringAssert.Contains("벽에 걸려", InspectionCatalog.Find("C-4").TabletLine, "둥근 시계는 돌려도 티가 안 나 — 이상이면 바닥에 떨어져 있다");
+            StringAssert.Contains("세워져", InspectionCatalog.Find("L-5").TabletLine, "76차 민 문구 — 씬의 도서관 쓰레기통은 누워 있다, 이상이면 누가 세워 놓았다");
+            StringAssert.Contains("제자리", InspectionCatalog.Find("C-4").TabletLine, "76차 민 문구 — 이상이면 바닥에 떨어져 있다");
         }
 
         [Test]
@@ -62,7 +60,7 @@ namespace NightDuty.Tests
         public void C4_수칙_불빛은_초록()
         {
             Assert.AreEqual("초록 불빛 아래에서는 손전등을 끄십시오.", ProgramCatalog.Rule("C4").Text);
-            StringAssert.Contains("초록", ParadoxCatalog.Find("C4").Message);
+            Assert.AreEqual("조명에 이상이 있을 시 손전등으로 확인해주십시오.", ParadoxCatalog.Find("C4").Message);   // 79차 민 문구
             StringAssert.DoesNotContain("붉은", ParadoxCatalog.Find("C4").Message);
         }
 
@@ -126,8 +124,8 @@ namespace NightDuty.Tests
                     repeats += kv.Value - 1;
                 }
 
-                Assert.LessOrEqual(repeats, 3, "시드 " + seed + " — 31칸에 항목 29개(실측 평균 2)");
-                Assert.GreaterOrEqual(n.Count, 27, "시드 " + seed);
+                Assert.LessOrEqual(repeats, 3, "시드 " + seed + " — 67차: 26칸(4·5·5·6·6)에 항목 29개");
+                Assert.GreaterOrEqual(n.Count, 23, "시드 " + seed + " — 26칸 − 겹침 3");
             }
         }
     }

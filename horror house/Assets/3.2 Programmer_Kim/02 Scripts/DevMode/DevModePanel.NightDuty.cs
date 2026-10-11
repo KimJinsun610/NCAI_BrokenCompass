@@ -64,6 +64,7 @@ public sealed partial class DevModePanel
         EventBus.FinalRuleSettled -= OnRule;
         EventBus.InspectionReported -= OnReport;
         EventBus.NightRestarted -= OnRestart;
+        NightRun.SignalObserved -= OnSignal;
         if (!on)
         {
             if (hookedAxes != null) hookedAxes.Raised -= OnRaised;
@@ -75,6 +76,7 @@ public sealed partial class DevModePanel
         EventBus.FinalRuleSettled += OnRule;
         EventBus.InspectionReported += OnReport;
         EventBus.NightRestarted += OnRestart;
+        NightRun.SignalObserved += OnSignal;   // 71차: 상호작용 확인
     }
 
     private void OnDirection(DirectionEvent e)
@@ -87,6 +89,8 @@ public sealed partial class DevModePanel
     {
         string color = r.Outcome == FinalOutcome.Violated ? "#f77" : r.Outcome == FinalOutcome.Noted ? "#ccc" : "#7f7";
         AddLog("<color=" + color + ">수칙</color> " + Escape(r.ToString()));
+        monitorRules.Add("<color=" + color + ">" + Escape(r.ToString()) + "</color>");
+        while (monitorRules.Count > 6) monitorRules.RemoveAt(0);
     }
 
     private void OnReport(InspectionReport r)
@@ -366,7 +370,7 @@ public sealed partial class DevModePanel
         if (GUILayout.Button("붙잡힘: 인체 모형 응시")) Later(() =>
         {
             SetShow(false);
-            NightRun.DebugForceCapture(FixedMobStare.Axis, FixedMobStare.SourcePrefix + FinalCues.ModelTarget);
+            NightRun.DebugForceCapture(FixedMobStare.Axis, FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget);
         });
         GUILayout.EndHorizontal();
     }
@@ -377,7 +381,7 @@ public sealed partial class DevModePanel
 
         BeginSection("밤");
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("밤 종료 요청(04:00 정산)")) Later(() => NightRun.RequestEndNight());
+        if (GUILayout.Button("밤 종료 요청(05:00 정산)")) Later(() => NightRun.RequestEndNight());
         if (GUILayout.Button("붙잡힌 뒤 재시작")) Later(() => NightRun.RestartAfterCapture());
         GUILayout.EndHorizontal();
 
@@ -638,6 +642,11 @@ public sealed partial class DevModePanel
         EncounterScript s = EncounterScripts.Find(id);
         if (s == null) return;
         NightRun.DirectorAutoRun = true;
+        if (NightRun.Sandbox)
+        {
+            SetSandbox(false);   // 71차: 자연 발동을 보려면 흐름이 흘러야 한다
+            Note("자연 발동을 보려고 흐름을 재개했습니다");
+        }
         int from, to;
         SlotWindow(slot, out from, out to);
         if (NightRun.NightMinute < from || NightRun.NightMinute >= to) JumpNight(from + 1);
@@ -707,7 +716,9 @@ public sealed partial class DevModePanel
 
     private void DrawSceneTab()
     {
+        DrawDirectCalls();
         DrawScienceModel();
+        DrawHallFigure();
         DrawCapturePreview();
         DrawFakes();
         DrawFinale();
@@ -716,7 +727,7 @@ public sealed partial class DevModePanel
     private void DrawScienceModel()
     {
         ScienceModel m = ScienceModel.Active;
-        BeginSection("과학실 인체 모형", "오래 보면 배치가 오름(유예 1일 2.5 · 2일 2 · 3일~ 1.5초) → 붙잡히면 인체 모형 컷신. 3일차부터 2.5초 보면 목이 꺾임. 2일차부터 안 보는 사이 다가옴.");
+        BeginSection("과학실 인체 모형", "2일차부터 안 보는 사이 다가옴 · 과학실을 나갈 때마다 자리를 옮김. (70차: 목 꺾임·오래 보면 붙잡힘은 복도 끝 모형으로 옮김)");
         if (m == null || m.Model == null)
         {
             GUILayout.Label("<color=#999>모형이 없습니다(근무 씬이 아님).</color>", small);
@@ -724,11 +735,8 @@ public sealed partial class DevModePanel
             return;
         }
 
-        FixedMobStare stare = NightRun.Stare;
         GUILayout.Label("자리 <b>" + m.Spot + "</b> (그 밤 " + m.BaseSpot + "~" + m.MaxSpot + ") · " + (m.Visible ? "보임" : "<color=#f77>숨음</color>")
-                        + " · 목 " + (m.NeckTurned ? "<color=#ffd24a>꺾임</color>" : "그대로") + " · 다가선 걸음 " + m.Creeps, small);
-        GUILayout.Label("응시: " + (stare.TargetId.Length > 0 ? Escape(stare.TargetId) + " " + stare.Seconds.ToString("0.0") + "초" : "없음")
-                        + " · 유예 " + FixedMobStare.GraceFor(NightRun.Day).ToString("0.0") + "초 · 판정 " + (NightRun.FixedMobStareEnabled ? "켬" : "<color=#f77>끔</color>"), small);
+                        + " · 다가선 걸음 " + m.Creeps, small);
         GUILayout.BeginHorizontal();
         for (int i = 0; i < ScienceModel.SpotCount; i++)
         {
@@ -738,6 +746,28 @@ public sealed partial class DevModePanel
         if (ColorButton("모형 앞으로", ComplyColor)) Later(() =>
         {
             TeleportNear(m.Model.transform.position, m.Spot >= 3 ? SpaceId.Corridor : SpaceId.ScienceRoom, 3f);
+            if (closeOnRun) SetShow(false);
+        });
+        GUILayout.EndHorizontal();
+        EndSection();
+    }
+
+    /// <summary>70차: 복도 끝에 선 인체 모형(모형 급습 전날) — 오래 보면 배치가 올라 붙잡힘, 2.5초 보면 목이 꺾임.</summary>
+    private void DrawHallFigure()
+    {
+        HallFigure h = HallFigure.Active;
+        BeginSection("복도 끝 인체 모형", "모형 급습 전날 밤 내내 복도 끝 비상등 아래에 서 있음(움직이지 않음). 오래 보면 배치가 오름(유예 1일 2.5 · 2일 2 · 3일~ 1.5초) → 붙잡히면 인체 모형 컷신. 2.5초 보면 목이 꺾임.");
+        ProgramDirector pd = NightRun.Programs;
+        if (pd != null) GUILayout.Label("이번 회차: 복도 끝 " + pd.HallFigureDay + "일차 → 모형 급습 " + pd.RushDay + "일차", small);
+        FixedMobStare stare = NightRun.Stare;
+        GUILayout.Label((h != null && h.Figure != null ? "서 있음" + (h.NeckTurned ? " · 목 <color=#ffd24a>꺾임</color>" : " · 목 그대로") : "<color=#999>오늘 밤은 없음</color>")
+                        + " · 응시: " + (stare.TargetId.Length > 0 ? Escape(stare.TargetId) + " " + stare.Seconds.ToString("0.0") + "초" : "없음")
+                        + " · 판정 " + (NightRun.FixedMobStareEnabled ? "켬" : "<color=#f77>끔</color>"), small);
+        GUILayout.BeginHorizontal();
+        if (h != null && GUILayout.Button("지금 세우기")) Later(() => h.DebugPlace());
+        if (h != null && h.Figure != null && ColorButton("모형 앞으로", ComplyColor)) Later(() =>
+        {
+            TeleportNear(h.Figure.transform.position, SpaceId.Corridor, 6f);
             if (closeOnRun) SetShow(false);
         });
         GUILayout.EndHorizontal();
@@ -754,7 +784,7 @@ public sealed partial class DevModePanel
             FearAxis a = axis;
             if (GUILayout.Button(AxisNames[(int)a])) Later(() => PreviewCapture(a, null));
         }
-        if (GUILayout.Button("인체 모형 응시")) Later(() => PreviewCapture(FixedMobStare.Axis, FixedMobStare.SourcePrefix + FinalCues.ModelTarget));
+        if (GUILayout.Button("인체 모형 응시")) Later(() => PreviewCapture(FixedMobStare.Axis, FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget));
         if (GUILayout.Button("회차 바꾸기")) Later(() => captureRepeat = captureRepeat % 3 + 1);
         GUILayout.EndHorizontal();
         EndSection();
@@ -918,6 +948,7 @@ public sealed partial class DevModePanel
         }
         EndSection();
 
+        DrawAllRules(book);
         DrawParadox();
 
         BeginSection("덱에 추가");
@@ -1002,10 +1033,20 @@ public sealed partial class DevModePanel
             if (GUILayout.Button("이동", GUILayout.Width(50f))) Later(() => TeleportToTarget(a.Item.TargetId, a.Item.Space));
             if (ColorButton("정상", ComplyColor, GUILayout.Width(50f))) Later(() => NightRun.ReportInspection(id, false));
             if (ColorButton("이상", ViolateColor, GUILayout.Width(50f))) Later(() => NightRun.ReportInspection(id, true));
+            InspectionAnomalies looks = InspectionAnomalies.Active;
+            if (looks != null)
+            {
+                GUILayout.Label(looks.IsApplied(id) ? "<color=#f9a>연출 있음</color>" : "<color=#888>연출 없음</color>", small, GUILayout.Width(56f));
+                if (GUILayout.Button("이상 연출 1", GUILayout.Width(74f))) Later(() => Note(looks.DebugApply(id, Band.Band1) ? id + " 이상 연출(구간 1)" : id + ": 보이는 연출이 없는 항목([소리] 등)"));
+                if (GUILayout.Button("4", GUILayout.Width(26f))) Later(() => Note(looks.DebugApply(id, Band.Band4) ? id + " 이상 연출(구간 4)" : id + ": 보이는 연출이 없는 항목"));
+            }
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
         }
+        if (InspectionAnomalies.Active != null && GUILayout.Button("이상 연출 모두 거두기", GUILayout.Width(150f))) Later(() => InspectionAnomalies.Active.DebugClear());
         EndSection();
+
+        DrawDuties();
     }
 
     // ─────────────────────────────── 이동 ───────────────────────────────
@@ -1205,6 +1246,514 @@ public sealed partial class DevModePanel
         }
 
         Physics.SyncTransforms();
+    }
+
+    // ─────────────────────────────── 71차: 흐름 정지 · 직접 호출 · 상호작용 확인 ───────────────────────────────
+
+    private static readonly object SandboxHold = new object();
+    private static readonly SpaceId[] RuleSpaceOrder =
+    {
+        SpaceId.Corridor, SpaceId.Classroom, SpaceId.ScienceRoom, SpaceId.Toilet, SpaceId.Library, SpaceId.SecurityRoom, SpaceId.None
+    };
+
+    private const int MaxSignals = 60;
+
+    private sealed class SignalEntry
+    {
+        public int Minute;
+        public string Text;
+    }
+
+    private bool autoSandbox = true;
+    private bool monitorOn = true;
+    private bool monitorAlways;
+    private readonly List<SignalEntry> signals = new List<SignalEntry>();
+    private readonly List<string> monitorRules = new List<string>();
+    private readonly HashSet<string> zonesNow = new HashSet<string>();
+    private string gazeId = string.Empty;
+    private float gazeRun;
+    private float gazeAt = -99f;
+    private string beamId = string.Empty;
+    private float beamAt = -99f;
+    private bool runningNow;
+    private string cctvNow = string.Empty;
+    private bool tabNow;
+    private GUIStyle monitorStyle;
+    private Texture2D monitorBg;
+    private Vector2 monitorScroll;
+
+    /// <summary>흐름 정지를 켜고 끈다 — 코어 스위치(<see cref="NightRun.Sandbox"/>) + 게임 시계.</summary>
+    private void SetSandbox(bool on)
+    {
+        autoSandbox = on;
+        NightRun.Sandbox = on;
+        if (gameTime == null) BindGameTime();
+        if (gameTime != null)
+        {
+            if (on) gameTime.Hold(SandboxHold);
+            else gameTime.Release(SandboxHold);
+        }
+
+        Note(on
+            ? "<color=#f99>흐름 정지</color> — 시계·조우·수칙 단서·가짜 놀람·점검/근무 지시·역설 문자가 저절로 나오지 않습니다. 늘 판정하고, 붙잡히지 않습니다(" + (NightRun.SandboxNoCapture ? "축 99에서 멈춤" : "붙잡힘 허용") + ")."
+            : "<color=#9f9>흐름 재개</color> — 원래 게임대로 흐릅니다.");
+    }
+
+    private void OnSignal(JudgeSignal s)
+    {
+        float now = Time.unscaledTime;
+        switch (s.Kind)
+        {
+            case SignalKind.GazeSample:
+                string g = s.TargetId ?? string.Empty;
+                if (g == gazeId && now - gazeAt < 0.35f) gazeRun += s.Value;
+                else
+                {
+                    gazeId = g;
+                    gazeRun = s.Value;
+                }
+
+                gazeAt = now;
+                return;
+            case SignalKind.BeamSample:
+                if (!string.IsNullOrEmpty(s.TargetId))
+                {
+                    beamId = s.TargetId;
+                    beamAt = now;
+                }
+
+                return;
+            case SignalKind.PlayerPose:
+            case SignalKind.CctvViewSample:
+            case SignalKind.Tick:
+                return;
+            case SignalKind.ZoneEntered:
+                if (!string.IsNullOrEmpty(s.TargetId)) zonesNow.Add(s.TargetId);
+                break;
+            case SignalKind.ZoneExited:
+                if (!string.IsNullOrEmpty(s.TargetId)) zonesNow.Remove(s.TargetId);
+                break;
+            case SignalKind.Running:
+                runningNow = s.Flag;
+                break;
+            case SignalKind.CctvChannel:
+                cctvNow = s.TargetId ?? string.Empty;
+                break;
+            case SignalKind.TabChanged:
+                tabNow = s.Flag;
+                break;
+        }
+
+        signals.Add(new SignalEntry { Minute = NightRun.NightMinute, Text = DescribeSignal(s) });
+        while (signals.Count > MaxSignals) signals.RemoveAt(0);
+    }
+
+    private static string KindName(SignalKind k)
+    {
+        switch (k)
+        {
+            case SignalKind.DoorCommandAccepted: return "문 조작";
+            case SignalKind.DoorAutoOpenObserved: return "저절로 열린 문을 봄";
+            case SignalKind.SpaceEntered: return "공간 들어감";
+            case SignalKind.SpaceExited: return "공간 나감";
+            case SignalKind.ZoneEntered: return "구역 들어감";
+            case SignalKind.ZoneExited: return "구역 나감";
+            case SignalKind.SequenceEnded: return "단서 끝";
+            case SignalKind.CueStarted: return "단서 시작";
+            case SignalKind.FlashlightChanged: return "손전등";
+            case SignalKind.Running: return "달리기";
+            case SignalKind.CctvChannel: return "CCTV 채널";
+            case SignalKind.TabChanged: return "태블릿";
+            default: return k.ToString();
+        }
+    }
+
+    private static string DescribeSignal(JudgeSignal s)
+    {
+        string t = "<color=#9cf>" + KindName(s.Kind) + "</color>";
+        if (!string.IsNullOrEmpty(s.TargetId)) t += " " + Escape(s.TargetId);
+        if (s.Space != SpaceId.None) t += " <color=#aaa>" + SpaceName(s.Space) + "</color>";
+        switch (s.Kind)
+        {
+            case SignalKind.FlashlightChanged:
+            case SignalKind.Running:
+            case SignalKind.TabChanged:
+                t += s.Flag ? " 켬" : " 끔";
+                break;
+            case SignalKind.DoorCommandAccepted:
+                t += (s.Flag ? " 열기" : " 닫기") + (s.Source == ActionSource.Direction ? " (연출)" : " (플레이어)");
+                break;
+        }
+
+        return t;
+    }
+
+    /// <summary>왼쪽 위 상호작용 확인 창 — 흐름 정지 중이거나 패널이 열려 있을 때(또는 「늘 보기」).</summary>
+    private void DrawMonitorOverlay(float screenH)
+    {
+        bool visible = monitorOn && NightRun.Day > 0 && (NightRun.Sandbox || show || monitorAlways);
+        if (!visible)
+        {
+            if (NightRun.Sandbox && !show) GUI.Label(new Rect(10f, 10f, 420f, 22f), "<color=#f99><b>개발자 모드 · 흐름 정지</b></color>  [-] 패널", rich);
+            return;
+        }
+
+        if (monitorStyle == null)
+        {
+            monitorBg = new Texture2D(1, 1);
+            monitorBg.SetPixel(0, 0, new Color(0.03f, 0.03f, 0.04f, 0.92f));
+            monitorBg.Apply();
+            monitorStyle = new GUIStyle(GUI.skin.box) { padding = new RectOffset(8, 8, 6, 6) };
+            monitorStyle.normal.background = monitorBg;
+        }
+
+        GUILayout.BeginArea(new Rect(10f, 10f, 400f, Mathf.Min(screenH - 20f, 560f)));
+        GUILayout.BeginVertical(monitorStyle);
+        GUILayout.Label((NightRun.Sandbox ? "<color=#f99><b>흐름 정지</b></color>" : "<color=#9f9><b>흐름 진행</b></color>")
+                        + " · 밤 " + Clock(NightRun.NightMinute) + " · " + (NightRun.IsJudgingNow ? "판정 중" : "<color=#f77>판정 정지</color>")
+                        + (show ? string.Empty : "  <color=#888>[-] 패널</color>"), small);
+        DrawLiveState();
+
+        GUILayout.Label("<color=#ffd27a>판정 신호</color> <color=#777>(응시·비춤·자세 샘플 제외, 최신이 위)</color>", small);
+        for (int i = signals.Count - 1; i >= 0 && i >= signals.Count - 8; i--)
+        {
+            GUILayout.Label("<color=#777>" + Clock(signals[i].Minute) + "</color> " + signals[i].Text, small);
+        }
+
+        if (monitorRules.Count > 0)
+        {
+            GUILayout.Label("<color=#ffd27a>수칙 정산</color>", small);
+            for (int i = monitorRules.Count - 1; i >= 0 && i >= monitorRules.Count - 4; i--) GUILayout.Label(monitorRules[i], small);
+        }
+
+        if (axisLog.Count > 0)
+        {
+            GUILayout.Label("<color=#ffd27a>축 변화</color>", small);
+            for (int i = axisLog.Count - 1; i >= 0 && i >= axisLog.Count - 3; i--)
+            {
+                AxisEntry e = axisLog[i];
+                int d = e.To - e.From;
+                GUILayout.Label("<color=" + AxisHex[(int)e.Axis] + ">" + AxisNames[(int)e.Axis] + "</color> " + e.From + " → " + e.To + " (" + (d >= 0 ? "+" : string.Empty) + d + ") <color=#ccc>" + Escape(SourceLabel(e.Source)) + "</color>", small);
+            }
+        }
+
+        GUILayout.EndVertical();
+        GUILayout.EndArea();
+    }
+
+    /// <summary>지금 플레이어 상태(공간·구역·손전등·응시·비춤·점검 포커스·진행 중 연출).</summary>
+    private void DrawLiveState()
+    {
+        float now = Time.unscaledTime;
+        FlashlightRelay light = FlashlightRelay.Active;
+        string zones = zonesNow.Count == 0 ? "-" : string.Join(", ", zonesNow);
+        GUILayout.Label("공간 <b>" + SpaceName(NightRun.CurrentSpace) + "</b> · 구역 " + Escape(zones)
+                        + " · 손전등 " + (light != null && light.IsOn ? "<color=#ffd95a>켬</color>" : "끔")
+                        + (runningNow ? " · <color=#f96>달리는 중</color>" : string.Empty)
+                        + (tabNow ? " · 태블릿 확대" : string.Empty)
+                        + (CctvSystem.Active != null && CctvSystem.Active.IsViewing ? " · CCTV " + Escape(cctvNow) : string.Empty), small);
+
+        bool gazing = now - gazeAt < 0.35f && gazeId.Length > 0;
+        bool beaming = now - beamAt < 0.35f;
+        GUILayout.Label("응시 " + (gazing ? "<b>" + Escape(gazeId) + "</b> " + gazeRun.ToString("0.0") + "초" : "<color=#777>없음</color>")
+                        + " · 비춤 " + (beaming ? "<b>" + Escape(beamId) + "</b>" : "<color=#777>없음</color>"), small);
+
+        InspectionSensor sensor = InspectionSensor.Active;
+        FixedMobStare stare = NightRun.Stare;
+        string extra = string.Empty;
+        if (sensor != null && !string.IsNullOrEmpty(sensor.Focus)) extra += "점검 포커스 <b>" + Escape(sensor.Focus) + "</b> · ";
+        if (stare.TargetId.Length > 0) extra += "<color=#d58cff>오래 바라봄 " + Escape(stare.TargetId) + " " + stare.Seconds.ToString("0.0") + "초</color> · ";
+        if (InteractionHud.ExternalPrompt != null && InteractionHud.ExternalPrompt.Length > 0) extra += "안내 「" + Escape(InteractionHud.ExternalPrompt) + "」 · ";
+        TensionDirector t = NightRun.Tension;
+        if (t != null)
+        {
+            for (int i = 0; i < t.Runs.Count; i++)
+            {
+                EncounterRun r = t.Runs[i];
+                if (r.State == EncounterRunState.Waiting || r.State == EncounterRunState.Done || r.State == EncounterRunState.Missed) continue;
+                extra += "<color=#ffd24a>" + Escape(r.Def != null ? r.Def.Name : "?") + " " + r.State + "</color> · ";
+            }
+
+            for (int i = 0; i < t.RuleRuns.Count; i++)
+            {
+                if (t.RuleRuns[i].Running) extra += "<color=#ffd24a>단서 " + t.RuleRuns[i].Script.RuleId + "</color> · ";
+            }
+        }
+
+        DutyDispatcher duties = NightRun.Duties;
+        if (duties != null && duties.Active != null) extra += "근무 지시 " + duties.Active.Id + " · ";
+        if (extra.Length > 0) GUILayout.Label(extra.Substring(0, extra.Length - 3), small);
+    }
+
+    // ── ⑨ 상호작용 ──
+
+    private void DrawInteractionTab()
+    {
+        BeginSection("흐름", "흐름 정지 = 개발자 모드를 켜면 자동. 시계·조우·수칙 단서·가짜 놀람·점검/근무 지시·역설 문자가 저절로 나오지 않고, 시각과 무관하게 늘 판정합니다. 닫은 문이 저절로 열리거나 과학실 모형이 다가오는 것도 멈춥니다.");
+        GUILayout.BeginHorizontal();
+        Toggle(NightRun.Sandbox, "흐름: 정지", "흐름: 진행", () => SetSandbox(!NightRun.Sandbox));
+        Toggle(NightRun.SandboxNoCapture, "붙잡힘 막기: 켬(축 99)", "붙잡힘 막기: 끔", () => NightRun.SandboxNoCapture = !NightRun.SandboxNoCapture);
+        Toggle(NightRun.SandboxInfiniteBattery, "배터리 무한: 켬", "배터리 무한: 끔", () => NightRun.SandboxInfiniteBattery = !NightRun.SandboxInfiniteBattery);
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        Toggle(monitorOn, "확인 창: 켬", "확인 창: 끔", () => monitorOn = !monitorOn);
+        Toggle(monitorAlways, "흐름 진행 중에도: 켬", "흐름 진행 중에도: 끔", () => monitorAlways = !monitorAlways);
+        Toggle(NightRun.FixedMobStareEnabled, "응시 붙잡힘 판정: 켬", "응시 붙잡힘 판정: 끔", () => NightRun.FixedMobStareEnabled = !NightRun.FixedMobStareEnabled);
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        Toggle(PlayerInteractor.IgnoreLocks, "잠긴 문 무시: 켬", "잠긴 문 무시: 끔", () => PlayerInteractor.IgnoreLocks = !PlayerInteractor.IgnoreLocks);
+        Toggle(DoorPolicySO.OpenEverythingOverride, "모든 문 열기: 켬", "모든 문 열기: 끔", () => DoorPolicySO.OpenEverythingOverride = !DoorPolicySO.OpenEverythingOverride);
+        GUILayout.EndHorizontal();
+        EndSection();
+
+        BeginSection("지금 상태", "패널을 닫고 걸어 다니며 보면 왼쪽 위 확인 창에 같은 내용이 실시간으로 나옵니다.");
+        DrawLiveState();
+        GUILayout.BeginHorizontal();
+        FlashlightRelay light = FlashlightRelay.Active;
+        if (GUILayout.Button(light != null && light.IsOn ? "손전등 끄기" : "손전등 켜기") && light != null) Later(() => light.SetOn(!light.IsOn));
+        if (GUILayout.Button(runningSignal ? "달리기 신호 끄기" : "달리기 신호 켜기")) Later(() =>
+        {
+            runningSignal = !runningSignal;
+            NightRun.Send(JudgeSignal.Run(runningSignal));
+        });
+        if (GUILayout.Button("기록 지우기")) Later(() =>
+        {
+            signals.Clear();
+            monitorRules.Clear();
+        });
+        GUILayout.EndHorizontal();
+        EndSection();
+
+        BeginSection("판정 신호 (최신 " + MaxSignals + ")", "센서·문·연출이 판정에 보낸 사건. 응시·비춤·자세·CCTV 시청 샘플(0.1초마다)은 위 「지금 상태」에만 씁니다.");
+        if (signals.Count == 0) GUILayout.Label("<color=#999>아직 없음</color>", small);
+        for (int i = signals.Count - 1; i >= 0; i--)
+        {
+            GUILayout.Label("<color=#777>" + Clock(signals[i].Minute) + "</color> " + signals[i].Text, small);
+        }
+        EndSection();
+    }
+
+    // ── ⑥ 모든 수칙 직접 호출 ──
+
+    /// <summary>수칙마다 어떻게 판정하는지(지키기/어기기) — 판정기(<c>FinalJudges.Create</c>)를 사람 말로.</summary>
+    private static string RuleHint(string id)
+    {
+        switch (id)
+        {
+            case "H1": return "사람 나무(미분류 물체) 1.2m 안에 들어가면 위반";
+            case "H2": return "저절로 열린 문을 닫으면 위반(열림을 봐야 시작)";
+            case "H3": return "발소리 6초 안에 방으로 피해 2초 숨기";
+            case "H4": return "부르는 목소리 쪽으로 돌아보면 위반";
+            case "C1": return "분필 소리 동안 교실에 들어가면 위반";
+            case "C2": return "앉은 소년을 3초 바라보면 위반 → 머리 박기";
+            case "C3": return "소년이 앉은 뒤 종이 울릴 때까지 움직이면 위반";
+            case "C4": return "초록 등 아래에서 손전등을 켜 두면 위반";
+            case "C5": return "없던 문 앞 구역에 들어가면 위반";
+            case "S1": return "과학실 테이프 가운데를 가로지르면 위반";
+            case "S2": return "유리 깨짐 뒤 10초 안에 과학실을 나가고 다시 들어가지 않기";
+            case "S3": return "인체 모형을 1.5초 비추면 위반 → 다음 날 급습 예약";
+            case "S4": return "과학실 소등 동안 어두운 구역에서 손전등을 끄면 위반";
+            case "S5": return "복도 끝 형체 → 3초 안에 손전등을 끄고 가만히(과학실·복도)";
+            case "T1": return "물 내림 뒤 8초 안에 화장실 나가기";
+            case "T2": return "사용 중인 칸 구역에 들어가면 위반";
+            case "T3": return "화장실 정전 → 3초 안에 손전등을 끄고 가만히";
+            case "T4": return "소녀를 봤으면 변기 칸을 [정상]으로(역보고)";
+            case "T5": return "불 켜진 칸 앞에서 손전등을 3초 넘게 끄면 위반";
+            case "L1": return "기울어진 책장 1.5m 안에 3초 머물면 위반";
+            case "L2": return "책장 넘김 뒤 10초 안에 도서관 나가기";
+            case "L3": return "노란 얼굴을 2초 비추기(빛을 떼면 위반)";
+            case "L4": return "상자 1.5m 안에 들어가면 위반";
+            case "L5": return "창밖 남자를 2초 바라보면 위반";
+            case "K1": return "CCTV 사람이 지나가는 동안 채널을 넘기면 위반";
+            case "K2": return "빈 방 채널을 3초 보면 위반";
+            case "K3": return "경비실에 45초 넘게 머물면 위반";
+            case "G1": return "1초 넘게 달리면 위반";
+            case "G3": return "판정 없음(5일차 표시)";
+            case "K4": return "피날레(5일차)";
+            default: return string.Empty;
+        }
+    }
+
+    private void DrawAllRules(FinalRuleBook book)
+    {
+        BeginSection("모든 수칙 직접 호출 (공간별)",
+            "「▶ 호출」 = 덱에 없으면 넣고 그 수칙의 방아쇠를 지금 겁니다 — 단서 소리·형체가 있는 수칙은 단서를, 조우에 묶인 수칙은 그 조우를 그 자리에서(흐름 확인), " +
+            "행동으로만 판정하는 수칙(S1·S3·L1·L4·K3·G1 등)은 덱에 넣고 그 자리로 옮깁니다. 판정 결과는 아래 정산·왼쪽 위 확인 창에.");
+        for (int s = 0; s < RuleSpaceOrder.Length; s++)
+        {
+            SpaceId space = RuleSpaceOrder[s];
+            List<RuleDef> rules = ProgramCatalog.RulesIn(space);
+            if (rules == null || rules.Count == 0) continue;
+            GUILayout.Label("<color=#ffd27a>" + (space == SpaceId.None ? "공통" : SpaceName(space)) + "</color>", small);
+            for (int i = 0; i < rules.Count; i++)
+            {
+                RuleDef d = rules[i];
+                FinalJudge j = book.Judge(d.Id);
+                string mark = j == null ? "<color=#777>덱 밖</color>" : (j.Violated ? "<color=#f77>✗ 위반</color>" : j.Triggered ? "<color=#7f7>✓ 방아쇠</color>" : "<color=#9cf>덱</color>");
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("<b>" + d.Id + "</b> " + mark + " <color=#aaa>" + Escape(RuleHint(d.Id)) + "</color>"
+                                + (j != null && j.Status.Length > 0 ? " <color=#9cf>" + Escape(j.Status) + "</color>" : string.Empty), small, GUILayout.Width(282f));
+                string rid = d.Id;
+                if (ColorButton("▶ 호출", ComplyColor, GUILayout.Width(58f))) Later(() => CallRule(rid));
+                if (CueEndable(rid) && GUILayout.Button("끝", GUILayout.Width(34f))) Later(() => EndRuleCall(rid));
+                if (d.Space != SpaceId.None && GUILayout.Button("이동", GUILayout.Width(42f))) Later(() => TeleportForRule(rid));
+                GUILayout.EndHorizontal();
+            }
+        }
+        EndSection();
+    }
+
+    private static bool CueEndable(string ruleId)
+    {
+        return ruleId == "C4" || RuleTriggers.Find(ruleId) != null;
+    }
+
+    /// <summary>수칙 하나를 직접 부른다(덱에 넣고 방아쇠).</summary>
+    private void CallRule(string ruleId)
+    {
+        RuleDef d = ProgramCatalog.Rule(ruleId);
+        if (d == null) return;
+        NightRun.DebugAddFinalRule(ruleId);
+
+        if (RuleTriggers.Find(ruleId) != null)
+        {
+            Note(NightRun.DebugFireRuleCue(ruleId) ? "수칙 " + ruleId + " 단서를 울림" : "<color=#f77>수칙 " + ruleId + " 단서를 울리지 못함</color>");
+            return;
+        }
+
+        if (ruleId == "C4")
+        {
+            RedLightSpot red = RedLightSpot.Active;
+            if (red != null && red.Spot.HasValue)
+            {
+                TeleportNear(red.Spot.Value, SpaceId.Corridor, 0.6f);
+                Note("C4: 오늘 초록 등 아래로 옮겼습니다 — 들어서면 단서가 납니다(손전등을 켜 두면 위반)");
+            }
+            else
+            {
+                Transform root = PlayerRoot();
+                NightRun.Send(JudgeSignal.Cue(FinalCues.RedLight, root != null ? root.position : Vector3.zero));
+                Note("C4: 오늘 초록 등이 없어 단서만 보냈습니다(지금 자리) — 「끝」으로 닫습니다");
+            }
+
+            return;
+        }
+
+        if (d.BoundEncounter.Length > 0)
+        {
+            ForceEncounter(d.BoundEncounter, true);
+            return;
+        }
+
+        TeleportForRule(ruleId);
+        Note("수칙 " + ruleId + "을 덱에 넣었습니다 — 행동으로 판정: " + RuleHint(ruleId));
+    }
+
+    private void EndRuleCall(string ruleId)
+    {
+        if (ruleId == "C4")
+        {
+            NightRun.Send(JudgeSignal.CueEnd(FinalCues.RedLight));
+            Note("C4 단서 끝");
+            return;
+        }
+
+        NightRun.DebugEndRuleCue(ruleId);
+        Note("수칙 " + ruleId + " 단서 끝");
+    }
+
+    // ── ⑦ 근무 지시 ──
+
+    private void DrawDuties()
+    {
+        DutyDispatcher duties = NightRun.Duties;
+        BeginSection("근무 지시 직접 내리기", duties == null ? "근무 지시기가 없습니다." :
+            "진행 중: " + (duties.Active != null ? duties.Active.Id + " — " + Escape(duties.Active.Order) : "없음") + ". 진행 중인 지시가 있으면 새로 내릴 수 없습니다(끝내거나 기한이 지나야 — 흐름 정지 중에는 기한이 멈춥니다).");
+        if (duties != null)
+        {
+            foreach (DutyDef def in DutyCatalog.All)
+            {
+                GUILayout.BeginHorizontal();
+                string text = def.Order.Replace("\n", " ");
+                if (text.Length > 48) text = text.Substring(0, 47) + "…";
+                GUILayout.Label("<b>" + def.Id + "</b> <color=#ccc>" + Escape(text) + "</color>" + (def.Seconds > 0f ? " <color=#888>" + def.Seconds.ToString("0") + "초</color>" : string.Empty), small, GUILayout.Width(380f));
+                string id = def.Id;
+                if (GUILayout.Button("내리기", GUILayout.Width(56f))) Later(() => Note(NightRun.DebugIssueDuty(id) ? "근무 지시 " + id + " 내림" : "<color=#f77>근무 지시 " + id + "를 내릴 수 없음(진행 중인 지시가 있거나 조건이 안 맞음)</color>"));
+                GUILayout.EndHorizontal();
+            }
+        }
+        EndSection();
+    }
+
+    // ── ⑤ 직접 호출: 그 밖의 연출 ──
+
+    private void DrawDirectCalls()
+    {
+        BeginSection("그 밖의 연출 직접 호출", "조우는 ④, 수칙 단서는 ⑥, 점검 이상 모습·근무 지시는 ⑦에서.");
+        GUILayout.BeginHorizontal();
+        if (GUILayout.Button("정시 알림 문자")) Later(() =>
+        {
+            int hour = Mathf.Clamp(NightRun.NightMinute / 60 + 1, 1, 4);
+            EventBus.RaiseHourStruck(hour * 60);
+            Note("정시 알림 " + hour + "시");
+        });
+        if (GUILayout.Button("CCTV 다시보기 한 컷")) Later(ShowReplay);
+        RedLightSpot red = RedLightSpot.Active;
+        if (red != null && red.Spot.HasValue && GUILayout.Button("초록 등 아래로")) Later(() => CallRule("C4"));
+        GUILayout.EndHorizontal();
+        EndSection();
+        DrawCctvSpots();
+    }
+
+    /// <summary>71차: CCTV 사람 자리 표 — 오늘 정해진 자리와 [이 자리로]·[지금 등장].</summary>
+    private void DrawCctvSpots()
+    {
+        CctvSpot person = NightRun.CctvPersonSpot;
+        CctvSpot anomaly = NightRun.CctvAnomalySpot;
+        BeginSection("CCTV 사람 자리",
+            "오늘 K1 조우: " + (person != null ? Escape(person.ToString()) : "<color=#888>없음</color>") + " · K-1 이상: " + (anomaly != null ? Escape(anomaly.ToString()) : "<color=#888>없음</color>")
+            + ". K1 조우는 그 자리의 채널을 2초 보면 등장해 걸어갑니다. [지금 등장] = 모니터를 그 채널로 돌리고 조우를 바로 겁니다(경비실 CCTV로 보십시오). 자리를 더하려면 코어 CctvSpots 표에 한 줄.");
+        foreach (CctvSpot spot in CctvSpots.All)
+        {
+            GUILayout.BeginHorizontal();
+            bool today = person != null && person.Id == spot.Id;
+            GUILayout.Label((today ? "<color=#ffd24a>▶</color> " : string.Empty) + "<b>CAM" + (spot.Channel + 1).ToString("00") + "</b> " + Escape(spot.Note), small, GUILayout.Width(300f));
+            string id = spot.Id;
+            int ch = spot.Channel;
+            if (GUILayout.Button("이 자리로", GUILayout.Width(70f))) Later(() => Note(NightRun.DebugSetCctvPersonSpot(id) ? "K1 조우 자리 → " + id : "자리 없음"));
+            if (GUILayout.Button("지금 등장", GUILayout.Width(70f))) Later(() =>
+            {
+                NightRun.DebugSetCctvPersonSpot(id);
+                if (CctvSystem.Active != null) CctvSystem.Active.SetChannel(ch);
+                Note(NightRun.DebugForceEncounter(ProgramCatalog.CctvPerson) ? "CCTV 사람 등장 — " + id : "<color=#f77>CCTV 사람 조우를 걸 수 없음(디렉터 없음)</color>");
+            });
+            GUILayout.EndHorizontal();
+        }
+
+        EndSection();
+    }
+
+    private void ShowReplay()
+    {
+        CctvReplay replay = CctvReplay.Active;
+        InspectionBoard board = NightRun.Inspections;
+        if (replay == null || board == null || board.Plan == null || board.Plan.Assignments.Count == 0)
+        {
+            Note("CCTV 다시보기: 연출기나 점검표가 없습니다");
+            return;
+        }
+
+        string item = board.Plan.Assignments[0].Id;
+        for (int i = 0; i < board.Plan.Assignments.Count; i++)
+        {
+            if (board.Plan.Assignments[i].IsAnomaly)
+            {
+                item = board.Plan.Assignments[i].Id;
+                break;
+            }
+        }
+
+        Note(replay.DebugShow(item, 150) ? "CCTV 다시보기 한 컷 — " + item + " (경비실 모니터)" : "CCTV 다시보기 실패(" + item + ")");
     }
 
     // ─────────────────────────────── 도구 ───────────────────────────────

@@ -161,7 +161,7 @@ public sealed class FlashlightPower : MonoBehaviour
             if (Swapping && Time.time >= _swapUntil) FinishSwap(relay, b);
             else if (!Swapping && ReadSwapInput()) BeginSwap();
 
-            if (relay.IsOn && !Swapping)
+            if (relay.IsOn && !Swapping && !NightRun.BatteryFrozen)   // 71차: 개발자 모드 흐름 정지 중 배터리 무한
             {
                 if (b.Drain(Time.deltaTime) || b.IsEmpty)
                 {

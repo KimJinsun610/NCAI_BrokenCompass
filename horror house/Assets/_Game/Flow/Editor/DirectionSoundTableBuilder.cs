@@ -32,7 +32,7 @@ public static class DirectionSoundTableBuilder
         { "E.BoySeated.release", Au + "class/SFX_CLASS_SchoolBell.wav", "0.6" },
         { "E.BoyBang.confront", Au + "class/SFX_CLASS_SeatCreak_*", "0.9" },
         { "E.BoyBang.release", Au + "class/SFX_CLASS_SchoolBell.wav", "0.6" },
-        { "E.BoyBang.headbang", Au + "class/SFX_CLASS_HeadThud.wav", "1" },
+        { "E.BoyBang.headbang", Au + "class/SFX_CLASS_BoyHeadBang.mp3", "1" },   // 75차(민 제공 「책상_둔탁음」): 소년이 책상에 머리를 박을 때마다 — 옛 HeadThud
 
         // 천장 다리: 쿵쿵(전조) → 먼지
         { "E.CeilingLegs.foreshadow", Au + "class/SFX_CLASS_LegThump_*", "0.85" },
@@ -69,7 +69,7 @@ public static class DirectionSoundTableBuilder
         { "door.drawer.close", Au + "furniture/SFX_FURN_DrawerClose.mp3", "0.7" },
         { "door.cabinet.open", Au + "furniture/SFX_FURN_CabinetOpen.wav", "0.55" },
         { "door.cabinet.close", Au + "furniture/SFX_FURN_CabinetClose.wav", "0.55" },
-        { "door.locker.open", Au + "toilet/SFX_TOILET_DoorOpen.wav", "1" },   // 60차(민: 「지금 문 여는 소리가 관물대 여는 소리에 더 가깝다」) — 쇳소리 끽(원본이 -19dB라 크게)
+        { "door.locker.open", Au + "hall/SFX_HALL_LockerOpen_Swing1.wav", "0.7" },   // 67차(민 선택 「D 철문 젖힘」): HALL_LockerDoorSwing_1 앞 1.2초(끝 0.25초 줄임) — 옛 TOILET_DoorOpen(3.4초)이 길다는 피드백
         { "door.locker.close", Au + "furniture/SFX_FURN_LockerClose.wav", "0.6" },
         // 51차 점프스케어(민: 「현악기 효과음이 짜친다」) — OpenGameArt Horror Hit Soundpack 1(CC0). 약·중·강, 얼굴용 고음 겹.
         { "stinger.weak", Au + "stinger/SFX_STING_Weak_*", "0.8" },
@@ -77,7 +77,7 @@ public static class DirectionSoundTableBuilder
         { "stinger.strong", Au + "stinger/SFX_STING_Strong_*", "1" },
         { "stinger.high", Au + "stinger/SFX_STING_High_*", "0.75" },
         { "stinger.corpse", Au + "stinger/SFX_STING_Corpse.mp3", "1" },   // 60차: 민 제공 시체 점프스케어
-        { "corpse.fall", Au + "class/SFX_CLASS_HeadThud.wav", "1" },
+        { "corpse.fall", Au + "class/SFX_CLASS_CorpseFall.mp3", "1" },   // 75차(민 제공 「시체_낙하음」): 천장 시체가 바닥에 처음 부딪힐 때 — 옛 HeadThud
         { "cctv.face", Au + "ui/SFX_TABLET_Glitch.wav", "0.9" },
         { "C1.cue", Au + "class/SFX_CLASS_ChalkStroke.wav", "1" },
         { "C4.cue", Au + "class/SFX_CLASS_C4_RedHum.wav", "0.9" },
@@ -158,6 +158,10 @@ public static class DirectionSoundTableBuilder
         { "body.breath.stop", Au + "body/SFX_BODY_BreathStop.wav", "0.85" },
         { "body.sigh", Au + "body/SFX_BODY_LongSigh.wav", "0.6" },
 
+        // 79차(민: 「벨소리는 phone_ring_3.wav, 숨소리는 추천한 사운드로」): 경비실 전화 — 벨(디자인 프롤로그 샘플을 복사) · 수화기 너머 숨
+        { "phone.ring", Au + "common/SFX_COMMON_PhoneRing.wav", "1" },   // 80차: 0.9 → 1(민: 너무 작다)
+        { "phone.breath", Au + "body/SFX_BODY_RoughBreath_02.wav", "1" },   // 80차: 0.8 → 1, 2D 가운데(PhoneRinger)
+
         // 맵 소리(WorldSounds) — 청각 구간별 하루 한 번(위 구간은 아래 구간에 더해짐), 배치 3·4, 조도 소등
         { "map.hall.1", Au + "hall/SFX_HALL_DoorClose.wav", "0.75" },
         { "map.hall.1b", Au + "hall/SFX_HALL_LockerRattle_*", "0.7" },
@@ -219,7 +223,6 @@ public static class DirectionSoundTableBuilder
         { "inspect.S-3.loop", Au + "lab/SFX_LAB_SinkDrip_1.wav", "0.8" },
         { "inspect.T-2.loop", Au + "toilet/SFX_TOILET_PaperTear.wav", "0.7" },
         { "inspect.H-5.loop", "Assets/_Game/Resources/Cctv/cctv_static.wav", "0.55" },   // 66차: 복도 스피커 지직거림
-        { "inspect.T-4.loop", Au + "hall/SFX_HALL_FountainTrickle_2.wav", "0.7" },   // 66차: 세면대 물 흐름
 
         // 점검 「가까이」(NightDutySfx) — +는 0.6초 뒤 이어서, inspect.near는 공용 충격음
         { "inspect.near", Au + "creature/SFX_STINGER_CloseImpact_*", "0.8" },
@@ -236,7 +239,6 @@ public static class DirectionSoundTableBuilder
         { "inspect.C-5.near", Au + "class/SFX_CLASS_TeacherChair.wav", "0.9" },   // 66차
         { "inspect.K-2.near", Au + "hall/SFX_HALL_ChairDrag.wav", "0.8" },
         { "inspect.H-6.near", Au + "hall/SFX_HALL_ChairDrag.wav", "0.8" },
-        { "inspect.L-4.near", Au + "class/SFX_CLASS_ChalkStroke.wav", "1" },
         { "inspect.S-4.near", Au + "lab/SFX_LAB_Scrape.wav", "0.8" },
 
         // 플레이어 발소리(PlayerFootsteps) — 바닥별 걷기·뛰기. 과학실·경비실은 FootstepSplitter가 한 걸음씩 자른 것

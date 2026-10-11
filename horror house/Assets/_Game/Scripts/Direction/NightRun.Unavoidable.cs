@@ -77,6 +77,7 @@ namespace NightDuty
         private static void UnavoidableObserve(in JudgeSignal signal, bool judging)
         {
             if (!judging || IsCaptured || _unavoidable.Def == null) return;
+            if (_sandbox && !_unavoidable.Staged) return;   // 71차: 흐름 정지 중에는 스스로 걸지 않는다
             UnavoidableApply(_unavoidable.Observe(signal, _currentSpace, IssuedSpacePending, IssuedItemPending));   // 50차: 지시받은 점검만
         }
 
@@ -176,7 +177,7 @@ namespace NightDuty
         private static string RuleCardText(RuleDef def, ParadoxPlan paradox)
         {
             if (_voidRules.Contains(def.Id)) return string.Empty;   // 57차: 조우가 끝내 오지 않은 수칙은 태블릿에서 뺀다(빈 글 = 카드 숨김)
-            string text = paradox.DisplayTextOf(def.Id) ?? def.Text;
+            string text = ShownRuleText(def.Id, paradox.DisplayTextOf(def.Id) ?? def.Text);   // 80차: 해독한 빈칸
             FinalJudge judge = _finalBook != null ? _finalBook.Judge(def.Id) : null;
             // 51차(민: 「태블릿에 수칙을 어긴 게 표시되지 않았으면」): 위반 얼룩을 쓰지 않는다. 위반은 현장 반응·몸·근무일지로만 안다.
             if (ShowViolationStain && judge != null && judge.Violated) text = "<mark=" + ViolationStain + ">" + text + "</mark>";

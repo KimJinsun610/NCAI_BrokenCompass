@@ -22,8 +22,12 @@ public sealed class DeskStarterKit : MonoBehaviour
     /// <summary>손전등 옅은 외곽선이 보이는 거리(m).</summary>
     public const float HintRange = 6f;   // 66차 민: 「눈에 띄게」 — 경비실 어디서든
 
-    /// <summary>손전등 소품 원본(씬 경로 — 복제해 책상에 둔다).</summary>
-    public const string FlashlightTemplatePath = "Interior/Corridors/Flashlight";
+    /// <summary>
+    /// 손전등 소품 원본(씬 경로 — 복제해 책상에 둔다). 둘 다 벤더 프리팹 <c>Flashlight_ON</c>의 씬 인스턴스.
+    /// 72차(민: 「손전등 모델을 도형이 아니라 씬에 있는 손전등 프리펩으로」): 옛 경로 「Interior/Corridors/Flashlight」는 씬에 없어(실제 이름 「Flashlight (1)」)
+    /// 늘 원통 도형으로 물러났다. 경로가 다 빗나가도 <see cref="FindTemplate"/>가 씬에서 이름으로 찾는다.
+    /// </summary>
+    public static readonly string[] FlashlightTemplatePaths = { "Interior/Corridors/Flashlight (1)", "Interior/Corridors/Flashlight" };
 
     /// <summary>책상 위 손전등 자리(가로).</summary>
     public static readonly Vector3 FlashlightSpot = new Vector3(32.86f, 0f, 46.92f);   // 66차 민 스크린샷: 모니터 앞 빈 상판(TeacherTable_static (1)) 한가운데
@@ -183,7 +187,7 @@ public sealed class DeskStarterKit : MonoBehaviour
         ReleasePrompt();
         if (FlashlightPower.Active != null) FlashlightPower.Active.PlayPickup();
         if (NightRun.Battery != null && NightRun.Battery.IsEmpty) ShowEmptyHint();   // 66차: 처음 손전등은 0%
-        else if (flashlight) Notice("[F] 손전등 켜기");
+        else if (flashlight) Notice("[좌클릭] 손전등 켜기");   // 90차: 옛 [F]
         return true;
     }
 
@@ -226,11 +230,12 @@ public sealed class DeskStarterKit : MonoBehaviour
 
     private GameObject MakeFlashlight(Vector3 at)
     {
-        GameObject template = GameObject.Find("/" + FlashlightTemplatePath);
+        GameObject template = FindTemplate();
         GameObject go;
         if (template != null)
         {
             go = Instantiate(template);
+            go.SetActive(true);   // 소품 손전등은 FlashlightRelay가 끌 수 있다(Flashlight_ON) — 복제본은 켠다
             foreach (Behaviour b in go.GetComponentsInChildren<Behaviour>(true))
             {
                 // 66차 플레이 점검: Light는 URP 추가 데이터가 붙들고 있어 지울 수 없다(「Can't remove Light」) — 끄기만 한다.
@@ -257,11 +262,50 @@ public sealed class DeskStarterKit : MonoBehaviour
 
         go.name = "책상 손전등";
         go.transform.SetParent(transform, true);
-        go.transform.rotation = Quaternion.Euler(0f, 70f, 0f) * go.transform.rotation;
+        // 프리팹 손전등은 길이가 로컬 Z — 소품 자리의 기울기는 버리고 상판에 눕힌다(도형은 위에서 세운 회전을 그대로).
+        go.transform.rotation = template != null ? Quaternion.Euler(0f, 70f, 0f) : Quaternion.Euler(0f, 70f, 0f) * go.transform.rotation;
         go.transform.position = at;
         Bounds b2;
         if (Bounds(go, out b2)) go.transform.position += new Vector3(at.x - b2.center.x, at.y + 0.002f - b2.min.y, at.z - b2.center.z);
         return go;
+    }
+
+    /// <summary>
+    /// 복제할 손전등 소품. 경로 → 없으면 씬에서 이름이 Flashlight로 시작하고 LODGroup이 있는 것(플레이어 손 · 정적 배칭 소품은 뺀다 —
+    /// 정적 배칭된 복제는 합친 메시를 끌고 와 엉뚱하게 그려진다). 꺼져 있어도 찾는다. 없으면 null(원통 도형으로 물러남).
+    /// </summary>
+    private GameObject FindTemplate()
+    {
+        for (int i = 0; i < FlashlightTemplatePaths.Length; i++)
+        {
+            GameObject byPath = GameObject.Find("/" + FlashlightTemplatePaths[i]);
+            if (byPath != null && Usable(byPath)) return byPath;
+        }
+
+        Scene scene = gameObject.scene;
+        GameObject best = null;
+        foreach (LODGroup lod in FindObjectsByType<LODGroup>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            GameObject g = lod.gameObject;
+            if (g.scene != scene || !g.name.StartsWith("Flashlight", System.StringComparison.OrdinalIgnoreCase)) continue;
+            if (g.GetComponentInParent<FPController>(true) != null || g.GetComponentInParent<Camera>(true) != null) continue;
+            if (!Usable(g)) continue;
+            if (best == null || g.name.IndexOf("_ON", System.StringComparison.OrdinalIgnoreCase) < 0) best = g;
+        }
+
+        return best;
+    }
+
+    private static bool Usable(GameObject g)
+    {
+        Renderer[] rs = g.GetComponentsInChildren<Renderer>(true);
+        if (rs.Length == 0) return false;
+        for (int i = 0; i < rs.Length; i++)
+        {
+            if (rs[i].isPartOfStaticBatch) return false;
+        }
+
+        return true;
     }
 
     private GameObject MakeBattery(Vector3 at)

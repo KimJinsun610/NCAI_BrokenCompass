@@ -26,13 +26,13 @@ public sealed class RedLightSpot : MonoBehaviour
     private static RedLightSpot s_active;
 
     /// <summary>빛이 닿는 거리(m).</summary>
-    public const float LightRange = 4.2f;
+    public const float LightRange = 3.4f;   // 67차(민: 「초록색 빛 수칙 때 모델이 다 발광해서 부자연스럽다」): 4.2 → 3.4
 
     /// <summary>66차: C4 수칙 등의 색(초록). 교실 단서 물들임(DirectionStage C4)도 이 색.</summary>
-    public static readonly Color CueColor = new Color(0.12f, 1f, 0.3f);
+    public static readonly Color CueColor = new Color(0.42f, 0.95f, 0.55f);   // 67차: 순초록(0.12, 1, 0.3)은 같은 세기에서도 붉은빛보다 밝기가 세 배라 방이 야간 투시경처럼 통째로 물들었다 — 채도를 낮춘 비상등 초록
 
     /// <summary>66차: 등 재질 바탕색(어두운 초록).</summary>
-    private static readonly Color CueBase = new Color(0.04f, 0.3f, 0.08f);
+    private static readonly Color CueBase = new Color(0.08f, 0.22f, 0.11f);
 
     private object _night;
     private GameObject _root;
@@ -170,7 +170,7 @@ public sealed class RedLightSpot : MonoBehaviour
         _light.color = CueColor;
         // 53차 플레이 점검: 6.5m · 3.2는 복도 한 토막을 통째로 물들여 「붉은 불빛 아래」가 어디인지 흐려졌다 — 등 밑 웅덩이로 줄인다.
         _light.range = LightRange;
-        _base = 0.85f;   // 57차(민: 「붉은 조명은 밝기를 좀 줄여야」): 1.5 → 0.85
+        _base = 0.28f;   // 67차: 0.85 → 0.28(초록은 같은 세기에서 훨씬 밝다)   // 57차(민: 「붉은 조명은 밝기를 좀 줄여야」): 1.5 → 0.85
         _light.intensity = _base;
         // 61차: 그림자를 켠다 — 그림자 없는 점광은 벽을 뚫고 옆방(경비실)을 물들였다.
         _light.shadows = LightShadows.Soft;
@@ -228,11 +228,15 @@ public sealed class RedLightSpot : MonoBehaviour
                 Material m = new Material(old[i]);
                 m.name = old[i].name + " (C4 초록 등)";
                 if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", CueBase);
-                if (m.HasProperty("_EmissionColor"))
+                // 86차(민 스크린샷: 도서관 매달린 등이 줄·갓까지 통째로 하얗게 빛남): 꺼진 매달린 등 재질(LampFluoHanging_OFF_mtl)은 발광 맵이 없어
+                // 발광색이 메시 전체에 칠해지고 실내 노출(+2.5EV)에 하얗게 날아갔다 — 제 발광 맵이 있는 등(천장 매립 등)만 관을 빛내고,
+                // 없는 등은 발광을 켜지 않는다(바탕색만 어두운 초록 · 바로 아래 초록 점광이 등을 비춘다).
+                bool glow = m.HasProperty("_EmissionColor") && HasOwnEmissionMap(m);
+                if (glow)
                 {
                     m.EnableKeyword("_EMISSION");
                     m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
-                    m.SetColor("_EmissionColor", red * 1.4f);   // 57차: 3 → 1.4
+                    m.SetColor("_EmissionColor", red * 0.9f);   // 57차: 3 → 1.4 · 67차: 1.4 → 0.9
                 }
 
                 neo[i] = m;
@@ -241,6 +245,15 @@ public sealed class RedLightSpot : MonoBehaviour
             _tinted.Add(new KeyValuePair<Renderer, Material[]>(r, old));
             r.sharedMaterials = neo;
         }
+    }
+
+    /// <summary>
+    /// 재질에 제 발광 맵(관 부분만 빛나는 무늬)이 있는지. 없으면 발광색이 메시 전체(갓·줄)에 칠해진다.
+    /// (같은 계열 켜진 재질의 맵을 빌려 보았으나 B~E 등은 UV가 달라 관이 빛나지 않았다 — PlayScene 확인.)
+    /// </summary>
+    private static bool HasOwnEmissionMap(Material m)
+    {
+        return m.HasProperty("_EmissionMap") && m.GetTexture("_EmissionMap") != null;
     }
 
     private void Clear()

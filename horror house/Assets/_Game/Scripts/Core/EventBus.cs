@@ -73,6 +73,15 @@ namespace NightDuty
         /// <summary>태블릿에 보이는 글(수칙 얼룩·점검 지시)이 바뀌었다. 태블릿은 다시 읽는다(10단계 위반 얼룩·재입실 불가).</summary>
         public static event Action TabletTextChanged;
 
+        /// <summary>67차(민: 「1시간마다 알림」): 밤 시계가 정시(01:00 · 02:00 · 03:00 · 04:00)를 지났다. 인자: 시. 태블릿 알림 한 통(<c>TabletBridge</c>).</summary>
+        public static event Action<int> HourStruck;
+
+        /// <summary><see cref="HourStruck"/>를 발생시킨다.</summary>
+        public static void RaiseHourStruck(int hour)
+        {
+            Invoke(HourStruck, hour);
+        }
+
         /// <summary>
         /// 경고 도장이나 대기 중인 처벌이 바뀌었다. 인자: (도장 수 0~2, 대기 중인 처벌 수).
         /// 태블릿 상단 바의 도장 세 칸이 구독한다. 세 번째 도장이 찍히는 순간은 대기 수가 늘어난 것으로 안다.
@@ -278,6 +287,7 @@ namespace NightDuty
             DutySent = null;
             SafeReadConfirmed = null;
             TabletTextChanged = null;
+            HourStruck = null;
             WarningsChanged = null;
             Punished = null;
             NightRestarted = null;

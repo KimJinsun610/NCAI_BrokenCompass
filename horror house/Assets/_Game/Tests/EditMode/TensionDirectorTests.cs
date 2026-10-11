@@ -143,6 +143,12 @@ namespace NightDuty.Tests
             {
                 EncounterScript s = EncounterScripts.Find(e.Id);
                 if (e.Id == ProgramCatalog.CctvPerson) continue;
+                if (e.Id == ProgramCatalog.HallEndFigure)
+                {
+                    Assert.AreEqual(SpaceId.Corridor, s.Space, "70차: 복도 끝 모형은 복도에서 마주친다(수칙 S5는 과학실 카드)");
+                    continue;
+                }
+
                 Assert.AreEqual(SpaceIds.Canonical(e.Space), s.Space, e.Id);
             }
         }
@@ -220,7 +226,7 @@ namespace NightDuty.Tests
         public void 강도2는_전조_없이_대면하고_창이_닫히면_끝_단서()
         {
             DirectorFixture f = new DirectorFixture(1, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Toilet).Wait(0.1f);
             Assert.IsTrue(f.HasPhase(ProgramCatalog.ToiletGirl, DirectionPhase.Confront));
             Assert.IsFalse(f.HasPhase(ProgramCatalog.ToiletGirl, DirectionPhase.Foreshadow));
@@ -237,7 +243,7 @@ namespace NightDuty.Tests
         public void 발소리는_복도_10m를_걸으면_전조_뒤_뒤쪽에서_온다()
         {
             DirectorFixture f = new DirectorFixture(1, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.Footsteps));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Corridor).Pose(10f, 43f, 90f).Wait(0.1f);
             Assert.IsFalse(f.HasPhase(ProgramCatalog.Footsteps, DirectionPhase.Foreshadow), "아직 안 걸었다");
             for (int i = 1; i <= 11; i++) f.Pose(10f + i, 43f, 90f);
@@ -255,7 +261,7 @@ namespace NightDuty.Tests
         public void 헛예고는_단서를_보내지_않고_다시_기다린다()
         {
             DirectorFixture f = new DirectorFixture(1, 0.0, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.Footsteps));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Corridor).Pose(0f, 43f, 90f);
             for (int i = 1; i <= 11; i++) f.Pose(i, 43f, 90f);
             f.Wait(3f);
@@ -268,7 +274,7 @@ namespace NightDuty.Tests
         public void 헛예고는_조우마다_한_번까지_다음은_진짜다()
         {
             DirectorFixture f = new DirectorFixture(1, 0.0, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.Footsteps));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Corridor).Pose(0f, 43f, 90f);
             for (int i = 1; i <= 11; i++) f.Pose(i, 43f, 90f);
             f.Wait(30f);   // 헛예고 + 재시도 대기(FalseRetry 20초)
@@ -287,7 +293,7 @@ namespace NightDuty.Tests
             DirectorFixture f = new DirectorFixture(1, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
             List<string> missed = new List<string>();
             f.Director.Missed += missed.Add;
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Library).Wait(1f);
             f.Minute = NightClock.RelaxStart;
             f.Wait(0.1f);
@@ -306,7 +312,7 @@ namespace NightDuty.Tests
         public void 넘긴_조우는_다른_슬롯_시간에도_그_공간에_들어가면_헛예고_없이_시작한다()
         {
             DirectorFixture f = new DirectorFixture(1, 0.0, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletBlackout));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Library).Wait(1f);
             f.Minute = NightClock.RelaxStart + 1f;
             f.Wait(0.1f);
@@ -332,7 +338,7 @@ namespace NightDuty.Tests
         {
             DirectorFixture f = new DirectorFixture(3, 0.99, null, DirectorFixture.Slot(EncounterSlot.C, ProgramCatalog.ToiletGirl));
             f.Highest = 80;
-            f.Minute = 195f;
+            f.Minute = NightClock.SlotCStart + 7f;
             f.Enter(SpaceId.Toilet).Wait(1f);
             Assert.AreEqual(0, f.CueCount(SignalKind.CueStarted, FinalCues.GirlStall));
             f.Highest = 60;
@@ -344,7 +350,7 @@ namespace NightDuty.Tests
         public void 존재형은_슬롯이_끝날_때까지_머문다()
         {
             DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.PeopleTree));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Corridor).Pose(0f, 43f).Wait(8.1f);
             Assert.IsTrue(f.HasPhase(ProgramCatalog.PeopleTree, DirectionPhase.Confront), "강도 3이라 전조 뒤 대면");
             f.Wait(60f);
@@ -358,7 +364,7 @@ namespace NightDuty.Tests
         public void 재시작하면_시작_분_뒤에_일어난_조우는_다시_기다린다()
         {
             DirectorFixture f = new DirectorFixture(1, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Toilet).Wait(7f);
             Assert.AreEqual(EncounterRunState.Done, f.Run(ProgramCatalog.ToiletGirl).State);
 
@@ -373,9 +379,9 @@ namespace NightDuty.Tests
         public void 붙잡히면_끝_단서_없이_중단()
         {
             DirectorFixture f = new DirectorFixture(1, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Toilet).Wait(0.1f);
-            f.Director.Tick(70f, 0.1f, 30, Band.Band0, true);
+            f.Director.Tick(NightClock.Call1 + 10f, 0.1f, 30, Band.Band0, true);
             JudgeSignal s;
             Assert.IsFalse(f.Director.TryDequeue(out s));
             Assert.IsTrue(f.HasPhase(ProgramCatalog.ToiletGirl, DirectionPhase.Aborted));
@@ -417,7 +423,7 @@ namespace NightDuty.Tests
         public void 이완_구간에는_수칙_단서가_없다()
         {
             DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "T1" });
-            f.Minute = 120f;
+            f.Minute = NightClock.RelaxStart + 8f;
             f.Enter(SpaceId.Toilet).Wait(10f);
             Assert.AreEqual(0, f.CueCount(SignalKind.CueStarted, FinalCues.Flush));
         }
@@ -468,7 +474,7 @@ namespace NightDuty.Tests
         public void 조우_중에는_수칙_단서를_쉰다()
         {
             DirectorFixture f = new DirectorFixture(1, 0.99, new[] { "T1" }, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletBlackout));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Toilet).Wait(4.2f);
             Assert.IsTrue(f.Director.Busy);
             int before = f.CueCount(SignalKind.CueStarted, FinalCues.Flush);

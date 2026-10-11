@@ -10,7 +10,7 @@ namespace NightDuty.Tests
         {
             public readonly TensionDirector Director;
             public readonly List<DirectionEvent> Events = new List<DirectionEvent>();
-            public float Minute = 70f;
+            public float Minute = NightClock.Call1 + 10f;
 
             public Rig(params string[] slotEncounters)
             {
@@ -118,6 +118,7 @@ namespace NightDuty.Tests
         [Test]
         public void 밤은_실시간_10분()
         {
+            // 67차(민: 「하루 시간도 5시까지 · 실제 길이도 늘릴거야」): 10분 → 12분 30초. 88차(민: 「게임 하루 시간을 4시간으로」): 다시 10분(게임 시계 24배 그대로).
             Assert.AreEqual(600f, NightClock.RealSecondsPerNight);
             Assert.AreEqual(600f, NightClock.RealSecondsAt(NightClock.ShiftEnd), 0.001f);
         }
@@ -128,8 +129,7 @@ namespace NightDuty.Tests
             System.Type phone = System.Type.GetType("ShiftEndPhone, Assembly-CSharp");   // Flow는 시험 어셈블리가 참조하지 않는다
             Assert.IsNotNull(phone);
             Assert.AreEqual("지시가 아직 끝나지 않았습니다.", phone.GetField("LockedLine").GetValue(null));
-            StringAssert.Contains("마지막 지시", NightRun.FinalOrderNotice);
-            StringAssert.Contains("퇴근", NightRun.FinalOrderNotice);
+            Assert.IsNull(typeof(NightRun).GetField("FinalOrderNotice"), "77차(민): 「마지막 지시입니다…」 안내 폐기");
             Assert.IsFalse(NightRun.IsFinalOrder(null));
         }
     }

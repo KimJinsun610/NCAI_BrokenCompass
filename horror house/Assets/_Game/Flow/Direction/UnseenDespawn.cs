@@ -67,6 +67,12 @@ public sealed class UnseenDespawn : MonoBehaviour
             return;
         }
 
+        if (ViolationScare.Holds(gameObject))   // 83차: 놀람 연출이 숨겨 둔 동안은 「안 보임」이 아니다
+        {
+            _awaySince = -1f;
+            return;
+        }
+
         Camera cam = Camera.main;
         if (cam != null && Visible(cam))
         {

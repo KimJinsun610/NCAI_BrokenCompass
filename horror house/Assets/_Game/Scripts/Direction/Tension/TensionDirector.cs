@@ -162,7 +162,7 @@ namespace NightDuty
         public const int FakePerId = 2;
 
         /// <summary>슬롯 끝 몇 분 전부터 방아쇠를 「그 공간에 있기만 하면」으로 완화하는지(게임 분).</summary>
-        public const float LastCallMinutes = 10f;
+        public const float LastCallMinutes = 10f;   // 67차(밤 05:00): 10 → 12(게임 분 ×1.25) · 88차(밤 04:00): 12 → 10
 
         /// <summary>디버그 강제 실행에서 존재형 조우의 길이(초).</summary>
         public const float ForcedPresenceSeconds = 60f;
@@ -216,6 +216,7 @@ namespace NightDuty
         private float _cctvSince = -1f;
         private float _lastCctvView = float.NegativeInfinity;
         private string _channel = string.Empty;
+        private float _channelSince = -1f;   // 71차: 지금 채널을 본 지(초) — CCTV 사람 자리 채널을 2초 보면 조우
         private float _lastRuleCue = float.NegativeInfinity;
         private float _nextFake;
         private int _fakesUsed;
@@ -245,6 +246,12 @@ namespace NightDuty
         /// null이면 그 공간 안이면 참(코어 시험).
         /// </summary>
         public Func<SpaceId, float, bool> DeepInSpace { get; set; }
+
+        /// <summary>
+        /// 85차: 앞선 지시(<see cref="EncounterScript.AfterOrder"/>·<see cref="EncounterScript.AfterDuty"/>)가 나가 그 조우가 방아쇠를 받을 수 있는지. NightRun이 넣는다.
+        /// null이면 늘 참(코어 시험). 디버그 강제 실행은 보지 않는다.
+        /// </summary>
+        public Func<EncounterRun, bool> EncounterGate { get; set; }
 
         /// <summary>
         /// 61차(민: 「몹은 나타나 있되, 플레이어가 몹을 시야에 넣고 인지한 뒤에 연출이 시작되도록」): 켜면 몹 대역이 있는 조우(<see cref="EncounterScript.NeedsSight"/>)는
@@ -386,6 +393,9 @@ namespace NightDuty
 
         /// <summary>그 공간에 아직 보고하지 않은 점검이 있는지(NightRun이 넣는다). null이면 「나가라」 문을 걸지 않는다(옛 동작·시험).</summary>
         public Func<SpaceId, bool> InspectionPendingIn { get; set; }
+
+        /// <summary>71차: 그 밤 CCTV 사람(K1 조우)이 나타날 자리의 채널(<c>cctv.chN</c>). 비면 아무 채널(옛 동작).</summary>
+        public string CctvPersonChannel { get; set; } = string.Empty;
 
         /// <summary>그날의 빈 방 채널(<c>cctv.chN</c>) — K2 단서가 늘 이 채널을 가리킨다. 비면 지금 보지 않는 채널 하나를 고른다(옛 동작).</summary>
         public string EmptyRoomChannel { get; set; } = string.Empty;
@@ -582,9 +592,11 @@ namespace NightDuty
                 case SignalKind.CctvViewSample:
                     if (Now - _lastCctvView > 0.5f) _cctvSince = Now;
                     _lastCctvView = Now;
+                    if (s.TargetId != _channel) _channelSince = Now;
                     _channel = s.TargetId;
                     break;
                 case SignalKind.CctvChannel:
+                    if (s.TargetId != _channel) _channelSince = Now;
                     _channel = s.TargetId;
                     break;
                 case SignalKind.GazeSample:
@@ -679,7 +691,11 @@ namespace NightDuty
                 case EncounterTrigger.CorridorWalk:
                     return _space == SpaceId.Corridor && (lastCall || _walk >= s.Dwell);
                 case EncounterTrigger.ViewingCctv:
-                    return ViewingCctv && Now - _cctvSince >= s.Dwell;
+                    if (!ViewingCctv || Now - _cctvSince < s.Dwell) return false;
+                    // 71차(민: 「CCTV 등장 장소 다양화 — 이벤트가 결정되면 장소도 함께」): 밤 시작에 정한 자리의 채널을 보고 있어야 한다(그 채널에 머문 지 Dwell).
+                    // 슬롯 끝 10분 전부터는 어느 채널이든 — 그때는 연출이 보고 있는 채널의 자리로 바꾼다.
+                    if (CctvPersonChannel.Length == 0 || lastCall) return true;
+                    return _channel == CctvPersonChannel && Now - Mathf.Max(_cctvSince, _channelSince) >= s.Dwell;
                 case EncounterTrigger.GazeTarget:
                     if (GazeTargetReady != null && !GazeTargetReady(s.GazeTargetId)) return false;
                     if (GazeTargetExitMode) return ExitTriggered(r, s);   // 61차: 사다리 곁에서 나오는 길
@@ -707,6 +723,12 @@ namespace NightDuty
                     continue;
                 }
 
+
+                if (!r.Forced && EncounterGate != null && !EncounterGate(r))
+                {
+                    r.Waiting = "앞선 지시 대기";   // 85차: 블라인드 지시(창밖 노란 얼굴) · biology 책/도서관 순찰 지시(문간 노란 얼굴)
+                    continue;
+                }
 
                 if (!Triggered(r, minute))
                 {
@@ -908,7 +930,7 @@ namespace NightDuty
                             {
                                 r.CarriedOver = true;
                                 r.Rearmed = true;
-                                Note(r.Def.Id, "슬롯 " + r.Slot + "에 방아쇠가 오지 않음(" + r.Waiting + ") — 03:30까지 넘김");
+                                Note(r.Def.Id, "슬롯 " + r.Slot + "에 방아쇠가 오지 않음(" + r.Waiting + ") — " + NightClock.Clock(NightClock.JudgingEnd) + "까지 넘김");
                                 break;
                             }
 

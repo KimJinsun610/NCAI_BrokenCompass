@@ -20,10 +20,10 @@ namespace NightDuty
         /// <summary>02:16–03:08. 호출 2 뒤 조우 슬롯 B(그날의 메인). 마지막 점검 공간이 열린다.</summary>
         SlotB = 4,
 
-        /// <summary>03:08–03:30. 남은 점검, 보너스 슬롯 C.</summary>
+        /// <summary>03:08–03:32. 남은 점검, 보너스 슬롯 C.</summary>
         SlotC = 5,
 
-        /// <summary>03:30–04:00. 잔여 점검 알림 뒤 복귀. 수칙 판정 종료, 새 조우 없음, 보고는 가능.</summary>
+        /// <summary>03:32–04:00. 잔여 점검 알림 뒤 복귀. 수칙 판정 종료, 새 조우 없음, 보고는 가능.</summary>
         Wrap = 6,
 
         /// <summary>04:00. 근무 종료.</summary>
@@ -31,45 +31,57 @@ namespace NightDuty
     }
 
     /// <summary>
-    /// 밤 시계 표 — <b>실시간 10분 = 게임 00:00~04:00</b>(실시간 1분 = 게임 24분). 59차(민: 「하룻밤이 너무 길다 — 2/3 정도로」): 15분 → 10분.
+    /// 밤 시계 표 — <b>실시간 10분 = 게임 00:00~04:00</b>(실시간 1분 = 게임 24분 그대로). 59차(민: 「하룻밤이 너무 길다 — 2/3 정도로」): 15분 → 10분.
+    /// 67차(민: 「하루 시간도 5시까지 늘려줘」 · 「실제 길이도 늘릴 거야」): 04:00 → 05:00, 10분 → 12분 30초 — 구간 경계를 모두 ×1.25(분 단위로 반올림).
+    /// 88차(민: 「게임 하루 시간을 4시간으로 줄여줘」): 05:00 → <b>04:00</b>, 12분 30초 → <b>10분</b>(게임 24배 그대로) — 구간 경계를 모두 ×0.8(67차 전 값으로).
     /// 시각은 모두 <b>근무 시작(00:00)부터의 게임 분</b>이다. 시각 숫자는 여기 한 곳에만 둔다.
     /// <para>
-    /// 판정 시간창은 00:16~03:30이고 이완 구간(01:52~02:16)에는 멈춘다. 퇴실 여부와는 무관하다 —
-    /// 경비실에 머무르는 사람에게도 K3가 걸려야 하기 때문이다. 예외는 03:30에 진행 중이던 조우의 대응 창과
-    /// 5일차 04:00 뒤의 K4다(둘 다 이 표가 아니라 호출하는 쪽이 판단한다).
+    /// 판정 시간창은 00:16~03:32이고 이완 구간(01:52~02:16)에는 멈춘다. 퇴실 여부와는 무관하다 —
+    /// 경비실에 머무르는 사람에게도 K3가 걸려야 하기 때문이다. 예외는 판정 끝에 진행 중이던 조우의 대응 창과
+    /// 5일차 근무 끝 뒤의 K4다(둘 다 이 표가 아니라 호출하는 쪽이 판단한다).
     /// </para>
     /// </summary>
     public static class NightClock
     {
-        /// <summary>하룻밤의 실시간 길이(초). 10분(59차, 전에는 15분).</summary>
+        /// <summary>하룻밤의 실시간 길이(초). 10분(88차 — 67차 12분 30초 · 59차 10분 · 그 전 15분).</summary>
         public const float RealSecondsPerNight = 600f;
 
-        /// <summary>하룻밤의 게임 길이(분). 00:00~04:00.</summary>
+        /// <summary>하룻밤의 게임 길이(분). 00:00~04:00(88차 — 67차 05:00).</summary>
         public const int NightMinutes = 240;
 
         /// <summary>실시간 1초에 흐르는 게임 초. 240분 × 60 / 600초 = 24.</summary>
         public const float GameSecondsPerRealSecond = NightMinutes * 60f / RealSecondsPerNight;
 
-        /// <summary>출근이 끝나고 수칙 판정이 시작되는 시각(00:16).</summary>
+        /// <summary>출근이 끝나고 수칙 판정이 시작되는 시각(00:16, 88차 — 67차 00:20).</summary>
         public const int JudgingStart = 16;
 
-        /// <summary>호출 1 · 조우 슬롯 A 시작(01:00).</summary>
+        /// <summary>호출 1 · 조우 슬롯 A 시작(01:00, 88차 — 67차 01:15).</summary>
         public const int Call1 = 60;
 
-        /// <summary>이완 구간 시작(01:52). 판정 정지.</summary>
+        /// <summary>이완 구간 시작(01:52, 88차 — 67차 02:20). 판정 정지.</summary>
         public const int RelaxStart = 112;
 
-        /// <summary>호출 2 · 이완 끝 · 체크포인트 시각(02:16). 그날 마지막 점검 공간이 열린다.</summary>
+        /// <summary>호출 2 · 이완 끝 · 체크포인트 시각(02:16, 88차 — 67차 02:50). 그날 마지막 점검 공간이 열린다.</summary>
         public const int Call2 = 136;
 
-        /// <summary>보너스 슬롯 C 시작(03:08).</summary>
+        /// <summary>보너스 슬롯 C 시작(03:08, 88차 — 67차 03:55).</summary>
         public const int SlotCStart = 188;
 
-        /// <summary>잔여 점검 알림 · 수칙 판정 종료(03:30).</summary>
-        public const int JudgingEnd = 210;
+        /// <summary>잔여 점검 알림 · 수칙 판정 종료(03:32, 88차 — 67차 04:25).</summary>
+        public const int JudgingEnd = 212;
 
-        /// <summary>근무 종료(04:00).</summary>
+        /// <summary>근무 종료(04:00, 88차 — 67차 05:00).</summary>
         public const int ShiftEnd = 240;
+
+        /// <summary>67차(민: 「1시간마다 알림」): 정시 알림을 보내는 시각(01:00 · 02:00 · 03:00). 04:00은 근무 종료라 따로 없다(88차).</summary>
+        public static readonly int[] HourMarks = { 60, 120, 180 };
+
+        /// <summary>그 게임 분의 「HH:MM」(근무 시작 00:00 기준).</summary>
+        public static string Clock(float minute)
+        {
+            int m = Math.Max(0, (int)Math.Floor(minute));
+            return (m / 60).ToString("00") + ":" + (m % 60).ToString("00");
+        }
 
         /// <summary>그 시각의 구간.</summary>
         /// <param name="minute">근무 시작부터의 게임 분.</param>
@@ -146,6 +158,9 @@ namespace NightDuty
         /// <summary>근무 종료(04:00). 한 번만.</summary>
         public event Action ShiftEnded;
 
+        /// <summary>67차: 정시(01:00 · 02:00 · 03:00)를 지났다. 인자: 시(1~3).</summary>
+        public event Action<int> HourStruck;
+
         /// <summary>마지막으로 받은 시각(근무 시작부터의 게임 분).</summary>
         public float Minute
         {
@@ -192,6 +207,30 @@ namespace NightDuty
             Cross(from, minute, NightClock.SlotCStart, null);
             Cross(from, minute, NightClock.JudgingEnd, ResidualAlert);
             Cross(from, minute, NightClock.ShiftEnd, ShiftEnded);
+
+            for (int i = 0; i < NightClock.HourMarks.Length; i++)
+            {
+                int mark = NightClock.HourMarks[i];
+                if (from < mark && minute >= mark) RaiseHour(mark / 60);
+            }
+        }
+
+        private void RaiseHour(int hour)
+        {
+            Action<int> handler = HourStruck;
+            if (handler == null) return;
+            Delegate[] targets = handler.GetInvocationList();
+            for (int i = 0; i < targets.Length; i++)
+            {
+                try
+                {
+                    ((Action<int>)targets[i])(hour);
+                }
+                catch (Exception e)
+                {
+                    UnityEngine.Debug.LogException(e);
+                }
+            }
         }
 
         private void Cross(float from, float to, int boundary, Action named)

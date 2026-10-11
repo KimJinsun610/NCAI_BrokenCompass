@@ -31,7 +31,7 @@ namespace NightDuty.Tests
             Assert.AreEqual("초록 불빛 아래에서는 손전등을 끄십시오.", ProgramCatalog.Rule("C4").Text, "66차: 붉은 → 초록");
             Assert.AreEqual("화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오.", ProgramCatalog.Rule("K1").Text, "원래대로");
             InspectionItem c3 = InspectionCatalog.Find("C-3");
-            Assert.AreEqual("교실 안쪽에 작은 사다리가 있는지 확인하십시오.", c3.TabletLine);
+            Assert.AreEqual("교실 안쪽에 작은 사다리가 있는지 확인해주십시오.", c3.TabletLine);   // 76차 민 문구
             Assert.AreEqual(FearAxis.Layout, c3.Axis, "이상 = 사다리 없음(배치)");
             Assert.AreEqual(AnomalyTemplate.Move, c3.Template);
         }
@@ -42,16 +42,17 @@ namespace NightDuty.Tests
             foreach (ParadoxEntry e in ParadoxCatalog.All)
             {
                 if (!e.HasMessage) continue;
-                Assert.IsTrue(e.Message.Contains("지금") || e.Message.Contains("즉시"), e.RuleId + ": " + e.Message);
+                // 79차: 민이 직접 쓴 역설 문구(H3·C2·C4·T1·L1)는 「지금·즉시」 없이 그대로 둔다.
+                if (System.Array.IndexOf(new[] { "H3", "C2", "C4", "T1", "L1" }, e.RuleId) < 0) Assert.IsTrue(e.Message.Contains("지금") || e.Message.Contains("즉시"), e.RuleId + ": " + e.Message);
                 StringAssert.DoesNotStartWith("[", e.Message, "역설 문자는 머리(「[점검 지시]」 등)가 없다 — " + e.RuleId);
             }
 
             ParadoxEntry c2 = ParadoxCatalog.Find("C2");
-            Assert.AreEqual("교실에 남아 있는 학생이 있습니다. 지금 확인하십시오.", c2.Message);
+            Assert.AreEqual("교실 소음의 원인을 응시해주십시오.", c2.Message);   // 79차 민
             Assert.AreEqual(FinalCues.BoySeated, c2.Cue, "소년이 앉은 뒤에 온다 — 몹을 예고하지 않는다");
             Assert.AreEqual(FinalCues.BoyTarget, c2.Target);
             ParadoxEntry c4 = ParadoxCatalog.Find("C4");
-            Assert.AreEqual("초록 등 아래가 어둡습니다. 지금 손전등으로 비추십시오.", c4.Message, "따르면(켜면) C4를 어긴다 · 66차: 초록");
+            Assert.AreEqual("조명에 이상이 있을 시 손전등으로 확인해주십시오.", c4.Message, "따르면(켜면) C4를 어긴다 · 79차 민 문구");
             Assert.AreEqual(SafeReadPattern.StandStill, c4.Pattern, "꺼진 채 붉은 등 아래를 지나가면 안전한 읽기");
             Assert.AreEqual("확인되었습니다.", NightRun.ParadoxAck);
         }
@@ -83,7 +84,7 @@ namespace NightDuty.Tests
         {
             DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.CeilingLegs));
             f.Director.GazeTargetReady = id => false;
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Classroom_1_3);
             for (int i = 0; i < 30; i++) f.Send(JudgeSignal.Gaze(InspectionCatalog.TargetPrefix + "C-3", 0.1f)).Wait(0.1f);
             Assert.IsFalse(f.HasPhase(ProgramCatalog.CeilingLegs, DirectionPhase.Foreshadow));
@@ -297,7 +298,7 @@ namespace NightDuty.Tests
         public void K1_조우_단서는_지금_채널을_단다()
         {
             DirectorFixture f = new DirectorFixture(3, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.CctvPerson));
-            f.Minute = 70f;
+            f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.SecurityRoom);
             f.Send(JudgeSignal.Channel("cctv.ch2"));
             for (int i = 0; i < 40; i++) f.Send(JudgeSignal.CctvView("cctv.ch2", 0.1f)).Wait(0.1f);

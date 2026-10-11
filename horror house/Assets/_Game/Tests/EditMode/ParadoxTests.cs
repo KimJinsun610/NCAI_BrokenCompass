@@ -324,8 +324,7 @@ namespace NightDuty.Tests
             }
 
             string text = NightRun.ChecklistMessage;
-            Assert.AreEqual(inSpace, Count(text, "· " + ParadoxRun.RevealAnomaly) + Count(text, "· " + ParadoxRun.RevealClear), "그 공간 줄에만 붙는다");
-            if (inSpace > 0) StringAssert.Contains("· " + got.Value.Label, text);
+            Assert.AreEqual(0, Count(text, "· " + ParadoxRun.RevealAnomaly) + Count(text, "· " + ParadoxRun.RevealClear), "77차(민): 줄 꼬리 「확인 필요/이상 없음」 폐기 — 안전한 읽기 사건(" + inSpace + "줄)은 그대로 온다");
         }
 
         private static int Count(string text, string part)
@@ -351,7 +350,7 @@ namespace NightDuty.Tests
                 InspectionPlan plan = NightRun.Inspections.Plan;
                 string text = NightRun.ChecklistMessage;
                 StringAssert.StartsWith("[점검 지시]", text);
-                StringAssert.Contains(NightRun.InspectionHowTo, text);
+                StringAssert.DoesNotContain("Z 정상", text, "72차: 조작 안내 없음");
                 for (int i = 0; i < plan.Assignments.Count; i++)
                 {
                     StringAssert.Contains((i + 1) + ". ", text);
@@ -360,7 +359,8 @@ namespace NightDuty.Tests
 
                 InspectionAssignment first = plan.Assignments[0];
                 NightRun.ReportInspection(first.Id, false);
-                StringAssert.Contains(first.Item.TabletLine + (first.IsLate ? " (02:16부터)" : string.Empty) + " · 보고함", NightRun.ChecklistMessage);
+                StringAssert.Contains(first.Item.TabletLine + (first.IsLate ? " (" + NightClock.Clock(NightClock.Call2) + "부터)" : string.Empty) + NightRun.StrikeClose, NightRun.ChecklistMessage);   // 74차: 「· 보고함」 대신 취소선
+                StringAssert.DoesNotContain("보고함", NightRun.ChecklistMessage);
             }
             finally
             {
@@ -650,7 +650,7 @@ namespace NightDuty.Tests
                 InspectionReport report = NightRun.ReportInspection(pending.Id, false);
                 Assert.IsFalse(report.Accepted);
                 Assert.AreEqual(ReportRejection.SpaceClosed, report.Rejection);
-                StringAssert.Contains(pending.Item.TabletLine + (pending.IsLate ? " (02:16부터)" : string.Empty) + " · 재입실 불가", NightRun.ChecklistMessage);
+                StringAssert.DoesNotContain(" · 재입실 불가", NightRun.ChecklistMessage, "77차(민): 줄 꼬리 폐기 — 보고 거절(SpaceClosed)은 그대로");
             }
             finally
             {

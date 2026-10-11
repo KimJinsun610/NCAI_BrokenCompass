@@ -123,12 +123,19 @@ namespace NightDuty
 
         /// <summary>
         /// 경비실 전화로 근무를 일찍 끝낼 수 있는가(2026-10-03 민): 밤이 진행 중이고 붙잡히지 않았으며,
-        /// 오늘 점검표가 있고 <b>전부 보고했을 때</b>. 끝내는 길은 04:00과 같은 <see cref="RequestEndNight"/>다 —
+        /// 오늘 점검표가 있고 <b>전부 보고했고</b>, 68차(민: 「점검 완료가 아니라 모든 지시의 완료 여부로」) <b>[근무 지시]도 남지 않았을 때</b>
+        /// (<see cref="DutiesPending"/> — 진행 중이거나 앞으로 나올 지시). 끝내는 길은 근무 종료 시각과 같은 <see cref="RequestEndNight"/>다 —
         /// 남은 카드 정산·조우 이월이 그대로 돈다(미완료 점검이 없으니 경고는 붙지 않는다).
         /// </summary>
         public static bool CanEndShiftEarly
         {
-            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCount == 0; }
+            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCount == 0 && !DutiesPending; }
+        }
+
+        /// <summary>68차: 조기 퇴근을 막는 지시가 남았는지 — 보고하지 않은 점검 또는 남은 [근무 지시]. 전화기 안내 「지시가 아직 끝나지 않았습니다.」가 읽는다.</summary>
+        public static bool InstructionsPending
+        {
+            get { return IsNightActive && (Board.RemainingCount > 0 || DutiesPending); }
         }
 
         /// <summary>
@@ -177,7 +184,13 @@ namespace NightDuty
         {
             get
             {
-                if (!JudgingWindowEnabled)
+                // 2026-10-11: 피날레 중에는 판정하지 않는다 — 5일차 조기 퇴근으로 03:30 전에 열려도(K3 경비실 머무름 등이 걸리지 않게). K4는 FinaleWatch가 따로 본다.
+                if (_finale.Active)
+                {
+                    return false;
+                }
+
+                if (!JudgingWindowEnabled || _sandbox)   // 71차: 개발자 모드 흐름 정지 중에는 늘 판정
                 {
                     return true;
                 }
@@ -240,7 +253,9 @@ namespace NightDuty
                 _ledger.Changed -= EventBus.RaiseWarningsChanged;
             }
 
+            FakeRuleCatalog.RunOffset = new System.Random().Next(FakeRuleCatalog.Lines.Length);   // 80차: 가짜 수칙 다섯 줄을 회차마다 돌려 나흘에
             _axes = new FearAxisSystem();
+            ApplySandboxCap();   // 71차: 개발자 모드 흐름 정지 중이면 새 축도 붙잡히지 않게
             _bands = new BandResolver(_axes);
             _axes.ValueChanged += _bands.OnValueChanged;
             _axes.Raised += OnAxisRaised;
@@ -259,6 +274,7 @@ namespace NightDuty
             ClearRaised();
             ResetExtensions(false);
             ResetOrders();
+            ResetCctv(true);   // 71차
             ViolationMinutesToday.Clear();
             _lastSummary = default;
         }
@@ -290,6 +306,7 @@ namespace NightDuty
             ClearRaised();
             ResetTabletState();
             _stare.Reset();
+            ResetWindowGaze();   // 85차: 재시작하면 창밖 노란 얼굴도 다시
 
             // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
@@ -401,8 +418,13 @@ namespace NightDuty
             }
 
             // 점검 지시도 판정 정지 구간에 흐른다(출근 직후 첫 지시, 호출 2는 이완이 끝나는 순간).
-            OrdersTick(judgeSeconds);
-            DutiesTick(judgeSeconds);
+            // 피날레 중에는 새 지시를 내지 않는다(5일차 조기 퇴근으로 일찍 열린 피날레).
+            if (!_finale.Active)
+            {
+                OrdersTick(judgeSeconds);
+                DutiesTick(judgeSeconds);
+                ShiftReadyTick();
+            }
 
             if (!IsJudgingNow)
             {
@@ -438,6 +460,7 @@ namespace NightDuty
                 return;
             }
 
+            ObserveSignalForDebug(signal);   // 71차: 개발자 모드 「상호작용 확인」
             if (AbsorbTabSignal(signal))
             {
                 return;
@@ -462,6 +485,7 @@ namespace NightDuty
                     ParadoxObserve(signal, judging);
                     UnavoidableObserve(signal, judging);
                     StareObserve(signal, judging);   // 64차: 고정 몹 응시
+                    WindowGazeObserve(signal);       // 85차: 창밖 노란 얼굴 2초 응시 → 달아남
                 }
 
                 DirectionObserve(signal);
@@ -731,6 +755,8 @@ namespace NightDuty
             }
 
             ParadoxAfterRestore();
+            OrdersAfterRestore();
+            _shiftReadyAnnounced = false;   // 68차: 되돌린 밤에서 다시 다 끝내면 다시 알린다(옛 알림 문자는 TabletBridge가 지운다)
 
             BeginNightCore(Day, _clockMinutes, true);
             DirectionRestart(k, from.StartMinute);
@@ -909,7 +935,7 @@ namespace NightDuty
                     : judge.Violated ? RuleVerdict.Violated : RuleVerdict.Complied;
                 bool instructed = ParadoxSentFor(def.Id);
                 string note = instructed && _paradox.SafeRead && _reveals.Count > 0 ? "확인함 → " + _reveals[_reveals.Count - 1].Label : string.Empty;
-                log.Add(new DutyLogEntry(i + 1, def.Id, def.Space, def.Text, verdict, instructed, note, UnavoidableBrokeFor(def.Id)));
+                log.Add(new DutyLogEntry(i + 1, def.Id, def.Space, ShownRuleText(def.Id, def.Text), verdict, instructed, note, UnavoidableBrokeFor(def.Id)));
             }
 
             return log;
@@ -936,7 +962,7 @@ namespace NightDuty
             DebugForceCapture(axis, "debug");
         }
 
-        /// <summary>디버그: 출처를 정해 붙잡는다 — 붙잡힘 장면이 출처를 보고 고를 때(64차: <c>stare.rule.S3.model</c> = 인체 모형 컷신). 에디터·디버그 빌드에서만 쓴다.</summary>
+        /// <summary>디버그: 출처를 정해 붙잡는다 — 붙잡힘 장면이 출처를 보고 고를 때(64차: <c>stare.rule.S5.figure</c> = 인체 모형 컷신, 70차부터 복도 끝 모형). 에디터·디버그 빌드에서만 쓴다.</summary>
         public static void DebugForceCapture(FearAxis axis, string sourceId)
         {
             EnsureRun();
@@ -1044,6 +1070,8 @@ namespace NightDuty
             _lastCaptureSources = new List<string>();
             ClearRaised();
             ResetExtensions(true);
+            ResetSandbox();   // 71차
+            ResetCctv(true);   // 71차
             ResetOrders();
             ResetDuties();
             _stare.Reset();

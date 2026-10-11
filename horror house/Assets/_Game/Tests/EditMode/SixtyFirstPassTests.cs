@@ -80,18 +80,17 @@ namespace NightDuty.Tests
         // ── 2단계: 태블릿 들기 제한 ──
 
         [Test]
-        public void 태블릿은_5초_뒤_내려가고_2초_뒤에_다시_들_수_있다()
+        public void 태블릿은_오래_들어도_저절로_내려가지_않고_내린_직후에도_바로_다시_든다()
         {
+            // 69차(민: 「5초 뒤에 내려오는 건 폐기 — 연출 나오면 내려오는 건 유지」) · 73차(민: 「토글로 바꾸자」 — 쉬는 시간도 폐기).
             TabletLimit l = new TabletLimit();
             Assert.IsFalse(l.Tick(0.1f, true, false), "막 들었다");
-            for (int k = 0; k < 47; k++) Assert.IsFalse(l.Tick(0.1f, true, false), "5초 전");
-            Assert.IsTrue(l.Tick(0.3f, true, false), "5초 — 내린다");
-            Assert.IsFalse(l.Tick(0.1f, false, false), "내려감");
-            Assert.IsTrue(l.Locked);
-            Assert.IsTrue(l.Tick(0.5f, true, false), "쉬는 중에 들면 곧바로 내린다");
-            Assert.IsFalse(l.Tick(1.6f, false, false));
-            Assert.IsFalse(l.Locked, "2초가 지났다");
-            Assert.IsFalse(l.Tick(0.1f, true, false), "다시 들 수 있다");
+            for (int k = 0; k < 600; k++) Assert.IsFalse(l.Tick(0.1f, true, false), "60초를 들어도 내리지 않는다");
+            Assert.IsFalse(l.Tick(0.1f, false, false), "플레이어가 내림");
+            Assert.IsFalse(l.Locked, "내렸다고 잠기지 않는다");
+            Assert.IsFalse(l.Tick(0.1f, true, false), "곧바로 다시 든다");
+            Assert.IsFalse(l.Tick(0.1f, false, false));
+            Assert.IsFalse(l.Tick(0.1f, true, false), "몇 번을 오가도 그대로 토글이다");
         }
 
         [Test]
@@ -103,8 +102,8 @@ namespace NightDuty.Tests
             Assert.IsFalse(l.Tick(0.1f, false, true));
             for (int k = 0; k < 30; k++) Assert.IsTrue(l.Tick(0.1f, true, true), "끝날 때까지 못 든다");
             Assert.IsFalse(l.Tick(0.1f, false, false));
-            Assert.IsFalse(l.Tick(2.1f, false, false));
-            Assert.IsFalse(l.Tick(0.1f, true, false), "연출이 끝나고 쉬는 시간이 지나면 든다");
+            Assert.IsFalse(l.Locked, "연출이 끝났다");
+            Assert.IsFalse(l.Tick(0.1f, true, false), "연출이 끝나면 곧바로 든다(73차: 쉬는 시간 폐기)");
         }
 
         // ── 2단계: 몹은 세워 두고, 본 뒤에 대면 ──
@@ -114,7 +113,7 @@ namespace NightDuty.Tests
         {
             DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
             f.Director.SightGated = true;
-            f.Minute = 61f;
+            f.Minute = NightClock.Call1 + 1f;
             f.Enter(SpaceId.Toilet).Wait(1f);
             Assert.IsTrue(f.HasPhase(ProgramCatalog.ToiletGirl, DirectionPhase.Present), "소녀를 세운다");
             Assert.IsFalse(f.HasPhase(ProgramCatalog.ToiletGirl, DirectionPhase.Confront), "아직 못 봤다");
@@ -131,7 +130,7 @@ namespace NightDuty.Tests
         {
             DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
             f.Director.SightGated = true;
-            f.Minute = 61f;
+            f.Minute = NightClock.Call1 + 1f;
             f.Enter(SpaceId.Toilet).Wait(TensionDirector.PresentMaxSeconds + 1f);
             Assert.IsTrue(f.HasPhase(ProgramCatalog.ToiletGirl, DirectionPhase.Aborted), "거둔다");
             Assert.IsFalse(f.HasPhase(ProgramCatalog.ToiletGirl, DirectionPhase.Confront));
@@ -147,7 +146,7 @@ namespace NightDuty.Tests
             Assert.IsTrue(EncounterScripts.Find(ProgramCatalog.BoyBang).NeedsSight);
 
             DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletGirl));
-            f.Minute = 61f;   // SightGated 꺼짐(코어 기본)
+            f.Minute = NightClock.Call1 + 1f;   // SightGated 꺼짐(코어 기본)
             f.Enter(SpaceId.Toilet).Wait(1f);
             Assert.IsTrue(f.HasPhase(ProgramCatalog.ToiletGirl, DirectionPhase.Confront));
         }
@@ -160,7 +159,7 @@ namespace NightDuty.Tests
             bool deep = false;
             DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.YellowFace));
             f.Director.DeepInSpace = (space, margin) => deep;
-            f.Minute = 61f;
+            f.Minute = NightClock.Call1 + 1f;
             f.Enter(SpaceId.Library).Wait(12f);
             Assert.IsFalse(f.HasPhase(ProgramCatalog.YellowFace, DirectionPhase.Foreshadow), "문간·가장자리에 오래 있어도 안 온다");
             deep = true;
@@ -171,17 +170,16 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 창밖_남자는_창에서_6미터_안에서만()
+        public void 창밖_노란_얼굴은_창_거리를_보지_않는다()
         {
+            // 85차(민: 「도서관 입구 맞은편 블라인드 점검 지시 → 창문 조우」): 61차 「창에서 6m 안」을 없앴다 — 블라인드 앞(창에서 13m)에서도 온다.
             StagePoints.Set(StageAnchors.WindowMan, new Vector3(0f, 0f, 20f));
             try
             {
                 DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.SuitMan));
-                f.Minute = 61f;
+                f.Minute = NightClock.Call1 + 1f;
                 f.Enter(SpaceId.Library).Pose(0f, 5f).Wait(10f);
-                Assert.IsFalse(f.HasPhase(ProgramCatalog.SuitMan, DirectionPhase.Foreshadow), "창에서 15m — 안 온다");
-                f.Pose(0f, 15f).Wait(7f);
-                Assert.IsTrue(f.HasPhase(ProgramCatalog.SuitMan, DirectionPhase.Foreshadow), "창에서 5m");
+                Assert.IsTrue(f.HasPhase(ProgramCatalog.SuitMan, DirectionPhase.Foreshadow), "창에서 15m여도 도서관 6초면 온다");
             }
             finally
             {
@@ -195,7 +193,7 @@ namespace NightDuty.Tests
             DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.CeilingLegs));
             f.Director.GazeTargetExitMode = true;
             f.Director.GazeTargetPosition = id => new Vector3(0f, 0f, 0f);
-            f.Minute = 61f;
+            f.Minute = NightClock.Call1 + 1f;
             f.Enter(SpaceId.Classroom).Pose(6f, 0f).Wait(1f);
             Assert.IsFalse(f.HasPhase(ProgramCatalog.CeilingLegs, DirectionPhase.Foreshadow), "사다리 곁에 간 적 없음");
             f.Pose(1.5f, 0f).Wait(1f);

@@ -139,6 +139,7 @@ public class TabletDocument : MonoBehaviour
     private int _loadedDay = -1;
     private TabletGlitch _glitch;
     private Tab _tab = Tab.Rules;
+    private bool _tabLocked;
 
     // 스크롤: 지금 맨 위에 보이는 줄 번호와, 마지막으로 잰 전체 줄 수
     private int _scrollLine;
@@ -146,6 +147,23 @@ public class TabletDocument : MonoBehaviour
 
     /// <summary>지금 보고 있는 화면.</summary>
     public Tab CurrentTab { get { return _tab; } }
+
+    /// <summary>화면이 한 탭에 고정돼 있는가(<see cref="LockTab"/>). 고정 중에는 탭 넘기기가 듣지 않는다.</summary>
+    public bool TabLocked { get { return _tabLocked; } }
+
+    /// <summary>그 탭으로 바꾸고 고정한다(피날레 연출 — 메시지란 고정). 화면을 껐다 켜도 그 탭에 머문다.</summary>
+    public void LockTab(Tab value)
+    {
+        _tabLocked = false;
+        SetTab(value);
+        _tabLocked = true;
+    }
+
+    /// <summary>탭 고정을 푼다.</summary>
+    public void UnlockTab()
+    {
+        _tabLocked = false;
+    }
 
     /// <summary>지금 화면에 들어 있는 항목 수.</summary>
     public int ItemCount
@@ -173,8 +191,8 @@ public class TabletDocument : MonoBehaviour
     {
         if (alarm != null) alarm.StateChanged += Render;
         // 화면을 켤 때마다 첫 탭(근무 수칙)으로 되돌린다.
-        // 태블릿을 들 때마다 화면이 꺼졌다 켜지므로, 열 때는 언제나 근무 수칙이 먼저 보인다.
-        _tab = TabOrder[0];
+        // 태블릿을 들 때마다 화면이 꺼졌다 켜지므로, 열 때는 언제나 근무 수칙이 먼저 보인다(탭이 고정돼 있으면 그대로).
+        if (!_tabLocked) _tab = TabOrder[0];
         _scrollLine = 0;
 
         // 태블릿을 열 때마다 화면이 켜지므로, 그때 일차가 바뀌었으면 다시 읽는다.
@@ -233,7 +251,7 @@ public class TabletDocument : MonoBehaviour
 
     public void SetTab(Tab value)
     {
-        if (_tab == value) return;
+        if (_tab == value || _tabLocked) return;
 
         _tab = value;
         _scrollLine = 0;   // 화면을 바꾸면 맨 위부터

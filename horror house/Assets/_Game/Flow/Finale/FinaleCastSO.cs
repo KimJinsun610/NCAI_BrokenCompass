@@ -152,6 +152,34 @@ public sealed class FinaleCastSO : ScriptableObject
 
     [SerializeField] private List<Role> roles = new List<Role>();
 
+    [Header("피날레 화면 문구(검은 화면 위 글자)")]
+    [Tooltip("「근무 시간이 종료되었습니다.」 · 퇴근 안내 · 「근무 종료, 철거가 예정대로 진행됩니다.」의 글꼴. 비우면 씬의 한글 글꼴을 빌린다.")]
+    [SerializeField] private TMPro.TMP_FontAsset screenFont;
+    [Tooltip("화면 문구 글자 크기(1920×1080 기준).")]
+    [SerializeField, Min(8f)] private float screenFontSize = 36f;
+
+    [Header("엔딩 1 크레딧")]
+    [Tooltip("「봤다」 결말(엔딩 1) 마지막 문구 뒤, 메인으로 가기 전에 띄울 엔딩 크레딧(HUD_EndingCredits_Design). 비우면 바로 메인.")]
+    [SerializeField] private GameObject creditsPrefab;
+
+    /// <summary>엔딩 1 크레딧 프리팹(없으면 null).</summary>
+    public GameObject CreditsPrefab
+    {
+        get { return creditsPrefab; }
+    }
+
+    /// <summary>피날레 화면 문구 글꼴(없으면 null).</summary>
+    public TMPro.TMP_FontAsset ScreenFont
+    {
+        get { return screenFont; }
+    }
+
+    /// <summary>피날레 화면 문구 글자 크기.</summary>
+    public float ScreenFontSize
+    {
+        get { return screenFontSize; }
+    }
+
     /// <summary>배역 목록(편집용).</summary>
     public List<Role> Roles
     {

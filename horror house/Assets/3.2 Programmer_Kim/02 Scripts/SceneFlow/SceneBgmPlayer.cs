@@ -22,6 +22,7 @@ public class SceneBgmPlayer : MonoBehaviour
     private AudioSource oneShot;   // 씬 입장 소리
     private AudioListener ownListener;
     private Coroutine fadeRoutine;
+    private float baseVolume;      // 지금 곡이 처음 틀어진 볼륨 — 「이전 곡 이어서」 볼륨 배율의 기준
 
     /// <summary>지금 나오는 곡(없으면 null).</summary>
     public AudioClip CurrentClip { get { return current != null && current.isPlaying ? current.clip : null; } }
@@ -107,7 +108,14 @@ public class SceneBgmPlayer : MonoBehaviour
         {
             FadeTo(null, 0f, true, 0f, fadeOut);
         }
-        // 곡이 비어 있고 「이전 곡 이어서」면 아무것도 안 바꾼다
+        else if (bgm.keepVolumeScale > 0f && current.isPlaying)
+        {
+            // 「이전 곡 이어서」 + 볼륨 배율 — 곡은 끊지 않고 처음 볼륨의 그 배율로 맞춘다(예: 프롤로그·계약서 50%)
+            if (fadeRoutine != null) StopCoroutine(fadeRoutine);
+            if (previous.isPlaying) previous.Stop();   // 끊긴 크로스페이드의 앞 곡이 남지 않게
+            fadeRoutine = StartCoroutine(FadeVolume(current, baseVolume * bgm.keepVolumeScale, bgm.fadeIn));
+        }
+        // 곡이 비어 있고 「이전 곡 이어서」(배율 0)면 아무것도 안 바꾼다
     }
 
     /// <summary>씬에 켜진 AudioListener가 없을 때만 자기 리스너를 켠다.</summary>
@@ -128,6 +136,7 @@ public class SceneBgmPlayer : MonoBehaviour
     public void FadeTo(AudioClip clip, float volume, bool loop, float fadeIn, float fadeOut)
     {
         if (fadeRoutine != null) StopCoroutine(fadeRoutine);
+        if (clip != null) baseVolume = volume;
 
         if (clip != null && current.isPlaying && current.clip == clip)
         {

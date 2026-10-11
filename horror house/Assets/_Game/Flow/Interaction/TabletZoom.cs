@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 /// <para><b>「읽는 중」 = 확대 상태</b>다. Tab 판정 신호·센서 정지(<see cref="TabletBridge"/>), CCTV·전화기 사용 금지, 알람 확인 같은 「태블릿을 펼쳤나」 판단은
 /// 모두 <see cref="Reading"/>을 읽는다 — 든 상태만으로는 판정이 멈추지 않는다. CCTV를 들여다보는 동안은 모니터를 가리지 않게 잠깐 내린다.</para>
 /// <para><b>61차 들기 제한</b>(플레이테스트 「플레이어가 태블릿을 너무 올리고 다닌다」 → 민: 「주요 연출이 나오면 강제로 내리고 끝날 때까지 못 올리고, 한 번 올리면 5초 뒤에 내려가고,
-/// 2초 후에 다시 올릴 수 있도록」, 규칙은 코어 <see cref="NightDuty.TabletLimit"/>): 「올림」 = 확대. 푼 뒤 2초 동안 다시 못 한다(69차: 「5초 뒤 저절로 풀림」은 폐기 — 민).
+/// 2초 후에 다시 올릴 수 있도록」, 규칙은 코어 <see cref="NightDuty.TabletLimit"/>): 「올림」 = 확대. 69차 「5초 뒤 저절로 풀림」·73차 「푼 뒤 2초 쉬는 시간」은 폐기 — Tab은 순수 토글이다(민).
 /// 주요 연출(조우의 전조·몹을 세워 둔 동안·대면·마무리 — <c>TensionDirector.Busy</c>) 동안은 확대를 풀고 손의 태블릿까지 시야 밖으로 내린다 — 끝나면 다시 든다.</para>
 /// <list type="bullet">
 /// <item>김진선님 <see cref="PlayerTablet"/>은 고치지 않는다. 실행 중에만 그 인스턴스의 <c>readInput</c>을 끄고 같은 키를 여기서 받아
@@ -36,6 +36,12 @@ public sealed class TabletZoom : MonoBehaviour
     [Tooltip("확대·축소에 걸리는 시간(초, 일시정지 중에는 멈춤).")]
     [SerializeField, Min(0.02f)] private float zoomSeconds = 0.22f;
 
+    [Header("손 떨림(피날레) — SetShake(1)일 때의 세기")]
+    [SerializeField, Min(0f)] private float shakePosition = 0.0035f;
+    [SerializeField, Min(0f)] private float shakeRotation = 1.6f;
+    [Tooltip("떨림 빠르기(노이즈 진행 속도).")]
+    [SerializeField, Min(0.1f)] private float shakeSpeed = 28f;
+
     private PlayerTablet _tablet;
     private ViewmodelSway _sway;
     private bool _zoomTarget;
@@ -54,7 +60,33 @@ public sealed class TabletZoom : MonoBehaviour
     private bool _savedWalk;
     private readonly NightDuty.TabletLimit _limit = new NightDuty.TabletLimit();
     private NightDuty.InspectionPlan _plan;
+    private bool _forced;
+    private float _shake;
+    private bool _shakeApplied;
     private TabletDocument[] _docs;
+
+    /// <summary>확대가 고정돼 있는지(<see cref="ForceZoom"/>) — Tab이 듣지 않는다.</summary>
+    public bool ZoomForced
+    {
+        get { return _forced; }
+    }
+
+    /// <summary>
+    /// 2026-10-10 피날레(「봤다」 결말): 태블릿을 확대한 채 고정한다 — Tab·연출 내림·들기 제한을 모두 무시한다. false면 풀고 평소대로(확대는 그대로 두므로 Tab으로 내린다).
+    /// </summary>
+    public void ForceZoom(bool on)
+    {
+        _forced = on;
+        if (!on || !Bind()) return;
+        if (!_tablet.IsOpened) _tablet.Open();
+        _zoomTarget = EnsureZoomPose();
+    }
+
+    /// <summary>손 떨림 세기(0 = 없음, 1 = 기본). 확대와 따로 건다.</summary>
+    public void SetShake(float amount)
+    {
+        _shake = Mathf.Max(0f, amount);
+    }
 
     /// <summary>74차(민: 「태블릿 올리는 키를 마우스 우클릭으로」): 확대 ↔ 든 상태. 옛 Tab.</summary>
     public const KeyCode ZoomKey = KeyCode.Mouse1;
@@ -98,10 +130,10 @@ public sealed class TabletZoom : MonoBehaviour
         get { return _blend > 0.5f; }
     }
 
-    /// <summary>확대 진행도 0~1(넘어가는 중에는 그 사이 값). <c>FPController</c>가 이만큼 걸음을 <c>tabletZoomSpeed</c>로 낮춘다.</summary>
+    /// <summary>확대 진행도 0(든 상태) ~ 1(확대). 확대·축소 동안 화면 움직임과 같은 곡선으로 바뀐다 — 이동 속도가 이것을 본다(FPController).</summary>
     public float ZoomAmount
     {
-        get { return Mathf.Clamp01(_blend); }
+        get { return Mathf.SmoothStep(0f, 1f, _blend); }
     }
 
     // ── 자동 설치 ─────────────────────────────────────────────
@@ -173,33 +205,45 @@ public sealed class TabletZoom : MonoBehaviour
             _limit.Reset();   // 새 밤
         }
 
-        // 61차: 주요 연출 중 — 확대를 푼다(92차: 손의 태블릿은 내리지 않는다).
-        bool busy = live && NightDuty.NightRun.Tension != null && NightDuty.NightRun.Tension.Busy;
-        LoweredForDirection = busy;
-        if (alwaysHeld)
+        if (_forced)
         {
-            // 늘 든다 — CCTV를 들여다보는 동안만 내린다. 92차(민: 「연출에서 태블릿이 먹통이 되는건 없애줘 — 조우 연출 중에 태블릿 화면이 안 나오는 것」):
-            // 61차 「주요 연출 중에는 내림(화면 꺼짐)」 폐기 — 연출 중에도 든 채 화면이 켜져 있다(확대만 풀리고, 연출 중에는 다시 확대하지 않는다).
-            if (cctv)
+            // 2026-10-10 피날레: 확대 고정 — Tab·연출 내림·들기 제한을 보지 않는다.
+            LoweredForDirection = false;
+            if (!_tablet.IsOpened) _tablet.Open();
+            _zoomTarget = EnsureZoomPose();
+        }
+        else
+        {
+            // 61차: 주요 연출 중 — 확대를 푼다(92차: 손의 태블릿은 내리지 않는다).
+            bool busy = live && NightDuty.NightRun.Tension != null && NightDuty.NightRun.Tension.Busy;
+            LoweredForDirection = busy;
+            if (alwaysHeld)
             {
+                // 늘 든다 — CCTV를 들여다보는 동안만 내린다. 92차(민: 「연출에서 태블릿이 먹통이 되는건 없애줘 — 조우 연출 중에 태블릿 화면이 안 나오는 것」):
+                // 61차 「주요 연출 중에는 내림(화면 꺼짐)」 폐기 — 연출 중에도 든 채 화면이 켜져 있다(확대만 풀리고, 연출 중에는 다시 확대하지 않는다).
+                if (cctv)
+                {
+                    _zoomTarget = false;
+                    if (_tablet.IsOpened) _tablet.Close();
+                }
+                else if (!_tablet.IsOpened)
+                {
+                    _tablet.Open();
+                }
+            }
+
+            if (!cctv && Input.GetKeyDown(ZoomKey)) Press();   // 74차: 우클릭(옛 Tab)
+            if (!_tablet.IsOpened) _zoomTarget = false;   // 다른 쪽(알람 등)이 내렸다
+
+            // 69차·73차: 시간으로도 쉬는 시간으로도 풀리지 않는다 — 연출이 나올 때만 풀린다(일시정지·CCTV 중에는 흐르지 않는다).
+            if (live && !cctv && _limit.Tick(Time.deltaTime, _zoomTarget, busy))
+            {
+                if (_zoomTarget && DirectionStage.Verbose) Debug.Log("[TabletZoom] 확대를 풀었다 — 연출 중");
                 _zoomTarget = false;
-                if (_tablet.IsOpened) _tablet.Close();
-            }
-            else if (!_tablet.IsOpened)
-            {
-                _tablet.Open();
             }
         }
 
-        if (!cctv && Input.GetKeyDown(ZoomKey)) Press();   // 74차: 우클릭(옛 Tab)
-        if (!_tablet.IsOpened) _zoomTarget = false;   // 다른 쪽(알람 등)이 내렸다
-
-        // 61차: 푼 뒤 2초는 다시 못 한다(일시정지·CCTV 중에는 흐르지 않는다). 69차: 「5초 뒤 풀림」은 폐기 — 연출이 나올 때만 풀린다.
-        if (live && !cctv && _limit.Tick(Time.deltaTime, _zoomTarget, busy))
-        {
-            if (_zoomTarget && DirectionStage.Verbose) Debug.Log("[TabletZoom] 확대를 풀었다 — " + (busy ? "연출 중" : "쉬는 중"));
-            _zoomTarget = false;
-        }
+        ApplyShake();
 
         float target = _zoomTarget ? 1f : 0f;
         if (Mathf.Approximately(_blend, target) && Mathf.Abs(_blendVelocity) < 0.0001f) return;
@@ -217,10 +261,10 @@ public sealed class TabletZoom : MonoBehaviour
     /// <summary>Tab 한 번 — 늘 드는 방식이면 확대 ↔ 든 상태. 아니면 내려 있으면 들고, 들고 있으면 확대하고, 확대돼 있으면 내린다.</summary>
     public void Press()
     {
-        if (!Bind()) return;
+        if (!Bind() || _forced) return;   // 확대 고정 중에는 Tab이 듣지 않는다
         if (alwaysHeld)
         {
-            if (_limit.Locked && !_zoomTarget) return;   // 61차: 연출 중·쉬는 중에는 확대하지 않는다
+            if (_limit.Locked && !_zoomTarget) return;   // 61차: 연출 중에는 확대하지 않는다(73차: 쉬는 시간 폐기)
             if (!_tablet.IsOpened) _tablet.Open();
             _zoomTarget = !_zoomTarget && EnsureZoomPose();
             return;
@@ -295,9 +339,34 @@ public sealed class TabletZoom : MonoBehaviour
         }
     }
 
+    /// <summary>손 떨림을 흔들림(<see cref="ViewmodelSway"/>)의 바깥 값에 얹는다. 0이 되면 한 번 비운다.</summary>
+    private void ApplyShake()
+    {
+        if (_sway == null) return;
+        if (_shake <= 0f)
+        {
+            if (!_shakeApplied) return;
+            _sway.extraPosition = Vector3.zero;
+            _sway.extraRotation = Vector3.zero;
+            _shakeApplied = false;
+            return;
+        }
+
+        float t = Time.unscaledTime * shakeSpeed;
+        float x = Mathf.PerlinNoise(t, 0.37f) * 2f - 1f;
+        float y = Mathf.PerlinNoise(0.71f, t) * 2f - 1f;
+        float z = Mathf.PerlinNoise(t * 0.8f, 5.3f) * 2f - 1f;
+        _sway.extraPosition = new Vector3(x, y * 0.7f, 0f) * (shakePosition * _shake);
+        _sway.extraRotation = new Vector3(y * 0.6f, x * 0.4f, z) * (shakeRotation * _shake);
+        _shakeApplied = true;
+    }
+
     private void Restore()
     {
         if (_tablet == null) return;
+        _forced = false;
+        _shake = 0f;
+        ApplyShake();
         SetSway(false);
         _tablet.openedPosition = _restorePos;
         _tablet.openedRotation = _restoreRot;

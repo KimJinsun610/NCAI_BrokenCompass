@@ -190,12 +190,24 @@ public sealed class ScareFace
         private Camera _cam;
         private Vector3 _axisLocal;
 
+        private float _weight = Weight;
+
         public static void Attach(GameObject go, Transform head, Camera cam)
+        {
+            Attach(go, head, cam, Weight, head.InverseTransformDirection(go.transform.forward));
+        }
+
+        /// <summary>
+        /// 99차: 얼굴 앞을 머리뼈 기준 축 <paramref name="faceAxisLocal"/>로 직접 준다(배치 붙잡힘 인체 모형 — 선 자세의 고개가 몸 앞에서 17° 돌아가 있어
+        /// 「몸 앞 = 얼굴 앞」으로 적으면 늘 그만큼 옆을 봤다. 모형 머리뼈의 +z가 얼굴 앞). <paramref name="weight"/> 1 = 정확히 카메라를 본다.
+        /// </summary>
+        public static void Attach(GameObject go, Transform head, Camera cam, float weight, Vector3 faceAxisLocal)
         {
             Stare s = go.AddComponent<Stare>();
             s._head = head;
             s._cam = cam;
-            s._axisLocal = head.InverseTransformDirection(go.transform.forward);
+            s._weight = Mathf.Clamp01(weight);
+            s._axisLocal = faceAxisLocal.normalized;
         }
 
         private void LateUpdate()
@@ -205,7 +217,7 @@ public sealed class ScareFace
             Vector3 want = _cam.transform.position - _head.position;
             if (want.sqrMagnitude < 1e-6f || cur.sqrMagnitude < 1e-6f) return;
             Quaternion q = Quaternion.FromToRotation(cur, want.normalized);
-            _head.rotation = Quaternion.Slerp(Quaternion.identity, q, Weight) * _head.rotation;
+            _head.rotation = Quaternion.Slerp(Quaternion.identity, q, _weight) * _head.rotation;
         }
     }
 

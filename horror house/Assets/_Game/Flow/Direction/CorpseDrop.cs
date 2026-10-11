@@ -12,7 +12,7 @@ using UnityEngine;
 /// 62차(민: 「시체의 디스폰은 플레이어 시야에서 완전히 벗어나면」): 「보인다」를 옛 「정면 30°」에서 <see cref="UnseenDespawn.Visible"/>(화면 가장자리까지·가림 포함)로 —
 /// 화면 끝에 걸려 있는데 사라지는 일이 없다. 조우 창이 닫혀도 보이는 동안은 남는다(<c>DirectionStage.Cleanup</c> → <see cref="UnseenDespawn.Begin"/>).</item>
 /// </list>
-/// 전조(먼지)는 <see cref="Dust"/>가 만든다. 플레이어 충돌체와는 부딪히지 않는다(길을 막거나 밀지 않게).
+/// 99차: 전조 천장 먼지 파티클은 폐지(하얀 점으로 보였다 — 92차 재질 교체로도 남음). 플레이어 충돌체와는 부딪히지 않는다(길을 막거나 밀지 않게).
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class CorpseDrop : MonoBehaviour
@@ -87,61 +87,6 @@ public sealed class CorpseDrop : MonoBehaviour
 
         c.Launch(toPlayer);
         return c;
-    }
-
-    /// <summary>92차: 먼지 재질(Resources).</summary>
-    public const string DustMaterialPath = "Fx/CorpseDust";
-
-    /// <summary>
-    /// 전조 먼지 — 천장 점에서 가는 먼지가 떨어진다. <paramref name="seconds"/> 뒤 스스로 거둔다.
-    /// </summary>
-    public static GameObject Dust(Vector3 ceiling, float seconds)
-    {
-        GameObject go = new GameObject("천장 먼지");
-        go.transform.SetPositionAndRotation(ceiling + Vector3.down * 0.05f, Quaternion.LookRotation(Vector3.down));
-        ParticleSystem ps = go.AddComponent<ParticleSystem>();
-        ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-
-        ParticleSystem.MainModule main = ps.main;
-        main.duration = Mathf.Max(0.2f, seconds);
-        main.loop = false;
-        main.startLifetime = new ParticleSystem.MinMaxCurve(1.2f, 2.2f);
-        main.startSpeed = new ParticleSystem.MinMaxCurve(0.05f, 0.3f);
-        main.startSize = new ParticleSystem.MinMaxCurve(0.012f, 0.035f);
-        main.startColor = new Color(0.55f, 0.52f, 0.48f, 0.85f);
-        main.gravityModifier = 0.35f;
-        main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.maxParticles = 300;
-
-        ParticleSystem.EmissionModule em = ps.emission;
-        em.rateOverTime = 45f;
-        em.SetBursts(new[]
-        {
-            new ParticleSystem.Burst(0f, 25),
-            new ParticleSystem.Burst(Mathf.Max(0.1f, seconds * 0.6f), 45)
-        });
-
-        ParticleSystem.ShapeModule shape = ps.shape;
-        shape.shapeType = ParticleSystemShapeType.Box;
-        shape.scale = new Vector3(0.6f, 0.6f, 0.02f);
-
-        ParticleSystemRenderer r = go.GetComponent<ParticleSystemRenderer>();
-        // 92차(민: 「시체 낙하의 하얀 파티클이 나오는 문제」): 옛 재질은 조명을 받지 않는 불투명 사각형이라 실내 노출(+2.5EV)에서 하얀 네모로 보였다.
-        // 이제 조명을 받는 반투명 둥근 먼지(Resources/Fx/CorpseDust — URP Particles/Lit, 기본 파티클 원형) — 어둠 속에선 거의 안 보이고 손전등에 희미하게 비친다.
-        Material m = Resources.Load<Material>(DustMaterialPath);
-        if (m == null)
-        {
-            Destroy(go);
-            return null;   // 재질이 없으면 먼지 없이(하얀 네모보다 낫다)
-        }
-
-        r.sharedMaterial = m;
-        main.startColor = new Color(0.5f, 0.47f, 0.42f, 0.55f);
-        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-
-        ps.Play();
-        Destroy(go, seconds + 3f);
-        return go;
     }
 
     // ── 래그돌 ───────────────────────────────────────────────

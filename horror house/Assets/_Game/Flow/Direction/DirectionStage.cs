@@ -218,11 +218,11 @@ public sealed class DirectionStage : MonoBehaviour
                 if (Impact() != null) Impact().Foreshadow(e.Phase == DirectionPhase.FalseForeshadow);
                 if (IsCorpse(e.SourceId))
                 {
-                    // 51차 시체 낙하 전조: 떨어질 자리 위 천장에서 먼지 + 삐걱(대면 때 같은 자리로 떨어진다).
+                    // 51차 시체 낙하 전조: 떨어질 자리 위 천장에서 삐걱(대면 때 같은 자리로 떨어진다).
                     // 60차: 어디서 떨어지든(교실 입구·사다리 방 안 — 방아쇠는 디렉터가 고른다) 늘 플레이어 바로 앞.
+                    // 99차(민: 「시체 낙하에서 아직도 하얀색 파티클이 보여. 그냥 이 파티클 자체를 없애줘」): 천장 먼지 파티클 폐지 — 소리만.
                     _corpseSpot = CorpseSpot(out _corpseCeiling);
                     _corpseSpotAt = Time.time;
-                    CorpseDrop.Dust(new Vector3(_corpseSpot.x, _corpseCeiling, _corpseSpot.z), e.Duration);
                     PlaySound(e.SourceId + ".foreshadow", new Vector3(_corpseSpot.x, _corpseCeiling, _corpseSpot.z));
                     break;
                 }

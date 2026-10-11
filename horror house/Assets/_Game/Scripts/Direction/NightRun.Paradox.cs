@@ -10,6 +10,69 @@ namespace NightDuty
         private static ParadoxPlanner _paradoxPlanner = new ParadoxPlanner();
         private static ParadoxRun _paradox = new ParadoxRun(ParadoxPlan.None);
         private static readonly List<SafeReadReveal> _reveals = new List<SafeReadReveal>();
+        private static readonly HashSet<string> _decodedBlanks = new HashSet<string>(StringComparer.Ordinal);
+
+        /// <summary>80차: 안전한 읽기로 빈칸을 해독한 수칙(회차 내내 남는다 — 새 회차에서 비운다).</summary>
+        public static IReadOnlyCollection<string> DecodedBlanks
+        {
+            get { return _decodedBlanks; }
+        }
+
+        /// <summary>80차: 빈칸을 해독했다(수칙 ID). 태블릿 글은 이미 고쳐져 있다.</summary>
+        public static event Action<string> BlankDecoded;
+
+        /// <summary>그 수칙의 빈칸을 이번 회차에 해독했는지.</summary>
+        public static bool IsBlankDecoded(string ruleId)
+        {
+            return ruleId != null && _decodedBlanks.Contains(ruleId);
+        }
+
+        /// <summary>그 수칙이 플레이어에게 보이는 글 — 해독했으면 빈칸을 채운다(판정은 원본).</summary>
+        public static string ShownRuleText(string ruleId, string text)
+        {
+            return IsBlankDecoded(ruleId) ? BlankDecoding.Decode(ruleId, text) : text;
+        }
+
+        /// <summary>
+        /// 80차(민: 「안전한 읽기 보상은 수칙 빈칸 해독으로」): 그날 덱에서 아직 못 푼 빈칸 수칙 하나를 해독한다 —
+        /// 안전한 읽기를 한 공간의 수칙이 먼저, 없으면 덱 순서로 첫 것, 덱에 없으면 회차에서 못 푼 것(정해진 순서). 다 풀었으면 null.
+        /// </summary>
+        private static string DecodeBlank(SpaceId space)
+        {
+            if (_program == null) return null;
+            SpaceId at = SpaceIds.Canonical(space);
+            string pick = null;
+            foreach (RuleDef def in _program.Deck)
+            {
+                if (def == null || !BlankDecoding.HasBlank(def.Id) || _decodedBlanks.Contains(def.Id) || _voidRules.Contains(def.Id)) continue;
+                if (at != SpaceId.None && SpaceIds.Canonical(def.Space) == at)
+                {
+                    pick = def.Id;
+                    break;
+                }
+
+                if (pick == null) pick = def.Id;
+            }
+
+            // 덱에 빈칸 수칙이 없으면 회차에서 아직 못 푼 것을 정해진 순서로 — 보상이 헛되지 않게(그 수칙이 나오는 날 풀린 채로 보인다).
+            if (pick == null)
+            {
+                foreach (string id in BlankDecoding.RuleIds)
+                {
+                    if (_decodedBlanks.Contains(id)) continue;
+                    pick = id;
+                    break;
+                }
+            }
+
+            if (pick == null) return null;
+            _decodedBlanks.Add(pick);
+            RefreshRuleCards();
+            Debug.Log("[NightRun] 빈칸 해독 " + pick + " → " + BlankDecoding.Word(pick));
+            if (BlankDecoded != null) BlankDecoded(pick);
+            EventBus.RaiseTabletTextChanged();
+            return pick;
+        }
 
         /// <summary>
         /// 역설 편성기 씨앗(시험·재현용). 값이 있으면 회차 시작마다 그 씨앗으로 편성기를 만든다. 스위치를 비울 때 함께 비운다.
@@ -87,6 +150,7 @@ namespace NightDuty
         private static void ResetParadox(bool clearSwitches)
         {
             if (clearSwitches) ParadoxSeed = null;
+            _decodedBlanks.Clear();   // 80차: 해독은 회차 단위
             _paradoxPlanner = ParadoxSeed.HasValue ? new ParadoxPlanner(new System.Random(ParadoxSeed.Value)) : new ParadoxPlanner();
             DisposeParadox();
         }
@@ -152,6 +216,7 @@ namespace NightDuty
                 case ParadoxStep.SafeRead:
                     SafeReadReveal reveal = new SafeReadReveal(id, _paradox.Space, SpaceHasAnomaly(Board.Plan, _paradox.Space));
                     _reveals.Add(reveal);
+                    DecodeBlank(_paradox.Space);   // 80차: 보상 = 빈칸 해독(태블릿 글이 먼저 고쳐지고 진동이 온다)
                     Debug.Log("[NightRun] 안전한 읽기 " + id + " → " + reveal.Space + " " + reveal.Label);
                     EventBus.RaiseSafeReadConfirmed(reveal);
                     break;

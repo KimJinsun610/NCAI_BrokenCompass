@@ -163,12 +163,21 @@ namespace NightDuty
         /// <summary>
         /// 편성하지 않는 수칙(정의는 남겨 둔다 — 판정기·역설 표·시험이 참조). 60차 민: 「교실의 판서 근무 수칙은 폐기해줘. 별로인 것 같아」 → C1.
         /// </summary>
-        public static readonly string[] Retired = { "C1" };
+        public static readonly string[] Retired = { "C1", "T3", "T5", "L5" };   // 79차 민: 「S4 T3 합침」·「T5 폐기」·「L5 폐기」
 
         /// <summary>편성하지 않는 수칙인지.</summary>
         public static bool IsRetired(string ruleId)
         {
             return ruleId != null && System.Array.IndexOf(Retired, ruleId) >= 0;
+        }
+
+        /// <summary>
+        /// 79차: 대응 수칙이 폐기된 조우(창밖 정장 남자 — L5 폐기)는 편성하지 않는다. 대응 수칙이 없는 조우(시체 낙하)는 해당하지 않는다.
+        /// </summary>
+        public static bool IsEncounterRetired(string encounterId)
+        {
+            EncounterDef e = Encounter(encounterId);
+            return e != null && e.ResponseRule.Length > 0 && IsRetired(e.ResponseRule);
         }
 
         /// <summary>5일차 경비실 고정 수칙(04:00 뒤에만 판정).</summary>
@@ -215,27 +224,32 @@ namespace NightDuty
             new RuleDef("S1", SpaceId.ScienceRoom, L, true, "과학실은 통로가 아닙니다. 통로로 사용하지 마십시오."),
             new RuleDef("S2", SpaceId.ScienceRoom, A, true, "깨지는 소리가 나면 과학실을 나가 다시 오지 마십시오."),
             new RuleDef("S3", SpaceId.ScienceRoom, I, true, "인체 모형에는 빛을 비추지 마십시오.", usesFlashlight: true),
-            new RuleDef("S4", SpaceId.ScienceRoom, I, true, "소등 중에는 손전등을 끄지 마십시오.", usesFlashlight: true, boundEncounter: ScienceBlackout),
+            new RuleDef("S4", SpaceId.ScienceRoom, I, true, "정전 중에는 손전등을 키지 마십시오.", usesFlashlight: true, boundEncounter: ScienceBlackout),   // 79차 민: T3 합침 — 과학실·화장실 소등 모두, 3초 유예
             new RuleDef("S5", SpaceId.ScienceRoom, I, true, "복도 끝에 _?이 서 있으면 빛을 끄고 기다리십시오.", isThreat: true, usesFlashlight: true, isWaitType: true, boundEncounter: HallEndFigure),
 
-            new RuleDef("T1", SpaceId.Toilet, A, true, "물이 다 내려가기 전에 나오십시오."),
+            new RuleDef("T1", SpaceId.Toilet, A, true, "화장실에서 물이 다 내려가기 전에 나오십시오."),   // 79차 민
             new RuleDef("T2", SpaceId.Toilet, L, true, "사용 중인 칸은 열지 마십시오."),
             new RuleDef("T3", SpaceId.Toilet, I, true, "정전 시에는 기다리십시오.", isThreat: true, usesFlashlight: true, isWaitType: true, boundEncounter: ToiletBlackout),
             new RuleDef("T4", SpaceId.Toilet, L, true, "변기는 정상입니다.", boundEncounter: ToiletGirl),
             new RuleDef("T5", SpaceId.Toilet, I, true, "불이 켜진 칸이 있으면 당신도 불을 켜십시오.", usesFlashlight: true),
+            new RuleDef("T7", SpaceId.Toilet, L, true, "화장실 거울을 3초 이상 보지 마십시오."),   // 79차 민 채택
 
             new RuleDef("L1", SpaceId.Library, A, true, "쓰러진 책장 곁에 서지 마십시오."),
             new RuleDef("L2", SpaceId.Library, A, true, "책장 넘기는 소리가 들리면, 도서관 점검 시간은 끝났습니다. 나가십시오.", isWaitType: true),
             new RuleDef("L3", SpaceId.Library, I, true, "도서관 ?_? 을 계속 비추십시오.", isThreat: true, usesFlashlight: true, boundEncounter: YellowFace),
             new RuleDef("L4", SpaceId.Library, L, true, "상자에서 떨어져 걸으십시오."),
             new RuleDef("L5", SpaceId.Library, A, true, "창밖에 먼저 인사하지 마십시오. 눈길도, 빛도 인사입니다.", isThreat: true, boundEncounter: SuitMan),
+            new RuleDef("L6", SpaceId.Library, I, true, "도서관에서는 손전등을 천장으로 향하지 마십시오.", usesFlashlight: true),   // 79차 민 채택
+            new RuleDef("L7", SpaceId.Library, L, true, "도서관에서는 뒷걸음질하지 마십시오."),   // 80차 민 채택(새 수칙 B — 역설 없음)
 
             new RuleDef("K1", SpaceId.SecurityRoom, L, true, "화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오.", boundEncounter: CctvPerson),   // 52차 민: 원래대로(점프스케어를 예고하는 수칙은 쓰지 않는다)
             new RuleDef("K2", SpaceId.SecurityRoom, A, true, "공실 채널은 오래 보지 마십시오."),
             new RuleDef("K3", SpaceId.SecurityRoom, A, true, "서명 시간 외에는 경비실에 오래 머물지 마십시오."),
             new RuleDef("K4", SpaceId.SecurityRoom, L, false, "근무 종료 후에는 경비실을 나가지 마십시오."),
+            new RuleDef("K5", SpaceId.SecurityRoom, A, true, "경비실 전화는 세 번 울린 뒤에 받으십시오."),   // 79차 민 채택
 
             new RuleDef("G1", SpaceId.None, A, true, "복도에서는 뛰지 마십시오."),
+            new RuleDef("G4", SpaceId.None, L, true, "태블릿을 보면서 걷지 마십시오."),   // 79차 민 채택 — 짝수 날(2·4일차)에 공통 수칙으로
             new RuleDef("G3", SpaceId.None, L, false, "이 수칙서와 태블릿 공지가 다를 경우 [　　]을 따르십시오.")
         };
 
@@ -250,11 +264,11 @@ namespace NightDuty
             new EncounterDef(HallEndFigure, "복도 끝에 선 자", I, SpaceId.ScienceRoom, "S5", 3, "dummy", new[] { Need(I, Band.Band2) }),   // 70차: 인체 모형, 모형 급습 전날(ProgramDirector 날짜 사슬)
             new EncounterDef(ModelRush, "모형 급습", I, SpaceId.ScienceRoom, "S5", 5, "dummy", new[] { Need(I, Band.Band3), Need(L, Band.Band2) }, true),
             new EncounterDef(ScienceBlackout, "과학실 소등", I, SpaceId.ScienceRoom, "S4", 3, "science.dark", new[] { Need(I, Band.Band2) }),
-            new EncounterDef(ToiletBlackout, "화장실 소등", I, SpaceId.Toilet, "T3", 3, "toilet.dark", new[] { Need(I, Band.Band2) }),
+            new EncounterDef(ToiletBlackout, "화장실 소등", I, SpaceId.Toilet, "S4", 3, "toilet.dark", new[] { Need(I, Band.Band2) }),
             new EncounterDef(PeopleTree, "사람 나무", L, SpaceId.Corridor, "H1", 3, "tree", new[] { Need(L, Band.Band2) }),
             new EncounterDef(CeilingLegs, "시체 낙하", L, SpaceId.Classroom, string.Empty, 3, "boy", new[] { Need(L, Band.Band2) }),   // 52차: 대응 수칙 없음(사다리 점검 중 놀람만 — 예고하는 수칙을 두지 않는다)
             new EncounterDef(PhantomDoor, "없던 문", L, SpaceId.Classroom, "C5", 2, "door", new[] { Need(L, Band.Band2) }),
-            new EncounterDef(SuitMan, "창밖 정장 남자", T, SpaceId.Library, "L5", 3, "glitchman", new[] { Need(T, Band.Band3) }),
+            new EncounterDef(SuitMan, "창밖 노란 얼굴", I, SpaceId.Library, "", 3, "duck", new[] { Need(I, Band.Band1) }),   // 84차(민: 「창밖의 노란 얼굴 조우가 도서관 노란 얼굴 조우의 빌드업」): 노란 얼굴 전날(날짜 사슬) · 85차(민: 「L3는 문쪽 조우일 때만」): 대응 수칙 없음
             new EncounterDef(CctvPerson, "CCTV에만 보이는 사람", L, SpaceId.SecurityRoom, "K1", 2, "blackman", new KeyValuePair<FearAxis, Band>[0])
         };
 

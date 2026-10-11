@@ -580,12 +580,13 @@ namespace NightDuty.Tests
             Run(8.3f);
             Assert.AreEqual(1, sent.Count);
             string text = NightRun.OrderMessage(sent[0]);
-            StringAssert.StartsWith("[점검 지시] 경비실", text);
-            StringAssert.Contains(InspectionCatalog.Find("K-1").TabletLine, text);
-            StringAssert.Contains(NightRun.InspectionHowTo, text, "첫 지시에만 조작 안내");
+            Assert.AreEqual(InspectionCatalog.Find("K-1").TabletLine, text, "88차: 지시 문구만(머리 줄 「[점검 지시] 경비실」 · 「· 이름 — 」 없음)");
+            StringAssert.DoesNotContain("Z 정상", text, "72차: 지시 문자에 조작 안내 없음");
 
             Assert.IsTrue(NightRun.ReportInspection("K-1", false).Accepted);
-            StringAssert.Contains(" 보고함", NightRun.OrderMessage(sent[0]));   // 60차: 「· [정상] 보고함」처럼 판정이 붙는다
+            string done = NightRun.OrderMessage(sent[0]);
+            Assert.AreEqual(NightRun.StrikeOpen + InspectionCatalog.Find("K-1").TabletLine + NightRun.StrikeClose, done, "74차: 보고한 줄은 취소선");
+            StringAssert.DoesNotContain("보고함", done, "74차: 완료 표시는 취소선만");
         }
 
         [Test]

@@ -65,6 +65,10 @@ public sealed class BoyHeadBang : MonoBehaviour
     private Transform[] _clipBones;
     private Quaternion[] _wrapPose;
     private Transform _head;
+    private bool _watchedToEnd;
+
+    /// <summary>80차(민: 「머리 부딪히는 걸 끝까지 목격한다면 덮치는 연출 후 증발」): 끝(<see cref="MaxSeconds"/>)까지 바라본 채 박기가 멈췄을 때.</summary>
+    public static event System.Action<BoyHeadBang> WatchedToEnd;
 
     /// <summary>지금 속도 배수. 시험·디버그용.</summary>
     public float Speed
@@ -188,7 +192,12 @@ public sealed class BoyHeadBang : MonoBehaviour
         if (watched) _lastWatched = Time.time;
         float dt = Time.deltaTime;
         _speed = watched ? Mathf.Min(MaxSpeed, _speed + SpeedUpPerSecond * dt) : Mathf.Max(1f, _speed - 0.6f * dt);
-        if (!_stopping && t >= MinSeconds && (t >= MaxSeconds || Time.time - _lastWatched > LookAwayGrace)) _stopping = true;
+        if (!_stopping && t >= MinSeconds && (t >= MaxSeconds || Time.time - _lastWatched > LookAwayGrace))
+        {
+            _stopping = true;
+            _watchedToEnd = t >= MaxSeconds && Time.time - _lastWatched <= LookAwayGrace;   // 80차
+        }
+
 
         float prev = _clipT;
         _clipT += dt * _speed;
@@ -206,6 +215,7 @@ public sealed class BoyHeadBang : MonoBehaviour
                 _stopped = true;
                 _holdAt = th;
                 _clips.Bang.SampleAnimation(_clips.ClipRoot, _holdAt);
+                if (_watchedToEnd && WatchedToEnd != null) WatchedToEnd(this);   // 80차
                 return;
             }
         }

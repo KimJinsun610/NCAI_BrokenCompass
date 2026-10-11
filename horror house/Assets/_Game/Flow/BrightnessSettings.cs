@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -44,6 +44,12 @@ public sealed class BrightnessSettings : MonoBehaviour
     // 프로필마다 «원래 적혀 있던 노출»을 기억한다. 이걸 안 하면 조절할 때마다 값이 누적된다.
     private static readonly Dictionary<ColorAdjustments, float> s_baseline = new Dictionary<ColorAdjustments, float>();
 
+    // 86차: 밝기를 얹는 볼륨 — 씬에 처음부터 있고 프로필 에셋이 노출(postExposure)을 정하는 것만(실내·실외 보정).
+    // 옛 Apply는 씬의 모든 볼륨을 훑어, 조도 톤(IlluminanceMap)·조우 화면 효과처럼 런타임에 만든 볼륨까지
+    // ① v.profile로 사본을 만들어 그 연출이 더는 화면에 닿지 않게 하고(톤이 굳음) ② 노출을 「0 + 보정」으로 덮어
+    // 실내 보정(2.5)을 지웠다 — 설정에서 밝기를 움직이면 화면이 뿌옇게 바랬다(민 제보, PlayScene 재현: 보안실 노출 4 → 1.2).
+    private static readonly HashSet<Volume> s_targets = new HashSet<Volume>();
+
     /// <summary>지금 밝기(0~1). 0.5가 기본이다.</summary>
     public static float Value
     {
@@ -65,6 +71,7 @@ public sealed class BrightnessSettings : MonoBehaviour
     {
         // 플레이를 껐다 켜면 볼륨 인스턴스가 새로 생긴다. 옛 기준값을 들고 있으면 안 된다.
         s_baseline.Clear();
+        s_targets.Clear();
         s_loaded = false;
         Changed = null;
 
@@ -108,7 +115,34 @@ public sealed class BrightnessSettings : MonoBehaviour
 
     private void Start()
     {
+        CollectTargets(gameObject.scene);
         Apply();
+    }
+
+    /// <summary>
+    /// 86차: 그 씬에 지금 있는 볼륨 중 프로필 에셋(<see cref="Volume.sharedProfile"/>)이 노출을 켜 둔 것만 밝기 대상으로 기억한다.
+    /// 이 뒤에 런타임으로 생기는 볼륨(조도 톤·조우 화면 효과·컷신)은 건드리지 않는다.
+    /// </summary>
+    private static void CollectTargets(Scene scene)
+    {
+        foreach (Volume v in FindObjectsByType<Volume>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (v.gameObject.scene != scene || s_targets.Contains(v)) continue;
+            VolumeProfile source = v.sharedProfile;
+            ColorAdjustments color;
+            if (source == null || !source.TryGet<ColorAdjustments>(out color) || !color.postExposure.overrideState) continue;
+            s_targets.Add(v);
+        }
+    }
+
+    /// <summary>86차: 밝기를 얹는 볼륨 수(시험·검수).</summary>
+    public static int TargetCount
+    {
+        get
+        {
+            s_targets.RemoveWhere(v => v == null);
+            return s_targets.Count;
+        }
     }
 
     /// <summary>밝기를 바꾸고 저장한다. 0~1.</summary>
@@ -140,7 +174,8 @@ public sealed class BrightnessSettings : MonoBehaviour
         Load();
 
         float offset = Offset;
-        foreach (Volume v in FindObjectsByType<Volume>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        s_targets.RemoveWhere(v => v == null);
+        foreach (Volume v in s_targets)
         {
             // profile(사본)을 쓴다. sharedProfile에 쓰면 에셋이 더럽혀진다.
             VolumeProfile profile = v.HasInstantiatedProfile() || v.sharedProfile != null ? v.profile : null;

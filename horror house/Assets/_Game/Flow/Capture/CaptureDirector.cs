@@ -54,6 +54,7 @@ public sealed partial class CaptureDirector : MonoBehaviour
 
     private Vector3 _spawnPos;
     private Quaternion _spawnRot;
+    private float _spawnPitch;
     private bool _spawnKnown;
     private readonly Dictionary<FearAxis, int> _counts = new Dictionary<FearAxis, int>();
     private readonly List<Canvas> _hidden = new List<Canvas>();
@@ -123,6 +124,7 @@ public sealed partial class CaptureDirector : MonoBehaviour
         FPController player = FindAnyObjectByType<FPController>();
         if (player != null)
         {
+            StartView.FaceCctv(player, out _spawnPitch);   // 72차: 출근 시선 = CCTV 모니터(재시작도 같은 시선)
             _spawnPos = player.transform.position;
             _spawnRot = player.transform.rotation;
             _spawnKnown = true;
@@ -290,6 +292,7 @@ public sealed partial class CaptureDirector : MonoBehaviour
     {
         if (player == null || !_spawnKnown) return;
         player.transform.SetPositionAndRotation(_spawnPos, _spawnRot);
+        StartView.ApplyPitch(player, _spawnPitch);
         Rigidbody body = player.GetComponent<Rigidbody>();
         if (body != null)
         {

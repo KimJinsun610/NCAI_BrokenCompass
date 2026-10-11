@@ -66,6 +66,13 @@ public sealed class ShiftEndPhone : MonoBehaviour
     private void Update()
     {
         IsReady = false;
+        if (PhoneRinger.IsRinging)   // 79차 K5: 울리는 동안 [E]는 「전화 받기」
+        {
+            _armedUntil = -1f;
+            ReleasePrompt();
+            return;
+        }
+
         if (_ended || !CanInteract() || !IsAimed())
         {
             _armedUntil = -1f;

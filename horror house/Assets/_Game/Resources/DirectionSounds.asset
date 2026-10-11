@@ -56,11 +56,11 @@ MonoBehaviour:
     hits:
     - 5.8760624
   - key: E.BoyBang.headbang
-    clip: {fileID: 8300000, guid: 6a87b5f535621284d9f4dc27272e6504, type: 3}
+    clip: {fileID: 8300000, guid: de04e7190ec841d41b831fd161db348d, type: 3}
     more: []
     volume: 1
     hits:
-    - 0.09089583
+    - 0
   - key: E.CeilingLegs.foreshadow
     clip: {fileID: 8300000, guid: 2854e001728b34a4087e37502bb9c78a, type: 3}
     more:
@@ -324,11 +324,11 @@ MonoBehaviour:
     hits:
     - 0
   - key: corpse.fall
-    clip: {fileID: 8300000, guid: 6a87b5f535621284d9f4dc27272e6504, type: 3}
+    clip: {fileID: 8300000, guid: 212ffffed1c1e47458f7754896030b89, type: 3}
     more: []
     volume: 1
     hits:
-    - 0.09089583
+    - 0
   - key: cctv.face
     clip: {fileID: 8300000, guid: 04fc8b26ba4bc2b459b924deb5e0b3db, type: 3}
     more: []
@@ -751,6 +751,18 @@ MonoBehaviour:
     volume: 0.6
     hits:
     - 2.3241875
+  - key: phone.ring
+    clip: {fileID: 8300000, guid: b7ff8f2cefc210a4294194bcf783ace4, type: 3}
+    more: []
+    volume: 1
+    hits:
+    - 0.1503125
+  - key: phone.breath
+    clip: {fileID: 8300000, guid: 19d52c2b45ecb1a44906c0905bf9ae3d, type: 3}
+    more: []
+    volume: 1
+    hits:
+    - 2.6247084
   - key: map.hall.1
     clip: {fileID: 8300000, guid: d457bc946db921e4fac83d8f6256e944, type: 3}
     more: []
@@ -1117,12 +1129,6 @@ MonoBehaviour:
     volume: 0.55
     hits:
     - 2.0716043
-  - key: inspect.T-4.loop
-    clip: {fileID: 8300000, guid: 9051dca7579277f43b4474e279168624, type: 3}
-    more: []
-    volume: 0.7
-    hits:
-    - 6.6738124
   - key: inspect.near
     clip: {fileID: 8300000, guid: 053304e3083e69346b2f95ef6baba349, type: 3}
     more:
@@ -1217,12 +1223,6 @@ MonoBehaviour:
     volume: 0.8
     hits:
     - 4.051521
-  - key: inspect.L-4.near
-    clip: {fileID: 8300000, guid: c5acaa50d4e5be249a1d42397fef4dc0, type: 3}
-    more: []
-    volume: 1
-    hits:
-    - 0.27347916
   - key: inspect.S-4.near
     clip: {fileID: 8300000, guid: 20741c8f33b2ffd40abace39953d7327, type: 3}
     more: []

@@ -25,9 +25,31 @@ public sealed class RoomDarkness : MonoBehaviour
     /// <summary>구운 빛 배수(0.4 — 모양은 보이고 글씨·색은 손전등으로).</summary>
     public const float BakedScale = 0.4f;
 
+    /// <summary>
+    /// 86차(민: 「소등 조우 때 소등은 되는데 라이팅은 계속 유지돼」): 소등 조우(<see cref="LightGroup.TurnOff"/> — 과학실·화장실)가 끄는 방.
+    /// 실시간 등·발광만 꺼지고 구운 빛(라이트맵·프로브)은 그대로라 방이 밝은 채였다 — 소등 동안 그 방 구운 빛을 <see cref="BlackoutScale"/>배로.
+    /// </summary>
+    public static readonly SpaceId[] BlackoutRooms = { SpaceId.ScienceRoom, SpaceId.Toilet };
+
+    /// <summary>소등 동안 구운 빛 배수 — 손전등 없이는 윤곽만.</summary>
+    public const float BlackoutScale = 0.05f;   // 0.12는 등 바로 아래 벽의 밝은 얼룩이 남았다(밝기 설정을 올리면 더)
+
     private const string ShaderName = "Hidden/NightDuty/LightmapScale";
     private static readonly int EmissionId = Shader.PropertyToID("_EmissionColor");
     private static readonly Color RedGlow = new Color(1f, 0.12f, 0.08f) * 1.6f;
+
+    private sealed class Blackout
+    {
+        public SpaceId Space;
+        public readonly List<Renderer> Renderers = new List<Renderer>();
+        public readonly List<int> Lit = new List<int>();
+        public readonly List<int> Dark = new List<int>();
+        public readonly List<int> Probes = new List<int>();
+        public UnityEngine.Rendering.SphericalHarmonicsL2[] ProbeBase;
+        public bool On;
+    }
+
+    private readonly List<Blackout> _blackouts = new List<Blackout>();
 
     private sealed class Room
     {
@@ -121,7 +143,135 @@ public sealed class RoomDarkness : MonoBehaviour
         }
 
         DimBaked(boxes);
+        BuildBlackouts(zones);
         _built = true;
+    }
+
+    // ─────────────────────────────── 86차 소등 ───────────────────────────────
+
+    /// <summary>소등 조우가 그 방을 껐다/켰다(<see cref="LightGroup"/>가 부른다). 그 방 구운 빛을 어둡게/되돌린다.</summary>
+    public static void SetBlackout(SpaceId space, bool dark)
+    {
+        if (s_active != null) s_active.ApplyBlackout(SpaceIds.Canonical(space), dark);
+    }
+
+    /// <summary>그 방이 지금 소등으로 어두운지(시험·검수).</summary>
+    public static bool IsBlackedOut(SpaceId space)
+    {
+        if (s_active == null) return false;
+        SpaceId s = SpaceIds.Canonical(space);
+        for (int i = 0; i < s_active._blackouts.Count; i++)
+        {
+            if (s_active._blackouts[i].Space == s) return s_active._blackouts[i].On;
+        }
+
+        return false;
+    }
+
+    /// <summary>소등 방마다 그 방 렌더러가 쓰는 라이트맵의 아주 어두운 복사본을 미리 덧붙여 둔다(소등 때 렌더러만 옮긴다).</summary>
+    private void BuildBlackouts(SpaceZones zones)
+    {
+        Shader shader = Shader.Find(ShaderName);
+        LightmapData[] maps = LightmapSettings.lightmaps;
+        LightProbes probes = LightmapSettings.lightProbes;
+        Vector3[] probePos = probes != null && probes.count > 0 ? probes.positions : new Vector3[0];
+        List<LightmapData> all = maps != null ? new List<LightmapData>(maps) : new List<LightmapData>();
+        Dictionary<int, int> copyOf = new Dictionary<int, int>();
+        Material blit = shader != null ? new Material(shader) : null;
+        if (blit != null) blit.SetFloat("_Scale", BlackoutScale);
+
+        for (int b = 0; b < BlackoutRooms.Length; b++)
+        {
+            Bounds box;
+            if (!zones.TryGetSpaceBox(BlackoutRooms[b], out box)) continue;
+            List<Bounds> wide = new List<Bounds> { new Bounds(box.center, box.size + new Vector3(0.6f, 3f, 0.6f)) };
+            Blackout room = new Blackout { Space = SpaceIds.Canonical(BlackoutRooms[b]) };
+            if (blit != null && maps != null)
+            {
+                foreach (MeshRenderer r in FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                {
+                    int li = r.lightmapIndex;
+                    if (li < 0 || li >= maps.Length || !Inside(wide, r.bounds.center) || maps[li].lightmapColor == null) continue;
+                    int dark;
+                    if (!copyOf.TryGetValue(li, out dark))
+                    {
+                        Texture2D copy = Darkened(maps[li].lightmapColor, blit);
+                        dark = -1;
+                        if (copy != null)
+                        {
+                            _copies.Add(copy);
+                            dark = all.Count;
+                            all.Add(new LightmapData { lightmapColor = copy, lightmapDir = maps[li].lightmapDir, shadowMask = maps[li].shadowMask });
+                        }
+
+                        copyOf[li] = dark;
+                    }
+
+                    if (dark < 0) continue;
+                    room.Renderers.Add(r);
+                    room.Lit.Add(li);
+                    room.Dark.Add(dark);
+                }
+            }
+
+            for (int i = 0; i < probePos.Length; i++)
+            {
+                if (Inside(wide, probePos[i])) room.Probes.Add(i);
+            }
+
+            _blackouts.Add(room);
+        }
+
+        if (blit != null) Destroy(blit);
+        if (maps != null && all.Count > maps.Length)
+        {
+            if (_originalMaps == null) _originalMaps = maps;
+            LightmapSettings.lightmaps = all.ToArray();
+        }
+    }
+
+    private void ApplyBlackout(SpaceId space, bool dark)
+    {
+        for (int b = 0; b < _blackouts.Count; b++)
+        {
+            Blackout room = _blackouts[b];
+            if (room.Space != space || room.On == dark) continue;
+            room.On = dark;
+            for (int i = 0; i < room.Renderers.Count; i++)
+            {
+                if (room.Renderers[i] != null) room.Renderers[i].lightmapIndex = dark ? room.Dark[i] : room.Lit[i];
+            }
+
+            LightProbes probes = LightmapSettings.lightProbes;
+            if (probes != null && room.Probes.Count > 0)
+            {
+                UnityEngine.Rendering.SphericalHarmonicsL2[] sh = probes.bakedProbes;
+                if (dark)
+                {
+                    room.ProbeBase = new UnityEngine.Rendering.SphericalHarmonicsL2[room.Probes.Count];
+                    for (int i = 0; i < room.Probes.Count; i++)
+                    {
+                        int k = room.Probes[i];
+                        if (k >= sh.Length) continue;
+                        room.ProbeBase[i] = sh[k];
+                        sh[k] *= BlackoutScale;
+                    }
+                }
+                else if (room.ProbeBase != null)
+                {
+                    for (int i = 0; i < room.Probes.Count && i < room.ProbeBase.Length; i++)
+                    {
+                        if (room.Probes[i] < sh.Length) sh[room.Probes[i]] = room.ProbeBase[i];
+                    }
+
+                    room.ProbeBase = null;
+                }
+
+                probes.bakedProbes = sh;
+            }
+
+            if (DirectionStage.Verbose) Debug.Log("[RoomDarkness] 소등 " + (dark ? "— 구운 빛 " + BlackoutScale + "배 " : "풀림 ") + space + " (렌더러 " + room.Renderers.Count + " · 프로브 " + room.Probes.Count + ")");
+        }
     }
 
     private static Room CollectLamps(SpaceId space, Bounds box)
@@ -246,6 +396,12 @@ public sealed class RoomDarkness : MonoBehaviour
 
     private void Restore()
     {
+        for (int b = 0; b < _blackouts.Count; b++)
+        {
+            if (_blackouts[b].On) ApplyBlackout(_blackouts[b].Space, false);
+        }
+
+        _blackouts.Clear();
         for (int i = 0; i < _remapped.Count; i++)
         {
             if (_remapped[i].Key != null) _remapped[i].Key.lightmapIndex = _remapped[i].Value;

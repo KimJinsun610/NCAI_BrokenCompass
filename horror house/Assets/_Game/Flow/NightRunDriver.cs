@@ -131,10 +131,39 @@ public sealed class NightRunDriver : MonoBehaviour
 
         if (clock == null) return;   // 근무 씬이 아니다(메인·로딩·결과·시험 씬).
 
+        MatchShiftEnd(clock);   // 88차: 다른 컴포넌트의 Start(태블릿 근무 줄 「00:00 - 04:00」)보다 먼저
         GameObject go = new GameObject("NightRunDriver (auto)");
         SceneManager.MoveGameObjectToScene(go, scene);
         NightRunDriver driver = go.AddComponent<NightRunDriver>();
         driver.gameTime = clock;
+    }
+
+    /// <summary>
+    /// 88차(민: 「게임 하루 시간을 4시간으로 줄여줘」): 게임 시계(<see cref="GameTime"/>)의 끝을 근무 시작 + <see cref="NightClock.ShiftEnd"/>분(04:00)에 맞춘다.
+    /// 김진선님 <c>PlaySystems</c> 프리팹(김진선님 폴더)은 끝 05:00이라 프리팹은 그대로 두고 런타임에 비공개 필드 <c>endSeconds</c>·<c>endHour</c>·<c>endMinute</c>를 고친다
+    /// (<c>Awake</c>가 계산을 마친 뒤). 이미 같으면 아무것도 하지 않는다. 고쳤으면 true.
+    /// </summary>
+    public static bool MatchShiftEnd(GameTime clock)
+    {
+        if (clock == null) return false;
+        int want = clock.StartMinutes + NightClock.ShiftEnd;
+        if (clock.EndMinutes == want) return false;
+
+        const System.Reflection.BindingFlags Flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        System.Reflection.FieldInfo end = typeof(GameTime).GetField("endSeconds", Flags);
+        if (end == null || end.FieldType != typeof(float))
+        {
+            Debug.LogWarning("[NightRunDriver] GameTime.endSeconds를 찾지 못해 근무 끝을 " + NightClock.Clock(NightClock.ShiftEnd) + "로 맞추지 못했습니다.", clock);
+            return false;
+        }
+
+        end.SetValue(clock, want * 60f);
+        System.Reflection.FieldInfo hour = typeof(GameTime).GetField("endHour", Flags);
+        System.Reflection.FieldInfo minute = typeof(GameTime).GetField("endMinute", Flags);
+        if (hour != null && hour.FieldType == typeof(int)) hour.SetValue(clock, (want / 60) % 24);
+        if (minute != null && minute.FieldType == typeof(int)) minute.SetValue(clock, want % 60);
+        Debug.Log("[NightRunDriver] 근무 끝 " + clock.EndTimeText + "(NightClock " + NightClock.Clock(NightClock.ShiftEnd) + ")", clock);
+        return true;
     }
 
     private void Start()
@@ -147,12 +176,13 @@ public sealed class NightRunDriver : MonoBehaviour
             return;
         }
 
+        MatchShiftEnd(gameTime);   // 88차(씬에 미리 놓인 구동기)
         if (MatchDesignPace)
         {
             int span = gameTime.EndMinutes - gameTime.StartMinutes;
             if (span > 0)
             {
-                // 게임 초 / 실제 초. 02:00~05:00(180분)이면 18배속 → 실시간 10분.
+                // 게임 초 / 실제 초. 00:00~04:00(240분)이면 24배속 → 실시간 10분(88차).
                 gameTime.SetTimeMultiplier(span * 60f / NightClock.RealSecondsPerNight);
             }
         }

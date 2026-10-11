@@ -228,7 +228,11 @@ public sealed class RedLightSpot : MonoBehaviour
                 Material m = new Material(old[i]);
                 m.name = old[i].name + " (C4 초록 등)";
                 if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", CueBase);
-                if (m.HasProperty("_EmissionColor"))
+                // 86차(민 스크린샷: 도서관 매달린 등이 줄·갓까지 통째로 하얗게 빛남): 꺼진 매달린 등 재질(LampFluoHanging_OFF_mtl)은 발광 맵이 없어
+                // 발광색이 메시 전체에 칠해지고 실내 노출(+2.5EV)에 하얗게 날아갔다 — 제 발광 맵이 있는 등(천장 매립 등)만 관을 빛내고,
+                // 없는 등은 발광을 켜지 않는다(바탕색만 어두운 초록 · 바로 아래 초록 점광이 등을 비춘다).
+                bool glow = m.HasProperty("_EmissionColor") && HasOwnEmissionMap(m);
+                if (glow)
                 {
                     m.EnableKeyword("_EMISSION");
                     m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
@@ -241,6 +245,15 @@ public sealed class RedLightSpot : MonoBehaviour
             _tinted.Add(new KeyValuePair<Renderer, Material[]>(r, old));
             r.sharedMaterials = neo;
         }
+    }
+
+    /// <summary>
+    /// 재질에 제 발광 맵(관 부분만 빛나는 무늬)이 있는지. 없으면 발광색이 메시 전체(갓·줄)에 칠해진다.
+    /// (같은 계열 켜진 재질의 맵을 빌려 보았으나 B~E 등은 UV가 달라 관이 빛나지 않았다 — PlayScene 확인.)
+    /// </summary>
+    private static bool HasOwnEmissionMap(Material m)
+    {
+        return m.HasProperty("_EmissionMap") && m.GetTexture("_EmissionMap") != null;
     }
 
     private void Clear()

@@ -34,10 +34,10 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 완충은_켜_둔_채_200초이고_다_닳는_순간을_한_번_알린다()
+        public void 완충은_켜_둔_채_160초이고_다_닳는_순간을_한_번_알린다()
         {
             FlashlightBattery b = new FlashlightBattery();
-            Assert.AreEqual(200f, BatteryRules.FullSeconds, "67차: 밤 12분 30초에 맞춰 160 → 200");
+            Assert.AreEqual(160f, BatteryRules.FullSeconds, "88차: 밤 10분에 맞춰 200 → 160(67차 전 값)");
             Assert.IsFalse(b.Drain(BatteryRules.FullSeconds - 1f));
             Assert.Greater(b.Charge, 0f);
             Assert.IsTrue(b.Drain(1.5f), "이번에 다 닳았다");
@@ -96,7 +96,7 @@ namespace NightDuty.Tests
         [Test]
         public void 일차가_지날수록_놓이는_배터리가_준다()
         {
-            int[] want = { 6, 6, 5, 5, 4 };   // 67차: 3·3·2·2·1 → 6·6·5·5·4(책장·선반 자리 추가)
+            int[] want = { 2, 6, 5, 5, 4 };   // 74차(민): 1일차 2   // 67차: 3·3·2·2·1 → 6·6·5·5·4(책장·선반 자리 추가)
             for (int day = 1; day <= 5; day++) Assert.AreEqual(want[day - 1], BatteryRules.PlacedOn(day), day + "일차");
         }
 

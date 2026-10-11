@@ -22,7 +22,7 @@ namespace NightDuty
         /// <summary>68차: 오늘 처리할 [근무 지시]가 남았는지(<see cref="DutyDispatcher.Pending"/>). [근무 지시]가 꺼져 있으면 false.</summary>
         public static bool DutiesPending
         {
-            get { return _duties != null && _duties.Pending(CurrentMinute()); }
+            get { return _duties != null && (_duties.Pending(CurrentMinute()) || LeadDutyPending(CurrentMinute())); }   // 85차: 조우 앞 지시가 아직이면 남은 것
         }
 
         /// <summary>68차: 모든 지시를 마쳐 조기 퇴근할 수 있게 된 순간 한 번 보내는 문자.</summary>
@@ -55,6 +55,7 @@ namespace NightDuty
             _shiftReadyAnnounced = false;
             // 57차: 그날 점검 대상은 비품 확인 지시로 내지 않고, 가까운 셋 중 하나를 고른다.
             _duties = DutiesEnabled ? new DutyDispatcher(Day, DutyCost, DutyCctvChannels, item => Board.Plan != null && Board.Plan.Find(item) != null, new System.Random()) : null;
+            ChooseLeadDuty();   // 85차: 문간 노란 얼굴 앞 지시(W15·W2 중 하나)
         }
 
         private static float DutyCost(SpaceId space)
@@ -73,9 +74,11 @@ namespace NightDuty
                 InspectionBacklog = Board.IssuedPendingCount,
                 SinceInspection = _orders != null ? _orders.SinceActivity : float.PositiveInfinity,
                 Finale = _finale.Active,
-                InspectionTurn = InspectionTurnNow()
+                InspectionTurn = InspectionTurnNow(),
+                HoldNew = LeadDutyDue(CurrentMinute())   // 85차
             };
 
+            ReleaseLeadDuty(input.Minute);   // 85차
             DutyEvent ev;
             if (_duties.Tick(input, out ev)) AnnounceDuty(ev);
         }
@@ -102,6 +105,34 @@ namespace NightDuty
             if (!_duties.NotePicked(target, out ev)) return false;
             AnnounceDuty(ev);
             return true;
+        }
+
+        /// <summary>80차: 출입 카드 지시(W16·W17)의 카드를 집었다. 그 카드를 바라는 지시가 진행 중이면 true.</summary>
+        public static bool TakeDutyCard(string card)
+        {
+            return _nightOpen && _duties != null && !IsCaptured && _duties.NoteCardTaken(card);
+        }
+
+        /// <summary>80차: 들고 있던 출입 카드를 경비실 열쇠함에 넣었다. 지시를 끝냈으면 true(완료 답장·축 −3).</summary>
+        public static bool DeliverDutyCard()
+        {
+            if (!_nightOpen || _duties == null || IsCaptured) return false;
+            DutyEvent ev;
+            if (!_duties.NoteCardDelivered(out ev)) return false;
+            AnnounceDuty(ev);
+            return true;
+        }
+
+        /// <summary>80차: 지금 그 출입 카드를 집기를 바라는지.</summary>
+        public static bool DutyWantsCard(string card)
+        {
+            return _nightOpen && _duties != null && !IsCaptured && _duties.WantsCard(card);
+        }
+
+        /// <summary>80차: 들고 있는 출입 카드(없으면 null).</summary>
+        public static string DutyCardCarried
+        {
+            get { return _nightOpen && _duties != null && !IsCaptured ? _duties.CarriedCard : null; }
         }
 
         /// <summary>65차: 지금 그 물건을 줍기를 바라는 지시가 진행 중인지.</summary>
@@ -173,6 +204,7 @@ namespace NightDuty
         private static void ResetDuties()
         {
             _duties = null;
+            _leadDuty = null;
             DutiesEnabled = false;
             DutyCctvChannels = 5;
         }

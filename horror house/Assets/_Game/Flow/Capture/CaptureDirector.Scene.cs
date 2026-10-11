@@ -263,6 +263,7 @@ public sealed partial class CaptureDirector
         FitDummyFace(cs.transform);   // 64차: 인체 모형 컷신 — 얼굴이 카메라 높이에 오게
         // 58차(민: 「scream을 붙잡힘 장면으로 쓰자」): 청각 컷신의 소년이 Hit 소리에 맞춰 비명 지르며 덮쳐 온다 — 이 인스턴스의 바인딩만 바꾼다(Play 전).
         bool scream = axis == FearAxis.Auditory && CutsceneScream.Attach(cs.gameObject);
+        TrueColor.Apply(cs.gameObject, true);   // 81차(민: 「사망 연출이 너무 하얗게」): 손전등을 붙잡는 김진선님 컷신의 몹만 원본 텍스처 색(이 인스턴스 재질만)
         bool finished = false;
         cs.Finished += () =>
         {
@@ -522,6 +523,7 @@ public sealed partial class CaptureDirector
         GameObject go = StandInFactory.Create(id, eye + ground * 1f - Vector3.up * 1.6f, eye, null);
         if (go == null) return null;
         go.name = "capture " + id;
+        TrueColor.Apply(go);   // 81차: 붙잡힘 얼굴은 빛과 무관하게 원본 텍스처 색
         foreach (Collider col in go.GetComponentsInChildren<Collider>(true)) col.enabled = false;
         if (_faceLayer >= 0)
         {

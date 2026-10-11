@@ -162,7 +162,7 @@ namespace NightDuty
         public const int FakePerId = 2;
 
         /// <summary>슬롯 끝 몇 분 전부터 방아쇠를 「그 공간에 있기만 하면」으로 완화하는지(게임 분).</summary>
-        public const float LastCallMinutes = 12f;   // 67차(밤 05:00): 10 → 12(게임 분 ×1.25)
+        public const float LastCallMinutes = 10f;   // 67차(밤 05:00): 10 → 12(게임 분 ×1.25) · 88차(밤 04:00): 12 → 10
 
         /// <summary>디버그 강제 실행에서 존재형 조우의 길이(초).</summary>
         public const float ForcedPresenceSeconds = 60f;
@@ -246,6 +246,12 @@ namespace NightDuty
         /// null이면 그 공간 안이면 참(코어 시험).
         /// </summary>
         public Func<SpaceId, float, bool> DeepInSpace { get; set; }
+
+        /// <summary>
+        /// 85차: 앞선 지시(<see cref="EncounterScript.AfterOrder"/>·<see cref="EncounterScript.AfterDuty"/>)가 나가 그 조우가 방아쇠를 받을 수 있는지. NightRun이 넣는다.
+        /// null이면 늘 참(코어 시험). 디버그 강제 실행은 보지 않는다.
+        /// </summary>
+        public Func<EncounterRun, bool> EncounterGate { get; set; }
 
         /// <summary>
         /// 61차(민: 「몹은 나타나 있되, 플레이어가 몹을 시야에 넣고 인지한 뒤에 연출이 시작되도록」): 켜면 몹 대역이 있는 조우(<see cref="EncounterScript.NeedsSight"/>)는
@@ -718,6 +724,12 @@ namespace NightDuty
                 }
 
 
+                if (!r.Forced && EncounterGate != null && !EncounterGate(r))
+                {
+                    r.Waiting = "앞선 지시 대기";   // 85차: 블라인드 지시(창밖 노란 얼굴) · biology 책/도서관 순찰 지시(문간 노란 얼굴)
+                    continue;
+                }
+
                 if (!Triggered(r, minute))
                 {
                     r.Waiting = "방아쇠 대기";
@@ -918,7 +930,7 @@ namespace NightDuty
                             {
                                 r.CarriedOver = true;
                                 r.Rearmed = true;
-                                Note(r.Def.Id, "슬롯 " + r.Slot + "에 방아쇠가 오지 않음(" + r.Waiting + ") — 04:25까지 넘김");
+                                Note(r.Def.Id, "슬롯 " + r.Slot + "에 방아쇠가 오지 않음(" + r.Waiting + ") — " + NightClock.Clock(NightClock.JudgingEnd) + "까지 넘김");
                                 break;
                             }
 

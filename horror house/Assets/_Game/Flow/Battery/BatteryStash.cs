@@ -103,6 +103,33 @@ public sealed class BatteryStash : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// 80차(경비실 지도 배터리 표시): 그 칸의 자리 — 배터리 모형이 보이면 모형, 닫힌 서랍·사물함 안이라 감춰져 있으면 그 칸(문·서랍)의 자리. 없으면 false.
+    /// </summary>
+    public bool TryGetCachePosition(string id, out Vector3 position)
+    {
+        for (int i = 0; i < _placed.Count; i++)
+        {
+            Cache c = _placed[i];
+            if (c.Id != id) continue;
+            if (c.Model != null && c.Model.activeInHierarchy)
+            {
+                position = c.Model.transform.position;
+                return true;
+            }
+
+            Transform t = c.Follow != null ? c.Follow : c.Owner;
+            if (t != null)
+            {
+                position = t.TransformPoint(c.LocalPos);
+                return true;
+            }
+        }
+
+        position = Vector3.zero;
+        return false;
+    }
+
     /// <summary>67차: 열린 선반 자리 수(그 밤 후보). 시험·디버그용.</summary>
     public int ShelfSpotCount
     {
@@ -270,6 +297,7 @@ public sealed class BatteryStash : MonoBehaviour
             }
 
             if (PlayerInteractor.Classify(d) != DoorPolicySO.Kind.Storage) continue;
+            if (zones != null && !InDutySpace(zones, d.Owner.transform.position)) continue;   // 86차: 화장실·복도·과학실·도서관·교실 안 수납만(경비실·라커룸 사물함 등 제외)
             if (!BatteryRules.Upright(d.Owner.transform.up.y)) continue;   // 56차 QA: 문을 막은 판자·엎어 기댄 책장(이름만 Bookcase)은 칸이 아니다
             string id = PathOf(d.Owner.transform);
             if (_doors.ContainsKey(id)) continue;
@@ -339,12 +367,24 @@ public sealed class BatteryStash : MonoBehaviour
         return b;
     }
 
+    /// <summary>86차: 배터리가 놓이는 공간 — 화장실·복도·과학실·도서관·교실(1-3).</summary>
+    public static readonly SpaceId[] BatterySpaces = { SpaceId.Corridor, SpaceId.Classroom_1_3, SpaceId.ScienceRoom, SpaceId.Library, SpaceId.Toilet };
+
     private static bool InDutySpace(SpaceZones zones, Vector3 at)
     {
         // 67차 플레이 점검: SpaceId.Classroom 상자는 쓰지 않는 1-1 교실이었다(1-1 책장에 배터리 자리가 잡히고 1-3 책장은 빠졌다) — 1-3을 직접 묻고 1-1은 뺀다.
         Bounds unused;
         if (zones.TryGetSpaceBox(SpaceId.Classroom_1_1, out unused) && unused.Contains(at)) return false;
-        SpaceId[] spaces = { SpaceId.Corridor, SpaceId.Classroom_1_3, SpaceId.ScienceRoom, SpaceId.Library, SpaceId.Toilet, SpaceId.SecurityRoom };
+        // 86차: 경비실 상자는 복도 상자(x 4~52 · z 40~48) 안에 들어 있어 복도로 잡혔다 — 먼저 뺀다.
+        Bounds guard;
+        if (zones.TryGetSpaceBox(SpaceId.SecurityRoom, out guard))
+        {
+            guard.Expand(new Vector3(0.6f, 4f, 0.6f));
+            if (guard.Contains(at)) return false;
+        }
+
+        // 86차(민: 「배터리는 화장실, 복도, 과학실, 도서관, 교실에서만」): 경비실 제외. 교실은 쓰는 1-3만(1-1은 잠긴 방).
+        SpaceId[] spaces = BatterySpaces;
         for (int i = 0; i < spaces.Length; i++)
         {
             Bounds box;

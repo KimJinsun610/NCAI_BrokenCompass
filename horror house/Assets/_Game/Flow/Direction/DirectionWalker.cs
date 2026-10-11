@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 /// <summary>
 /// 대역을 두 점 사이로 걷게 한다(2026-10-01 — 화장실 소녀가 옆으로 걸어 칸으로 들어가는 연출).
@@ -84,6 +84,21 @@ public sealed class DirectionWalker : MonoBehaviour
     }
 
     private bool _destroyOnArrive;
+
+    /// <summary>80차: 걷는 중인지(놀람 방아쇠 — 소녀가 칸으로 걸어 들어가는 동안).</summary>
+    public bool Walking
+    {
+        get { return enabled && !Arrived && _length > 0.01f; }
+    }
+
+    /// <summary>80차: 남은 걸음을 <paramref name="multiplier"/>배 빠르게(놀람 뒤 소녀가 칸 안으로 빠르게).</summary>
+    public void Hurry(float multiplier)
+    {
+        if (multiplier <= 0f) return;
+        _speed *= multiplier;
+        Animator a = GetComponentInChildren<Animator>();
+        if (a != null) a.speed *= multiplier;
+    }
 
     /// <summary>
     /// 70차: 조우가 끝나 거둘 때 아직 걷는 중이면 끝점까지 마저 걷고 스스로 지운다(참을 돌려줌).

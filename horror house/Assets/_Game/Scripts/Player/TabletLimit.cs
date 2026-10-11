@@ -3,33 +3,22 @@
 namespace NightDuty
 {
     /// <summary>
-    /// 태블릿 들기 제한(61차, 2026-10-07 플레이테스트: 「플레이어가 태블릿을 너무 올리고 다닌다」 → 민 결정:
-    /// 「주요 연출이 나오면 강제로 내리고 끝날 때까지 못 올리고, 한 번 올리면 5초 뒤에 내려가고, 2초 후에 다시 올릴 수 있도록」).
+    /// 태블릿 들기 제한(61차, 2026-10-07 플레이테스트: 「플레이어가 태블릿을 너무 올리고 다닌다」).
     /// 화면 쪽(<c>TabletZoom</c> — 태블릿은 늘 손에 들려 있고 「올림」 = 확대)이 매 프레임 <see cref="Tick"/>을 부르고, true면 확대를 푼다.
     /// 주요 연출 중에는 화면 쪽이 손의 태블릿까지 시야 밖으로 내린다.
     /// <para>69차(민: 「태블릿을 들었을 때 5초 뒤에 내려오는 건 폐기 — 연출이 나오면 내려오는 건 유지」): 들고 있는 시간으로는 내리지 않는다.</para>
+    /// <para>73차(민: 「토글로 바꾸자」): 내린 뒤 쉬는 시간도 없앴다 — <b>Tab은 순수 토글</b>이고, 막 내린 직후에도 바로 다시 든다.</para>
     /// <list type="bullet">
-    /// <item>내린 뒤(스스로 내렸든 강제로 내렸든) <see cref="ReopenCooldown"/>초 동안은 들 수 없다 — 들려 하면 곧바로 내린다.</item>
     /// <item>주요 연출(조우의 전조·대면·마무리, 몹을 세워 둔 동안 — <c>TensionDirector.Busy</c>) 동안은 들 수 없고, 들고 있었으면 곧바로 내린다.</item>
+    /// <item>그 밖에는 **무엇도 저절로 내리지 않는다** — 들고 있는 시간도, 방금 내렸다는 사실도 다시 드는 것을 막지 않는다.</item>
     /// </list>
     /// </summary>
     public sealed class TabletLimit
     {
-        /// <summary>내린 뒤 다시 들 수 있기까지(초).</summary>
-        public const float ReopenCooldown = 2f;
-
         private float _openFor;
-        private float _cooldown;
-        private bool _wasOpen;
 
-        /// <summary>지금 들 수 없는지(연출 중이거나 쉬는 중).</summary>
+        /// <summary>지금 들 수 없는지(주요 연출 중).</summary>
         public bool Locked { get; private set; }
-
-        /// <summary>다시 들 수 있기까지 남은 시간(초).</summary>
-        public float Cooldown
-        {
-            get { return _cooldown; }
-        }
 
         /// <summary>이번에 들고 있은 시간(초).</summary>
         public float OpenFor
@@ -44,35 +33,23 @@ namespace NightDuty
         public bool Tick(float dt, bool isOpen, bool directionBusy)
         {
             if (dt < 0f) dt = 0f;
-            if (_cooldown > 0f) _cooldown = Math.Max(0f, _cooldown - dt);
-            Locked = directionBusy || _cooldown > 0f;
+            Locked = directionBusy;
 
             if (!isOpen)
             {
-                if (_wasOpen)
-                {
-                    _wasOpen = false;
-                    _openFor = 0f;
-                    _cooldown = ReopenCooldown;
-                    Locked = true;
-                }
-
+                _openFor = 0f;
                 return false;
             }
 
-            if (!_wasOpen && Locked) return true;   // 잠긴 동안 들려고 함 — 곧바로 내린다(쉬는 시간은 늘리지 않는다)
-            _wasOpen = true;
-            if (directionBusy) return true;
-            _openFor += dt;
-            return false;   // 69차: 「5초 뒤 내려감」 폐기 — 연출(directionBusy)만 내린다
+            if (directionBusy) return true;   // 연출 중 — 들고 있었으면 내리고, 들려 하면 곧바로 내린다
+            _openFor += Math.Max(0f, dt);
+            return false;   // 69차·73차: 시간으로도 쉬는 시간으로도 내리지 않는다
         }
 
         /// <summary>처음 상태로(밤 시작·재시작).</summary>
         public void Reset()
         {
             _openFor = 0f;
-            _cooldown = 0f;
-            _wasOpen = false;
             Locked = false;
         }
     }

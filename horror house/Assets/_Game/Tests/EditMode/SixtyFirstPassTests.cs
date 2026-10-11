@@ -80,18 +80,17 @@ namespace NightDuty.Tests
         // ── 2단계: 태블릿 들기 제한 ──
 
         [Test]
-        public void 태블릿은_오래_들어도_저절로_내려가지_않고_내린_뒤_2초_뒤에_다시_들_수_있다()
+        public void 태블릿은_오래_들어도_저절로_내려가지_않고_내린_직후에도_바로_다시_든다()
         {
-            // 69차(민: 「5초 뒤에 내려오는 건 폐기 — 연출 나오면 내려오는 건 유지」).
+            // 69차(민: 「5초 뒤에 내려오는 건 폐기 — 연출 나오면 내려오는 건 유지」) · 73차(민: 「토글로 바꾸자」 — 쉬는 시간도 폐기).
             TabletLimit l = new TabletLimit();
             Assert.IsFalse(l.Tick(0.1f, true, false), "막 들었다");
             for (int k = 0; k < 600; k++) Assert.IsFalse(l.Tick(0.1f, true, false), "60초를 들어도 내리지 않는다");
             Assert.IsFalse(l.Tick(0.1f, false, false), "플레이어가 내림");
-            Assert.IsTrue(l.Locked);
-            Assert.IsTrue(l.Tick(0.5f, true, false), "쉬는 중에 들면 곧바로 내린다");
-            Assert.IsFalse(l.Tick(1.6f, false, false));
-            Assert.IsFalse(l.Locked, "2초가 지났다");
-            Assert.IsFalse(l.Tick(0.1f, true, false), "다시 들 수 있다");
+            Assert.IsFalse(l.Locked, "내렸다고 잠기지 않는다");
+            Assert.IsFalse(l.Tick(0.1f, true, false), "곧바로 다시 든다");
+            Assert.IsFalse(l.Tick(0.1f, false, false));
+            Assert.IsFalse(l.Tick(0.1f, true, false), "몇 번을 오가도 그대로 토글이다");
         }
 
         [Test]
@@ -103,8 +102,8 @@ namespace NightDuty.Tests
             Assert.IsFalse(l.Tick(0.1f, false, true));
             for (int k = 0; k < 30; k++) Assert.IsTrue(l.Tick(0.1f, true, true), "끝날 때까지 못 든다");
             Assert.IsFalse(l.Tick(0.1f, false, false));
-            Assert.IsFalse(l.Tick(2.1f, false, false));
-            Assert.IsFalse(l.Tick(0.1f, true, false), "연출이 끝나고 쉬는 시간이 지나면 든다");
+            Assert.IsFalse(l.Locked, "연출이 끝났다");
+            Assert.IsFalse(l.Tick(0.1f, true, false), "연출이 끝나면 곧바로 든다(73차: 쉬는 시간 폐기)");
         }
 
         // ── 2단계: 몹은 세워 두고, 본 뒤에 대면 ──

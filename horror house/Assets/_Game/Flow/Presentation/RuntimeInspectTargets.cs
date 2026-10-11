@@ -27,9 +27,7 @@ public sealed class RuntimeInspectTargets : MonoBehaviour
         P("S-4", "Interior/science classroom/Globe (2)"),
         P("S-5", "Interior/science classroom/Aged Erlenmeyer Flask (2)", "Interior/science classroom/Aged Erlenmeyer Flask (4)"),
         P("S-6", "Interior/science classroom/Map"),
-        P("T-4", "Interior/Toilet02/Toilet_Sink (6)", "Interior/Toilet02/Toilet_Sink (7)", "Interior/Toilet02/Toilet_Sink (8)", "Interior/Toilet02/Toilet_Sink (9)"),
         P("T-5", "Interior/Toilet02/TowelB (2)"),
-        P("L-4", "Interior/Classroom01/Blackboard (1)"),
         P("L-5", "Interior/Classroom01/TrashCanSmall (1)"),
         P("K-2", "Interior/janitor's room/Distressed Metal Folding Chair", "Interior/janitor's room/Distressed Metal Folding Chair (2)"),
         P("K-3", "Interior/janitor's room/Plant01 (1)")

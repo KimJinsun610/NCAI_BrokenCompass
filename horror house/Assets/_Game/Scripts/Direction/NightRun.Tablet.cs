@@ -23,6 +23,7 @@
             }
 
             _tabletOpen = signal.Flag;
+            if (_finalBook != null) _finalBook.World.TabletOpen = signal.Flag;   // 79차: G4 「태블릿을 보면서 걷지 마십시오」 — 판정에는 넘기지 않고 상태만
             return true;
         }
 

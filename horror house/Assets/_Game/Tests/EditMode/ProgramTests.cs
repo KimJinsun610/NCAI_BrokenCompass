@@ -20,21 +20,21 @@ namespace NightDuty.Tests
         [Test]
         public void 공간수칙_28장과_공통_G1_G3()
         {
-            Assert.AreEqual(30, ProgramCatalog.AllRules.Count);
+            Assert.AreEqual(35, ProgramCatalog.AllRules.Count);   // 79차: T7·L6·K5·G4 추가(T3·T5·L5는 폐기 — 정의는 남김) · 80차: L7 추가
             Assert.IsNull(ProgramCatalog.Rule("G2"), "G2는 2026-10-04 폐기");
             Assert.AreEqual(4, ProgramCatalog.RulesIn(SpaceId.Corridor).Count);
             Assert.AreEqual(5, ProgramCatalog.RulesIn(SpaceId.Classroom).Count);
             Assert.AreEqual(5, ProgramCatalog.RulesIn(SpaceId.ScienceRoom).Count);
-            Assert.AreEqual(5, ProgramCatalog.RulesIn(SpaceId.Toilet).Count);
-            Assert.AreEqual(5, ProgramCatalog.RulesIn(SpaceId.Library).Count);
-            Assert.AreEqual(4, ProgramCatalog.RulesIn(SpaceId.SecurityRoom).Count);
+            Assert.AreEqual(6, ProgramCatalog.RulesIn(SpaceId.Toilet).Count);
+            Assert.AreEqual(7, ProgramCatalog.RulesIn(SpaceId.Library).Count);   // 80차: L7
+            Assert.AreEqual(5, ProgramCatalog.RulesIn(SpaceId.SecurityRoom).Count);
         }
 
         [Test]
         public void 위협_손전등_대기형_목록이_기획서와_같다()
         {
             CollectionAssert.AreEquivalent(new[] { "H3", "H4", "C3", "S5", "T3", "L3", "L5" }, Ids(r => r.IsThreat));
-            CollectionAssert.AreEquivalent(new[] { "C4", "S3", "S4", "S5", "T3", "T5", "L3" }, Ids(r => r.UsesFlashlight));
+            CollectionAssert.AreEquivalent(new[] { "C4", "S3", "S4", "S5", "T3", "T5", "L3", "L6" }, Ids(r => r.UsesFlashlight));
             CollectionAssert.AreEquivalent(new[] { "C1", "C3", "T3", "H3", "S5", "L2" }, Ids(r => r.IsWaitType));
         }
 
@@ -67,9 +67,16 @@ namespace NightDuty.Tests
                     continue;
                 }
 
+                if (e.Id == ProgramCatalog.SuitMan)
+                {
+                    Assert.AreEqual(string.Empty, e.ResponseRule, "85차: 창밖 노란 얼굴은 수칙 없이(L3는 문간 노란 얼굴만) — 2초 응시하면 달아남");
+                    continue;
+                }
+
                 RuleDef r = ProgramCatalog.Rule(e.ResponseRule);
                 Assert.IsNotNull(r, e.Id);
-                Assert.AreEqual(e.Space, r.Space, e.Id);
+                if (e.Id == ProgramCatalog.ToiletBlackout) Assert.AreEqual("S4", r.Id, "79차: 화장실 소등도 S4(정전 중 손전등 금지)");
+                else Assert.AreEqual(e.Space, r.Space, e.Id);
                 if (e.SecondRule.Length > 0) Assert.AreEqual(e.Space, ProgramCatalog.Rule(e.SecondRule).Space, e.Id);
             }
 
@@ -82,7 +89,7 @@ namespace NightDuty.Tests
         {
             foreach (RuleDef r in ProgramCatalog.AllRules)
             {
-                if (r.IsStandalone) continue;
+                if (r.IsStandalone || ProgramCatalog.IsRetired(r.Id)) continue;   // 79차: T3(S4에 합침)
                 EncounterDef e = ProgramCatalog.Encounter(r.BoundEncounter);
                 Assert.IsNotNull(e, r.Id);
                 Assert.IsTrue(e.ResponseRule == r.Id || e.SecondRule == r.Id, r.Id);
@@ -124,9 +131,9 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 일차1은_S1_G1에_후보에서_넷을_더한_여섯_장이다()
+        public void 일차1은_S1_G1에_후보에서_둘을_더한_네_장이다()
         {
-            // 57차(민: 「1~2일차 수칙이 너무 풀이 좁아」「수칙은 5~6개로 고정」): 고정 4장 → S1·G1 + Day1Pool에서 넷.
+            // 57차(민: 「1~2일차 수칙이 너무 풀이 좁아」): S1·G1 + Day1Pool. 74차(민: 「1일차 4개, 2~4일차 5개, 5일차 6개」): 후보에서 둘.
             HashSet<string> decks = new HashSet<string>();
             for (int seed = 0; seed < 60; seed++)
             {
@@ -134,7 +141,8 @@ namespace NightDuty.Tests
                 NightProgram p = d.Build(Request(1, FixedBands.All(Band.Band0), FixedBands.All(Band.Band0), null));
                 string why = "seed " + seed + ": " + p;
 
-                Assert.AreEqual(ProgramDirector.RulesPerDay, p.Deck.Count, why);
+                Assert.AreEqual(4, ProgramDirector.RulesFor(1));
+                Assert.AreEqual(ProgramDirector.RulesFor(1), p.Deck.Count, why);
                 Assert.IsTrue(p.Has("S1"), "1일차는 모형 위치를 익히는 날 — " + why);
                 Assert.IsFalse(p.Has("S3"), why);
                 Assert.AreEqual("G1", p.Deck[p.Deck.Count - 1].Id, why);
@@ -175,8 +183,7 @@ namespace NightDuty.Tests
                     string why = "seed " + seed + ": " + p.Report;
 
                     // 57차: 하루 여섯 장(민: 「수칙은 5~6개로 고정」) — 공간마다 많아야 한 장(소년 쾅이면 교실 둘), 점검이 없는 공간의 채움부터 뺀다.
-                    Assert.LessOrEqual(p.Deck.Count, ProgramDirector.RulesPerDay, why);
-                    Assert.GreaterOrEqual(p.Deck.Count, ProgramDirector.RulesPerDay - 1, why);
+                    Assert.AreEqual(ProgramDirector.RulesFor(day), p.Deck.Count, why);   // 74차: 2~4일차 5장, 5일차 6장
                     bool bang = p.HasEncounter(ProgramCatalog.BoyBang);
                     foreach (SpaceId s in ProgramCatalog.RuleSpaces)
                     {
@@ -187,7 +194,10 @@ namespace NightDuty.Tests
                     Assert.LessOrEqual(CountIn(p, SpaceId.SecurityRoom), 1, why);
                     Assert.IsFalse(day != 5 && p.Has("K4"), "K4는 5일차만 — " + why);
                     Assert.AreEqual(p.HasEncounter(ProgramCatalog.CctvPerson), p.Has("K1"), why);
-                    Assert.AreEqual("G1", p.Deck[p.Deck.Count - 1].Id, why);
+                    Assert.IsTrue(p.Has("G1"), why);
+                    Assert.AreEqual(p.Has("G4") ? "G4" : "G1", p.Deck[p.Deck.Count - 1].Id, why);   // 79차: G4는 짝수 날 맨 끝(자리가 있을 때)
+                    Assert.IsTrue(!p.Has("G4") || ProgramDirector.HasTabletRule(day), "G4는 짝수 날만 — " + why);
+                    foreach (string retired in ProgramCatalog.Retired) Assert.IsFalse(p.Has(retired), retired + " 폐기 — " + why);
                     if (day == 2) Assert.IsTrue(p.Has(ProgramCatalog.FirstParadoxRule), "2일차 첫 역설 C2 — " + why);
 
                     int flash = 0;
@@ -274,8 +284,8 @@ namespace NightDuty.Tests
             NightProgram day3 = d.Build(Request(3, FixedBands.All(Band.Band1), FixedBands.All(Band.Band1), null));
 
             Assert.IsTrue(day3.HasEncounter(ProgramCatalog.ModelRush), day3.Report);
-            Assert.IsTrue(day3.HasEncounter(ProgramCatalog.SuitMan), day3.Report);
-            Assert.IsTrue(day3.Has("S5") && day3.Has("L5"), day3.Report);
+            Assert.IsFalse(day3.HasEncounter(ProgramCatalog.SuitMan), "84차: 창밖 노란 얼굴은 날짜 사슬로만(2일차) — 예약은 무시한다. " + day3.Report);
+            Assert.IsTrue(day3.Has("S5") && !day3.Has("L5"), day3.Report);
             Assert.IsTrue(day3.At(EncounterSlot.A).Reserved, "예약이 앞 슬롯을 먼저 차지한다");
         }
 
@@ -284,12 +294,12 @@ namespace NightDuty.Tests
         {
             ProgramDirector d = new ProgramDirector(new System.Random(3));
             d.Build(Request(1, FixedBands.All(Band.Band0), FixedBands.All(Band.Band0), null));
-            ProgramRequest req = Request(3, FixedBands.All(Band.Band1), FixedBands.All(Band.Band1), null);
-            req.ForcedRules = new[] { "T5", "L4" };
+            ProgramRequest req = Request(4, FixedBands.All(Band.Band1), FixedBands.All(Band.Band1), null);   // 84차: 2·3일차는 도서관이 노란 얼굴 사슬(L3)로 찬다 — 도서관 강제는 4일차로
+            req.ForcedRules = new[] { "T7", "L4" };   // 79차: T5 폐기
 
             NightProgram p = d.Build(req);
 
-            Assert.IsTrue(p.Has("T5") && p.Has("L4"), p.Report);
+            Assert.IsTrue(p.Has("T7") && p.Has("L4"), p.Report);
         }
 
         [Test]
@@ -300,7 +310,7 @@ namespace NightDuty.Tests
             {
                 ProgramDirector d = new ProgramDirector(new System.Random(seed));
                 d.Build(Request(1, FixedBands.All(Band.Band0), FixedBands.All(Band.Band0), null));
-                NightProgram p = d.Build(Request(3, new FixedBands(Band.Band2, Band.Band0, Band.Band2), FixedBands.All(Band.Band1), null));
+                NightProgram p = d.Build(Request(4, new FixedBands(Band.Band2, Band.Band0, Band.Band2), FixedBands.All(Band.Band1), null));   // 84차: 3일차는 노란 얼굴 사슬이 슬롯 하나를 쓴다 — 4일차로
                 if (!p.HasEncounter(ProgramCatalog.BoyBang)) continue;
 
                 seen = true;
@@ -327,7 +337,14 @@ namespace NightDuty.Tests
                     if (r.Space != SpaceId.None && r.HasAxis && r.Axis == FearAxis.Illuminance) any = true;
                 }
 
-                Assert.IsTrue(any, p.Report);
+                // 79차: 조우·고정 수칙만으로 하루 장수가 꽉 찬 날은 채움이 한 장도 없다(하루 장수가 우선).
+                bool onlyBound = true;
+                foreach (RuleDef r in p.Deck)
+                {
+                    if (r.Space != SpaceId.None && r.Space != SpaceId.SecurityRoom && r.IsStandalone) onlyBound = false;
+                }
+
+                Assert.IsTrue(any || onlyBound, p.Report);
             }
         }
     }

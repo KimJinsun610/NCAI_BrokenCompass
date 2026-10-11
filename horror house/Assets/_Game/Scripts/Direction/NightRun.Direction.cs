@@ -30,6 +30,7 @@ namespace NightDuty
             _tension = new TensionDirector(_program, Day, RestartsTonight);
             _tension.Emitted += OnDirectionEmitted;
             _tension.GazeTargetReady = GazeTargetReady;   // 51차: 사다리(C-3)를 「점검 중」일 때만 시체가 떨어진다
+            _tension.EncounterGate = LeadGateOpen;         // 85차: 블라인드 지시 → 창밖 노란 얼굴 · biology 책/도서관 순찰 지시 → 문간 노란 얼굴
             // 60차: 시체가 떨어지는 곳 반반 — 사다리 방 안에 들어와서(사다리 2.8m 안) 사다리를 볼 때 /
             // 61차(민: 「교실 안쪽에서 떨어지는 건, 플레이어가 그 안쪽에서 나오면서 플레이어 쪽으로」): 사다리 곁에 들어갔다가 나오는 길에(옛: 교실 입구에서 사다리를 볼 때).
             _tension.GazeTargetPosition = TargetPosition;
@@ -165,7 +166,8 @@ namespace NightDuty
 
             int highest = _axes.GetValue(HighestSensory());
             Band auditory = _bands.Shown.GetBand(FearAxis.Auditory);
-            if (DirectorAutoRun && !_sandbox)   // 71차: 개발자 모드 흐름 정지 — 새 조우·단서·가짜 놀람을 스스로 걸지 않는다
+            // 71차: 개발자 모드 흐름 정지 — 새 조우·단서·가짜 놀람을 스스로 걸지 않는다. 피날레 중(2026-10-11, 조기 퇴근으로 일찍 열려도)도 같다.
+            if (DirectorAutoRun && !_sandbox && !_finale.Active)
             {
                 _tension.Tick(CurrentMinute(), realSeconds, highest, auditory, IsCaptured);
             }

@@ -53,10 +53,11 @@ namespace NightDuty.Tests
         public void 유예_안에서는_오르지_않고_넘으면_오래_볼수록_빨리_오른다()
         {
             FixedMobStare s = new FixedMobStare();
-            Assert.AreEqual(0, Feed(s, FinalCues.HallFigureTarget, 1.5f, 3), "3일차 유예 1.5초");
+            // 92차: 복도 끝 인체 모형은 축을 올리지 않는다 — 사람 나무로.
+            Assert.AreEqual(0, Feed(s, FinalCues.H1Object, 1.5f, 3), "3일차 유예 1.5초");
             Assert.AreEqual(1.5f, s.Seconds, 1e-3f);
-            int first = Feed(s, FinalCues.HallFigureTarget, 2f, 3);    // 0~2초: 3 + 0.5t
-            int second = Feed(s, FinalCues.HallFigureTarget, 2f, 3);   // 2~4초
+            int first = Feed(s, FinalCues.H1Object, 2f, 3);    // 0~2초: 3 + 0.5t
+            int second = Feed(s, FinalCues.H1Object, 2f, 3);   // 2~4초
             Assert.AreEqual(7, first, "∫(3+0.5t) 0~2 = 7");
             Assert.AreEqual(9, second, "∫(3+0.5t) 2~4 = 9");
             Assert.Greater(second, first);
@@ -110,7 +111,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 인체_모형을_계속_보면_배치_축이_오르다가_붙잡힌다()
+        public void 인체_모형은_계속_봐도_축이_오르지_않고_붙잡히지_않는다()
         {
             NightRun.FixedMobStareEnabled = true;
             NightRun.BeginNight(3, () => 0);
@@ -120,14 +121,11 @@ namespace NightDuty.Tests
             Gaze(FinalCues.HallFigureTarget, 1.5f);
             Assert.AreEqual(before, NightRun.Axes.GetValue(FearAxis.Layout), "유예 안");
 
-            Gaze(FinalCues.HallFigureTarget, 2f);
-            Assert.AreEqual(before + 7, NightRun.Axes.GetValue(FearAxis.Layout));
-            Assert.IsTrue(NightRun.RaisedSources(FearAxis.Layout).Contains(FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget));
-
+            // 92차(민: 「인체 모형이 복도에 서있는 연출에서, 오래 쳐다보면 죽는걸 빼줘」).
             Gaze(FinalCues.HallFigureTarget, 40f);
-            Assert.IsTrue(NightRun.IsCaptured, "계속 보면 끝내 붙잡힌다");
-            Assert.AreEqual(FearAxis.Layout, NightRun.Cause.Axis);
-            Assert.AreEqual(FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget, NightRun.Cause.SourceId, "붙잡힘 장면이 인체 모형 컷신을 고르는 열쇠");
+            Assert.AreEqual(before, NightRun.Axes.GetValue(FearAxis.Layout), "축이 오르지 않는다");
+            Assert.IsFalse(NightRun.IsCaptured, "붙잡히지 않는다");
+            Assert.GreaterOrEqual(NightRun.Stare.Seconds, 2.5f, "바라본 시간은 센다(목 꺾임)");
         }
 
         [Test]
@@ -182,7 +180,7 @@ namespace NightDuty.Tests
         [Test]
         public void S1_점검_문구는_정면을_보는_인체_모형이다()
         {
-            Assert.AreEqual("인체 모형은 정면을 보고 있습니다.", InspectionCatalog.Find("S-1").TabletLine);
+            Assert.AreEqual("과학실 인체 모형이 정면을 향하는지 확인해주십시오.", InspectionCatalog.Find("S-1").TabletLine);   // 76차 민 문구
         }
     }
 }

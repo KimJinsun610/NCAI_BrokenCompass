@@ -65,6 +65,19 @@ public sealed class BoyHeadBang : MonoBehaviour
     private Transform[] _clipBones;
     private Quaternion[] _wrapPose;
     private Transform _head;
+    private bool _watchedToEnd;
+    private float _watchRun;
+    private float _lastSeenAt = -999f;
+    private bool _scared;
+
+    /// <summary>
+    /// 91차(민: 「소년 머리 박다가 놀람 연출 나오는 게 너무 오래 걸려. 머리 박는 걸 3초 쳐다보면 바로 나오게」): 박는 동안 이만큼(초) 이어 바라보면 곧바로 놀람(<see cref="WatchedToEnd"/>).
+    /// 0.3초 미만 눈을 뗀 것은 이어서 센다. 옛: 끝(<see cref="MaxSeconds"/> 14초)까지 바라봐야 했다.
+    /// </summary>
+    public const float WatchToScare = 3f;
+
+    /// <summary>80차(민: 「머리 부딪히는 걸 끝까지 목격한다면 덮치는 연출 후 증발」): 끝(<see cref="MaxSeconds"/>)까지 바라본 채 박기가 멈췄을 때.</summary>
+    public static event System.Action<BoyHeadBang> WatchedToEnd;
 
     /// <summary>지금 속도 배수. 시험·디버그용.</summary>
     public float Speed
@@ -137,6 +150,26 @@ public sealed class BoyHeadBang : MonoBehaviour
     private void LateUpdate()
     {
         float t = Time.time - _start;
+        if (!_scared && !_stopped)
+        {
+            // 91차: 박는 걸 3초 이어 바라보면 바로 놀람.
+            bool seen = Watched();
+            if (seen) _lastSeenAt = Time.time;
+            if (seen) _watchRun += Time.deltaTime;
+            else if (Time.time - _lastSeenAt > 0.3f) _watchRun = 0f;
+            if (_watchRun >= WatchToScare)
+            {
+                _scared = true;
+                if (_clips != null)
+                {
+                    _stopped = true;
+                    _holdAt = _clipT;
+                }
+
+                if (WatchedToEnd != null) WatchedToEnd(this);
+            }
+        }
+
         if (_clips != null)
         {
             PlayClip(t);
@@ -188,7 +221,12 @@ public sealed class BoyHeadBang : MonoBehaviour
         if (watched) _lastWatched = Time.time;
         float dt = Time.deltaTime;
         _speed = watched ? Mathf.Min(MaxSpeed, _speed + SpeedUpPerSecond * dt) : Mathf.Max(1f, _speed - 0.6f * dt);
-        if (!_stopping && t >= MinSeconds && (t >= MaxSeconds || Time.time - _lastWatched > LookAwayGrace)) _stopping = true;
+        if (!_stopping && t >= MinSeconds && (t >= MaxSeconds || Time.time - _lastWatched > LookAwayGrace))
+        {
+            _stopping = true;
+            _watchedToEnd = t >= MaxSeconds && Time.time - _lastWatched <= LookAwayGrace;   // 80차
+        }
+
 
         float prev = _clipT;
         _clipT += dt * _speed;
@@ -206,6 +244,11 @@ public sealed class BoyHeadBang : MonoBehaviour
                 _stopped = true;
                 _holdAt = th;
                 _clips.Bang.SampleAnimation(_clips.ClipRoot, _holdAt);
+                if (_watchedToEnd && !_scared && WatchedToEnd != null)   // 80차
+                {
+                    _scared = true;
+                    WatchedToEnd(this);
+                }
                 return;
             }
         }

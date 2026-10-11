@@ -19,8 +19,9 @@ MonoBehaviour:
   - "Shift \uB97C \uB204\uB978 \uCC44 \uC774\uB3D9\uD558\uBA74 \uB2EC\uB9B4 \uC218
     \uC788\uC2B5\uB2C8\uB2E4."
   - "Esc \uB97C \uB204\uB974\uBA74 \uC77C\uC2DC\uC815\uC9C0 \uBA54\uB274\uAC00 \uC5F4\uB9BD\uB2C8\uB2E4."
-  - "Tab\uC73C\uB85C \uC624\uB298 \uBC1B\uC740 \uADFC\uBB34\uC218\uCE59\uACFC \uBA54\uC2DC\uC9C0\uB97C
-    \uB2E4\uC2DC \uD655\uC778\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  - "\uC6B0\uD074\uB9AD\uC73C\uB85C \uD0DC\uBE14\uB9BF\uC744 \uB4E4\uACE0, Tab\uC73C\uB85C
+    \uADFC\uBB34\uC218\uCE59\uACFC \uBA54\uC2DC\uC9C0\uB97C \uBC14\uAFD4 \uBCFC \uC218
+    \uC788\uC2B5\uB2C8\uB2E4."
   - "E\uB85C \uC870\uC791 \uAC00\uB2A5\uD55C \uBB38\uC744 \uC5F4\uAC70\uB098 \uB2EB\uC744
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."
   - "\uADFC\uBB34\uC218\uCE59\uC740 \uB0A0\uB9C8\uB2E4 \uB2EC\uB77C\uC9D1\uB2C8\uB2E4.
@@ -36,7 +37,7 @@ MonoBehaviour:
   - "\uC870\uBA85\uC758 \uC0C9\uC740 \uD604\uC7AC \uC870\uB3C4 \uC704\uD5D8\uC744
     \uB4DC\uB7EC\uB0C5\uB2C8\uB2E4. \uCF1C\uC9C4 \uC870\uBA85 \uC218\uB97C \uC140
     \uD544\uC694\uB294 \uC5C6\uC2B5\uB2C8\uB2E4."
-  - "\uADFC\uBB34\uB294 05:00\uC5D0 \uC885\uB8CC\uB429\uB2C8\uB2E4. \uC885\uB8CC
+  - "\uADFC\uBB34\uB294 04:00\uC5D0 \uC885\uB8CC\uB429\uB2C8\uB2E4. \uC885\uB8CC
     \uC2DC\uC810\uAE4C\uC9C0 \uBC1C\uC0DD\uD55C \uD310\uC815\uC740 \uC801\uC6A9\uB429\uB2C8\uB2E4."
   unlockedTips:
   - "\uB3C4\uB9DD\uAC14\uB2E4\uB358 \uACBD\uBE44\uC6D0\uC758 \uD1F4\uC2E4 \uAE30\uB85D\uC740
@@ -54,6 +55,8 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: 9dc9af25b4757184581c010421f92b90, type: 3}
   - id: TIP_002
     sprite: {fileID: 21300000, guid: 26ef758b63a9e5b4e83505197e0f93fc, type: 3}
+  - id: TIP_003
+    sprite: {fileID: 21300000, guid: f7bf1b17beb65ac4dabce364185a882c, type: 3}
   - id: TIP_004
     sprite: {fileID: 21300000, guid: b644aac82d39796419180d8541a07b1d, type: 3}
   - id: TIP_005
@@ -62,8 +65,6 @@ MonoBehaviour:
     sprite: {fileID: 21300000, guid: ec9c452da316527438571d92600367b7, type: 3}
   - id: TIP_007
     sprite: {fileID: 21300000, guid: b364cbba9b3069a45b2f9eaf3f4ccb0e, type: 3}
-  - id: TIP_008
-    sprite: {fileID: 21300000, guid: 454419ae335193142a8f5968d3ff6376, type: 3}
   - id: TIP_009
     sprite: {fileID: 21300000, guid: 64857b2cc52a49149a15c544b8aec58d, type: 3}
   - id: TIP_010

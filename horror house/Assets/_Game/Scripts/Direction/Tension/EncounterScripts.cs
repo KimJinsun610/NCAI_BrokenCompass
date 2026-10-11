@@ -120,6 +120,18 @@ namespace NightDuty
         public float NearAnchor;
 
         /// <summary>
+        /// 85차(민: 「도서관 입구 맞은편 블라인드 점검 지시 → 창문 조우」): 비어 있지 않으면 그 점검 항목이 지시된 뒤에만 방아쇠를 받는다.
+        /// 그날 그 항목은 편성에 넣고 묶어 두었다가(<c>InspectionBoard.Hold</c>) 슬롯이 열리기 조금 앞에 단독 지시로 낸다(<c>NightRun.ReleaseLeadOrders</c>).
+        /// </summary>
+        public string AfterOrder = string.Empty;
+
+        /// <summary>
+        /// 85차(민: 「다음날에도 biology 책 습득 or 다른 도서관 순찰 → 도서관 문 조우」): 비어 있지 않으면 그날 이 중 하나를 [근무 지시]로 정해 두고(평소 지시에서 뺀다)
+        /// 슬롯이 열리기 조금 앞에 낸다. 그 지시가 나간 뒤에만 방아쇠를 받는다.
+        /// </summary>
+        public string[] AfterDuty = new string[0];
+
+        /// <summary>
         /// 61차: 몹 대역이 서는 조우(존재형·시체·CCTV·응시 방아쇠 제외) — 대역을 먼저 세우고 플레이어가 본 뒤 대면한다(<see cref="DirectionPhase.Present"/>).
         /// </summary>
         public bool NeedsSight
@@ -232,8 +244,8 @@ namespace NightDuty
                     Id = ProgramCatalog.YellowFace, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 4f, DeepMargin = 2.5f,   // 61차: 도서관 안쪽 2.5m 넘게 들어와 4초(옛 도서관 8초 체류)
                     Cue = FinalCues.YellowFace, Window = 11f,   // 44차: 8초는 알아보고 비추면 끝나 공포가 쌓이지 않았다 — 마주 비추고 버티는 시간
                     Placement = CuePlacement.AheadOfPlayer, Distance = 4f, StandIn = "mob.duck", AnchorId = FinalCues.FaceTarget,
-                    StageAnchor = StageAnchors.YellowDoor,
-                    Note = "기획서: 도서관 점검 2개 뒤 출입구를 등질 때. 우선 도서관 8초 체류."
+                    StageAnchor = StageAnchors.YellowDoor, AfterDuty = new[] { "W15", "W2" },   // 85차: biology 책 습득 또는 도서관 순찰 지시 뒤
+                    Note = "85차: 창밖 노란 얼굴 다음 날. [근무 지시] W15(biology 책) 또는 W2(도서관 순찰)가 나간 뒤, 도서관 안쪽 2.5m · 4초면 문간에 선다 — L3 「도서관 ?_? 을 계속 비추십시오」."
                 },
                 new EncounterScript
                 {
@@ -249,9 +261,9 @@ namespace NightDuty
                 {
                     Id = ProgramCatalog.ModelRush, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.ScienceRoom, Dwell = 10f,
                     Cue = FinalCues.HallEnd, Window = 10f,
-                    Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.dummy",
+                    Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.dummy.stand",   // 91차: 구부정 → 선 모형(전날 복도 끝에 서 있던 그 모습으로 서 있다가 달려온다)
                     StageAnchor = StageAnchors.RushHall,   // 70차: 과학실 옆 복도 끝 비상등 아래에 세워 두고, 복도에서 알아보면 달려온다(MannequinRush)
-                    Note = "과학실 10초 체류 뒤 복도 끝 비상등 아래에 선다(안에서는 안 보임) → 복도에서 알아보면 달려와 덮친다. S5 — 불을 끄고 기다리면 어깨를 스치고 지나감."
+                    Note = "과학실 10초 체류 뒤 복도 끝 비상등 아래에 선다(안에서는 안 보임) → 복도에서 알아보면 0.8초 꼼짝 않다가 고개를 홱 돌리고 곧게 선 채 13m/s로 달려와 몸을 뚫고 지나간다(플레이어는 넘어졌다 일어남). S5 — 불을 끄고 기다리면 어깨를 스치고 지나감."
                 },
                 new EncounterScript
                 {
@@ -290,10 +302,10 @@ namespace NightDuty
                 new EncounterScript
                 {
                     Id = ProgramCatalog.SuitMan, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 6f,
-                    Cue = FinalCues.WindowKnock, Window = 10f,
-                    Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.windowman", AnchorId = FinalCues.ManTarget,
-                    StageAnchor = StageAnchors.WindowMan, NearAnchor = 6f,   // 61차: 창에서 6m 안에서만
-                    Note = "창 두드림으로 시작. L5: 먼저 인사(비춤·2초 응시)하지 않는다. 도서관 북쪽 창(WallOutside_4m_WindowDouble) 밖 — 모델은 DUCK(민 지정)."
+                    Cue = FinalCues.WindowKnock, Window = 10f,   // 85차: 수칙 없음(L3는 문간 노란 얼굴만) — 창 두드림 소리만
+                    Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.windowman", AnchorId = FinalCues.WindowFaceTarget,
+                    StageAnchor = StageAnchors.WindowMan, AfterOrder = "L-2",   // 85차: 블라인드(L-2) 지시 뒤 · 창 거리 조건(61차 6m) 없앰 — 블라인드 앞에서 창이 보이게
+                    Note = "85차: 창밖 노란 얼굴 — 도서관 노란 얼굴 전날(날짜 사슬). 「도서관 입구 맞은편 블라인드(L-2)」 단독 지시 → 도서관 6초면 북쪽 창 밖에 서서 창을 두드린다(WindowFace). 플레이어 쪽으로 고개를 돌려 보고 있다가, 2초 넘게 응시하면 창 앞을 가로질러 달아난다. 수칙 없음."
                 },
                 new EncounterScript
                 {
@@ -349,6 +361,9 @@ namespace NightDuty
         /// <summary>CCTV 채널 수(0~4). 연출 쪽 채널 ID는 <c>cctv.ch&lt;n&gt;</c>.</summary>
         public const int CctvChannels = 5;
 
+        /// <summary>79차 K5: 전화가 울리는 시간(초) — 벨 8번 × 3초.</summary>
+        public const float PhoneRingSeconds = 24f;
+
         private static readonly Dictionary<string, RuleTriggerScript> s_byRule = Build();
 
         /// <summary>모든 대본.</summary>
@@ -376,6 +391,8 @@ namespace NightDuty
                 new RuleTriggerScript { RuleId = "T2", Cue = FinalCues.StallOccupied, Target = "toilet.stall.inner.inside", Space = SpaceId.Toilet, DwellMin = 1f, DwellMax = 4f, Duration = 20f },
                 new RuleTriggerScript { RuleId = "T5", Cue = FinalCues.StallLit, Space = SpaceId.Toilet, DwellMin = 4f, DwellMax = 9f, EndOnExit = true },
                 new RuleTriggerScript { RuleId = "L2", Cue = FinalCues.Pages, Space = SpaceId.Library, DwellMin = 6f, DwellMax = 14f, Duration = 3f },
+                // 79차 K5: 경비실에 머물면 전화가 울린다 — 벨 8번(3초 간격) 동안. 받으면 연출(PhoneRinger)이 벨을 그친다.
+                new RuleTriggerScript { RuleId = "K5", Cue = FinalCues.PhoneRing, Space = SpaceId.SecurityRoom, DwellMin = 4f, DwellMax = 10f, Duration = PhoneRingSeconds },
                 new RuleTriggerScript { RuleId = "K2", Cue = FinalCues.EmptyRoom, Target = "cctv", Space = SpaceId.SecurityRoom, WhileViewingCctv = true, DwellMin = 2f, DwellMax = 5f, Duration = 15f }
             };
 

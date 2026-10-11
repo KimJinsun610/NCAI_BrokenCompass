@@ -2,7 +2,7 @@
 
 namespace NightDuty.Tests
 {
-    /// <summary>5일차 피날레 판정(11단계): K4(경비실을 나가지 않기) · 「봤다」(창밖 남자 2초) · CCTV 채널 · G3 빈칸 · 결말 정산.</summary>
+    /// <summary>5일차 피날레 판정(11단계 · 2026-10-10 개편): K4(경비실을 나가지 않기) · 「봤다」(응시 창 안에서 창밖 남자를 합쳐서 1.5초, 비춤 제외) · CCTV 채널 · G3 빈칸 · 결말 정산.</summary>
     public sealed class FinaleTests
     {
         private int _clock;
@@ -32,6 +32,12 @@ namespace NightDuty.Tests
         private static void Gaze(string target, int samples)
         {
             for (int i = 0; i < samples; i++) NightRun.Send(JudgeSignal.Gaze(target, 0.1f));
+        }
+
+        /// <summary>창밖 남자가 화면에 보였는지 0.1초씩(연출이 SightProbe.VisibleNow로 재서 넣는 값).</summary>
+        private static void Sight(bool visible, int samples)
+        {
+            for (int i = 0; i < samples; i++) NightRun.Finale.FeedSight(visible, 0.1f);
         }
 
         [Test]
@@ -69,10 +75,11 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 다시_하면_위반_봤다_채널을_지우고_시도가_는다()
+        public void 다시_하면_위반_봤다_채널_응시를_지우고_시도가_는다()
         {
             OpenFinale();
-            NightRun.Send(JudgeSignal.Beam(FinaleWatch.WindowTarget, 0.1f));
+            NightRun.Finale.OpenGazeWindow();
+            Sight(true, 15);
             NightRun.Send(JudgeSignal.Channel("cctv.ch1"));
             NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceExited, SpaceId.SecurityRoom));
 
@@ -80,36 +87,66 @@ namespace NightDuty.Tests
 
             Assert.IsFalse(NightRun.Finale.Violated);
             Assert.IsFalse(NightRun.Finale.Seen);
+            Assert.AreEqual(0f, NightRun.Finale.GazeTotal);
+            Assert.IsFalse(NightRun.Finale.GazeWindowOpen, "응시 창도 닫힌다");
             Assert.AreEqual(0, NightRun.Finale.ChannelsSeen);
             Assert.AreEqual(2, NightRun.Finale.Attempt);
         }
 
         [Test]
-        public void 창밖_남자를_2초_이어서_보면_봤다()
+        public void 응시_창_안에서_창밖_남자가_화면에_1점5초_보이면_봤다()
         {
             OpenFinale();
-            Gaze(FinaleWatch.WindowTarget, 19);
-            Assert.IsFalse(NightRun.Finale.Seen, "1.9초");
-            Gaze(FinaleWatch.WindowTarget, 1);
-            Assert.IsTrue(NightRun.Finale.Seen, "2.0초");
+            NightRun.Finale.OpenGazeWindow();
+            Sight(true, 14);
+            Assert.IsFalse(NightRun.Finale.Seen, "1.4초");
+            Sight(true, 1);
+            Assert.IsTrue(NightRun.Finale.Seen, "1.5초");
         }
 
         [Test]
-        public void 응시가_끊기면_처음부터_센다()
+        public void 화면에서_벗어났다_돌아와도_합쳐서_센다()
         {
             OpenFinale();
-            Gaze(FinaleWatch.WindowTarget, 15);
-            Gaze(string.Empty, 3);   // 0.3초 틈(허용 0.2초)
-            Gaze(FinaleWatch.WindowTarget, 15);
+            NightRun.Finale.OpenGazeWindow();
+            Sight(true, 8);
+            Sight(false, 5);   // 0.5초 화면 밖
+            Sight(true, 7);
+            Assert.IsTrue(NightRun.Finale.Seen, "0.8 + 0.7 = 1.5초");
+        }
+
+        [Test]
+        public void 응시_창_밖에서는_세지_않는다()
+        {
+            OpenFinale();
+            Sight(true, 30);
+            Assert.IsFalse(NightRun.Finale.Seen, "창이 열리기 전");
+            Assert.AreEqual(0f, NightRun.Finale.GazeTotal);
+
+            NightRun.Finale.OpenGazeWindow();
+            Sight(true, 10);
+            NightRun.Finale.CloseGazeWindow();
+            Sight(true, 10);
+            Assert.IsFalse(NightRun.Finale.Seen, "창이 닫힌 뒤");
+        }
+
+        [Test]
+        public void 조준점_응시_신호는_세지_않는다()
+        {
+            OpenFinale();
+            NightRun.Finale.OpenGazeWindow();
+            Gaze(FinaleWatch.WindowTarget, 30);
+            Assert.IsFalse(NightRun.Finale.Seen, "B안 — 화면에 보인 시간만 센다");
+            Assert.AreEqual(0f, NightRun.Finale.GazeTotal);
+        }
+
+        [Test]
+        public void 비춤은_봤다로_세지_않는다()
+        {
+            OpenFinale();
+            NightRun.Finale.OpenGazeWindow();
+            for (int i = 0; i < 30; i++) NightRun.Send(JudgeSignal.Beam(FinaleWatch.WindowTarget, 0.1f));
             Assert.IsFalse(NightRun.Finale.Seen);
-        }
-
-        [Test]
-        public void 비추면_바로_봤다()
-        {
-            OpenFinale();
-            NightRun.Send(JudgeSignal.Beam(FinaleWatch.WindowTarget, 0.1f));
-            Assert.IsTrue(NightRun.Finale.Seen);
         }
 
         [Test]
@@ -156,7 +193,8 @@ namespace NightDuty.Tests
                 got = s;
             };
 
-            NightRun.Send(JudgeSignal.Beam(FinaleWatch.WindowTarget, 0.1f));
+            NightRun.Finale.OpenGazeWindow();
+            Sight(true, 15);
             Assert.IsTrue(NightRun.EndFinale());
 
             Assert.AreEqual(1, ended);

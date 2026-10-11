@@ -27,3 +27,6 @@ MonoBehaviour:
     judgeId: 
     gazeCollider: 0
     beats: []
+  screenFont: {fileID: 11400000, guid: 4a78f016907f53f4f9d74cd782fee09c, type: 2}
+  screenFontSize: 36
+  creditsPrefab: {fileID: 1992461081768549865, guid: 0a662886e817b9a45a7d590f728e8a32, type: 3}

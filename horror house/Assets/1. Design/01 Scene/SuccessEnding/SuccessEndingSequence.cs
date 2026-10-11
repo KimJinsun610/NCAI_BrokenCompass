@@ -105,6 +105,12 @@ namespace NightDuty.SuccessEnding
         public float centerFontSize = 34f;
         [Tooltip("프롤로그처럼 글자가 타자 치듯 나타나는 속도(초당 글자). 0이면 한 번에.")]
         public float typeCharsPerSecond = 28f;
+        [Tooltip("음성이 있는 줄은 자막 타자 속도를 음성 길이에 맞춥니다(말보다 자막이 먼저 끝나 소리가 밀려 들리지 않게). 끄면 typeCharsPerSecond 고정.")]
+        public bool fitTypingToVoice = true;
+        [Tooltip("음성 길이 중 자막이 다 나타나기까지 쓰는 비율. 0.85 = 말이 끝나기 조금 전에 자막이 완성됩니다.")]
+        [Range(0.3f, 1f)] public float typeVoiceFraction = 0.85f;
+        [Tooltip("음성에 맞출 때의 최소 타자 속도(초당 글자). 최대는 typeCharsPerSecond.")]
+        [Min(1f)] public float minTypeCharsPerSecond = 4f;
         public Vector2 randomFontSize = new Vector2(30f, 54f);
         public Vector2 floodFontSize = new Vector2(24f, 66f);
         [Range(0, 30)] public float randomRotation = 5f;
@@ -418,6 +424,7 @@ namespace NightDuty.SuccessEnding
         private readonly List<Coroutine> spawners = new List<Coroutine>();
         private int crowdIndex;
         private float typeStart; private bool typing;
+        private float typeCps;
 
         // build-up audio state
         private bool buildUpActive;
@@ -468,6 +475,27 @@ namespace NightDuty.SuccessEnding
             }
             foreach (var s in AllSources()) if (s != null) { s.playOnAwake = false; s.Stop(); }
             SetupDeathAudio();
+            PreloadVoices();
+        }
+
+        // 음성 클립은 「Preload Audio Data」가 꺼져 있어 처음 재생할 때 불러오느라 시작이 늦을 수 있다 — 씬 시작에 미리 불러 둔다.
+        private void PreloadVoices()
+        {
+            PreloadLines(callLines); PreloadLines(buildUpLines); PreloadLines(afterLines); PreloadLines(cleanLines);
+            PreloadClips(floodExtraVoices);
+        }
+
+        private static void PreloadLines(List<EndingLine> lines)
+        {
+            if (lines == null) return;
+            foreach (var line in lines) if (line != null) PreloadClips(line.voices);
+        }
+
+        private static void PreloadClips(AudioClip[] clips)
+        {
+            if (clips == null) return;
+            foreach (var c in clips)
+                if (c != null && c.loadState != AudioDataLoadState.Loaded && c.loadState != AudioDataLoadState.Loading) c.LoadAudioData();
         }
 
         private AudioClip DeathClip(AudioClip assigned, string name)
@@ -1067,12 +1095,12 @@ namespace NightDuty.SuccessEnding
 
             if (line.mode == EndingLineMode.Centered && line.breakAtVoiceTime >= 0f && voiceSrc != null)
             {
-                ShowCentered(line.text);
+                ShowCentered(line.text, SpeechSeconds(line));
                 yield return BreakLine(line, voiceSrc, dur);
             }
             else if (line.mode == EndingLineMode.Centered)
             {
-                ShowCentered(line.text);
+                ShowCentered(line.text, SpeechSeconds(line));
                 float voiceEnd = VoiceEnd(line);
                 float visible = Mathf.Clamp(Mathf.Max(dur - line.hideBeforeEnd, voiceEnd), 0f, dur);
                 yield return WaitCursor(visible);
@@ -1089,13 +1117,31 @@ namespace NightDuty.SuccessEnding
             }
         }
 
-        private void ShowCentered(string text)
+        // 이 줄의 음성이 실제로 말하는 시간(초, 재생 음높이 반영). 17번처럼 중간에 끊는 줄은 끊는 지점까지. 음성이 없으면 0.
+        private float SpeechSeconds(EndingLine line)
+        {
+            if (line == null || line.voices == null || line.voices.Length == 0) return 0f;
+            if (line.breakCutAtVoiceTime > 0f) return line.breakCutAtVoiceTime / RoutePitch(line.voiceRoute);
+            return VoiceEnd(line);
+        }
+
+        // 자막 타자 속도: 음성이 있으면 음성 길이의 typeVoiceFraction에 걸쳐 다 나타나게(최대 typeCharsPerSecond), 없으면 typeCharsPerSecond.
+        private float TypeSpeedFor(string text, float speechSeconds)
+        {
+            if (typeCharsPerSecond <= 0f) return 0f;
+            if (!fitTypingToVoice || speechSeconds <= 0f || string.IsNullOrEmpty(text)) return typeCharsPerSecond;
+            float cps = text.Length / Mathf.Max(0.05f, speechSeconds * typeVoiceFraction);
+            return Mathf.Clamp(cps, Mathf.Min(minTypeCharsPerSecond, typeCharsPerSecond), typeCharsPerSecond);
+        }
+
+        private void ShowCentered(string text, float speechSeconds = 0f)
         {
             if (centerText == null) return;
             centerText.fontSize = centerFontSize;
             centerText.color = textColor;
             centerText.text = text;
-            if (typeCharsPerSecond > 0f) { centerText.maxVisibleCharacters = 0; typeStart = seqTime; typing = true; }
+            typeCps = TypeSpeedFor(text, speechSeconds);
+            if (typeCps > 0f) { centerText.maxVisibleCharacters = 0; typeStart = seqTime; typing = true; }
             else { centerText.maxVisibleCharacters = 99999; typing = false; }
         }
 
@@ -1519,7 +1565,7 @@ namespace NightDuty.SuccessEnding
             float now = seqTime;
 
             if (typing && centerText != null)
-                centerText.maxVisibleCharacters = Mathf.CeilToInt((now - typeStart) * typeCharsPerSecond);
+                centerText.maxVisibleCharacters = Mathf.CeilToInt((now - typeStart) * typeCps);
 
             for (int i = popping.Count - 1; i >= 0; i--)
             {

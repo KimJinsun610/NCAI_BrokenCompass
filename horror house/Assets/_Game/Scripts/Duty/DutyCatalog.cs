@@ -12,7 +12,7 @@ namespace NightDuty
         /// <summary>W2 — 도서관 숨은 지점 네 곳을 지나 나온다.</summary>
         Patrol = 1,
 
-        /// <summary>W3 — 1-3 교실 문간에 서서 천장 등을 1초 본다.</summary>
+        /// <summary>W3 「교실의 상태를 확인해주십시오.」 — 1-3 교실 안에 <see cref="DutyCatalog.ClassroomCheckSeconds"/>초 머무른다(88차 — 옛: 문간에서 천장 등 1초 응시).</summary>
         LightsOutCheck = 2,
 
         /// <summary>W4 — 플레이어가 열어 둔 문을 모두 닫는다.</summary>
@@ -28,7 +28,16 @@ namespace NightDuty
         GazeCheck = 6,
 
         /// <summary>65차 — 물건 하나(<see cref="DutyDef.Target"/>)를 [E]로 줍는다(민: 「반납 상자 → 도서관 안쪽 책상의 biology 책 습득, 클릭해서 습득하면 완료」).</summary>
-        Pickup = 7
+        Pickup = 7,
+
+        /// <summary>80차 W21 — 복도 끝 비상구 앞(<see cref="DutyCatalog.ExitZone"/>)에서 손전등을 세 번 깜빡인다(<see cref="DutyCatalog.FlashWindowSeconds"/>초 안에 켜기 세 번).</summary>
+        ExitFlash = 8,
+
+        /// <summary>80차 W19 — 경비실 전화가 울리면 받는다(<see cref="SignalKind.PhoneAnswered"/>). 지시를 받으면 잠시 뒤 전화가 울린다(연출 <c>PhoneDuty</c>).</summary>
+        PhoneAnswer = 9,
+
+        /// <summary>80차 W16·W17 — 출입 카드(<see cref="DutyDef.Target"/>)를 [E]로 집어 경비실 열쇠함(LibraryCardCatalogB의 열린 서랍)에 [E]로 넣는다(연출 <c>DutyCards</c>).</summary>
+        CardDelivery = 10
     }
 
     /// <summary>[근무 지시] 한 종류의 정의. 문구는 「~바랍니다」(수칙 「하십시오」 · 점검 「있습니다」 · 역설 「지금 하십시오」와 갈린다).</summary>
@@ -84,6 +93,14 @@ namespace NightDuty
             return d;
         }
 
+        /// <summary>80차: 출입 카드 반납 지시를 만든다. <paramref name="card"/> = 연출 쪽이 세우는 카드 ID.</summary>
+        public static DutyDef Card(string id, string card, SpaceId space, FearAxis axis, string order, string done, string missed, float seconds, params int[] days)
+        {
+            DutyDef d = new DutyDef(id, DutyKind.CardDelivery, space, axis, order, done, missed, seconds, days);
+            d.Target = card;
+            return d;
+        }
+
         /// <summary>만든다.</summary>
         public DutyDef(string id, DutyKind kind, SpaceId space, FearAxis axis, string order, string done, string missed, float seconds, params int[] days)
         {
@@ -111,7 +128,7 @@ namespace NightDuty
     /// </summary>
     public static class DutyCatalog
     {
-        /// <summary>머리글.</summary>
+        /// <summary>옛 머리글(88차부터 지시 문자에 붙이지 않는다 — 민: 「그냥 지시 문구만 나오게」). 로그·문서용.</summary>
         public const string Header = "[근무 지시] ";
 
         /// <summary>도서관 순찰 지점 구역 ID 접두어(뒤에 1~4).</summary>
@@ -135,8 +152,23 @@ namespace NightDuty
         /// <summary>65차: 도서관 안쪽 책상 위 biology 책(줍기 대상, 씬 <c>Interior/Library/Book16 (2)</c>).</summary>
         public const string LibraryBookTarget = "duty.library.book";
 
+        /// <summary>80차 W16: 과학실에 두고 간 출입 카드(과학실 책상 위에 선다).</summary>
+        public const string ScienceCardTarget = "duty.card.science";
+
+        /// <summary>80차 W17: 교실(1-1) 교탁 서랍 속 출입 카드.</summary>
+        public const string ClassroomCardTarget = "duty.card.classroom";
+
+        /// <summary>80차 W21: 손전등 세 번 깜빡임을 한 번으로 치는 시간(초).</summary>
+        public const float FlashWindowSeconds = 8f;
+
+        /// <summary>80차 W21: 깜빡임 수.</summary>
+        public const int FlashCount = 3;
+
         /// <summary>CCTV 채널 하나를 본 것으로 치는 초.</summary>
         public const float ChannelSeconds = 2f;
+
+        /// <summary>88차 W3: 교실 상태 확인으로 치는 교실 안 누적 초.</summary>
+        public const float ClassroomCheckSeconds = 2f;
 
         /// <summary>등·유도등을 본 것으로 치는 연속 응시 초.</summary>
         public const float GazeSeconds = 1f;
@@ -146,30 +178,35 @@ namespace NightDuty
 
         private static readonly List<DutyDef> s_all = new List<DutyDef>
         {
-            new DutyDef("W1", DutyKind.CctvSweep, SpaceId.SecurityRoom, FearAxis.Layout,
-                "CCTV 전 채널 순회 바랍니다.", "CCTV 순회가 기록되었습니다.", "CCTV 순회 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+            // 77차(민): W1 CCTV 순회 폐기(K-1 「CCTV 모든 채널」 점검과 겹침). ID W1은 다시 쓰지 않는다.
             new DutyDef("W2", DutyKind.Patrol, SpaceId.Library, FearAxis.Auditory,
-                "도서관 순찰 바랍니다.", "도서관 순찰이 기록되었습니다.", "도서관 순찰 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 57차: 120 → 150초 · 67차(민): 제한 없음
+                "도서관을 순찰해주십시오.", "도서관 순찰이 기록되었습니다.", "도서관 순찰 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 57차: 120 → 150초 · 67차(민): 제한 없음
             new DutyDef("W3", DutyKind.LightsOutCheck, SpaceId.Classroom_1_3, FearAxis.Auditory,
-                "교실 소등 확인", "1-3 교실 이상 없음.", "1-3 교실 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+                "교실의 상태를 확인해주십시오.", "1-3 교실 이상 없음.", "1-3 교실 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
             new DutyDef("W4", DutyKind.DoorTidy, SpaceId.Corridor, FearAxis.Layout,
-                "열어 둔 문 정리 바랍니다.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 0f, 2, 3, 4, 5),   // 67차(민): 제한 없음
+                "열어 둔 문들을 정리 해주십시오.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 0f, 2, 3, 4, 5),   // 67차(민): 제한 없음
             new DutyDef("W5", DutyKind.LogSign, SpaceId.SecurityRoom, FearAxis.Auditory,
-                "경비실 근무일지 서명", "근무일지 서명이 기록되었습니다.", "근무일지 서명 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),
-            new DutyDef("W6", DutyKind.ExitSignCheck, SpaceId.Corridor, FearAxis.Auditory,
-                "복도 끝 비상구 응시 후 경비실 복귀", "유도등 확인이 기록되었습니다.", "유도등 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+                "경비실 근무일지에 서명해주십시오.", "근무일지 서명이 기록되었습니다.", "근무일지 서명 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),
+            // 92차(민: 「복도 끝 비상구를 응시 후 경비실에 복귀하십시오 <- 이건 폐지해줘」): W6 비상구 응시 폐기. ID W6은 다시 쓰지 않는다(ExitSignCheck 처리 코드는 남겨 둠).
 
-            // 57차(민: 「근무 지시 풀을 늘려서 다양하게」): 비품 확인 — 그날 점검에 없는 점검 대상을 1초 본다(보고 없음, 응시 대상은 씬에 이미 있다).
-            DutyDef.Gaze("W7", "H-1", FearAxis.Illuminance, "복도 소화기 압력 확인 바랍니다.", "소화기 확인이 기록되었습니다.", "소화기 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
-            DutyDef.Gaze("W8", "S-2", FearAxis.Illuminance, "과학실 현미경 확인 바랍니다.", "현미경 전원 확인이 기록되었습니다.", "현미경 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
-            DutyDef.Gaze("W9", "C-1", FearAxis.Layout, "교실 화분 상태 확인 바랍니다.", "화분 확인이 기록되었습니다.", "화분 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
-            DutyDef.Gaze("W10", "H-2", FearAxis.Layout, "복도 식수대 누수 확인 바랍니다.", "식수대 확인이 기록되었습니다.", "식수대 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
-            DutyDef.Gaze("W11", "L-2", FearAxis.Illuminance, "도서관 블라인드 확인 바랍니다.", "블라인드 확인이 기록되었습니다.", "블라인드 확인 기록이 없습니다.", LimitSeconds, 2, 3, 4, 5),
-            DutyDef.Gaze("W12", "T-3", FearAxis.Illuminance, "화장실 거울 조명 확인 바랍니다.", "거울 조명 확인이 기록되었습니다.", "거울 조명 확인 기록이 없습니다.", LimitSeconds, 2, 3, 4, 5),
-            DutyDef.Gaze("W13", "L-1", FearAxis.Layout, "도서관 열람석 확인 바랍니다.", "열람석 확인이 기록되었습니다.", "열람석 확인 기록이 없습니다.", LimitSeconds, 2, 3, 4, 5),
-            DutyDef.Gaze("W14", "T-2", FearAxis.Auditory, "화장실 칸 문 확인 바랍니다.", "칸 문 확인이 기록되었습니다.", "칸 문 확인 기록이 없습니다.", LimitSeconds, 3, 4, 5),
+            // 77차(민: 「지시 문구들은 점검 지시들과 너무 겹쳐서」): 57차 비품 확인 W7~W14(점검 대상을 1초 보기) 폐기. ID W7~W14는 다시 쓰지 않는다.
 
             // 65차(민: 「반납 상자는 book16(2) 관련 지시로 — 도서관 안쪽 책상에 있는 biology 책을 습득하세요. 클릭해서 습득하면 완료」). 문구는 민 그대로(「~바랍니다」 예외).
+            // 80차(민: W19 「경비실 전화가 울리면 받아주십시오.」 채택 — 문구 민 그대로). 지시 뒤 전화가 울린다 — K5(세 번 울린 뒤 받기)와 맞물린다.
+            new DutyDef("W19", DutyKind.PhoneAnswer, SpaceId.SecurityRoom, FearAxis.Auditory,
+                "경비실 전화가 울리면 받아주십시오.", "통화가 기록되었습니다.", "통화 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+
+            // 80차(민: W16 「과학실에 두고 간 출입 카드를 경비실 열쇠함에 넣어주십시오.」 · W17 「교실 교탁 서랍의 출입 카드를 가져와 주십시오.」 ·
+            // 「열쇠함은 경비실의 LibraryCardCatalogB에 열려있는 서랍에 두는 걸로 · 카드키 모델 · 문구도 출입 카드로」). 둘 다 열쇠함에 넣으면 완료.
+            DutyDef.Card("W16", ScienceCardTarget, SpaceId.ScienceRoom, FearAxis.Layout, "과학실에 두고 간 출입 카드를 경비실 열쇠함에 넣어주십시오.",
+                "출입 카드 반납이 기록되었습니다.", "출입 카드 반납 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+            DutyDef.Card("W17", ClassroomCardTarget, SpaceId.Classroom, FearAxis.Layout, "교실 교탁 서랍의 출입 카드를 가져와 주십시오.",
+                "출입 카드 회수가 기록되었습니다.", "출입 카드 회수 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+
+            // 80차(민: D1 채택 「유도등이 아니라 비상구라고 명시」). W18·W20은 폐기한 제안 번호라 쓰지 않는다.
+            new DutyDef("W21", DutyKind.ExitFlash, SpaceId.Corridor, FearAxis.Illuminance,
+                "복도 끝 비상구 앞에서 손전등을 세 번 깜빡여 주십시오.", "비상구 신호가 기록되었습니다.", "비상구 신호 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+
             DutyDef.Pickup("W15", LibraryBookTarget, SpaceId.Library, FearAxis.Auditory, "도서관 안쪽 책상에 있는 biology 책을 습득하세요.", "biology 책 습득이 기록되었습니다.", "biology 책 습득 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 67차(민): 제한 없음
         };
 
@@ -207,6 +244,18 @@ namespace NightDuty
         /// </summary>
         public const float LimitSeconds = 120f;
 
+        /// <summary>
+        /// 76차(민: 「지시 사항들의 제한 시간도 폐기해줘」): 기본 꺼짐 — 근무 지시·점검 지시 모두 기한·「HH:MM까지」·기한 지남 경고가 없다.
+        /// 67차 제한 방식을 시험하는 옛 시험만 켠다. 켜지 않는 한 <see cref="DutyDef.Seconds"/>는 읽지 않고 <see cref="EffectiveSeconds"/>를 쓴다.
+        /// </summary>
+        public static bool TimeLimitsEnabled { get; set; }
+
+        /// <summary>76차: 지금 적용할 그 지시의 기한(실제 초). 제한을 껐으면(기본) 늘 0 = 제한 없음.</summary>
+        public static float EffectiveSeconds(DutyDef def)
+        {
+            return def == null || !TimeLimitsEnabled ? 0f : def.Seconds;
+        }
+
         /// <summary><see cref="LimitSeconds"/>를 게임 분으로(48분).</summary>
         public static float LimitGameMinutes
         {
@@ -234,33 +283,32 @@ namespace NightDuty
         /// <summary>지시 문자 끝에 붙는 마감 줄(67차 ②) — 제한이 있는 지시만 「HH:MM까지」. 받은 시각을 모르면 빈 문자열.</summary>
         public static string LimitLine(DutyDef def, float issuedMinute)
         {
-            if (def == null || def.Seconds <= 0f || issuedMinute < 0f) return string.Empty;
-            return "\n" + DeadlineText(issuedMinute, def.Seconds);
+            float seconds = EffectiveSeconds(def);   // 76차: 제한을 껐으면 마감 줄이 없다
+            if (seconds <= 0f || issuedMinute < 0f) return string.Empty;
+            return "\n" + DeadlineText(issuedMinute, seconds);
         }
 
         /// <summary>
-        /// 그날의 지시 문자(머리글 포함). 머리글은 늘 멀쩡하고 <b>내용이</b> 뒤틀린다 — 2일차부터 W3에 「지나친 확신」,
-        /// 4일차 W2는 「다른 근무자」 변주(제안서 대표 장면 ①②).
+        /// 그날의 지시 문자 — 88차(민: 「지시 메시지의 양식을 고쳐야 해. 그냥 지시 문구만 나오게 해줘」): 지시 문장만(옛 머리글 「[근무 지시] 」 없음).
         /// </summary>
         public static string OrderText(DutyDef def, int day)
         {
             if (def == null) return string.Empty;
-            if (def.Kind == DutyKind.LightsOutCheck && day >= 2) return Header + def.Order + "\n1-3 교실은 소등되어 있습니다.";
-            if (def.Kind == DutyKind.Patrol && day == 4) return Header + "복도 순찰은 다른 근무자가 진행 중입니다. " + def.Order;
-            return Header + def.Order;
+            // 77차(민): W2 4일차 「다른 근무자」 변주 폐기, W3 2일차부터 둘째 줄(「1-3 교실은 소등되어 있습니다.」)도 새 문구에 없어 뺐다.
+            return def.Order;
         }
 
-        /// <summary>67차: 태블릿에 실리는 지시 문자 = 지시 문장 + 마감 줄(「02:08까지」, 제한 없는 W2·W4·W5·W15는 없음).</summary>
+        /// <summary>태블릿에 실리는 지시 문자 = 지시 문장만(88차 — 67차 마감 줄 「02:08까지」도 붙이지 않는다).</summary>
         public static string MessageText(DutyDef def, int day, float issuedMinute)
         {
-            return OrderText(def, day) + LimitLine(def, issuedMinute);
+            return OrderText(def, day);
         }
 
         /// <summary>완료 답장(「~이 기록되었습니다. 00:42」). 「확인되었습니다.」는 역설 답장 전용이라 쓰지 않는다.</summary>
         public static string DoneText(DutyDef def, int day, int minute)
         {
             if (def == null) return string.Empty;
-            string text = def.Kind == DutyKind.Patrol && day == 4 ? "순찰이 기록되었습니다. 근무자 2명." : def.Done;
+            string text = def.Done;   // 77차: 4일차 W2 변주 폐기
             return minute >= 0 ? text + " " + Clock(minute) : text;
         }
 

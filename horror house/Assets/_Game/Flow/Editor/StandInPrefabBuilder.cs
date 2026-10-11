@@ -94,7 +94,7 @@ public static class StandInPrefabBuilder
             new Spec { Id = "mob.boy.stand", Model = NewBoy, Height = 1.35f, LoopClipModel = NewBoy, ExitWalk = true, Note = "선 소년 = 새 skirtboy 숨쉬기(멀리 보이는 몹 — 59차: 사라질 때 사각지대로 달려감)" },
             new Spec { Id = "mob.legs", Model = NewBoy, Height = 1.35f, Pose = PoseHanging, Pivot = Pivot.Hanging, GazeBox = true, Note = "천장 다리·시체 낙하 = 새 skirtboy, 팔은 천장 속·다리만 보임" },
             new Spec { Id = "mob.windowman", Model = NewDuck, Height = 1.85f, LoopClipModel = NewDuck, ExitWalk = true, GazeBox = true, HeadBox = new Vector3(0.6f, 0.55f, 0.45f), Note = "창밖 남자 = 새 business duck(숨쉬기)" },
-            new Spec { Id = "mob.duck", Model = NewDuck, Height = 1.85f, LoopClipModel = NewDuck, ExitWalk = true, Note = "노란 얼굴 = 새 business duck(숨쉬기)" },
+            new Spec { Id = "mob.duck", Model = NewDuck, Height = 1.85f, LoopClipModel = NewDuck, ExitWalk = true, Note = "노란 얼굴 = 새 business duck(숨쉬기) — 94차(민): 92차 A안(쓰러짐 첫 프레임) 되돌림" },
             // 61차(민: 「키가 높아짐에 따라 인체 모형(몬스터)도 스케일을 살짝 올려 줘」): 인체모형 1.7 → 1.9m(플레이어 1.95m·눈 1.70m보다 머리 하나 위).
             new Spec { Id = "mob.dummy.stand", Model = "m_humandummy/humman dummy_default_motion.fbx", BindHeight = 1.07f, Height = 1.9f, PoseClipModel = "m_humandummy/humman dummy_default_motion.fbx", PoseTime = 0f, Note = "복도 끝에 선 자 = 인체모형(팔을 내린 선 자세)" },
             new Spec { Id = "mob.dummy", Model = "m_humandummy/humman dummy_wake_motion.fbx", BindHeight = 1.07f, Height = 1.9f, PoseClipModel = "m_humandummy/humman dummy_wake_motion.fbx", PoseTime = 6.6f, Note = "모형 급습 = 인체모형(일어선 직후 구부정한 자세)" },
@@ -104,6 +104,7 @@ public static class StandInPrefabBuilder
             new Spec { Id = "mob.blackman", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, Note = "CCTV에만 보이는 사람(기존 유지)" },
             new Spec { Id = "mob.blackman.glimpse", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, ExitWalk = true, Note = "멀리 보이는 검은 남자(59차) — CCTV 사람과 같은 모델에 달리기만 더함(CCTV 사람은 결과 단계에 걸어 나가지 않게 따로 둠)" },
             new Spec { Id = "prop.toilet.water", WrapPrefab = KimHorror + "Toilet/HorrorProp_ToiletA_ClearWater.prefab", Note = "61차(민: 「변기 물 적용 안 되어 있음 — 진선님 에셋 있음」): 맑은 변기 물. 씬 변기에 겹쳐 물만 보인다(ToiletBowls가 안쪽 변기를 끈다)" },
+            new Spec { Id = "prop.toilet.flush", WrapPrefab = KimHorror + "Toilet/HorrorProp_ToiletA_BloodFlush.prefab", Note = "79차 T1: 물 내림 단서 때 변기 물이 소용돌이치며 내려간다(김진선님 ToiletFlush — 「T1 물 내림 단서 연결은 Lee님 작업」). 런타임에 물·소용돌이를 맑은 물 재질로 바꾼다(ToiletFlushCue)" },
             new Spec { Id = "prop.toilet.bloodhair", WrapPrefab = KimHorror + "Toilet/HorrorProp_ToiletA_BloodHair.prefab", Note = "61차: T-1 이상 — 핏물·머리카락, 가까이(0.8m) 가면 핏물이 솟는다(김진선님 ToiletBloodGush)" },
             new Spec { Id = "prop.trashcan", WrapPrefab = "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/TrashCanBig_A.prefab", Note = "65차: H-4 쓰레기통 이상 — 걷어차인 듯 날아가는 물리 복제(씬 쓰레기통은 정적 배칭이라 원본을 숨기고 이것을 굴린다, TrashCanKick)" },
             new Spec { Id = "fx.corpse.roaches", WrapPrefab = KimHorror + "HorrorEvent_BugSwarm.prefab", Note = "60차: 시체 낙하 때 천장에서 쏟아지는 바퀴벌레(김진선님 벌레 떼 — 구역 트리거·숫자 키는 끔, DirectionStage가 Play)" },

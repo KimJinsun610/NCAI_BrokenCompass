@@ -139,6 +139,38 @@ public sealed class ToiletBowls : MonoBehaviour
         if (me._water.TryGetValue(Root(toilet), out water) && water != null) water.SetActive(true);
     }
 
+    /// <summary>79차 T1: 물을 얹은 변기 중 그 점에서 가장 가까운 것(변기 뿌리). 없으면 null.</summary>
+    public Transform Nearest(Vector3 point)
+    {
+        Transform best = null;
+        float bestD = float.MaxValue;
+        foreach (KeyValuePair<Transform, GameObject> kv in _water)
+        {
+            if (kv.Key == null || kv.Value == null || !kv.Value.activeInHierarchy) continue;   // 핏물로 바뀐 변기는 빼고
+            float d = (kv.Key.position - point).sqrMagnitude;
+            if (d < bestD)
+            {
+                bestD = d;
+                best = kv.Key;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>79차 T1: 그 변기의 맑은 물 면(김진선님 프리팹의 <c>Water</c>). 없으면 null.</summary>
+    public Transform WaterOf(Transform toilet)
+    {
+        GameObject overlay;
+        if (toilet == null || !_water.TryGetValue(Root(toilet), out overlay) || overlay == null) return null;
+        foreach (Transform t in overlay.GetComponentsInChildren<Transform>(true))
+        {
+            if (t.name == "Water") return t;
+        }
+
+        return null;
+    }
+
     /// <summary>점검 기준점의 부모 등 — LODGroup이 달린 변기 뿌리.</summary>
     private static Transform Root(Transform t)
     {

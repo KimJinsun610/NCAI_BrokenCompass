@@ -26,11 +26,12 @@ public sealed class BatteryHud : MonoBehaviour
     private const float PipWidth = 10f;
     private const float PipHeight = 18f;
 
-    private static readonly Color Frame = new Color(1f, 1f, 1f, 0.85f);
-    private static readonly Color Full = new Color(0.88f, 0.92f, 0.86f, 0.92f);
+    // 90차(민: 「배터리 아이콘과 인터페이스는 초록색이 좋을 듯해」): 테두리·충전 막대·예비 칸을 초록으로(옛 흰빛). 30% 아래 호박색 · 10% 아래 붉은 경고는 그대로.
+    public static readonly Color Frame = new Color(0.42f, 0.95f, 0.5f, 0.88f);
+    private static readonly Color Full = new Color(0.36f, 0.9f, 0.45f, 0.92f);
     private static readonly Color Amber = new Color(1f, 0.72f, 0.3f, 0.95f);
     private static readonly Color Red = new Color(0.95f, 0.25f, 0.2f, 1f);
-    private static readonly Color PipEmpty = new Color(1f, 1f, 1f, 0.22f);
+    private static readonly Color PipEmpty = new Color(0.42f, 0.95f, 0.5f, 0.22f);
 
     private Canvas _canvas;
     private CanvasGroup _group;
@@ -178,7 +179,7 @@ public sealed class BatteryHud : MonoBehaviour
         {
             px -= PipWidth;
             _pips[i] = Bar(box, "spare " + (i + 1), px, -(BodyHeight - PipHeight) * 0.5f, PipWidth, PipHeight, PipEmpty);
-            Bar(_pips[i].rectTransform, "cap", -PipWidth * 0.7f, 3f, PipWidth * 0.4f, 3f, PipEmpty).color = new Color(1f, 1f, 1f, 0.5f);
+            Bar(_pips[i].rectTransform, "cap", -PipWidth * 0.7f, 3f, PipWidth * 0.4f, 3f, PipEmpty).color = new Color(0.42f, 0.95f, 0.5f, 0.5f);
             px -= 5f;
         }
 

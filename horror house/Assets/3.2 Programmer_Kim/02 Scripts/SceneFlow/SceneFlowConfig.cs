@@ -19,11 +19,16 @@ public class SceneFlowConfig : ScriptableObject
     private string resultScene;
     [ScenePath, SerializeField, Tooltip("메인의 시작 버튼 뒤, Day 1 전에 보여 주는 계약서 씬")]
     private string contractScene;
+    [ScenePath, SerializeField, Tooltip("계약서 앞에 보여 주는 오프닝 씬. 비워 두면 시작 버튼이 계약서로 바로 간다.")]
+    private string openingScene;
+    [ScenePath, SerializeField, Tooltip("5일차 피날레 「창을 보지 않음」 결말(전화로 퇴근) 뒤의 성공 엔딩 씬. 끝나면 크레딧 → 메인.")]
+    private string successEndingScene;
 
     [Header("BGM — 씬별 배경음 (Play 씬은 BGM 없음)")]
     [SerializeField] private SceneBgm mainBgm = new SceneBgm();
     [SerializeField] private SceneBgm loadingBgm = new SceneBgm { keepPrevious = true };
     [SerializeField] private SceneBgm contractBgm = new SceneBgm { keepPrevious = true };
+    [SerializeField] private SceneBgm openingBgm = new SceneBgm { keepPrevious = true };
     [SerializeField] private SceneBgm resultBgm = new SceneBgm();
     [Tooltip("BGM이 꺼지거나 다른 곡으로 넘어갈 때 앞 곡이 줄어드는 시간(초)")]
     [SerializeField, Min(0f)] private float bgmFadeOut = 1.0f;
@@ -46,6 +51,8 @@ public class SceneFlowConfig : ScriptableObject
             case GameScene.Play: return playScene;
             case GameScene.Result: return resultScene;
             case GameScene.Contract: return contractScene;
+            case GameScene.Opening: return openingScene;
+            case GameScene.SuccessEnding: return successEndingScene;
             default: return null;
         }
     }
@@ -59,9 +66,13 @@ public class SceneFlowConfig : ScriptableObject
             case GameScene.Loading: return loadingBgm;
             case GameScene.Result: return resultBgm;
             case GameScene.Contract: return contractBgm;
+            case GameScene.Opening: return openingBgm;
             default: return null;
         }
     }
+
+    /// <summary>오프닝 씬이 지정돼 있는가. 비어 있으면 시작 버튼은 계약서로 바로 간다.</summary>
+    public bool HasOpening { get { return !string.IsNullOrEmpty(openingScene); } }
 
     /// <summary>씬 경로로 어느 GameScene인지 찾는다. 표에 없으면 false.</summary>
     public bool TryGetScene(string scenePath, out GameScene scene)
@@ -97,6 +108,9 @@ public class SceneBgm
     [Min(0f)] public float fadeIn = 1.5f;
     [Tooltip("곡이 비어 있을 때 앞 씬의 곡을 계속 튼다.")]
     public bool keepPrevious;
+    [Tooltip("「이전 곡 이어서」일 때 볼륨 배율 — 그 곡이 처음 틀어진 볼륨 기준(0.5 = 절반). 0이면 바꾸지 않는다.\n" +
+             "기준이 처음 볼륨이라, 이어지는 씬마다 0.5를 넣어도 계속 절반으로 유지된다(겹쳐 줄지 않음).")]
+    [Range(0f, 1f)] public float keepVolumeScale;
 
     [Tooltip("이 씬에 들어올 때 한 번 내는 소리(예: 계약서 종이 넘김). 비우면 없음.")]
     public AudioClip enterSound;

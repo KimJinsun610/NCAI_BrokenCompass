@@ -86,7 +86,7 @@ namespace NightDuty.Tests
             Assert.IsTrue(d.Pending(30f), "아직 하나도 안 냈다 — 상한까지 나온다");
             Assert.IsTrue(d.Pending(NightClock.Call1 - 1f), "마디 상한에 막혀도 다음 마디에 나온다");
 
-            for (int i = 0; i < DutyCatalog.DailyCap(1); i++) IssueAndFinish(d, new[] { "W3", "W6", "W15" }[i], 30f);
+            for (int i = 0; i < DutyCatalog.DailyCap(1); i++) IssueAndFinish(d, new[] { "W3", "W21", "W15" }[i], 30f);
             Assert.AreEqual(DutyCatalog.DailyCap(1), d.IssuedToday);
             Assert.IsTrue(d.Pending(30f), "근무일지(W5)는 이완 구간에 나온다");
             Assert.IsFalse(d.Pending(NightClock.Call2 + 1f), "상한까지 냈고 근무일지 시간도 지났다");
@@ -111,7 +111,7 @@ namespace NightDuty.Tests
             Assert.IsFalse(NightRun.CanEndShiftEarly, "점검 완료 + 추가 지시 있음 → 불가");
 
             DutyDispatcher d = NightRun.Duties;
-            foreach (string id in new[] { "W3", "W6", "W15" }) IssueAndFinish(d, id, _clock);
+            foreach (string id in new[] { "W3", "W21", "W15" }) IssueAndFinish(d, id, _clock);
             Assert.IsFalse(NightRun.CanEndShiftEarly, "근무일지(W5)가 아직");
 
             _clock = (int)NightClock.Call2 + 1;
@@ -129,7 +129,7 @@ namespace NightDuty.Tests
             NightRun.BeginNight(1, () => _clock);
             NightRun.ReportInspection("H-2", false);
             DutyDispatcher d = NightRun.Duties;
-            foreach (string id in new[] { "W3", "W6", "W15" }) IssueAndFinish(d, id, _clock);
+            foreach (string id in new[] { "W3", "W21", "W15" }) IssueAndFinish(d, id, _clock);
             _clock = (int)NightClock.Call2 + 1;
             Assert.IsTrue(NightRun.CanEndShiftEarly);
 

@@ -133,7 +133,7 @@ namespace NightDuty.Tests
             _clock = (int)(from - NightRun.LeadMinutes) - 1;
             DutyEvent ev;
             if (NightRun.Duties.Active != null) Assert.Pass("다른 지시 진행 중 — 이 시험은 빈 지시기에서만");
-            NightRun.Duties.Force("W6", out ev);   // 진행 중인 다른 지시가 있으면 기다린다
+            NightRun.Duties.Force("W21", out ev);   // 진행 중인 다른 지시가 있으면 기다린다
             Ticks(5);
             Assert.IsFalse(NightRun.Duties.WasIssued(lead), "슬롯 앞이 아님");
             Assert.IsTrue(NightRun.DutiesPending, "조우 앞 지시가 남았다");
@@ -142,7 +142,7 @@ namespace NightDuty.Tests
             Ticks(5);
             Assert.IsFalse(NightRun.Duties.WasIssued(lead), "다른 지시가 끝날 때까지 기다린다");
             Assert.IsFalse(NightRun.Duties.Tick(new DutyInput { Minute = _clock, Dt = 1f, HoldNew = true }, out ev), "그동안 새 평소 지시는 쉰다");
-            NightRun.Duties.Tick(new DutyInput { Minute = NightClock.JudgingEnd, Dt = 0.1f }, out ev);   // W6 끝(제한 없는 지시 — 조용히 닫힘)
+            NightRun.Duties.Tick(new DutyInput { Minute = NightClock.JudgingEnd, Dt = 0.1f }, out ev);   // W21 끝(제한 없는 지시 — 조용히 닫힘, 92차 W6 폐지)
             Assert.IsNull(NightRun.Duties.Active);
 
             Ticks(5);

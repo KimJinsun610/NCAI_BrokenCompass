@@ -93,6 +93,16 @@ public sealed class CctvWalker : MonoBehaviour
     /// </summary>
     public void Walk(Vector3 from, Vector3 to, bool pingPong, float restSeconds, Action arrived)
     {
+        // 91차(민: 「CCTV 화면에 나오는 사람도 중간에 뿅 하고 사라지는데 안 그러도록」): 길 끝이 화면 안이면 끝에서 사라지는 게 보였다 —
+        // 두 끝을 그 채널 화면 밖(또는 가려지는 곳)까지 늘려, 화면 밖에서 나타나 걸어 들어오고 화면 밖으로 걸어 나간 뒤 사라지게 한다.
+        _cam = ChannelCamera();
+        if (_cam != null)
+        {
+            Vector3 a0 = from, b0 = to;
+            from = Offscreen(_cam, a0, a0 - b0);
+            to = Offscreen(_cam, b0, b0 - a0);
+        }
+
         _a = from;
         _b = to;
         _forward = true;
@@ -134,7 +144,9 @@ public sealed class CctvWalker : MonoBehaviour
         Vector3 to = target - pos;
         to.y = 0f;
         float d = to.magnitude;
-        float step = WalkSpeed * Time.deltaTime;
+        // 91차: 화면에 안 보이는 동안(늘린 길 끝자락)은 빨리 — 들어오고 나가는 데 시간을 끌지 않는다.
+        float speed = _cam != null && !Visible(_cam, pos) ? WalkSpeed * OffscreenSpeedUp : WalkSpeed;
+        float step = speed * Time.deltaTime;
         if (d <= step || d < 0.01f)
         {
             transform.position = new Vector3(target.x, pos.y, target.z);
@@ -186,6 +198,55 @@ public sealed class CctvWalker : MonoBehaviour
         _anim.speed = WalkSpeed / Mathf.Max(0.05f, _natural);
         if (restart && !_anim.GetCurrentAnimatorStateInfo(0).IsName(StandInExit.WalkState)) _anim.Play(StandInExit.WalkState, 0, UnityEngine.Random.value);
     }
+
+    /// <summary>91차: 길 끝을 화면 밖으로 늘리는 최대 거리(m).</summary>
+    public const float MaxOffscreenExtend = 14f;
+
+    /// <summary>91차: 화면 밖(늘린 끝자락)에서 걷는 빠르기 배수.</summary>
+    public const float OffscreenSpeedUp = 3f;
+
+    private Camera _cam;
+
+    private Camera ChannelCamera()
+    {
+        CctvSystem cctv = CctvSystem.Active;
+        if (cctv == null || _only == null) return null;
+        return cctv.ChannelCamera(_only.Channel);
+    }
+
+    /// <summary>
+    /// 91차: <paramref name="end"/>에서 <paramref name="outward"/> 쪽으로 0.3m씩 나아가 그 카메라에 안 보이게 되고(화면 밖·가려짐) <b>그 뒤로도 <see cref="HiddenRun"/>m 내내 안 보이는</b>
+    /// 첫 점 + 0.6m(몸 폭). 기둥 뒤처럼 잠깐 가려졌다 다시 보이는 곳에서 사라지지 않게. <see cref="MaxOffscreenExtend"/> 안에 없으면 그 안의 가장 먼 안 보이는 점, 그것도 없으면 끝 그대로.
+    /// </summary>
+    public static Vector3 Offscreen(Camera cam, Vector3 end, Vector3 outward)
+    {
+        outward.y = 0f;
+        if (cam == null || outward.sqrMagnitude < 1e-4f) return end;
+        outward.Normalize();
+        if (!Visible(cam, end)) return end;
+        float lastHidden = -1f;
+        for (float d = 0.3f; d <= MaxOffscreenExtend; d += 0.3f)
+        {
+            if (Visible(cam, end + outward * d)) continue;
+            lastHidden = d;
+            bool stays = true;
+            for (float k = 0.3f; k <= HiddenRun && d + k <= MaxOffscreenExtend + HiddenRun; k += 0.3f)
+            {
+                if (Visible(cam, end + outward * (d + k)))
+                {
+                    stays = false;
+                    break;
+                }
+            }
+
+            if (stays) return end + outward * (d + 0.6f);
+        }
+
+        return lastHidden > 0f ? end + outward * lastHidden : end;
+    }
+
+    /// <summary>91차: 사라지는 자리 뒤로 계속 안 보여야 하는 거리(m).</summary>
+    public const float HiddenRun = 1.5f;
 
     // ── 자리 확인 ─────────────────────────────────────────────
 

@@ -1,16 +1,19 @@
 ﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
-/// 86차(민: 「마우스 감도 조절, 볼륨을 esc 누르면 지금 라이팅처럼 조절이 가능한 인터페이스를 추가해줘」).
-/// 일시정지 화면(<c>HUD_Pause_Design</c> — <see cref="PauseMenu"/>)에 <b>MOUSE</b>·<b>VOLUME</b> 버튼과 슬라이더 묶음을 런타임에 덧붙인다.
+/// 일시정지 화면(<c>HUD_Pause_Design</c> — <see cref="PauseMenu"/>) 덧붙임.
+/// 92차(민: 「esc를 누르면 resume, options, quit 이 세개가 나오고, options를 누르면 라이팅, 마우스감도, 볼륨조절, 뒤로가기 키가 나오도록」):
 /// <list type="bullet">
-/// <item>LIGHT 버튼(<c>Btn_Light</c>)과 밝기 묶음(<c>Group_Brightness</c>)을 복제한다 — 모양·글꼴이 같다. 순서는 LIGHT · MOUSE · VOLUME · RESUME · QUIT,
-/// LIGHT 자리는 그대로 두고 <see cref="RowStep"/> 간격으로 아래로(RESUME·QUIT를 그만큼 내림 — 1080 화면 안).</item>
-/// <item>버튼을 누르면 그 묶음을 펼치고 나머지(밝기 포함)는 접는다. LIGHT를 누르면 MOUSE·VOLUME 묶음을 접는다. 메뉴를 열 때마다 모두 접힌 채(밝기와 같게).</item>
-/// <item>복제한 버튼의 김진선님 OnClick(밝기 여닫기)은 비우고, 복제한 묶음의 <see cref="BrightnessSlider"/>는 떼고 <see cref="OptionSlider"/>를 단다.</item>
+/// <item><b>첫 화면</b>: RESUME · OPTIONS · QUIT(제목 PAUSE). 메뉴를 열 때마다 이 화면으로.</item>
+/// <item><b>OPTIONS 화면</b>: LIGHT · MOUSE · VOLUME · BACK(제목 OPTIONS). 앞의 셋은 누르면 그 줄 오른쪽에 슬라이더 묶음이 펼쳐지고 나머지는 접힌다(86차와 같게).
+/// BACK은 첫 화면으로.</item>
+/// <item>버튼·묶음은 LIGHT 버튼(<c>Btn_Light</c>)·밝기 묶음(<c>Group_Brightness</c>)을 복제해 모양·글꼴이 같다. 복제한 버튼의 김진선님 OnClick은 비우고,
+/// 복제한 묶음의 <see cref="BrightnessSlider"/>는 떼고 <see cref="OptionSlider"/>를 단다. 줄 간격 <see cref="RowStep"/>, 첫 줄은 LIGHT가 있던 자리.</item>
+/// <item>RESUME은 김진선님 <c>FPController.ResumeGame</c>(계속하기)에 더해 커서를 곧바로 숨기고 화면 가운데에 묶는다(92차 — 「resume을 해도 커서가 남아있는」).</item>
 /// </list>
 /// 프리팹·씬·김진선님 스크립트는 고치지 않는다(런타임 덧붙임). 감시자(<see cref="EnsureWatcher"/>)가 일시정지 화면이 생기면 붙인다.
 /// </summary>
@@ -21,22 +24,42 @@ public sealed class PauseMenuExtras : MonoBehaviour
     private const string QuitButton = "Btn_Quite";
     private const string BrightnessGroup = "Group_Brightness";
     private const string ResumeButton = "Btn_Resume";
+    private const string TitleName = "Title_Pause";
 
     /// <summary>버튼 줄 간격(캔버스 1080 기준 px) — 버튼 높이 45 + 틈 20.</summary>
     public const float RowStep = 65f;
 
+    /// <summary>설정 화면 슬라이더 묶음을 오른쪽으로 비키는 양(px) — 버튼 글자가 길어도 닿지 않게.</summary>
+    public const float GroupShiftX = 36f;
+
+    /// <summary>첫 화면 제목.</summary>
+    public const string MainTitle = "PAUSE";
+
+    /// <summary>설정 화면 제목.</summary>
+    public const string OptionsTitle = "OPTIONS";
+
     private GameObject _brightness;
     private readonly List<GameObject> _groups = new List<GameObject>();
+    private readonly List<GameObject> _mainButtons = new List<GameObject>();
+    private readonly List<GameObject> _optionButtons = new List<GameObject>();
+    private TMP_Text _title;
+    private bool _onOptions;
 
-    /// <summary>덧붙인 묶음(시험·검수).</summary>
+    /// <summary>덧붙인 묶음(마우스·볼륨, 시험·검수).</summary>
     public IReadOnlyList<GameObject> Groups
     {
         get { return _groups; }
     }
 
+    /// <summary>지금 설정 화면인지(시험·검수).</summary>
+    public bool OnOptions
+    {
+        get { return _onOptions; }
+    }
+
     private void OnEnable()
     {
-        CloseOwn();   // 메뉴를 열 때마다 접힌 채(PauseMenu가 밝기 묶음을 접는 것과 같게)
+        ShowMain();   // 메뉴를 열 때마다 첫 화면(PauseMenu가 밝기 묶음을 접는 것과 같게)
     }
 
     private void CloseOwn()
@@ -47,17 +70,52 @@ public sealed class PauseMenuExtras : MonoBehaviour
         }
     }
 
+    private void CloseAll()
+    {
+        CloseOwn();
+        if (_brightness != null && _brightness.activeSelf) _brightness.SetActive(false);
+    }
+
     private void Toggle(GameObject group)
     {
         bool open = group != null && !group.activeSelf;
-        CloseOwn();
-        if (_brightness != null && _brightness.activeSelf) _brightness.SetActive(false);
+        CloseAll();
         if (group != null) group.SetActive(open);
+    }
+
+    /// <summary>첫 화면(RESUME · OPTIONS · QUIT).</summary>
+    public void ShowMain()
+    {
+        SetPage(false);
+    }
+
+    /// <summary>설정 화면(LIGHT · MOUSE · VOLUME · BACK).</summary>
+    public void ShowOptions()
+    {
+        SetPage(true);
+    }
+
+    private void SetPage(bool options)
+    {
+        _onOptions = options;
+        CloseAll();
+        for (int i = 0; i < _mainButtons.Count; i++) if (_mainButtons[i] != null) _mainButtons[i].SetActive(!options);
+        for (int i = 0; i < _optionButtons.Count; i++) if (_optionButtons[i] != null) _optionButtons[i].SetActive(options);
+        if (_title != null) _title.text = options ? OptionsTitle : MainTitle;
+        if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);   // 누른 버튼이 강조된 채 남지 않게
+    }
+
+    /// <summary>계속하기 — 김진선님 계속하기(메뉴 닫기·시간 재개)에 더해 커서를 곧바로 숨기고 묶는다.</summary>
+    public static void HideCursorNow()
+    {
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
+        if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
     }
 
     // ── 붙이기 ───────────────────────────────────────────────
 
-    /// <summary>그 일시정지 화면에 붙인다(이미 붙어 있으면 그대로). 필요한 자식을 못 찾으면 null.</summary>
+    /// <summary>그 일시정지 화면에 붙인다(이미 붙어 있으면 그대로). 필요한 자식을 못 찾으면 덧붙이지 않는다.</summary>
     public static PauseMenuExtras Install(PauseMenu menu)
     {
         if (menu == null) return null;
@@ -68,38 +126,71 @@ public sealed class PauseMenuExtras : MonoBehaviour
         RectTransform light = root.Find(LightButton) as RectTransform;
         RectTransform quit = root.Find(QuitButton) as RectTransform;
         RectTransform bright = root.Find(BrightnessGroup) as RectTransform;
+        RectTransform resume = root.Find(ResumeButton) as RectTransform;
         PauseMenuExtras extras = menu.gameObject.AddComponent<PauseMenuExtras>();
-        if (light == null || quit == null || bright == null)
+        if (light == null || quit == null || bright == null || resume == null)
         {
-            Debug.LogWarning("[PauseMenuExtras] 일시정지 화면에서 Btn_Light·Btn_Quite·Group_Brightness를 찾지 못했습니다 — 감도·볼륨 슬라이더를 붙이지 않습니다.");
+            Debug.LogWarning("[PauseMenuExtras] 일시정지 화면에서 Btn_Light·Btn_Quite·Btn_Resume·Group_Brightness를 찾지 못했습니다 — 설정 화면을 붙이지 않습니다.");
             return extras;
         }
 
         extras._brightness = bright.gameObject;
+        Transform title = root.Find(TitleName);
+        extras._title = title != null ? title.GetComponent<TMP_Text>() : null;
+
         // 버튼마다 기준점(anchor)이 달라(QUIT는 아래 기준) anchoredPosition이 아니라 캔버스 안 자리(localPosition)로 줄을 맞춘다.
         float top = light.localPosition.y;
         float groupDy = bright.localPosition.y - top;
         int sibling = light.GetSiblingIndex();
-        extras.AddRow(root, light, bright, "MOUSE", "Mouse", OptionSlider.Kind.Mouse, top - RowStep, groupDy, sibling + 1);
-        extras.AddRow(root, light, bright, "VOLUME", "Volume", OptionSlider.Kind.Volume, top - 2f * RowStep, groupDy, sibling + 2);
-        RectTransform resume = root.Find(ResumeButton) as RectTransform;
-        if (resume != null) SetLocalY(resume, top - 3f * RowStep);
-        SetLocalY(quit, top - 4f * RowStep);
+
+        // 첫 화면: RESUME · OPTIONS · QUIT
+        SetLocalY(resume, top);
+        RectTransform options = extras.CloneButton(root, light, "OPTIONS", "Options", top - RowStep, sibling + 1);
+        SetLocalY(quit, top - 2f * RowStep);
+        Button optionsButton = options.GetComponent<Button>();
+        if (optionsButton != null) optionsButton.onClick.AddListener(extras.ShowOptions);
+        Button resumeButton = resume.GetComponent<Button>();
+        if (resumeButton != null) resumeButton.onClick.AddListener(HideCursorNow);   // 김진선님 계속하기(HUDActions) 뒤에 덧붙임
+        extras._mainButtons.Add(resume.gameObject);
+        extras._mainButtons.Add(options.gameObject);
+        extras._mainButtons.Add(quit.gameObject);
+
+        // 설정 화면: LIGHT · MOUSE · VOLUME · BACK
+        SetLocalY(light, top);
+        SetLocalY(bright, top + groupDy);
+        bright.anchoredPosition += new Vector2(GroupShiftX, 0f);   // 「MOUSE」·「VOLUME」 글자가 슬라이더에 닿지 않게(복제 묶음도 따라감)
+        extras._optionButtons.Add(light.gameObject);
+        extras._optionButtons.Add(extras.AddRow(root, light, bright, "MOUSE", "Mouse", OptionSlider.Kind.Mouse, top - RowStep, groupDy, sibling + 2));
+        extras._optionButtons.Add(extras.AddRow(root, light, bright, "VOLUME", "Volume", OptionSlider.Kind.Volume, top - 2f * RowStep, groupDy, sibling + 3));
+        RectTransform back = extras.CloneButton(root, light, "BACK", "Back", top - 3f * RowStep, sibling + 4);
+        Button backButton = back.GetComponent<Button>();
+        if (backButton != null) backButton.onClick.AddListener(extras.ShowMain);
+        extras._optionButtons.Add(back.gameObject);
 
         Button lightButton = light.GetComponent<Button>();
-        if (lightButton != null) lightButton.onClick.AddListener(extras.CloseOwn);   // LIGHT를 펼치면 우리 묶음은 접는다
+        if (lightButton != null) lightButton.onClick.AddListener(extras.CloseOwn);   // LIGHT를 펼치면 우리 묶음은 접는다(밝기 여닫기는 김진선님 OnClick)
+        extras.ShowMain();
         return extras;
     }
 
-    private void AddRow(Transform root, RectTransform lightButton, RectTransform brightGroup, string label, string id, OptionSlider.Kind kind, float y, float groupDy, int sibling)
+    /// <summary>LIGHT 버튼 모양의 버튼 하나(김진선님 OnClick은 비움).</summary>
+    private RectTransform CloneButton(Transform root, RectTransform lightButton, string label, string id, float y, int sibling)
     {
         GameObject btn = Instantiate(lightButton.gameObject, root, false);
         btn.name = "Btn_" + id;
         RectTransform brt = (RectTransform)btn.transform;
         SetLocalY(brt, y);
-        btn.transform.SetSiblingIndex(sibling);
+        btn.transform.SetSiblingIndex(Mathf.Min(sibling, root.childCount - 1));
         TMP_Text text = btn.GetComponentInChildren<TMP_Text>(true);
         if (text != null) text.text = label;
+        Button button = btn.GetComponent<Button>();
+        if (button != null) button.onClick = new Button.ButtonClickedEvent();
+        return brt;
+    }
+
+    private GameObject AddRow(Transform root, RectTransform lightButton, RectTransform brightGroup, string label, string id, OptionSlider.Kind kind, float y, float groupDy, int sibling)
+    {
+        RectTransform brt = CloneButton(root, lightButton, label, id, y, sibling);
 
         GameObject group = Instantiate(brightGroup.gameObject, root, false);
         group.SetActive(false);
@@ -124,12 +215,9 @@ public sealed class PauseMenuExtras : MonoBehaviour
         option.Setup(kind, slider, value);
         _groups.Add(group);
 
-        Button button = btn.GetComponent<Button>();
-        if (button != null)
-        {
-            button.onClick = new Button.ButtonClickedEvent();   // 복제된 김진선님 OnClick(밝기 여닫기)은 비운다
-            button.onClick.AddListener(() => Toggle(group));
-        }
+        Button button = brt.GetComponent<Button>();
+        if (button != null) button.onClick.AddListener(() => Toggle(group));
+        return brt.gameObject;
     }
 
     /// <summary>캔버스 안 높이(localPosition.y)를 맞춘다(기준점·축은 그대로).</summary>

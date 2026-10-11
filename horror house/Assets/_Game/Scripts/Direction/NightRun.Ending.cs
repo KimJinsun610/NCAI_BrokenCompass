@@ -27,7 +27,7 @@ namespace NightDuty
             if (!_nightOpen || IsCaptured || Day < FinaleWatch.Day || _finale.Active) return false;
             _finale.Begin();
             DirectionAbort("피날레");   // 2026-10-11: 조기 퇴근으로 일찍 열리면 진행 중이던 조우·단서가 있을 수 있다 — 끝 단서 없이 거둔다
-            Debug.Log("[NightRun] 피날레 시작(5일차) — K4: 경비실을 나가지 않기");
+            Debug.Log("[NightRun] 피날레 시작(5일차 " + NightClock.Clock(NightClock.ShiftEnd) + ") — K4: 경비실을 나가지 않기");
             return true;
         }
 

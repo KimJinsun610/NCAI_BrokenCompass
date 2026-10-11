@@ -205,8 +205,15 @@ namespace NightDuty
     /// </summary>
     public sealed class ProgramDirector
     {
-        /// <summary>하루 수칙 수(57차, 민: 「수칙은 5~6개로 고정하는 게 좋을 듯」 — 전에는 1일차 4장, 2일차부터 7~8장).</summary>
-        public const int RulesPerDay = 6;
+        /// <summary>
+        /// 그날 수칙 수 — 74차(민: 「1일차에 등장하는 수칙들은 4개, 2일~4일차 5개, 5일차 6개」). 옛 57차는 매일 6장.
+        /// </summary>
+        public static int RulesFor(int day)
+        {
+            if (day <= 1) return 4;
+            if (day >= 5) return 6;
+            return 5;
+        }
 
         /// <summary>1일차 수칙 후보(57차, 민: 「1~2일차 수칙이 너무 풀이 좁다」) — 조우에 묶이지 않은 수칙 중 1일차 점검 공간(복도·교실·과학실·경비실)의 것. S1·G1은 고정.</summary>
         public static readonly string[] Day1Pool = { "H2", "C4", "S2", "K2", "K3" };   // 60차: C1(판서) 폐기
@@ -258,6 +265,32 @@ namespace NightDuty
         {
             _rushDay = DefaultRushDay;
             _hallDay = DefaultRushDay - 1;
+            _faceDay = DefaultFaceDay;
+            _windowDay = DefaultFaceDay - 1;
+        }
+
+        // ── 84차: 창밖 노란 얼굴 → 다음 날 도서관 노란 얼굴 ─────────────
+
+        /// <summary>
+        /// 84차(민: 「현재 복도 조우가 복도 급습의 빌드업이 되는 것처럼, 창밖의 노란 얼굴 조우가 도서관 노란 얼굴 조우의 빌드업이 되면 좋겠어」) —
+        /// 도서관 노란 얼굴(문간)이 나오는 날(기본 3일차). 그 전날(<see cref="WindowFaceDay"/>)에는 창밖 노란 얼굴이 도서관 북쪽 창 밖에 서 있다.
+        /// 둘은 슬롯 뽑기에서 빠지고 이 날짜로만 들어간다(복도 끝 → 모형 급습과 같은 규칙, 날은 겹치지 않는다 — 2·3일차 / 4·5일차).
+        /// </summary>
+        public const int DefaultFaceDay = 3;
+
+        private int _faceDay;
+        private int _windowDay;
+
+        /// <summary>그 회차에 도서관 노란 얼굴이 나오는 날.</summary>
+        public int FaceDay
+        {
+            get { return _faceDay; }
+        }
+
+        /// <summary>그 회차에 창밖 노란 얼굴이 서는 날(노란 얼굴 전날).</summary>
+        public int WindowFaceDay
+        {
+            get { return _windowDay; }
         }
 
         /// <summary>
@@ -323,7 +356,7 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 다음 밤 조우를 예약한다 — S3 위반이면 <see cref="ProgramCatalog.ModelRush"/>, 노란 얼굴에서 빛을 떼면 <see cref="ProgramCatalog.SuitMan"/>.
+        /// 다음 밤 조우를 예약한다 — S3 위반이면 <see cref="ProgramCatalog.ModelRush"/>(84차: 노란 얼굴에서 빛을 떼도 예약하지 않는다 — 창밖 노란 얼굴은 날짜 사슬).
         /// 다음 <see cref="Build"/>가 쓰고 비운다.
         /// </summary>
         public void Reserve(string encounterId)
@@ -360,7 +393,7 @@ namespace NightDuty
             // 57차: 고정 4장(H2·C4·S1·G1) → S1·G1 고정 + 후보(Day1Pool)에서 넷, 모두 여섯 장. 한 공간 두 장까지, 경비실 한 장, 손전등 한도.
             List<RuleDef> picked = new List<RuleDef> { ProgramCatalog.Rule("S1") };   // 51차: S3(모형을 비추지 마)는 2일차부터 — 1일차는 모형 위치를 익히는 날
             List<string> pool = new List<string>(Day1Pool);
-            while (picked.Count < RulesPerDay - 1 && pool.Count > 0)
+            while (picked.Count < RulesFor(1) - 1 && pool.Count > 0)
             {
                 string id = pool[_rng.Next(pool.Count)];
                 pool.Remove(id);
@@ -450,6 +483,9 @@ namespace NightDuty
             ApplyRushReservation(day, reserved);
             if (day == _hallDay) PlaceChain(d, ProgramCatalog.HallEndFigure);
             if (day == _rushDay) PlaceChain(d, ProgramCatalog.ModelRush);
+            // 84차: 창밖 노란 얼굴(노란 얼굴 전날) · 도서관 노란 얼굴 — 같은 날짜 사슬.
+            if (day == _windowDay) PlaceChain(d, ProgramCatalog.SuitMan);
+            if (day == _faceDay) PlaceChain(d, ProgramCatalog.YellowFace);
 
             // 2) 강제 수칙.
             List<string> forced = new List<string>();
@@ -459,6 +495,7 @@ namespace NightDuty
             {
                 RuleDef r = ProgramCatalog.Rule(forced[i]);
                 if (r == null) continue;
+                if (ProgramCatalog.IsRetired(r.Id)) { d.Note.Append(r.Id).Append(" 강제 편성 실패(폐기한 수칙). "); continue; }   // 79차
 
                 // 조우에 묶인 수칙은 혼자 들어가면 방아쇠가 오지 않는다 — 그 조우를 함께 건다(2일차 C2 → 천장 다리).
                 if (!r.IsStandalone)
@@ -491,6 +528,7 @@ namespace NightDuty
                 EncounterDef e = ProgramCatalog.Encounter(reserved[i]);
                 if (e == null) continue;
                 if (IsChained(e.Id)) continue;   // 70차: 날짜 사슬로만
+                if (ProgramCatalog.IsEncounterRetired(e.Id)) continue;   // 79차: 대응 수칙을 폐기한 조우(L5 창밖 정장 남자)
                 if (!CanPlaceEncounter(d, e)) { d.Note.Append(e.Id).Append(" 예약 편성 실패(공간 충돌). "); continue; }
                 PlaceEncounter(d, e, true);
             }
@@ -507,7 +545,7 @@ namespace NightDuty
             // 경비실.
             if (d.In(SpaceId.SecurityRoom).Count == 0)
             {
-                Place(d, ProgramCatalog.Rule(_rng.Next(2) == 0 ? "K2" : "K3"), false);
+                Place(d, ProgramCatalog.Rule(SecurityPool[_rng.Next(SecurityPool.Length)]), false);   // 79차: K5(전화) 추가
             }
 
             // 7) 남은 칸.
@@ -527,7 +565,9 @@ namespace NightDuty
             for (int s = 0; s < ProgramCatalog.RuleSpaces.Length; s++) deck.AddRange(d.In(ProgramCatalog.RuleSpaces[s]));
             deck.AddRange(d.In(SpaceId.SecurityRoom));
             deck.Add(ProgramCatalog.Rule("G1"));
-            TrimDeck(d, deck, LowestShown(shown));
+            bool tabletRule = HasTabletRule(day);   // 79차: G4는 짝수 날 — 한 장 자리를 비워 두고 넣는다
+            TrimDeck(d, deck, LowestShown(shown), tabletRule ? RulesFor(day) - 1 : RulesFor(day));
+            if (tabletRule && deck.Count < RulesFor(day)) deck.Add(ProgramCatalog.Rule(TabletRule));   // 조우 수칙만으로 꽉 찬 날은 넣지 않는다
 
             d.Slots.Sort((a, b) => a.Slot.CompareTo(b.Slot));
             List<EncounterDef> extras = new List<EncounterDef>();
@@ -536,13 +576,25 @@ namespace NightDuty
             return new NightProgram(day, d.Slots, deck, d.Note.Length > 0 ? d.Note + program.ToString() : program.ToString(), extras);
         }
 
+        /// <summary>79차: 경비실 수칙 후보(그날 경비실에 조우 수칙이 없을 때 하나).</summary>
+        public static readonly string[] SecurityPool = { "K2", "K3", "K5" };
+
+        /// <summary>79차(민 채택 「태블릿을 보면서 걷지 마십시오.」): 공통 수칙 G4.</summary>
+        public const string TabletRule = "G4";
+
+        /// <summary>79차: G4가 드는 날 — 2·4일차(짝수 날). 하루 장수(<see cref="RulesFor"/>) 안에서 한 장을 차지한다.</summary>
+        public static bool HasTabletRule(int day)
+        {
+            return day >= 2 && day % 2 == 0;
+        }
+
         /// <summary>
-        /// 57차: 하루 <see cref="RulesPerDay"/>장으로 줄인다 — 그날 점검이 없는 공간의 채움 → 다른 채움 → 묶이지 않은 경비실 순으로 뺀다(G1은 남긴다).
+        /// 57차: 하루 <see cref="RulesFor"/>장으로 줄인다 — 그날 점검이 없는 공간의 채움 → 다른 채움 → 묶이지 않은 경비실 순으로 뺀다(G1은 남긴다).
         /// 조우·강제 수칙(<c>Locked</c>)과 가장 낮은 축의 마지막 한 장은 빼지 않는다.
         /// </summary>
-        private void TrimDeck(Draft d, List<RuleDef> deck, FearAxis lowest)
+        private void TrimDeck(Draft d, List<RuleDef> deck, FearAxis lowest, int target)
         {
-            while (deck.Count > RulesPerDay)
+            while (deck.Count > target)
             {
                 RuleDef drop = null;   // G1(복도에서 뛰지 마십시오)은 매일 남긴다 — 달리기 판정·시험이 기대는 공통 수칙
                 for (int pass = 0; pass < 2 && drop == null; pass++)
@@ -563,9 +615,12 @@ namespace NightDuty
                     drop = k;
                 }
 
+                // 79차: 조우·고정 수칙만으로 장수가 꽉 찼으면 가장 낮은 축의 마지막 채움도 뺀다(하루 장수가 우선).
+                if (drop == null) drop = deck.FindLast(r => !d.Locked.Contains(r.Id) && r.Space != SpaceId.SecurityRoom && r.Space != SpaceId.None);
+
                 if (drop == null) break;
                 deck.Remove(drop);
-                d.Note.Append(drop.Id).Append(" 뺌(하루 ").Append(RulesPerDay).Append("장). ");
+                d.Note.Append(drop.Id).Append(" 뺌(하루 ").Append(target).Append("장). ");
             }
         }
 
@@ -591,6 +646,7 @@ namespace NightDuty
                 if (Chosen(d, e.Id)) continue;
                 if (e.Id == ProgramCatalog.CeilingLegs) continue;   // 59차: 시체 낙하는 슬롯 밖 겹침 조우(Extras)로 늘 건다
                 if (IsChained(e.Id)) continue;   // 70차: 복도 끝에 선 자·모형 급습은 날짜 사슬로만
+                if (ProgramCatalog.IsEncounterRetired(e.Id)) continue;   // 79차: L5 폐기 → 창밖 정장 남자도 걸지 않는다
                 if (!e.Satisfied(request.Shown)) continue;
                 if (!SpecialOk(e, day, request)) continue;
                 if (prev != null && prev.Encounter.Mob == e.Mob) continue;
@@ -631,7 +687,7 @@ namespace NightDuty
             switch (day)
             {
                 case 2:
-                    return encounterId == ProgramCatalog.CeilingLegs || encounterId == ProgramCatalog.YellowFace || encounterId == ProgramCatalog.BoyBang;
+                    return encounterId == ProgramCatalog.CeilingLegs || encounterId == ProgramCatalog.SuitMan || encounterId == ProgramCatalog.BoyBang;   // 84차: 노란 얼굴은 3일차(사슬) — 2일차는 창밖
                 case 3:
                     return encounterId == ProgramCatalog.ToiletGirl || encounterId == ProgramCatalog.CctvPerson
                            || encounterId == ProgramCatalog.ScienceBlackout || encounterId == ProgramCatalog.ToiletBlackout;
@@ -754,7 +810,8 @@ namespace NightDuty
         /// <summary>70차: 날짜 사슬로만 들어가는 조우(복도 끝에 선 자 → 다음 날 모형 급습).</summary>
         public static bool IsChained(string encounterId)
         {
-            return encounterId == ProgramCatalog.HallEndFigure || encounterId == ProgramCatalog.ModelRush;
+            return encounterId == ProgramCatalog.HallEndFigure || encounterId == ProgramCatalog.ModelRush
+                   || encounterId == ProgramCatalog.SuitMan || encounterId == ProgramCatalog.YellowFace;   // 84차
         }
 
         private void PlaceChain(Draft d, string encounterId)

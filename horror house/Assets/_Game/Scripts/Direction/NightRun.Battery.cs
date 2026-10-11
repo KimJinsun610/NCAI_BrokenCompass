@@ -35,7 +35,7 @@ namespace NightDuty
         public static bool PickUpFlashlight()
         {
             if (_deskKit == null || IsCaptured || !_deskKit.TakeFlashlight()) return false;
-            Debug.Log("[NightRun] 손전등 주움 — 이제 F로 켤 수 있다");
+            Debug.Log("[NightRun] 손전등 주움 — 이제 좌클릭으로 켤 수 있다");
             return true;
         }
 

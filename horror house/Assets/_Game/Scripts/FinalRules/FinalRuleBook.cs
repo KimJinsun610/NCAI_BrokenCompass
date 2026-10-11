@@ -76,6 +76,12 @@ namespace NightDuty
         /// <summary>달리는 중인지.</summary>
         public bool Running { get; internal set; }
 
+        /// <summary>79차: 올려다본 각도(도, 위 +). L6.</summary>
+        public float Pitch { get; internal set; }
+
+        /// <summary>79차: 태블릿이 올라와 있는지(TabChanged — 판정에는 넘기지 않고 상태로만). G4.</summary>
+        public bool TabletOpen { get; internal set; }
+
         /// <summary>판정 시간(ms) — 판정 구간의 Tick 누적. 수칙의 제한 시간은 이 시계로 잰다.</summary>
         public int NowMs { get; internal set; }
 
@@ -115,6 +121,12 @@ namespace NightDuty
                     break;
                 case SignalKind.Running:
                     Running = s.Flag;
+                    break;
+                case SignalKind.LookPitch:
+                    Pitch = s.Value;
+                    break;
+                case SignalKind.TabChanged:
+                    TabletOpen = s.Flag;
                     break;
             }
         }

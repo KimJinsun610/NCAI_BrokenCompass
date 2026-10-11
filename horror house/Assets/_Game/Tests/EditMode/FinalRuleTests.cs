@@ -379,17 +379,17 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void S2_깨지는_소리_10초_안에_나오고_다시_들어가면_위반()
+        public void S2_깨지는_소리_5초_안에_나오고_다시_들어가면_위반()
         {
             FinalFixture f = new FinalFixture("S2");
-            f.Enter(SpaceId.ScienceRoom).Cue(FinalCues.Glass).Wait(5f).Exit(SpaceId.ScienceRoom);
+            f.Enter(SpaceId.ScienceRoom).Cue(FinalCues.Glass).Wait(3f).Exit(SpaceId.ScienceRoom);   // 79차: 유예 10 → 5초
             Assert.AreEqual(0, f.Value(FearAxis.Auditory));
             f.Wait(10f).Enter(SpaceId.ScienceRoom);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Auditory));
 
             FinalFixture g = new FinalFixture("S2");
-            g.Enter(SpaceId.ScienceRoom).Cue(FinalCues.Glass).Wait(10.1f);
-            Assert.AreEqual(Deltas.RuleViolation, g.Value(FearAxis.Auditory));
+            g.Enter(SpaceId.ScienceRoom).Cue(FinalCues.Glass).Wait(5.1f);
+            Assert.AreEqual(Deltas.RuleViolation, g.Value(FearAxis.Auditory), "79차 민: 과학실에 계속 남아 있어도 어김");
         }
 
         [Test]
@@ -410,13 +410,28 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void S4_소등_중_어두운_구역에서_불이_꺼져있으면_위반()
+        public void S4_정전_3초_뒤에도_손전등이_켜져_있으면_위반_과학실과_화장실()
         {
+            // 79차(민: 「S4 T3 합침 — 정전 중에는 손전등을 키지 마십시오. 3초 유예」)
             FinalFixture f = new FinalFixture("S4");
-            f.Enter(SpaceId.ScienceRoom).Light(false).Cue(FinalCues.ScienceBlackout).Wait(3f);
-            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "구역 밖");
-            f.Send(JudgeSignal.Target(SignalKind.ZoneEntered, FinalCues.ScienceDarkZone)).Wait(1.2f);
+            f.Enter(SpaceId.ScienceRoom).Light(true).Cue(FinalCues.ScienceBlackout).Wait(2.8f);
+            Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "3초 유예");
+            f.Wait(0.4f);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance));
+
+            FinalFixture g = new FinalFixture("S4");
+            g.Enter(SpaceId.Toilet).Light(true).Cue(FinalCues.ToiletBlackout).Wait(1f).Light(false).Wait(5f);
+            Assert.AreEqual(0, g.Value(FearAxis.Illuminance), "유예 안에 끄면 지킴");
+            g.Light(true).Wait(0.2f);
+            Assert.AreEqual(Deltas.RuleViolation, g.Value(FearAxis.Illuminance), "정전 중 다시 켜도 어김");
+
+            FinalFixture h = new FinalFixture("S4");
+            h.Enter(SpaceId.Corridor).Light(true).Cue(FinalCues.ToiletBlackout).Wait(5f);
+            Assert.AreEqual(0, h.Value(FearAxis.Illuminance), "겪지 않은 정전으로는 벌하지 않는다");
+
+            FinalFixture k = new FinalFixture("S4");
+            k.Enter(SpaceId.ScienceRoom).Light(true).Cue(FinalCues.ScienceBlackout).Wait(1f).Exit(SpaceId.ScienceRoom).Wait(5f);
+            Assert.AreEqual(0, k.Value(FearAxis.Illuminance), "유예 안에 나가면 끝");
         }
 
         [Test]
@@ -511,7 +526,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void L3_노란얼굴에서_빛이_떨어지면_20과_정장남자_예약()
+        public void L3_노란얼굴에서_빛이_떨어지면_위반_예약은_없음()
         {
             FinalFixture f = new FinalFixture("L3");
             f.Cue(FinalCues.YellowFace).Wait(1f);
@@ -519,7 +534,7 @@ namespace NightDuty.Tests
             Assert.IsNull(f.Last("L3"));
             f.Samples(() => JudgeSignal.Beam(string.Empty, 0.1f), 0.7f);
             Assert.AreEqual(FinalOutcome.Violated, f.Last("L3"));
-            CollectionAssert.AreEqual(new[] { ProgramCatalog.SuitMan }, f.Requested);
+            CollectionAssert.IsEmpty(f.Requested, "84차: 창밖 노란 얼굴은 노란 얼굴 전날(날짜 사슬) — 빛을 떼도 예약하지 않는다");
         }
 
         [Test]

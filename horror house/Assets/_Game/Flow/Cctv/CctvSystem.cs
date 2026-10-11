@@ -287,6 +287,21 @@ public sealed class CctvSystem : MonoBehaviour
         go.AddComponent<CctvSystem>();
     }
 
+    /// <summary>
+    /// 설치 전에도 쓸 수 있는 모니터 화면 중심·앞 방향(월드) — 72차 출근 시선(<see cref="StartView"/>)이 쓴다. 모니터가 없으면 false.
+    /// </summary>
+    public static bool TryFindScreen(out Vector3 center, out Vector3 outward)
+    {
+        center = Vector3.zero;
+        outward = Vector3.zero;
+        CctvConfigSO cfg = CctvConfigSO.Load();
+        Transform monitor = FindMonitor(cfg);
+        if (monitor == null) return false;
+        center = monitor.TransformPoint(cfg.ScreenLocalCenter);
+        outward = monitor.TransformDirection(Vector3.down).normalized;
+        return true;
+    }
+
     private static Transform FindMonitor(CctvConfigSO cfg)
     {
         if (cfg == null || string.IsNullOrEmpty(cfg.MonitorPath))

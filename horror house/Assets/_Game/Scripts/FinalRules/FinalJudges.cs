@@ -44,6 +44,9 @@ namespace NightDuty
         public const string GirlTarget = "rule.T4.girl";
         public const string StallLit = "cue.stall.lit";
 
+        /// <summary>79차 T7: 화장실 거울(응시 대상 — <c>RuleTargetsInstaller</c>가 근무 씬 거울에 붙인다).</summary>
+        public const string MirrorTarget = "rule.T7.mirror";
+
         // 도서관
         public const string L1Shelf = "rule.L1.shelf";
         public const string Pages = "cue.pages";
@@ -53,9 +56,15 @@ namespace NightDuty
         public const string WindowKnock = "cue.windowknock";
         public const string ManTarget = "rule.L5.man";
 
+        /// <summary>85차: 창밖 노란 얼굴의 응시 대상 — 수칙 판정이 아니라 「2초 응시하면 달아남」(<c>NightRun.WindowFaceFled</c>)에만 쓴다.</summary>
+        public const string WindowFaceTarget = "encounter.window.face";
+
         // 경비실
         public const string CctvPerson = "cue.cctvperson";
         public const string EmptyRoom = "cue.emptyroom";
+
+        /// <summary>79차 K5: 경비실 전화가 울린다(끝 = 벨이 그침 또는 받음).</summary>
+        public const string PhoneRing = "cue.phone.ring";
     }
 
     /// <summary>수칙 ID → 판정기. 판정 조건이 없는 수칙(G3·K4)은 기록만 하는 판정기를 받는다.</summary>
@@ -77,30 +86,38 @@ namespace NightDuty
                 case "C4": return new LightOffJudge(FinalCues.RedLight, LightOffJudge.GraceSeconds);   // 52차: 붉은 불빛 아래에서는 손전등을 끈다
                 case "C5": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
                 case "S1": return new NoPassageJudge(FinalCues.S1Center);
-                case "S2": return new LeaveAfterCueJudge(FinalCues.Glass, LeaveAfterCueJudge.GraceSeconds);   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
+                case "S2": return new LeaveAfterCueJudge(FinalCues.Glass, ScienceLeaveSeconds);   // 79차 민: 「5초로 하자」   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
                 case "S3": return new BeamAvoidJudge(FinalCues.ModelTarget, BeamAvoidJudge.LimitSeconds, ProgramCatalog.ModelRush);   // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」(미션처럼 읽히던 50차 문구 폐기)
-                case "S4": return new LightKeepJudge(FinalCues.ScienceBlackout, FinalCues.ScienceDarkZone, 1f, false);
+                case "S4": return new BlackoutLightOffJudge(BlackoutLightOffJudge.GraceSeconds);   // 79차: T3 합침 — 정전 중 손전등 금지
                 case "S5": return new WaitInDarkJudge(FinalCues.HallEnd, 3f, SpaceId.Corridor);   // 70차: 복도 끝에서 달려오는 급습은 복도에서 마주친다
                 case "T1": return new ExitWithinJudge(FinalCues.Flush, 8f, false);
                 case "T2": return new ZoneForbiddenJudge(FinalCues.StallOccupied, null);
                 case "T3": return new WaitInDarkJudge(FinalCues.ToiletBlackout, 3f);
                 case "T4": return new ReverseReportJudge();
                 case "T5": return new LightKeepJudge(FinalCues.StallLit, null, 3f, true);
+                case "T7": return new DontStareJudge(null, FinalCues.MirrorTarget, 3f);   // 79차
                 case "L1": return new DwellNearJudge(FinalCues.L1Shelf, 1.5f, 3f);
                 case "L2": return new LeaveAfterCueJudge(FinalCues.Pages, LeaveAfterCueJudge.GraceSeconds);
-                case "L3": return new KeepBeamJudge(FinalCues.YellowFace, FinalCues.FaceTarget, 2f, 0.5f, ProgramCatalog.SuitMan);
+                case "L3": return new KeepBeamJudge(FinalCues.YellowFace, FinalCues.FaceTarget, 2f, 0.5f, null);   // 84차: 창밖 노란 얼굴이 이제 노란 얼굴의 전날(빌드업)이라 빛을 떼도 예약하지 않는다
                 case "L4": return new ProximityAvoidJudge(FinalCues.L4Box, 1.5f);
                 case "L5": return new DontGreetJudge(FinalCues.WindowKnock, FinalCues.ManTarget, 2f);
+                case "L6": return new BeamUpwardJudge();   // 79차
+                case "L7": return new NoBackwardWalkJudge();   // 80차
                 case "K1": return new NoChannelChangeJudge(FinalCues.CctvPerson);   // 52차 민: 원래대로
                 case "K2": return new DontWatchJudge(FinalCues.EmptyRoom, 3f);
                 case "K3": return new DwellSpaceJudge(SpaceId.SecurityRoom, 45f);
+                case "K5": return new AnswerAfterRingsJudge();   // 79차
                 case "G1": return new NoRunningJudge(1f);
+                case "G4": return new NoWalkingWithTabletJudge();   // 79차
                 case "G3": return new RecordOnlyJudge();
                 case "K4": return new RecordOnlyJudge();
             }
 
             return null;
         }
+
+        /// <summary>79차(민: 「S2 … 과학실에 계속 남아있어도 수칙 어기게됨」 · 「5초로 하자」): 깨지는 소리 뒤 과학실을 나갈 유예(초). L2는 그대로 10초.</summary>
+        public const float ScienceLeaveSeconds = 5f;
     }
 
     // ── 공통 도구 ──────────────────────────────────────────
@@ -1384,6 +1401,293 @@ namespace NightDuty
         {
             _watching = false;
             _seen = 0f;
+        }
+    }
+
+    /// <summary>
+    /// S4(79차, 민: 「수칙 S4 T3 합침 및 수정 : 정전 중에는 손전등을 키지 마십시오. 화장실, 과학실 소등 조우 이후 3초 유예시간 뒤에, 여전히 손전등 키는게 인식되면 수칙 어김」).
+    /// 과학실 소등(<see cref="FinalCues.ScienceBlackout"/>)·화장실 소등(<see cref="FinalCues.ToiletBlackout"/>) 어느 쪽이든 단서 때 그 공간에 있었으면 해당한다.
+    /// 단서부터 <see cref="GraceSeconds"/>초가 지난 뒤 그 공간 안에서 손전등이 켜져 있으면(그 뒤에 켜도) 위반. 단서가 끝나거나 그 공간을 나가면 끝난다.
+    /// </summary>
+    public sealed class BlackoutLightOffJudge : FinalJudge
+    {
+        /// <summary>정전 뒤 손전등을 끌 유예(초).</summary>
+        public const float GraceSeconds = 3f;
+
+        private readonly float _grace;
+        private string _cue = string.Empty;
+        private SpaceId _space;
+        private int _startMs;
+
+        /// <summary>만든다.</summary>
+        public BlackoutLightOffJudge(float graceSeconds)
+        {
+            _grace = graceSeconds;
+        }
+
+        /// <inheritdoc/>
+        public override string Status
+        {
+            get { return _cue.Length > 0 ? "정전 중 " : string.Empty; }
+        }
+
+        /// <summary>정전 단서의 공간(과학실·화장실). 정전 단서가 아니면 None.</summary>
+        public static SpaceId SpaceOfCue(string cueId)
+        {
+            if (cueId == FinalCues.ScienceBlackout) return SpaceId.ScienceRoom;
+            if (cueId == FinalCues.ToiletBlackout) return SpaceId.Toilet;
+            return SpaceId.None;
+        }
+
+        internal override void Observe(in JudgeSignal s, FinalWorld w)
+        {
+            if (s.Kind == SignalKind.CueStarted)
+            {
+                string id = ParadoxRun.CueId(s.TargetId);
+                SpaceId sp = SpaceOfCue(id);
+                if (sp == SpaceId.None || w.Space != sp) return;   // 겪지 않은 정전으로는 벌하지 않는다
+                _cue = id;
+                _space = sp;
+                _startMs = w.NowMs;
+                Trigger();
+                return;
+            }
+
+            if (_cue.Length == 0) return;
+            if (s.Kind == SignalKind.SequenceEnded && ParadoxRun.CueId(s.TargetId) == _cue)
+            {
+                _cue = string.Empty;
+                return;
+            }
+
+            if (s.Kind == SignalKind.SpaceExited && SpaceIds.Canonical(s.Space) == _space)
+            {
+                _cue = string.Empty;
+                return;
+            }
+
+            if (s.Kind != SignalKind.Tick || w.NowMs - _startMs < FinalWorld.ToMs(_grace)) return;
+            if (w.Flashlight && w.Space == _space)
+            {
+                _cue = string.Empty;
+                Violate("정전 중 손전등을 켬");
+            }
+        }
+
+        internal override void ResetEpisode()
+        {
+            _cue = string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// L6(79차 민 채택 「도서관에서는 손전등을 천장으로 향하지 마십시오.」): 그 공간에서 손전등을 켠 채 <see cref="PitchDegrees"/>° 넘게 올려다본 시간이
+    /// 연속 <see cref="LimitSeconds"/>초를 넘으면 위반. 그 공간에 있으면 방아쇠.
+    /// </summary>
+    public sealed class BeamUpwardJudge : FinalJudge
+    {
+        /// <summary>천장을 향한 것으로 보는 올려다본 각도(도).</summary>
+        public const float PitchDegrees = 35f;
+
+        /// <summary>연속 한도(초) — 둘러보다 스친 것은 봐준다.</summary>
+        public const float LimitSeconds = 2f;
+
+        private float _up;
+
+        internal override void Observe(in JudgeSignal s, FinalWorld w)
+        {
+            if (Def == null || w.Space != Def.Space)
+            {
+                _up = 0f;
+                return;
+            }
+
+            if (s.Kind != SignalKind.Tick) return;
+            Trigger();
+            if (!w.Flashlight || w.Pitch < PitchDegrees)
+            {
+                _up = 0f;
+                return;
+            }
+
+            _up += s.Value;
+            if (_up >= LimitSeconds)
+            {
+                _up = 0f;
+                Violate("손전등을 천장으로 향함");
+            }
+        }
+
+        internal override void ResetEpisode()
+        {
+            _up = 0f;
+        }
+    }
+
+    /// <summary>
+    /// L7(80차 민 채택 「도서관에서는 뒷걸음질하지 마십시오.」): 그 공간에서 바라보는 쪽의 반대(뒤 ±<see cref="BackAngleDegrees"/>°)로 걸은 시간이
+    /// 연속 <see cref="LimitSeconds"/>초를 넘으면 위반. 걷기 = 자세 샘플 사이 수평 이동이 <see cref="StepMeters"/>m 넘음(G4와 같다). 그 공간에 있으면 방아쇠.
+    /// </summary>
+    public sealed class NoBackwardWalkJudge : FinalJudge
+    {
+        /// <summary>연속 한도(초) — 문을 닫으며 한두 걸음 물러나는 것은 봐준다.</summary>
+        public const float LimitSeconds = 1f;
+
+        /// <summary>샘플 사이 걸었다고 보는 거리(m).</summary>
+        public const float StepMeters = 0.04f;
+
+        /// <summary>뒤로 걸었다고 보는 각도(바로 뒤에서 좌우로, 도). 옆걸음은 세지 않는다.</summary>
+        public const float BackAngleDegrees = 55f;
+
+        private Vector3 _last;
+        private bool _hasLast;
+        private bool _backing;
+        private float _back;
+
+        /// <summary>바라보는 수평 방향(<paramref name="forward"/>)과 이동(<paramref name="move"/>)이 뒷걸음인지.</summary>
+        public static bool IsBackward(Vector3 forward, Vector3 move)
+        {
+            forward.y = 0f;
+            move.y = 0f;
+            if (forward.sqrMagnitude < 1e-6f || move.sqrMagnitude < 1e-6f) return false;
+            return Vector3.Dot(forward.normalized, move.normalized) <= -Mathf.Cos(BackAngleDegrees * Mathf.Deg2Rad);
+        }
+
+        internal override void Observe(in JudgeSignal s, FinalWorld w)
+        {
+            if (s.Kind == SignalKind.PlayerPose)
+            {
+                Vector3 move = s.Point - _last;
+                _backing = _hasLast && SensingRules.HorizontalDistance(s.Point, _last) > StepMeters && IsBackward(w.Forward, move);
+                _last = s.Point;
+                _hasLast = true;
+                return;
+            }
+
+            if (s.Kind != SignalKind.Tick) return;
+            if (Def == null || w.Space != Def.Space)
+            {
+                _back = 0f;
+                return;
+            }
+
+            Trigger();
+            if (!_backing)
+            {
+                _back = 0f;
+                return;
+            }
+
+            _back += s.Value;
+            if (_back >= LimitSeconds)
+            {
+                _back = 0f;
+                Violate("도서관에서 뒷걸음질");
+            }
+        }
+
+        internal override void ResetEpisode()
+        {
+            _hasLast = false;
+            _backing = false;
+            _back = 0f;
+        }
+    }
+
+    /// <summary>
+    /// G4(79차 민 채택 「태블릿을 보면서 걷지 마십시오.」): 태블릿을 올린 채 걸은 시간이 연속 <see cref="LimitSeconds"/>초를 넘으면 위반.
+    /// 걷기 = 자세 샘플(0.1초) 사이 수평 이동이 <see cref="StepMeters"/>m 넘음. 태블릿을 올리면 방아쇠.
+    /// </summary>
+    public sealed class NoWalkingWithTabletJudge : FinalJudge
+    {
+        /// <summary>연속 한도(초).</summary>
+        public const float LimitSeconds = 1.5f;
+
+        /// <summary>샘플 사이 걸었다고 보는 거리(m) — 초속 0.4m.</summary>
+        public const float StepMeters = 0.04f;
+
+        private Vector3 _last;
+        private bool _hasLast;
+        private bool _moving;
+        private float _walk;
+
+        internal override void Observe(in JudgeSignal s, FinalWorld w)
+        {
+            if (s.Kind == SignalKind.PlayerPose)
+            {
+                _moving = _hasLast && SensingRules.HorizontalDistance(s.Point, _last) > StepMeters;
+                _last = s.Point;
+                _hasLast = true;
+                return;
+            }
+
+            if (s.Kind != SignalKind.Tick) return;
+            if (!w.TabletOpen)
+            {
+                _walk = 0f;
+                return;
+            }
+
+            Trigger();
+            if (!_moving)
+            {
+                _walk = 0f;
+                return;
+            }
+
+            _walk += s.Value;
+            if (_walk >= LimitSeconds)
+            {
+                _walk = 0f;
+                Violate("태블릿을 보며 걸음");
+            }
+        }
+
+        internal override void ResetEpisode()
+        {
+            _hasLast = false;
+            _moving = false;
+            _walk = 0f;
+        }
+    }
+
+    /// <summary>
+    /// K5(79차 민 채택 「경비실 전화는 세 번 울린 뒤에 받으십시오.」): 전화가 울리기 시작하면(<see cref="FinalCues.PhoneRing"/>)
+    /// 세 번째 벨이 끝나기 전(<see cref="EarliestAnswerSeconds"/>)에 받으면 위반, 벨이 그칠 때까지 받지 않아도 위반. 그 뒤에 받으면 지킴.
+    /// </summary>
+    public sealed class AnswerAfterRingsJudge : CueEpisodeJudge
+    {
+        /// <summary>벨 한 번의 주기(초) — 벨소리 2.1초 + 쉼.</summary>
+        public const float RingPeriod = 3f;
+
+        /// <summary>벨소리 길이(초, <c>phone.ring</c>).</summary>
+        public const float RingSeconds = 2.1f;
+
+        /// <summary>받기 전에 울려야 하는 횟수.</summary>
+        public const int RingsBeforeAnswer = 3;
+
+        /// <summary>받아도 되는 가장 이른 때(초) — 세 번째 벨이 끝난 뒤.</summary>
+        public static float EarliestAnswerSeconds
+        {
+            get { return (RingsBeforeAnswer - 1) * RingPeriod + RingSeconds; }
+        }
+
+        /// <summary>만든다.</summary>
+        public AnswerAfterRingsJudge() : base(FinalCues.PhoneRing)
+        {
+        }
+
+        protected override void OnEnd(FinalWorld w)
+        {
+            if (!Settled) Fail("전화를 받지 않음");
+            Active = false;
+        }
+
+        protected override void OnSignal(in JudgeSignal s, FinalWorld w)
+        {
+            if (s.Kind != SignalKind.PhoneAnswered) return;
+            if (Elapsed(w) + 1e-3f < EarliestAnswerSeconds) Fail("세 번 울리기 전에 받음");
+            else Pass("세 번 울린 뒤 받음");
         }
     }
 

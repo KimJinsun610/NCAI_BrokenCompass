@@ -402,8 +402,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
     private Look Build(string itemId, Band band)
     {
         InspectionItem item = InspectionCatalog.Find(itemId);
-        // 57차: S-3 개수대는 [소리] 틀이지만 물줄기도 보인다(민: 「시각적으로 확인할 수 있게」) — 판정·HasLook은 그대로.
-        if (!AnomalyLook.HasLook(item) && itemId != FaucetItem) return null;
+        // 81차(민: 「세면대 물 퀄리티가 부족 — S-3은 물줄기만 제거」): S-3 개수대는 다시 [소리]만 — 보이는 물(FaucetWater) 폐기.
+        if (!AnomalyLook.HasLook(item)) return null;
 
         Look look = new Look { ItemId = itemId, Band = band };
         if (itemId == "K-1")
@@ -498,9 +498,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 Hair(look, prop, b, band);
                 break;
             }
-            case FaucetItem:
-                Faucet(look, prop, jt.transform, b, band);   // 57차: 잠겼어야 할 수도에서 물이 떨어진다
-                break;
             case "C-3":
                 ok = HideProp(look, prop, jt.transform);   // 51차: 사다리가 없다(점검 기준점만 남는다)
                 if (ok) EmptyMark(look, prop, b);   // 65차(민: 「사다리 없는 자리에서 없다고 보고할 수 있도록」): 빈자리에 자국 — 외곽선이 그려지고 [없음]으로 보고
@@ -536,14 +533,8 @@ public sealed class InspectionAnomalies : MonoBehaviour
             case "S-5":
                 ok = GlowFlasks(look, glow, band);   // 선반 플라스크 유리가 붉게 빛나며 깜빡임
                 break;
-            case "T-4":
-                ok = SinkRunning(look, band);   // 세면대 넷 중 하나에서 물이 흐른다
-                break;
             case "T-5":
                 ok = FallToFloor(look, prop, jt.transform, b, 0.55f);   // 수건이 바닥에 떨어져 있다
-                break;
-            case "L-4":
-                ok = ChalkWriting(look, prop, b, band);   // 도서관 칠판에 분필 글씨
                 break;
             case "L-5":
                 ok = StandUp(look, prop, jt.transform, b);   // 쓰러져 있던 쓰레기통이 세워져 있다(66차 플레이 점검: 씬의 도서관 쓰레기통은 원래 누워 있다)
@@ -566,38 +557,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
         }
 
         return look;
-    }
-
-    /// <summary>[소리] 틀이지만 눈에 보이는 물도 세우는 항목(57차).</summary>
-    public const string FaucetItem = "S-3";
-
-    /// <summary>과학실 개수대(Laboratory_Sink) 수도꼭지 입 — 소품 로컬 좌표(모형 축척 77.9·x 270°). 57차 레이 측정: 월드 (51.30, 2.40, 40.465).</summary>
-    private static readonly Vector3 FaucetMouthLocal = new Vector3(-0.00013f, 0.00096f, 0.01155f);
-
-    /// <summary>
-    /// S-3 물 — 수도꼭지 입에서 개수대 바닥까지 물방울(구간 1)·물줄기(구간 2+)·파문(<see cref="FaucetWater"/>).
-    /// 입은 소품 로컬 좌표, 소품 크기가 바뀌어 상자 밖이면 상자 윗부분 가운데. 바닥은 입 아래로 쏜 레이가 맞는 그 소품의 면.
-    /// </summary>
-    private static void Faucet(Look look, Transform prop, Transform inspect, Bounds b, Band band)
-    {
-        Vector3 mouth = prop.TransformPoint(FaucetMouthLocal);
-        Bounds grown = b;
-        grown.Expand(0.05f);
-        if (!grown.Contains(mouth)) mouth = new Vector3(b.center.x, b.min.y + b.size.y * 0.88f, b.center.z);
-
-        float basin = mouth.y - 0.34f;
-        float best = float.MaxValue;
-        foreach (RaycastHit h in Physics.RaycastAll(mouth + Vector3.down * 0.02f, Vector3.down, 1.2f, ~0, QueryTriggerInteraction.Ignore))
-        {
-            if (h.collider == null || h.collider.transform.IsChildOf(inspect) || !h.collider.transform.IsChildOf(prop)) continue;
-            if (h.distance < best)
-            {
-                best = h.distance;
-                basin = h.point.y;
-            }
-        }
-
-        look.Objects.Add(FaucetWater.Create("이상 " + look.ItemId + " 물", mouth, basin, Mathf.Max(1, (int)band), Ring(), Dot()));
     }
 
     /// <summary>[옮김·없음] 소품을 통째로 감춘다 — 렌더러·콜라이더를 끄고(점검 기준점 아래는 남김) 거둘 때 되돌린다.</summary>
@@ -660,15 +619,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
     private static readonly float[] TiltDegreesByBand = { 0f, 35f, 90f, 150f, 180f };
     private static readonly float[] SpinDegreesByBand = { 0f, 25f, 40f, 65f, 100f };
     private static readonly float[] BenchDegreesByBand = { 0f, 25f, 40f, 55f, 70f };
-
-    private static readonly string[] ChalkLinesByBand =
-    {
-        "",
-        "보고 있어",
-        "보고 있어\n뒤에",
-        "보고하지 마\n뒤에 있어",
-        "보고하지 마\n보고하지 마\n뒤에 있어"
-    };
 
     private static int BandIndex(Band band)
     {
@@ -766,42 +716,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
         return true;
     }
 
-    /// <summary>T-4: 세면대 넷 중 그날 하나 — 수도꼭지(벽 쪽 윗면)에서 물이 흐른다(S-3과 같은 물).</summary>
-    private bool SinkRunning(Look look, Band band)
-    {
-        int n = RuntimeInspectTargets.PropCount(look.ItemId);
-        Transform sink = RuntimeInspectTargets.Prop(look.ItemId, PoolIndex(look.ItemId + ".sink", n));
-        if (sink == null) return false;
-        Bounds sb = PropBounds(sink, null);
-        Vector3 wall = WallDirection(sb.center, sink);
-        float reach = Mathf.Abs(wall.x) * sb.extents.x + Mathf.Abs(wall.z) * sb.extents.z;
-        Vector3 side = Vector3.Cross(Vector3.up, wall);   // 앞에서 봐서 오른쪽 수도꼭지(66차 플레이 점검: 두 꼭지 사이에서 흘렀다)
-        Vector3 mouth = new Vector3(sb.center.x, sb.max.y - SinkMouthDrop, sb.center.z) + wall * Mathf.Max(0.05f, reach - SinkMouthInset) + side * SinkMouthSide;
-        float basin = sb.center.y;
-        float best = float.MaxValue;
-        foreach (RaycastHit h in Physics.RaycastAll(mouth + Vector3.down * 0.03f, Vector3.down, 1f, ~0, QueryTriggerInteraction.Ignore))
-        {
-            if (h.collider == null || h.collider.name.StartsWith("Inspect ")) continue;
-            if (h.distance < best)
-            {
-                best = h.distance;
-                basin = h.point.y;
-            }
-        }
-
-        look.Objects.Add(FaucetWater.Create("이상 " + look.ItemId + " 물", mouth, basin, Mathf.Max(1, (int)band), Ring(), Dot()));
-        return true;
-    }
-
-    /// <summary>세면대 수도꼭지 입: 윗면에서 아래로(m).</summary>
-    public static float SinkMouthDrop = 0.1f;
-
-    /// <summary>세면대 수도꼭지 입: 벽면에서 안쪽으로(m).</summary>
-    public static float SinkMouthInset = 0.17f;
-
-    /// <summary>세면대 수도꼭지 입: 가운데에서 오른쪽 꼭지까지(m).</summary>
-    public static float SinkMouthSide = 0.09f;
-
     /// <summary>C-4 시계 · T-5 수건: 벽에 걸려 있던 것이 벽 아래 바닥에 떨어져 누워 있다(벽에서 <paramref name="pullOut"/>m).</summary>
     private bool FallToFloor(Look look, Transform prop, Transform judge, Bounds b, float pullOut)
     {
@@ -857,31 +771,6 @@ public sealed class InspectionAnomalies : MonoBehaviour
         if (Vector3.Dot(swung - far, -wall) < 0f) deg = -deg;
         Transform moved;
         return TurnAround(look, prop, judge, pivot, Vector3.up, deg, out moved);
-    }
-
-    /// <summary>L-4: 도서관 칠판(트인 쪽 면)에 분필 글씨 — 구간이 높을수록 줄이 늘어난다.</summary>
-    private bool ChalkWriting(Look look, Transform prop, Bounds b, Band band)
-    {
-        Vector3 n = b.size.x < b.size.z ? Vector3.right : Vector3.forward;
-        if (FreeDistance(b.center, -n, prop, 8f) > FreeDistance(b.center, n, prop, 8f)) n = -n;
-        float thick = Mathf.Abs(n.x) * b.extents.x + Mathf.Abs(n.z) * b.extents.z;
-        float width = Mathf.Abs(n.x) > 0.5f ? b.size.z : b.size.x;
-        if (_props == null) _props = Resources.Load<InspectionAnomalyPropsSO>(InspectionAnomalyPropsSO.ResourcePath);
-        TMPro.TMP_FontAsset font = _props != null ? _props.ChalkFont : null;
-
-        GameObject go = new GameObject("이상 " + look.ItemId + " 분필 글씨");
-        float tilt = PoolIndex(look.ItemId + ".tilt", 2) == 0 ? -4f : 5f;
-        go.transform.SetPositionAndRotation(b.center + n * (thick + 0.008f) + Vector3.down * 0.05f, Quaternion.LookRotation(-n, Vector3.up) * Quaternion.Euler(0f, 0f, tilt));
-        TMPro.TextMeshPro tmp = go.AddComponent<TMPro.TextMeshPro>();
-        if (font != null) tmp.font = font;
-        tmp.text = ChalkLinesByBand[BandIndex(band)];
-        tmp.fontSize = 3.8f;
-        tmp.alignment = TMPro.TextAlignmentOptions.Center;
-        tmp.enableWordWrapping = false;
-        tmp.color = new Color(0.93f, 0.93f, 0.88f, 0.82f);
-        tmp.rectTransform.sizeDelta = new Vector2(width * 0.85f, b.size.y * 0.9f);
-        look.Objects.Add(go);
-        return true;
     }
 
     /// <summary>66차: 그 점 아래 위를 보는 면 중 <paramref name="below"/>보다 낮은 가장 높은 것(8m까지). 없으면 NaN.</summary>

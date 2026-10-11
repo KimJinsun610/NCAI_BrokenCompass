@@ -71,6 +71,12 @@ namespace NightDuty
         /// <summary>CCTV 시청 샘플(0.1초, 모니터를 보는 동안만). TargetId = 보고 있는 채널 ID, Value = 샘플 시간(초).</summary>
         CctvViewSample = 47,
 
+        /// <summary>79차: 시선의 위아래 각도 샘플(0.1초, 자세 샘플과 함께). Value = 올려다본 각도(도, 위 +, 아래 −) — L6 「손전등을 천장으로」.</summary>
+        LookPitch = 48,
+
+        /// <summary>79차: 경비실 전화를 받았다(울리는 동안 [E]) — K5 「세 번 울린 뒤에 받으십시오」.</summary>
+        PhoneAnswered = 49,
+
         /// <summary>태블릿(Tab) 상태가 바뀌었다. Flag = 열림.</summary>
         TabChanged = 60
     }
@@ -212,6 +218,18 @@ namespace NightDuty
         public static JudgeSignal CctvView(string channelId, float sampleSeconds)
         {
             return new JudgeSignal(SignalKind.CctvViewSample, SpaceId.None, channelId, ActionSource.Player, false, sampleSeconds);
+        }
+
+        /// <summary>79차: 시선 위아래 각도 샘플.</summary>
+        public static JudgeSignal Pitch(float pitchDegrees)
+        {
+            return new JudgeSignal(SignalKind.LookPitch, SpaceId.None, string.Empty, ActionSource.Player, false, pitchDegrees);
+        }
+
+        /// <summary>79차: 경비실 전화를 받음.</summary>
+        public static JudgeSignal PhoneAnswer()
+        {
+            return new JudgeSignal(SignalKind.PhoneAnswered, SpaceId.SecurityRoom, string.Empty, ActionSource.Player, false, 0f);
         }
 
         /// <inheritdoc/>

@@ -17,7 +17,7 @@ using UnityEngine.SceneManagement;
 /// <c>#if ENABLE_LEGACY_INPUT_MANAGER</c>로 감싸 레거시를 끈 설정에서도 컴파일되게 한다.
 /// New Input System으로 옮길 때는 <see cref="Toggle"/>·<see cref="SetOn"/>을 액션에 연결하면 된다.</para>
 ///
-/// <para><b>기본 키는 F.</b> 기획서 9절은 「F 또는 우클릭, 미정」이다. 우클릭은 조준·집기 같은 다른 상호작용에
+/// <para><b>90차부터 키는 좌클릭</b>(<see cref="PlayerToggleKey"/>, 옛 F — 우클릭은 태블릿 들기). 아래는 옛 설명: 기획서 9절은 「F 또는 우클릭, 미정」이다. 우클릭은 조준·집기 같은 다른 상호작용에
 /// 쓰일 여지가 남아 있고 <c>FPController</c>의 기존 키(WASD·Shift·Space·Tab·Esc)와도 겹치지 않아 F를 기본값으로 둔다.
 /// <see cref="alsoRightMouse"/>를 켜면 우클릭도 함께 받는다. 기획이 확정되면 인스펙터에서 바꾸면 된다.</para>
 /// </summary>
@@ -33,8 +33,11 @@ public sealed class FlashlightRelay : MonoBehaviour
     [SerializeField] private bool startOn;
 
     [Header("입력")]
-    [Tooltip("토글 키. 기획 미정값의 기본은 F.")]
-    [SerializeField] private KeyCode toggleKey = KeyCode.F;
+    [Tooltip("토글 키. 90차(민: 「마우스 좌클릭으로 손전등 on/off」): 좌클릭(Mouse0). 실행 중에는 PlayerToggleKey로 맞춘다.")]
+    [SerializeField] private KeyCode toggleKey = PlayerToggleKey;
+
+    /// <summary>90차(민: 「마우스 좌클릭으로 손전등 on/off, 우클릭 태블릿 들기, Tab으로 메시지/수칙 전환」): 손전등 키 — 좌클릭(옛 F).</summary>
+    public const KeyCode PlayerToggleKey = KeyCode.Mouse0;
 
     [Tooltip("켜면 마우스 우클릭으로도 토글한다.")]
     [SerializeField] private bool alsoRightMouse;
@@ -144,6 +147,7 @@ public sealed class FlashlightRelay : MonoBehaviour
     private void OnEnable()
     {
         Active = this;
+        toggleKey = PlayerToggleKey;   // 90차: 직렬화된 옛 값(F)이 남아 있어도 좌클릭
         CacheLights();
         ApplyToWorld(startOn);
         _isOn = startOn;
@@ -247,6 +251,12 @@ public sealed class FlashlightRelay : MonoBehaviour
         // 그런 연출은 FPController를 끄는 것으로 「조작 불가」를 표시한다(2026-10-02 김진선).
         if (_player == null) _player = GetComponentInParent<FPController>();
         if (_player != null && !_player.enabled)
+        {
+            return false;
+        }
+
+        // 90차: 좌클릭이 손전등이 된 뒤 — 커서가 보이는 화면(일시정지·사망 화면의 버튼, 개발자 패널)을 누르는 클릭은 손전등으로 받지 않는다.
+        if (Cursor.visible && Cursor.lockState != CursorLockMode.Locked)
         {
             return false;
         }

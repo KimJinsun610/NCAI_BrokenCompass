@@ -57,6 +57,8 @@ namespace NightDuty
                 changed = true;
             }
 
+            if (PatchLeadOrders(rows, program)) changed = true;   // 85차: 창밖 노란 얼굴 날 블라인드(L-2)
+
             if (reverse)
             {
                 string t1 = InspectionCatalog.ReverseReportItem;
@@ -125,7 +127,9 @@ namespace NightDuty
         /// </summary>
         private static void HoldForProgram(InspectionPlan plan, NightProgram program)
         {
-            if (plan == null || program == null || !program.Has(ProgramCatalog.ReverseReportRule)) return;
+            if (plan == null || program == null) return;
+            HoldLeadOrders(plan, program);   // 85차
+            if (!program.Has(ProgramCatalog.ReverseReportRule)) return;
             Board.Hold(InspectionCatalog.ReverseReportItem);
         }
 
@@ -173,11 +177,12 @@ namespace NightDuty
                 DirectorBusy = busy,
                 Pacer = _tension != null ? _tension.Pacer : null,
                 Banned = _unavoidable.Banned,
-                DutyActive = _duties != null && _duties.Active != null && _duties.Active.Seconds > 0f,   // 제한 없는 지시(W2·W4·W5·W15)는 점검을 막지 않는다
+                DutyActive = _duties != null && _duties.Active != null && DutyCatalog.EffectiveSeconds(_duties.Active) > 0f,   // 제한 없는 지시(W2·W4·W5·W15)는 점검을 막지 않는다
                 DutyTurn = DutyTurnNow(minute)
             };
 
             ReleaseToiletOrder(input.Minute);
+            ReleaseLeadOrders(input.Minute);   // 85차: 블라인드(L-2) → 창밖 노란 얼굴
             InspectionOrder order = _orders.Tick(input);
             if (order != null) AnnounceOrder(order);
             TickOrderLimits(realSeconds, busy);
@@ -248,6 +253,7 @@ namespace NightDuty
         public static float OrderLimitSeconds(InspectionOrder order)
         {
             if (order == null || order.Kind == OrderKind.Witness) return 0f;
+            if (!DutyCatalog.TimeLimitsEnabled) return 0f;   // 76차(민: 「지시 사항들의 제한 시간도 폐기」): 기한·마감 시각·기한 지남 경고 없음
             return DutyCatalog.LimitSeconds;
         }
 
@@ -348,7 +354,7 @@ namespace NightDuty
         }
 
         /// <summary>61차: 변기 지시가 여자아이 슬롯보다 이만큼(게임 분) 먼저 나간다 — 지시를 읽고 화장실에 들어서면 슬롯이 열려 있다.</summary>
-        public const float ToiletOrderLeadMinutes = 5f;   // 67차(밤 05:00): 4 → 5
+        public const float ToiletOrderLeadMinutes = 4f;   // 67차(밤 05:00): 4 → 5 · 88차(밤 04:00): 5 → 4
 
         /// <summary>61차: T4 날 묶어 둔 변기(T-1)를 여자아이 슬롯에 맞춰 단독 지시로 낸다(한 번).</summary>
         private static void ReleaseToiletOrder(float minute)
@@ -412,66 +418,55 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 점검 지시 문자 본문(TMP 서식). 머리 한 줄 + 항목마다 「· 이름 — 문구」. 보고하면 그 줄이 흐려지고 「· 보고함」,
+        /// 점검 지시 문자 본문(TMP 서식). 88차: 항목마다 지시 문장 한 줄(<see cref="OrderLine"/> — 옛 머리 줄 「[점검 지시] 공간 · 마감」과 「· 이름 — 」 없음). 보고하면 그 줄에 취소선만 긋는다(74차 — 옛 흐림·「· [정상] 보고함」 폐기).
         /// 재입실 불가·안전한 읽기 표시는 점검표와 같다. 첫 지시에만 조작 안내를 붙인다.
         /// </summary>
         public static string OrderMessage(InspectionOrder order)
         {
             if (order == null) return string.Empty;
 
+            // 88차(민: 「지시 메시지의 양식을 고쳐야 해. 그냥 지시 문구만 나오게 해줘」): 머리 줄(「[점검 지시] 과학실」 · 마감 「02:08까지」 · 「기한 지남」)과
+            // 항목 머리(「· 현미경 — 」)를 뺐다 — 항목마다 지시 문장(TabletLine) 한 줄. 보고한 줄은 그대로 취소선(74차). allDone은 줄마다 그어져 따로 없다.
             StringBuilder sb = new StringBuilder();
-            string space = order.Space != SpaceId.None ? SpaceLabel(order.Space) : string.Empty;
-            switch (order.Kind)
-            {
-                case OrderKind.Call1:
-                case OrderKind.Call2:
-                    // 51차: 점검 지시는 늘 「[점검 지시]」 — 역설 문자(머리 없음·「지금」)와 한눈에 갈리게.
-                    sb.Append("[점검 지시] ").Append(space.Length > 0 ? space : "점검");
-                    break;
-                case OrderKind.CatchUp:
-                    // 53차: 한 공간뿐이면(조우 슬롯까지 아껴 둔 방이 풀린 경우) 그 공간 이름 — 「남은 점검」은 여러 공간일 때만.
-                    sb.Append("[점검 지시] ").Append(space.Length > 0 ? space : "남은 점검");
-                    break;
-                default:
-                    sb.Append("[점검 지시] ").Append(space.Length > 0 ? space : "점검");
-                    break;
-            }
-
-            // 67차 ②: 마감 시각을 머리 줄에 적는다(「02:08까지」). 넘기면 「기한 지남」.
-            string due = OrderDeadlineText(order.Index);
-            if (OrderExpired(order.Index)) sb.Append(" · <color=").Append(ChecklistLateColor).Append(">기한 지남</color>");
-            else if (due.Length > 0) sb.Append(" · ").Append(due);
-
             for (int i = 0; i < order.ItemIds.Count; i++)
             {
                 InspectionAssignment a = Board.Plan.Find(order.ItemIds[i]);
                 if (a == null) continue;
                 bool done = Board.StateOf(a.Id) != InspectionState.Pending;
-                sb.Append('\n');
-                if (done) sb.Append("<color=").Append(ChecklistDoneColor).Append('>');
-                sb.Append("· ");
-                if (order.Space == SpaceId.None) sb.Append(SpaceLabel(a.Item.Space)).Append(' ');
-                sb.Append(a.Item.Name);
-                if (order.Kind == OrderKind.Witness) sb.Append('(').Append(WitnessStallLabel).Append(')');
-                sb.Append(" — ").Append(a.Item.TabletLine).Append(ItemStatus(a));
-                if (done) sb.Append("</color>");
+                if (sb.Length > 0) sb.Append('\n');
+                if (done) sb.Append(StrikeOpen);
+                sb.Append(OrderLine(order, a));
+                if (done) sb.Append(StrikeClose);
+                // 77차(민): 줄 꼬리 「· 재입실 불가 / · 확인 필요 / · 이상 없음」 폐기.
             }
 
-            if (order.Index == 1)
-            {
-                sb.Append("\n<color=").Append(ChecklistHowToColor).Append('>').Append(InspectionHowTo).Append("</color>");
-            }
-
-            if (IsFinalOrder(order))
-            {
-                sb.Append("\n<color=").Append(ChecklistHowToColor).Append('>').Append(FinalOrderNotice).Append("</color>");
-            }
+            // 77차(민): 「마지막 지시입니다. 마치면 경비실 전화로 퇴근하십시오.」 안내 폐기 — 모든 지시를 마치면 ShiftReadyText 한 통.
 
             return sb.ToString();
         }
 
-        /// <summary>마지막 지시에 붙는 안내(59차, 민: 「마지막 지시가 나오면 퇴근해도 된다는 안내문」). 67차(문장은 짧게): 줄임.</summary>
-        public const string FinalOrderNotice = "마지막 지시입니다. 마치면 경비실 전화로 퇴근하십시오.";
+        /// <summary>
+        /// 88차: 지시 문자 한 줄 = 그 항목의 지시 문장. 85차 단독 변기 지시(목격)는 칸을 문장 안에 넣는다(「화장실 변기(3번 칸)의 상태 보고.」).
+        /// </summary>
+        public static string OrderLine(InspectionOrder order, InspectionAssignment a)
+        {
+            if (a == null) return string.Empty;
+            string line = a.Item.TabletLine;
+            if (order != null && order.Kind == OrderKind.Witness && a.Id == InspectionCatalog.ReverseReportItem)
+            {
+                string tagged = a.Item.Name + "(" + WitnessStallLabel + ")";
+                int at = line.IndexOf(a.Item.Name, StringComparison.Ordinal);
+                line = at >= 0 ? line.Substring(0, at) + tagged + line.Substring(at + a.Item.Name.Length) : line + " (" + WitnessStallLabel + ")";
+            }
+
+            return line;
+        }
+
+        /// <summary>74차: 완료 표시 — TMP 취소선(민: 「완료가 된 지시들은 줄이 그어지는 걸로만」).</summary>
+        public const string StrikeOpen = "<s>";
+
+        /// <summary>74차: 취소선 닫기.</summary>
+        public const string StrikeClose = "</s>";
 
         /// <summary>67차: 기한을 넘긴 지시의 「기한 지남」 색.</summary>
         public const string ChecklistLateColor = "#C8643C";
@@ -493,15 +488,6 @@ namespace NightDuty
             // 68차(민: 「점검이 끝나면 퇴근할 수 있는 상태가 되는데 이후에 추가 지시가 발생」): [근무 지시]가 남았으면 마지막 지시가 아니다 —
             // 모든 지시를 마치면 따로 「모든 지시를 마쳤습니다」 문자가 간다(ShiftReadyText).
             return !DutiesPending;
-        }
-
-        /// <summary>항목 줄 뒤 표시: 보고함 / 재입실 불가 / 안전한 읽기 결과.</summary>
-        private static string ItemStatus(InspectionAssignment a)
-        {
-            if (Board.StateOf(a.Id) != InspectionState.Pending) return Board.StateOf(a.Id) == InspectionState.ReportedAnomaly ? " · [이상] 보고함" : " · [정상] 보고함";   // 60차: 정정할 수 있으니 무엇으로 보고했는지 보인다
-            if (_unavoidable.Banned != SpaceId.None && SpaceIds.Canonical(a.Item.Space) == _unavoidable.Banned) return " · 재입실 불가";
-            SafeReadReveal? reveal = RevealOf(a.Item.Space);
-            return reveal.HasValue ? " · " + reveal.Value.Label : string.Empty;
         }
 
         /// <summary>그 공간에 지시받았고 아직 보고하지 않은 점검이 있는지(회피 불가 역설은 지시받은 점검만 걸고 넘어진다).</summary>

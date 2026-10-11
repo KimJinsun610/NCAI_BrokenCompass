@@ -147,7 +147,7 @@ namespace NightDuty
         public const float LullRange = 20f;
 
         /// <summary>먼저 열릴 항목을 모두 낼 시각(01:40) — 시간표의 끝. 51차(민: 「초반 3개는 괜찮은데 이후 2개가 너무 늦다」): 03:00 → 01:40.</summary>
-        public const int EarlyDeadline = 125;   // 67차(밤 05:00): 100 → 125(×1.25, 02:05)
+        public const int EarlyDeadline = 100;   // 67차(밤 05:00): 100 → 125(×1.25, 02:05) · 88차(밤 04:00): 125 → 100
 
         /// <summary>남은 지시가 있으면 지난 지시 뒤 이 시간(실제 초, 게임 30분) 안에 다음 지시를 낸다(밀린 지시 1 이하일 때).</summary>
         public const float MaxQuiet = 47f;   // 57차: 112 → 70 · 59차(밤 10분): 70 → 47(게임 약 19분)
@@ -159,7 +159,7 @@ namespace NightDuty
         public const float NextAfterReport = 4f;
 
         /// <summary>여유를 재는 끝(03:45) — 04:00 전에 다 끝낼 수 있어야 한다.</summary>
-        public const int WorkDeadline = 280;   // 67차(밤 05:00): 225 → 280(04:40)
+        public const int WorkDeadline = 225;   // 67차(밤 05:00): 225 → 280(04:40) · 88차(밤 04:00): 280 → 225(03:45)
 
         /// <summary>따라잡기 여유 기준(초).</summary>
         public const float SlackMin = 60f;
@@ -171,7 +171,7 @@ namespace NightDuty
         public const float SecondsPerItem = 27f;
 
         /// <summary>조우가 곧 열린다고 보는 게임 분.</summary>
-        public const float ArmedLeadMinutes = 10f;   // 67차: 8 → 10(게임 분 ×1.25)
+        public const float ArmedLeadMinutes = 8f;   // 67차: 8 → 10(게임 분 ×1.25) · 88차: 10 → 8
 
         /// <summary>복도 중심선 z.</summary>
         public const float CorridorZ = 44f;

@@ -87,6 +87,20 @@ public sealed class TabletZoom : MonoBehaviour
         _shake = Mathf.Max(0f, amount);
     }
 
+    private TabletDocument[] _docs;
+
+    /// <summary>74차(민: 「태블릿 올리는 키를 마우스 우클릭으로」): 확대 ↔ 든 상태. 옛 Tab.</summary>
+    public const KeyCode ZoomKey = KeyCode.Mouse1;
+
+    /// <summary>
+    /// 메시지-근무수칙 전환 키 — 김진선님 <see cref="TabletDocument.switchTabKey"/>(옛 Q)를 실행 중 인스턴스에서만 바꾼다.
+    /// 74차 좌클릭 → 90차(민: 「Tab으로 메시지/수칙 전환」) Tab — 좌클릭은 손전등(<see cref="FlashlightRelay.PlayerToggleKey"/>).
+    /// </summary>
+    public const KeyCode SwitchTabKey = KeyCode.Tab;
+
+    /// <summary>74차: 태블릿 아래 조작 안내 줄의 키 이름 「Mouse0」을 바꿀 말(90차부터 키가 Tab이라 TabletDocument가 「Tab」을 그대로 적는다 — 옛 값이 남은 경우만).</summary>
+    public const string SwitchTabLabel = "좌클릭";
+
     /// <summary>61차 들기 제한 규칙 상태(검수용).</summary>
     public NightDuty.TabletLimit Limit
     {
@@ -163,9 +177,24 @@ public sealed class TabletZoom : MonoBehaviour
 
     // ── 매 프레임 ─────────────────────────────────────────────
 
+    /// <summary>74차: 태블릿 아래 조작 안내 「Mouse0 : 메시지」 → 「좌클릭 : 메시지」(김진선님 TabletDocument는 그리기만 하고 고치지 않는다).</summary>
+    private void LateUpdate()
+    {
+        if (_docs == null) return;
+        for (int i = 0; i < _docs.Length; i++)
+        {
+            TabletDocument d = _docs[i];
+            if (d == null || d.hintText == null) continue;
+            string s = d.hintText.text;
+            if (s != null && s.Contains("Mouse0")) d.hintText.text = s.Replace("Mouse0", SwitchTabLabel);
+        }
+    }
+
     private void Update()
     {
         if (!Bind()) return;
+        // 90차: 우클릭(들기·확대)은 여기서만 받는다 — CCTV가 보기를 마치며 저장해 둔 readInput(true)을 되돌려 김진선님 PlayerTablet도 같은 우클릭으로 내렸다 올리는 일이 없게.
+        if (alwaysHeld && _tablet.readInput && !(CctvSystem.Active != null && CctvSystem.Active.IsViewing)) _tablet.readInput = false;
         if (ViewmodelTime.Paused) return;   // 일시정지 중에는 키도 받지 않고 움직이지도 않는다(PlayerTablet과 같다)
 
         bool cctv = CctvSystem.Active != null && CctvSystem.Active.IsViewing;
@@ -203,7 +232,7 @@ public sealed class TabletZoom : MonoBehaviour
                 }
             }
 
-            if (!cctv && Input.GetKeyDown(_tablet.toggleKey)) Press();
+            if (!cctv && Input.GetKeyDown(ZoomKey)) Press();   // 74차: 우클릭(옛 Tab)
             if (!_tablet.IsOpened) _zoomTarget = false;   // 다른 쪽(알람 등)이 내렸다
 
             // 69차·73차: 시간으로도 쉬는 시간으로도 풀리지 않는다 — 연출이 나올 때만 풀린다(일시정지·CCTV 중에는 흐르지 않는다).
@@ -265,6 +294,9 @@ public sealed class TabletZoom : MonoBehaviour
         if (_tablet == null) return false;
         _sway = _tablet.GetComponent<ViewmodelSway>();
         _tablet.readInput = false;   // 키는 여기서 받는다(실행 중 인스턴스 값만 — 프리팹은 그대로)
+        _tablet.toggleKey = ZoomKey;   // 74차: 다른 곳(CCTV가 readInput을 되돌릴 때 등)에서도 Tab으로 들리지 않게
+        _docs = _tablet.GetComponentsInChildren<TabletDocument>(true);
+        for (int i = 0; i < _docs.Length; i++) _docs[i].switchTabKey = SwitchTabKey;
         _basePos = alwaysHeld ? heldPosition : _tablet.openedPosition;
         _baseRot = Quaternion.Euler(alwaysHeld ? heldRotation : _tablet.openedRotation);
         _restorePos = _tablet.openedPosition;

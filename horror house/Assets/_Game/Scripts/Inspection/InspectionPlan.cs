@@ -355,13 +355,16 @@ namespace NightDuty
 
             // 2) 고른 공간마다 적어도 한 항목 — 67차: 하루 항목 수(4·5·5·6·6)를 넘기면 그 공간은 뺀다.
             //    다만 좌·우 동이 비면 넘겨서라도 둔다(이상 셋이 한 동에 몰린 날). 비어 있는 동의 공간을 먼저 본다.
+            //    81차: 한 공간을 넣을 때마다 다시 정렬한다 — 처음 한 번만 정렬하면 같은 동 둘을 먼저 넣고 남은 동 때문에 하루 항목 수를 넘겼다(이상 셋이 복도에 몰린 날).
             List<SpaceId> order = new List<SpaceId>(spaces);
-            order.Sort((x, y) => WingCovered(list, x).CompareTo(WingCovered(list, y)));
-            for (int s = 0; s < order.Count; s++)
+            while (order.Count > 0)
             {
-                if (HasSpace(list, order[s])) continue;
-                if (list.Count >= total && WingCovered(list, order[s])) continue;
-                InspectionItem item = PickFresh(InspectionCatalog.InSpace(order[s]));
+                order.Sort((x, y) => WingCovered(list, x).CompareTo(WingCovered(list, y)));
+                SpaceId next = order[0];
+                order.RemoveAt(0);
+                if (HasSpace(list, next)) continue;
+                if (list.Count >= total && WingCovered(list, next)) continue;
+                InspectionItem item = PickFresh(InspectionCatalog.InSpace(next));
                 list.Add(new InspectionAssignment(item, false, Band.Band0, false));
             }
 

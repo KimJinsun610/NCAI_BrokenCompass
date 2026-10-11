@@ -182,7 +182,7 @@ namespace NightDuty.Tests
         [Test]
         public void S1_점검_문구는_정면을_보는_인체_모형이다()
         {
-            Assert.AreEqual("인체 모형은 정면을 보고 있습니다.", InspectionCatalog.Find("S-1").TabletLine);
+            Assert.AreEqual("과학실 인체 모형이 정면을 향하는지 확인해주십시오.", InspectionCatalog.Find("S-1").TabletLine);   // 76차 민 문구
         }
     }
 }

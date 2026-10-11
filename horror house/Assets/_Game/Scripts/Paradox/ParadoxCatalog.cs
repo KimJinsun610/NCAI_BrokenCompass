@@ -83,31 +83,35 @@ namespace NightDuty
         {
             Add("H1", "복도의 중앙을 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, FinalCues.H1Object, "복도의 미분류 물체에? 다가가지 마 십시오.");
             Add("H2", "저절로 열린 문이 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, null, "열린 문은 열린 문입니다. 열린 채로. 두십 시오.");
-            Add("H3", "복도에 인원이 있습니다. 지금 확인하십시오.", SafeReadPattern.StandStill, FinalCues.Footsteps, null, "발소리 가 들리면? 가까운 방 으로. 대피 하십니까.? 대피하십시오.");
+            Add("H3", "인원이 확인되면, 대기하십시오.", SafeReadPattern.StandStill, FinalCues.Footsteps, null, "발소리 가 들리면? 가까운 방 으로. 대피 하십니까.? 대피하십시오.");
             Add("H4", null, SafeReadPattern.None, null, null, null);
             Add("C1", "교실에서 소리가 나면 즉시 점검하십시오.", SafeReadPattern.StandStill, FinalCues.Chalk, null, "판서 가 끝나기 전 에는? 들어가지 마시오.");
-            Add("C2", "교실에 남아 있는 학생이 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.BoySeated, FinalCues.BoyTarget, "교실 의 _? 는 무시 대상 입니 다.");   // 52차: 소년이 앉은 뒤에 온다(예고하지 않음) — 따르면(바라보면) C2를 어긴다
+            Add("C2", "교실 소음의 원인을 응시해주십시오.", SafeReadPattern.EyesOnly, FinalCues.BoySeated, FinalCues.BoyTarget, "교실 의 _? 는 무시 대상 입니 다.");   // 52차: 소년이 앉은 뒤에 온다(예고하지 않음) — 따르면(바라보면) C2를 어긴다
             Add("C3", null, SafeReadPattern.None, null, null, "수업 중 이동 은 금지입니 ㄷ ㅏ.");   // 민 2026-10-04: 역설 폐기(몬스터를 과하게 예고해 긴장 저하)
-            Add("C4", "초록 등 아래가 어둡습니다. 지금 손전등으로 비추십시오.", SafeReadPattern.StandStill, FinalCues.RedLight, null, "초록 불빛 아래 손전등 은 켜지 마. 켜지 마.");   // 52차: 끄라는 수칙 — 따르면(켜면) 어긴다, 등 아래를 꺼진 채 지나가면 안전한 읽기. 66차: 붉은 → 초록
+            Add("C4", "조명에 이상이 있을 시 손전등으로 확인해주십시오.", SafeReadPattern.StandStill, FinalCues.RedLight, null, "초록 불빛 아래 손전등 은 켜지 마. 켜지 마.");   // 52차: 끄라는 수칙 — 따르면(켜면) 어긴다, 등 아래를 꺼진 채 지나가면 안전한 읽기. 66차: 붉은 → 초록
             Add("C5", null, SafeReadPattern.None, null, null, "성한 문 으로는? 나가지 마시오. 교실 의 문은 부서졌다.");   // 민 2026-10-04: 역설 폐기
             Add("S1", "반대편 문이 열렸습니다. 지금 점검하십시오.", SafeReadPattern.EyesOnly, null, null, "과학 실은 통로 입니까?. 아니오.");
             Add("S2", "지금 과학실의 훼손 물품을 점검하십시오.", SafeReadPattern.EyesOnly, FinalCues.Glass, null, "깨지는 소리 가 나면? 과학실 을 나가. 다시 오지 마.");   // 민 2026-10-04: CCTV로 → 눈으로만
             Add("S3", null, SafeReadPattern.None, null, null, null);   // 민 2026-10-04: 수칙 문구를 「빛으로 확인」으로 바꾸며 변조본 폐기
-            Add("S4", null, SafeReadPattern.None, null, null, "소등 중 에는 손전등 을? 끄지 마 십시오.");
+            Add("S4", null, SafeReadPattern.None, null, null, "정전 중 에는 손전등 을? 키지 마 십시오.");   // 79차: T3 합침·문구 반대로
             Add("S5", "복도 끝 출구를 즉시 확인하십시오.", SafeReadPattern.StandStill, FinalCues.HallEnd, null, "복도 끝 에 _?이 서 있습니까?. 끄고 기다리 십시오.");
-            Add("T1", "물이 내려가고 있습니다. 지금 칸을 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.Flush, null, null);
+            Add("T1", "변기 수압을 점검해주십시오.", SafeReadPattern.EyesOnly, FinalCues.Flush, null, null);   // 79차 민: 물 내려가는 변기에 「점검」 상호작용(ToiletFlushCheck)
             Add("T2", null, SafeReadPattern.None, null, null, "사용 중 인 칸은? 열지 마 십시오.");
-            Add("T3", "정전입니다. 즉시 비상등을 찾으십시오.", SafeReadPattern.StandStill, FinalCues.ToiletBlackout, null, "어둠 에서 대기 하라.");
-            Add("T5", "불이 켜진 칸이 있습니다. 지금은 그 불빛이면 충분합니다.",   // 51차: 역설 문자는 모두 「지금·즉시」
-                SafeReadPattern.EyesOnly, FinalCues.StallLit, null, "빛? 에는 빛?으로 대처 하세요.");
-            Add("L1", "쓰러진 책장 밑에 책이 깔렸습니다. 지금 비추십시오.", SafeReadPattern.EyesOnly, null, FinalCues.L1Shelf, "쓰러진 책장 곁 에 서 지 마 십 시 오");
+            Add("T3", null, SafeReadPattern.None, null, null, null);   // 79차 민: 「T3, T5 <- 폐기」(수칙도 S4에 합침·폐기)
+            Add("T5", null, SafeReadPattern.None, null, null, null);
+            Add("T7", "거울에 얼룩이 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, FinalCues.MirrorTarget, "화장실 거울 을? 3초 이상. 보지 마 십시오.");   // 79차 — 1초 보고 눈을 떼면 안전한 읽기, 3초면 위반
+            Add("L1", "도서관 무너진 가구들을 점검해주십시오.", SafeReadPattern.EyesOnly, null, FinalCues.L1Shelf, "쓰러진 책장 곁 에 서 지 마 십 시 오");
             Add("L2", null, SafeReadPattern.None, null, null, "종이 넘기 는 소리 가 들리면? 열람 끝.");   // 민 2026-10-04: 역설 폐기(몹 예고)
             Add("L3", null, SafeReadPattern.None, null, null, "도서관 ?_? 을 계속 비추 십니까? 예.");
             Add("L4", "바닥에 상자가 쏟아져 있습니다. 지금 확인하십시오.", SafeReadPattern.EyesOnly, null, FinalCues.L4Box, "상자 에서 떨어 져 걸으 십시오?");
-            Add("L5", null, SafeReadPattern.None, null, null, "창밖에 먼저 인사 하지 마시오. 먼저.");   // 민 2026-10-04: 역설 폐기(몹 예고)
+            Add("L5", null, SafeReadPattern.None, null, null, null);   // 79차 민: 수칙 폐기
+            Add("L6", "천장에 누수 흔적이 있습니다. 지금 비추십시오.", SafeReadPattern.EyesOnly, null, null, "도서관 에서는? 천장 을 비추지 마 십시오.");   // 79차
+            Add("L7", null, SafeReadPattern.None, null, null, null);   // 80차 민: 새 수칙 B 채택 · 역설은 채택하지 않음
             Add("K1", null, SafeReadPattern.None, null, null, null);   // 민 2026-10-04: 역설 폐기(몹 예고)
             Add("K2", "공실 CAM{0}에 움직임이 있습니다. 즉시 확인하십시오.", SafeReadPattern.EyesOnly, FinalCues.EmptyRoom, null, null);   // {0} = 그날 빈 방 채널(CAM01~05)
             Add("K3", "복도에 위험 신고가 있습니다. 즉시 CCTV로 확인하십시오.", SafeReadPattern.Cctv, null, null, null, SpaceId.Corridor);
+            Add("K5", null, SafeReadPattern.None, null, null, "경비실 전화 는? 세 번. 울린 뒤에 받으 십시오.");   // 79차
+            Add("G4", null, SafeReadPattern.None, null, null, "태블릿 을 보면서? 걷지 마 십시오.");   // 79차
         }
 
         private static void Add(string id, string message, SafeReadPattern pattern, string cue, string target, string variant, SpaceId cctvSpace = SpaceId.None)

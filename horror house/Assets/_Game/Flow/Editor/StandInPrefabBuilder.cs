@@ -104,6 +104,7 @@ public static class StandInPrefabBuilder
             new Spec { Id = "mob.blackman", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, Note = "CCTV에만 보이는 사람(기존 유지)" },
             new Spec { Id = "mob.blackman.glimpse", Model = "m_blackman/blackman.fbx", BindHeight = 1.04f, Height = 1.8f, ExitWalk = true, Note = "멀리 보이는 검은 남자(59차) — CCTV 사람과 같은 모델에 달리기만 더함(CCTV 사람은 결과 단계에 걸어 나가지 않게 따로 둠)" },
             new Spec { Id = "prop.toilet.water", WrapPrefab = KimHorror + "Toilet/HorrorProp_ToiletA_ClearWater.prefab", Note = "61차(민: 「변기 물 적용 안 되어 있음 — 진선님 에셋 있음」): 맑은 변기 물. 씬 변기에 겹쳐 물만 보인다(ToiletBowls가 안쪽 변기를 끈다)" },
+            new Spec { Id = "prop.toilet.flush", WrapPrefab = KimHorror + "Toilet/HorrorProp_ToiletA_BloodFlush.prefab", Note = "79차 T1: 물 내림 단서 때 변기 물이 소용돌이치며 내려간다(김진선님 ToiletFlush — 「T1 물 내림 단서 연결은 Lee님 작업」). 런타임에 물·소용돌이를 맑은 물 재질로 바꾼다(ToiletFlushCue)" },
             new Spec { Id = "prop.toilet.bloodhair", WrapPrefab = KimHorror + "Toilet/HorrorProp_ToiletA_BloodHair.prefab", Note = "61차: T-1 이상 — 핏물·머리카락, 가까이(0.8m) 가면 핏물이 솟는다(김진선님 ToiletBloodGush)" },
             new Spec { Id = "prop.trashcan", WrapPrefab = "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/TrashCanBig_A.prefab", Note = "65차: H-4 쓰레기통 이상 — 걷어차인 듯 날아가는 물리 복제(씬 쓰레기통은 정적 배칭이라 원본을 숨기고 이것을 굴린다, TrashCanKick)" },
             new Spec { Id = "fx.corpse.roaches", WrapPrefab = KimHorror + "HorrorEvent_BugSwarm.prefab", Note = "60차: 시체 낙하 때 천장에서 쏟아지는 바퀴벌레(김진선님 벌레 떼 — 구역 트리거·숫자 키는 끔, DirectionStage가 Play)" },

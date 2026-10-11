@@ -13,7 +13,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(SpaceId.Corridor, item.Space);
             Assert.AreEqual(FearAxis.Layout, item.Axis);
             Assert.AreEqual(AnomalyTemplate.Switch, item.Template, "걷어차이는 사건 — [옮김] 자리 풀이 아니다");
-            Assert.AreEqual("쓰레기통이 정상인지 보고하십시오.", item.TabletLine);
+            Assert.AreEqual("복도 쓰레기통의 상태를 보고해주십시오.", item.TabletLine);   // 76차 민 문구
             Assert.IsTrue(AnomalyLook.HasLook(item));
         }
 
@@ -26,7 +26,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(DutyKind.Pickup, d.Kind);
             Assert.AreEqual(DutyCatalog.LibraryBookTarget, d.Target);
             Assert.AreEqual(SpaceId.Library, d.Space);
-            Assert.AreEqual("[근무 지시] 도서관 안쪽 책상에 있는 biology 책을 습득하세요.", DutyCatalog.OrderText(d, 1));
+            Assert.AreEqual("도서관 안쪽 책상에 있는 biology 책을 습득하세요.", DutyCatalog.OrderText(d, 1));   // 88차: 머리글 없음
             for (int day = 1; day <= 5; day++) Assert.IsTrue(d.OnDay(day), day + "일차");
         }
 
@@ -102,9 +102,9 @@ namespace NightDuty.Tests
         {
             DutyDispatcher disp = new DutyDispatcher(1, null, 5);
             DutyEvent ev;
-            Assert.IsTrue(disp.Force("W7", out ev));
+            Assert.IsTrue(disp.Force("W2", out ev));   // 77차: W7 폐기
             Assert.IsFalse(disp.NotePicked(DutyCatalog.LibraryBookTarget, out ev));
-            Assert.AreEqual("W7", disp.Active.Id);
+            Assert.AreEqual("W2", disp.Active.Id);
         }
     }
 }

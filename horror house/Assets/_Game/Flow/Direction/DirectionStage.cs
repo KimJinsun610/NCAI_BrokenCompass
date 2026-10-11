@@ -126,6 +126,7 @@ public sealed class DirectionStage : MonoBehaviour
         EventBus.FinalRuleSettled += OnRuleSettled;
         EventBus.NightRestarted += OnRestarted;
         EventBus.DayEnded += OnDayEnded;
+        BoyHeadBang.WatchedToEnd += OnBoyWatchedToEnd;   // 80차 위반 놀람
         // 61차: 몹은 먼저 세우고 플레이어가 알아본 뒤 대면 · 「안쪽 깊이」 머무름은 방 상자로 잰다.
         NightRun.EncounterSightGating = true;
         NightRun.DeepInSpaceProbe = DeepIn;
@@ -148,6 +149,7 @@ public sealed class DirectionStage : MonoBehaviour
         EventBus.FinalRuleSettled -= OnRuleSettled;
         EventBus.NightRestarted -= OnRestarted;
         EventBus.DayEnded -= OnDayEnded;
+        BoyHeadBang.WatchedToEnd -= OnBoyWatchedToEnd;
         NightRun.EncounterSightGating = false;
         NightRun.DeepInSpaceProbe = null;
         ClearAll(DirectionPhase.Aborted);
@@ -268,6 +270,12 @@ public sealed class DirectionStage : MonoBehaviour
             pre.Go = hall.Figure;
             pre.At = hall.Figure.transform.position;
         }
+        else if (e.SourceId == ProgramCatalog.SuitMan && WindowFace.Active != null && WindowFace.Active.Show() != null)
+        {
+            // 85차: 창밖 노란 얼굴 = WindowFace가 창밖에 세운 모형(플레이어 쪽을 바라보다 2초 응시하면 달아남 — 지우지도 걸어 나가게 하지도 않는다).
+            pre.Go = WindowFace.Active.Figure;
+            pre.At = pre.Go.transform.position;
+        }
         else
         {
             pre.Go = SpawnAt(pre.Holder, script.StandIn, script.StageAnchor, script.Placement == CuePlacement.CeilingAhead, point, player, script.AnchorId, out pre.At, false);
@@ -277,6 +285,7 @@ public sealed class DirectionStage : MonoBehaviour
         // 70차: 모형 급습은 복도에서 알아봐야 달려온다(과학실 동쪽 문 틈으로 본 것은 세지 않음 — 벽을 뚫고 달려오게 된다).
         Func<bool> gate = null;
         if (id == ProgramCatalog.ModelRush || id == ProgramCatalog.HallEndFigure) gate = () => SpaceIds.Canonical(NightRun.CurrentSpace) == SpaceId.Corridor;
+        else if (id == ProgramCatalog.SuitMan) gate = () => SpaceIds.Canonical(NightRun.CurrentSpace) == SpaceId.Library;   // 84차: 도서관 안에서 창밖을 알아봐야
         SightProbe.Attach(pre.Go, id, () => NightRun.EncounterSeen(id), gate);
         if (Verbose) Debug.Log("[Direction] 대역을 세움(보기를 기다림) — " + id + " @" + pre.At.ToString("F1"));
     }
@@ -293,7 +302,7 @@ public sealed class DirectionStage : MonoBehaviour
     {
         Presented pre = TakePresented(id);
         if (pre == null) return;
-        if (HallFigure.Owns(pre.Go)) Release(pre.Go);   // 70차: 복도 끝 모형은 그대로 둔다
+        if (HallFigure.Owns(pre.Go) || WindowFace.Owns(pre.Go)) Release(pre.Go);   // 70차: 복도 끝 모형 · 84차: 창밖 노란 얼굴은 그대로 둔다
         else if (pre.Go != null) Destroy(pre.Go);
         for (int i = pre.Holder.Undo.Count - 1; i >= 0; i--)
         {
@@ -415,6 +424,9 @@ public sealed class DirectionStage : MonoBehaviour
             if (cue == null) cue = go.AddComponent<DirectionCue>();
             cue.Play(new CueContext { Intensity = e.Intensity, Anchor = at, EncounterId = e.SourceId });
             st.Objects.Add(go);
+            // 80차 위반 놀람(민): 칸으로 걸어 들어가는 소녀에게 다가가면 · 문 밖 노란 얼굴에 너무 가까이 가면 — 덮치고, 소녀는 칸 안으로 빠르게 / 오리는 원래대로 걸어 나간다.
+            if (e.SourceId == ProgramCatalog.ToiletGirl) ScareOnApproach.Attach(go, GirlScareRadius, true, "mob.girl.stand", e.SourceId, ViolationScare.GirlFlee);
+            else if (e.SourceId == ProgramCatalog.YellowFace) ScareOnApproach.Attach(go, DuckScareRadius, false, "mob.duck", e.SourceId, ViolationScare.DuckFlee);
             if (EncounterImpact.HitsWhenSeen(e.SourceId))
             {
                 // 60차: 도서관 조우(노란 얼굴·창밖 남자)는 마주치는 순간 점프스케어.
@@ -491,6 +503,7 @@ public sealed class DirectionStage : MonoBehaviour
         if (prefab == null) yield break;
         GameObject fx = Instantiate(prefab, floor, Quaternion.Euler(0f, UnityEngine.Random.Range(0f, 360f), 0f));
         fx.name = "시체 바퀴벌레";
+        SolidRoaches(fx);   // 78차: 납작 스프라이트 벌레가 회색 종이처럼 깨져 보인다 — 모두 입체 벌레로
         // 벌레 무리를 바닥 바로 위(0.45m)에 둔다 — 바닥에 쏟아져 닿자마자 사방으로 기어간다(기는 입자는 떨어진 벌레가 바닥에 닿을 때 생기는 하위 방출이라 떨어지는 줄기를 끌 수 없다).
         foreach (Transform t in fx.GetComponentsInChildren<Transform>(true))
         {
@@ -507,6 +520,34 @@ public sealed class DirectionStage : MonoBehaviour
         HorrorEvent he = fx.GetComponentInChildren<HorrorEvent>(true);
         if (he != null) he.Play();   // 타임라인: 벌레 무리 켜기 + 기어가는 소리
         Destroy(fx, 14f);
+    }
+
+    /// <summary>
+    /// 78차(민: 「시체 낙하 조우에서 바퀴벌레 이펙트의 텍스쳐가 깨진다」): 김진선님 벌레 떼의 <c>CrawlFlat</c>(납작한 판 + 알파 컷 스프라이트)는
+    /// 낮은 각도·벽·쓰레기통에 부딪혀 세워질 때 회색 반투명 종이처럼 보인다. 프리팹·재질은 고치지 않고 이 인스턴스에서만
+    /// 그 입자들을 <c>Crawl3D</c>와 같은 입체 벌레 메시·재질로 그린다. 바뀐 입자 계통 수를 돌려준다.
+    /// </summary>
+    public static int SolidRoaches(GameObject fx)
+    {
+        if (fx == null) return 0;
+        ParticleSystemRenderer solid = null;
+        foreach (ParticleSystemRenderer r in fx.GetComponentsInChildren<ParticleSystemRenderer>(true))
+        {
+            if (r.name == "Crawl3D") solid = r;
+        }
+
+        if (solid == null || solid.mesh == null || solid.sharedMaterial == null) return 0;
+        int n = 0;
+        foreach (ParticleSystemRenderer r in fx.GetComponentsInChildren<ParticleSystemRenderer>(true))
+        {
+            if (r.name != "CrawlFlat") continue;
+            r.renderMode = ParticleSystemRenderMode.Mesh;
+            r.mesh = solid.mesh;
+            r.sharedMaterial = solid.sharedMaterial;
+            n++;
+        }
+
+        return n;
     }
 
     private static bool IsCorpse(string encounterId)
@@ -1207,6 +1248,18 @@ public sealed class DirectionStage : MonoBehaviour
                 st.Undo.Add(g.Untint);
                 break;
             }
+            case "K5":
+                PhoneRinger.Ring(RuleTriggers.PhoneRingSeconds);   // 79차: 경비실 전화가 울린다
+                break;
+            case "T1":
+            {
+                // 79차: 가까운 변기가 실제로 내려간다(소용돌이) — 소리도 그 변기에서. 역설 날이면 「점검」 미끼.
+                RuleTriggerScript t1 = RuleTriggers.Find("T1");
+                bool played;
+                Vector3 at = ToiletFlushCue.Begin(this, PlayerFeet(), t1 != null && t1.Duration > 0f ? t1.Duration : 8f, PointOr(e.Point, 3f), out played);
+                if (!played) PlaySound(e.SourceId + ".cue", at);   // 물 내림 프리팹이 제 소리를 낸다
+                return;
+            }
             case "T5":
             {
                 Bounds stall;
@@ -1380,6 +1433,20 @@ public sealed class DirectionStage : MonoBehaviour
         }
     }
 
+    /// <summary>80차: 화장실 소녀에게 이만큼(m) 다가가면 놀람.</summary>
+    public const float GirlScareRadius = 1.6f;
+
+    /// <summary>80차: 노란 얼굴에 이만큼(m) 다가가면 놀람.</summary>
+    public const float DuckScareRadius = 1.5f;
+
+    /// <summary>80차(민: 「소년 — 머리 부딪히는 걸 끝까지 목격한다면, 덮치는 연출 후 증발하게. 자연스럽게」).</summary>
+    private static void OnBoyWatchedToEnd(BoyHeadBang bang)
+    {
+        if (bang == null) return;
+        GameObject boy = bang.gameObject;
+        ViolationScare.Play(boy, "mob.boy.stand", ProgramCatalog.BoyBang, () => ViolationScare.BoyFlee(boy));
+    }
+
     private void OnRuleSettled(FinalRuleResult r)
     {
         // 52차: 앉은 소년을 3초 바라보면(C2 위반) 책상에 머리를 세 번 박고 엎드린다(소리는 복도까지).
@@ -1436,6 +1503,13 @@ public sealed class DirectionStage : MonoBehaviour
             {
                 if (phase == DirectionPhase.Aborted) cue.Abort();
                 else cue.SetPhase(phase);
+            }
+
+            // 84·85차: 창밖 노란 얼굴은 그 밤 내내 창밖에서 바라본다(2초 응시하면 WindowFace가 달아나게 한다) — 걸어 나가지도, 지워지지도 않는다.
+            if (WindowFace.Owns(go))
+            {
+                Release(go);
+                continue;
             }
 
             // 58차(민: 문·창문의 오리는 사라질 때 빠르게 걸어 나가며): 결과 단계면 걸어 나가고 스스로 지운다. 중단(붙잡힘·04:00)은 바로 지운다.

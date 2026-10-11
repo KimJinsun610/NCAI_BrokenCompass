@@ -36,29 +36,31 @@ namespace NightDuty.Tests
     public sealed class InspectionCatalogTests
     {
         [Test]
-        public void 점검_항목은_29개다_복도6_교실5_과학실6_화장실5_도서관4_경비실3()
+        public void 점검_항목은_27개다_복도6_교실5_과학실6_화장실4_도서관3_경비실3()
         {
-            Assert.AreEqual(29, InspectionCatalog.All.Count, "66차: 16 → 29(민: 「점검은 안 겹칠수록 좋아」)");
+            Assert.AreEqual(27, InspectionCatalog.All.Count, "66차: 16 → 29(민: 「점검은 안 겹칠수록 좋아」) · 80차: L-4 칠판 폐기 → 28 · 81차: T-4 세면대 폐기 → 27");
+            Assert.IsNull(InspectionCatalog.Find("T-4"), "81차(민): 세면대 물 퀄리티 부족 — 항목 폐기");
+            Assert.IsNull(InspectionCatalog.Find("L-4"), "80차(민): 「이 보고하지마」 칠판 폐기");
             Assert.AreEqual(6, InspectionCatalog.InSpace(SpaceId.Corridor).Count);
             Assert.AreEqual("쓰레기통", InspectionCatalog.Find("H-4").Name, "65차: H-4 = 쓰레기통(49차에 뺀 복도 사물함이 아니다)");
             Assert.IsNull(InspectionCatalog.Find("L-3"), "65차: 반납 상자는 [근무 지시] W15 biology 책 줍기로");
             Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Classroom).Count);
             Assert.AreEqual(6, InspectionCatalog.InSpace(SpaceId.ScienceRoom).Count);
-            Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Toilet).Count);
-            Assert.AreEqual(4, InspectionCatalog.InSpace(SpaceId.Library).Count);
+            Assert.AreEqual(4, InspectionCatalog.InSpace(SpaceId.Toilet).Count);
+            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Library).Count);
             Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.SecurityRoom).Count);
             Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Classroom_1_3).Count, "옛 교실 값도 새 교실로 읽는다");
         }
 
         [Test]
-        public void 항목에는_신뢰축이_없고_문구는_정상을_단정한다()
+        public void 항목에는_신뢰축이_없고_문구는_마침표로_끝난다()
         {
             HashSet<string> ids = new HashSet<string>();
             foreach (InspectionItem item in InspectionCatalog.All)
             {
                 Assert.IsTrue(ids.Add(item.Id), "ID 중복: " + item.Id);
                 Assert.AreNotEqual(FearAxis.Trust, item.Axis, item.Id);
-                Assert.IsTrue(item.TabletLine.EndsWith("니다.") || item.TabletLine.EndsWith("십시오."), item.Id + " 문구는 공문 말투(단정문, 52차 C-3은 민 문구 「…확인하십시오.」)");
+                Assert.IsTrue(item.TabletLine.EndsWith("."), item.Id + " 문구는 마침표로 끝난다(76차 민 문구 「~의 상태 보고.」·「~인지 확인.」)");
                 Assert.AreSame(item, InspectionCatalog.FindByTarget(item.TargetId));
                 Assert.AreSame(item, InspectionCatalog.FindByTarget(item.Id));
             }

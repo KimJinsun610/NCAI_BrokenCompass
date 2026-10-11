@@ -128,6 +128,8 @@ public sealed class FinalRuleRelay : MonoBehaviour
         // ① 자세
         Vector3 feet = root.position;
         NightRun.Send(JudgeSignal.Pose(feet, root.eulerAngles.y));
+        Camera eye = ResolveCamera();
+        if (eye != null) NightRun.Send(JudgeSignal.Pitch(Mathf.Asin(Mathf.Clamp(eye.transform.forward.y, -1f, 1f)) * Mathf.Rad2Deg));   // 79차 L6: 올려다본 각도(위 +)
 
         // ①′ 런타임 신호 구역
         UpdateRuntimeZones(feet);

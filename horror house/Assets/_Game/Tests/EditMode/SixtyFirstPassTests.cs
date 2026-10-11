@@ -170,17 +170,16 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 창밖_남자는_창에서_6미터_안에서만()
+        public void 창밖_노란_얼굴은_창_거리를_보지_않는다()
         {
+            // 85차(민: 「도서관 입구 맞은편 블라인드 점검 지시 → 창문 조우」): 61차 「창에서 6m 안」을 없앴다 — 블라인드 앞(창에서 13m)에서도 온다.
             StagePoints.Set(StageAnchors.WindowMan, new Vector3(0f, 0f, 20f));
             try
             {
                 DirectorFixture f = new DirectorFixture(2, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.SuitMan));
                 f.Minute = NightClock.Call1 + 1f;
                 f.Enter(SpaceId.Library).Pose(0f, 5f).Wait(10f);
-                Assert.IsFalse(f.HasPhase(ProgramCatalog.SuitMan, DirectionPhase.Foreshadow), "창에서 15m — 안 온다");
-                f.Pose(0f, 15f).Wait(7f);
-                Assert.IsTrue(f.HasPhase(ProgramCatalog.SuitMan, DirectionPhase.Foreshadow), "창에서 5m");
+                Assert.IsTrue(f.HasPhase(ProgramCatalog.SuitMan, DirectionPhase.Foreshadow), "창에서 15m여도 도서관 6초면 온다");
             }
             finally
             {

@@ -253,6 +253,7 @@ namespace NightDuty
                 _ledger.Changed -= EventBus.RaiseWarningsChanged;
             }
 
+            FakeRuleCatalog.RunOffset = new System.Random().Next(FakeRuleCatalog.Lines.Length);   // 80차: 가짜 수칙 다섯 줄을 회차마다 돌려 나흘에
             _axes = new FearAxisSystem();
             ApplySandboxCap();   // 71차: 개발자 모드 흐름 정지 중이면 새 축도 붙잡히지 않게
             _bands = new BandResolver(_axes);
@@ -305,6 +306,7 @@ namespace NightDuty
             ClearRaised();
             ResetTabletState();
             _stare.Reset();
+            ResetWindowGaze();   // 85차: 재시작하면 창밖 노란 얼굴도 다시
 
             // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
@@ -483,6 +485,7 @@ namespace NightDuty
                     ParadoxObserve(signal, judging);
                     UnavoidableObserve(signal, judging);
                     StareObserve(signal, judging);   // 64차: 고정 몹 응시
+                    WindowGazeObserve(signal);       // 85차: 창밖 노란 얼굴 2초 응시 → 달아남
                 }
 
                 DirectionObserve(signal);
@@ -932,7 +935,7 @@ namespace NightDuty
                     : judge.Violated ? RuleVerdict.Violated : RuleVerdict.Complied;
                 bool instructed = ParadoxSentFor(def.Id);
                 string note = instructed && _paradox.SafeRead && _reveals.Count > 0 ? "확인함 → " + _reveals[_reveals.Count - 1].Label : string.Empty;
-                log.Add(new DutyLogEntry(i + 1, def.Id, def.Space, def.Text, verdict, instructed, note, UnavoidableBrokeFor(def.Id)));
+                log.Add(new DutyLogEntry(i + 1, def.Id, def.Space, ShownRuleText(def.Id, def.Text), verdict, instructed, note, UnavoidableBrokeFor(def.Id)));
             }
 
             return log;

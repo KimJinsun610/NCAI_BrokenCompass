@@ -143,9 +143,9 @@ namespace NightDuty.Tests
             {
                 EncounterScript s = EncounterScripts.Find(e.Id);
                 if (e.Id == ProgramCatalog.CctvPerson) continue;
-                if (e.Id == ProgramCatalog.HallEndFigure)
+                if (e.Id == ProgramCatalog.HallEndFigure || e.Id == ProgramCatalog.ModelRush)
                 {
-                    Assert.AreEqual(SpaceId.Corridor, s.Space, "70차: 복도 끝 모형은 복도에서 마주친다(수칙 S5는 과학실 카드)");
+                    Assert.AreEqual(SpaceId.Corridor, s.Space, "70차: 복도 끝 모형은 복도에서 마주친다(수칙 S5는 과학실 카드) · 103차: 모형 급습도 과학실 쪽 복도에 들어서면");
                     continue;
                 }
 
@@ -160,6 +160,7 @@ namespace NightDuty.Tests
             {
                 RuleDef r = ProgramCatalog.Rule(s.RuleId);
                 Assert.IsNotNull(r, s.RuleId);
+                if (s.RuleId == "C3") continue;   // 103차: C3(소년 조우에 묶임)는 교실에 들어가면 울리는 수업 종이 단서 — 조우 대신 종으로 울린다
                 Assert.IsTrue(r.IsStandalone, s.RuleId + "는 조우에 묶인 수칙이라 디렉터가 조우로 울린다");
             }
         }
@@ -646,7 +647,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 소년_착석_단서가_C3_판정까지_간다()
+        public void 수업_종_단서가_C3_판정까지_간다()
         {
             NightRun.StartNewRun();
             NightRun.ProgramEnabled = true;
@@ -665,7 +666,11 @@ namespace NightDuty.Tests
             for (int i = 0; i < 35; i++) NightRun.Tick(0.1f);
 
             Assert.IsTrue(seen.Exists(e => e.SourceId == ProgramCatalog.BoySeated && e.Phase == DirectionPhase.Confront));
-            Assert.IsTrue(NightRun.FinalRules.Judge("C3").Triggered, "대면 단서가 판정 책까지 갔다");
+            Assert.IsFalse(NightRun.FinalRules.Judge("C3").Triggered, "103차: 소년 대면만으로는 C3가 시작되지 않는다");
+            Assert.IsTrue(NightRun.DebugFireRuleCue("C3"), "C3 수업 종 대본");
+            for (int i = 0; i < 2; i++) NightRun.Tick(0.1f);
+            Assert.IsTrue(seen.Exists(e => e.Kind == DirectionEventKind.RuleCue && e.SourceId == "C3"));
+            Assert.IsTrue(NightRun.FinalRules.Judge("C3").Triggered, "수업 종 단서가 판정 책까지 갔다");
 
             NightRun.Send(JudgeSignal.Pose(new Vector3(45f, 1.5f, 36f), 0f));
             Assert.AreEqual(Deltas.ThreatFailure, NightRun.Axes.GetValue(FearAxis.Auditory));

@@ -14,11 +14,23 @@ using UnityEngine;
 /// <item>손전등이 켜져 있으면 속도를 늦추지 않고 플레이어 몸을 그대로 뚫고 지나간다(<see cref="Arrived"/>(참) — 부르는 쪽이 점프스케어 + 넘어짐),
 /// 등 뒤 <see cref="ThroughDistance"/>m까지 달려가 사라진다. 꺼져 있으면(S5 「빛을 끄고 기다리십시오」를 지키는 쪽) 옆으로 <see cref="PassSide"/>m 비켜 어깨를 스치고 지나간다(<see cref="Arrived"/>(거짓)).</item>
 /// <item>달려오는 길이 벽에 막히면(플레이어가 과학실로 들어감) 거기서 사라진다. 최대 <see cref="MaxRunSeconds"/>초.</item>
+/// <item>103차(민: 「복도 급습은 조우가 정해지면 과학실 쪽 복도에 진입하고, 모형이 시야에 있고, 손전등을 비추면 바로 뛰어오도록 · 비추지 않더라도 시야에서 벗어나면 뛰어오게」):
+/// 대면(<see cref="Begin"/>, <c>waitForTrigger</c>)부터 꼼짝 않고 지켜본다(<see cref="Phase.Watch"/>) — 손전등 원뿔(<see cref="LitRange"/>m)에 가림 없이 들면 곧바로 고개를 홱 돌려 달려오고,
+/// 플레이어 화면에서 <see cref="UnseenSeconds"/>초 벗어나면(고개를 돌리거나 가려짐) 그 사이 달려 나온다. <see cref="WatchMaxSeconds"/>초가 지나면 그냥 달려온다.</item>
 /// </list>
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class MannequinRush : MonoBehaviour
 {
+    /// <summary>103차: 지켜보는 동안 손전등에 이만큼(m) 안이면 「비춤」.</summary>
+    public const float LitRange = 25f;
+
+    /// <summary>103차: 화면에서 이만큼(초) 벗어나면 달려 나온다.</summary>
+    public const float UnseenSeconds = 0.2f;
+
+    /// <summary>103차: 비추지도 눈을 떼지도 않고 버티면 이만큼(초) 뒤 그냥 달려온다(대응 창 안).</summary>
+    public const float WatchMaxSeconds = 12f;
+
     /// <summary>91차: 알아본 뒤 꼼짝 않고 서 있는 시간(초).</summary>
     public const float StillSeconds = 0.8f;
 
@@ -55,7 +67,7 @@ public sealed class MannequinRush : MonoBehaviour
     /// <summary>한 주기(두 걸음) 길이(m) — 최고 속도에서. 느릴 때는 짧아진다.</summary>
     public const float StrideCycle = 3.2f;
 
-    private enum Phase { Idle, Still, Snap, Run, Through, Pass, Done }
+    private enum Phase { Idle, Watch, Still, Snap, Run, Through, Pass, Done }
 
     private Phase _phase = Phase.Idle;
     private float _t;
@@ -69,6 +81,8 @@ public sealed class MannequinRush : MonoBehaviour
     private System.Random _rng;
     private float _jitter = 1f;
     private float _jitterLeft;
+    private bool _wait;
+    private float _unseen;
 
     private Transform _model;
     private Vector3 _modelRest;
@@ -92,14 +106,21 @@ public sealed class MannequinRush : MonoBehaviour
     /// <summary>지금 속도(m/s, 검수용).</summary>
     public float Speed { get; private set; }
 
-    /// <summary>시작한다.</summary>
-    public static MannequinRush Begin(GameObject mob, Action<bool> arrived)
+    /// <summary>시작한다. <paramref name="waitForTrigger"/>면(103차) 비추거나 화면에서 벗어날 때까지 지켜보다 달려온다.</summary>
+    public static MannequinRush Begin(GameObject mob, Action<bool> arrived, bool waitForTrigger = false)
     {
         MannequinRush r = mob.GetComponent<MannequinRush>();
         if (r == null) r = mob.AddComponent<MannequinRush>();
         r._arrived = arrived;
+        r._wait = waitForTrigger;
         r.Init();
         return r;
+    }
+
+    /// <summary>103차: 아직 지켜보는 중인지(검수용).</summary>
+    public bool Watching
+    {
+        get { return _phase == Phase.Watch; }
     }
 
     private void Init()
@@ -125,7 +146,8 @@ public sealed class MannequinRush : MonoBehaviour
         _rest = new Quaternion[_bones.Length];
         for (int i = 0; i < _bones.Length; i++) if (_bones[i] != null) _rest[i] = _bones[i].localRotation;
         foreach (Collider c in GetComponentsInChildren<Collider>()) if (!c.isTrigger) c.enabled = false;   // 플레이어를 밀지 않게(몸을 뚫고 지나간다)
-        _phase = Phase.Still;
+        _phase = _wait ? Phase.Watch : Phase.Still;
+        _unseen = 0f;
         _t = 0f;
         _runT = 0f;
         _gait = 0f;
@@ -169,6 +191,9 @@ public sealed class MannequinRush : MonoBehaviour
 
         switch (_phase)
         {
+            case Phase.Watch:
+                Watch(dt);
+                break;
             case Phase.Still:
                 if (_t >= StillSeconds) Next(Phase.Snap);
                 break;
@@ -191,6 +216,65 @@ public sealed class MannequinRush : MonoBehaviour
                 Coast(player, dt);
                 break;
         }
+    }
+
+    /// <summary>103차: 비추면 곧바로 · 화면에서 벗어나면 그 사이에 달려 나온다.</summary>
+    private void Watch(float dt)
+    {
+        if (Lit())
+        {
+            if (DirectionStage.Verbose) Debug.Log("[MannequinRush] 손전등에 비춰짐 — 달려옴");
+            Next(Phase.Snap);
+            return;
+        }
+
+        if (SeenByPlayer()) _unseen = 0f;
+        else _unseen += dt;
+        if (_unseen >= UnseenSeconds || _t >= WatchMaxSeconds)
+        {
+            if (DirectionStage.Verbose) Debug.Log("[MannequinRush] " + (_unseen >= UnseenSeconds ? "시야에서 벗어남" : "오래 버팀") + " — 달려옴");
+            Next(Phase.Snap);
+        }
+    }
+
+    private Vector3 Chest
+    {
+        get { return transform.position + Vector3.up * 1.3f; }
+    }
+
+    private bool Lit()
+    {
+        FlashlightRelay light = FlashlightRelay.Active;
+        Camera cam = Camera.main;
+        if (light == null || !light.IsOn || cam == null) return false;
+        Vector3 origin = cam.transform.position;
+        if (!SensingRules.InBeam(origin, cam.transform.forward, Chest, LitRange)) return false;
+        return Clear(origin, Chest);
+    }
+
+    private bool SeenByPlayer()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return false;
+        Vector3 v = cam.WorldToViewportPoint(Chest);
+        if (v.z <= 0f || v.x < 0f || v.x > 1f || v.y < 0f || v.y > 1f) return false;
+        return Clear(cam.transform.position, Chest) || Clear(cam.transform.position, transform.position + Vector3.up * 1.75f);
+    }
+
+    private bool Clear(Vector3 from, Vector3 to)
+    {
+        Vector3 d = to - from;
+        float dist = d.magnitude;
+        if (dist < 0.01f) return true;
+        Transform player = Player();
+        foreach (RaycastHit h in Physics.RaycastAll(from, d / dist, dist - 0.1f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+        {
+            Transform t = h.collider.transform;
+            if (t.IsChildOf(transform) || (player != null && t.IsChildOf(player))) continue;
+            return false;
+        }
+
+        return true;
     }
 
     private void Next(Phase p)
@@ -378,7 +462,7 @@ public sealed class MannequinRush : MonoBehaviour
         }
 
         // 고개: 꼼짝 않다가(Still) 홱 플레이어 쪽으로(Snap) — 달리는 동안도 플레이어를 노려본다.
-        if (_head != null && _phase != Phase.Still)
+        if (_head != null && _phase != Phase.Still && _phase != Phase.Watch)
         {
             float w = _phase == Phase.Snap ? Mathf.Clamp01(_t / SnapSeconds) : 1f;
             w = w * w * (3f - 2f * w);

@@ -181,6 +181,11 @@ namespace NightDuty
         /// <summary>시체 낙하 대역 ID(연출 쪽 <c>CorpseDrop</c>가 리지드바디 래그돌로 떨어뜨린다).</summary>
         public const string CorpseStandIn = "mob.corpse";
 
+        /// <summary>103차: 모형 급습이 「과학실 쪽 복도에 들어섰다」로 치는 거리(m, 복도 끝 급습 자리에서 수평).</summary>
+        public const float RushNearMeters = 15f;
+
+        private const string RushNearMetersText = "15";
+
         private static readonly Dictionary<string, EncounterScript> s_byId = Build();
 
         /// <summary>모든 대본.</summary>
@@ -203,19 +208,21 @@ namespace NightDuty
                 new EncounterScript
                 {
                     Id = ProgramCatalog.BoySeated, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Classroom, Dwell = 3f,
-                    Cue = FinalCues.BoySeated, ReleaseCue = FinalCues.Bell, Window = 15f,
+                    Cue = FinalCues.BoySeated, Window = 15f,   // 103차: 끝의 종(ReleaseCue)을 없앰 — 종은 C3 단서(교실에 들어가면 곧)로 옮겼다
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy",
                     StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3, DeepMargin = 2f,   // 61차: 교실 안에 확실히 들어와서
                     Note = "기획서: 교실 점검 항목을 처음 비출 때. 비춤 대신 교실 3초 체류로 시작한다(점검 대상이 교실 깊숙이 있어 거의 같은 순간)."
                 },
                 new EncounterScript
                 {
-                    Id = ProgramCatalog.BoyBang, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Classroom, Dwell = 3f,
-                    Cue = FinalCues.BoySeated, ReleaseCue = FinalCues.Bell, Window = 18f,
+                    // 103차(민: 「교실에 입장하고, 소년 스폰 위치가 시야에 보이지 않는 순간부터 등장해서, 응시를 하지 않았더라도 머리를 박는걸 시작」):
+                    // 3초 체류(안쪽 2m) → 교실에 들어서면. 앉히는 때는 연출(DirectionStage)이 자리가 화면에 없을 때로 고른다.
+                    Id = ProgramCatalog.BoyBang, Trigger = EncounterTrigger.EnterSpace, Space = SpaceId.Classroom,
+                    Cue = FinalCues.BoySeated, Window = 18f,   // 103차: 끝의 종 없음(C3 수업 종으로)
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy", AnchorId = FinalCues.BoyTarget,
-                    StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3, DeepMargin = 2f,   // 61차
-                    Note = "52차 민: C2 「교실의 _? 는 무시하십시오.」 + C3 「수업 중에 움직이지 마십시오.」 + 앉은 소년 — 셋이 하나. " +
-                           "움직이지도, 바라보지도 말아야 한다. 소년을 3초 바라보면(C2 위반) 책상에 머리를 박는다(BoyHeadBang, 소리는 복도까지)." 
+                    StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3,
+                    Note = "52차 민: C2 「교실의 _? 는 무시하십시오.」 + C3 「수업 종이 울리면 정지하십시오.」(103차) + 앉은 소년 — 셋이 하나. " +
+                           "103차: 교실에 들어서면, 맨 뒷줄 자리가 화면에 없을 때 앉아 곧장 책상에 머리를 박기 시작한다(BoyHeadBang, 소리는 복도까지). 바라보면 빨라지고, 3초 바라보면 C2 위반." 
                 },
                 new EncounterScript
                 {
@@ -242,10 +249,11 @@ namespace NightDuty
                 new EncounterScript
                 {
                     Id = ProgramCatalog.YellowFace, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 4f, DeepMargin = 2.5f,   // 61차: 도서관 안쪽 2.5m 넘게 들어와 4초(옛 도서관 8초 체류)
-                    Cue = FinalCues.YellowFace, Window = 11f,   // 44차: 8초는 알아보고 비추면 끝나 공포가 쌓이지 않았다 — 마주 비추고 버티는 시간
+                    Cue = FinalCues.YellowFace, Window = 30f,   // 44차: 8초는 알아보고 비추면 끝나 공포가 쌓이지 않았다 · 103차: 11 → 30 — 천천히 걸어오는 동안 창이 닫히지 않게(비춰 쫓아내거나 놀람이 나면 LibraryDuck이 창을 일찍 닫는다)
                     Placement = CuePlacement.AheadOfPlayer, Distance = 4f, StandIn = "mob.duck", AnchorId = FinalCues.FaceTarget,
                     StageAnchor = StageAnchors.YellowDoor, AfterDuty = new[] { "W15", "W2" },   // 85차: biology 책 습득 또는 도서관 순찰 지시 뒤
-                    Note = "85차: 창밖 노란 얼굴 다음 날. [근무 지시] W15(biology 책) 또는 W2(도서관 순찰)가 나간 뒤, 도서관 안쪽 2.5m · 4초면 문간에 선다 — L3 「도서관 ?_? 을 계속 비추십시오」."
+                    Note = "103차: 4~5일차(창밖 노란 얼굴은 2~3일차). [근무 지시] W15(biology 책) 또는 W2(도서관 순찰)가 나간 뒤, 도서관 안쪽 2.5m · 4초면 문이 열리며(문 소리) 문간에 선다 — 문 쪽을 보면 네비메쉬로 천천히 걸어온다. " +
+                           "L3 「도서관 ?_? 을 계속 비추십시오」 — 비춰도 3초는 계속 다가오다 멈칫(비추는 동안은 덮치지 않음), 3.8초 이어서 비추면 문 밖으로 달아나고, 안 비추면 1.5m까지 와서 놀람 · 문으로 빠져나가려 해도 놀람(LibraryDuck)."
                 },
                 new EncounterScript
                 {
@@ -259,11 +267,13 @@ namespace NightDuty
                 },
                 new EncounterScript
                 {
-                    Id = ProgramCatalog.ModelRush, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.ScienceRoom, Dwell = 10f,
-                    Cue = FinalCues.HallEnd, Window = 10f,
+                    // 103차(민: 「조우가 정해지면 과학실 쪽 복도에 진입하고, 모형이 시야에 있고, 손전등을 비추면 바로 뛰어오도록 · 비추지 않더라도 시야에서 벗어나면 뛰어오게」):
+                    // 과학실 10초 머무름 대신 — 급습 밤에 복도 끝 자리에서 RushNearMeters 안 복도로 들어서면 세우고, 알아보면 대면(지켜봄 → 비춤/눈 뗌에 달려옴).
+                    Id = ProgramCatalog.ModelRush, Trigger = EncounterTrigger.EnterSpace, Space = SpaceId.Corridor, NearAnchor = RushNearMeters,
+                    Cue = FinalCues.HallEnd, Window = 20f,   // 103차: 지켜보는 시간(최대 12초) + 달리기
                     Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.dummy.stand",   // 91차: 구부정 → 선 모형(전날 복도 끝에 서 있던 그 모습으로 서 있다가 달려온다)
                     StageAnchor = StageAnchors.RushHall,   // 70차: 과학실 옆 복도 끝 비상등 아래에 세워 두고, 복도에서 알아보면 달려온다(MannequinRush)
-                    Note = "과학실 10초 체류 뒤 복도 끝 비상등 아래에 선다(안에서는 안 보임) → 복도에서 알아보면 0.8초 꼼짝 않다가 고개를 홱 돌리고 곧게 선 채 13m/s로 달려와 몸을 뚫고 지나간다(플레이어는 넘어졌다 일어남). S5 — 불을 끄고 기다리면 어깨를 스치고 지나감."
+                    Note = "103차: 급습 밤 과학실 쪽 복도(복도 끝 자리에서 " + RushNearMetersText + "m 안)에 들어서면 복도 끝 비상등 아래에 선다 → 알아보면 지켜보다가 손전등에 비춰지면 곧바로, 안 비춰도 화면에서 벗어나면 달려온다(최대 12초 뒤엔 그냥). 옛(91차): 알아보면 0.8초 꼼짝 않다가 고개를 홱 돌리고 곧게 선 채 13m/s로 달려와 몸을 뚫고 지나간다(플레이어는 넘어졌다 일어남). S5 — 불을 끄고 기다리면 어깨를 스치고 지나감."
                 },
                 new EncounterScript
                 {
@@ -353,6 +363,9 @@ namespace NightDuty
 
         /// <summary>단서 길이 대신 그 공간을 나갈 때 끝낸다(T5 — 나갈 때까지 불을 켜 둔다).</summary>
         public bool EndOnExit;
+
+        /// <summary>103차: 수칙 단서 사이 간격(<c>TensionDirector.RuleGap</c>)을 보지 않는다 — C3 수업 종은 「교실에 들어가면 곧」이어야 한다.</summary>
+        public bool IgnoreGap;
     }
 
     /// <summary>수칙 단서 대본 표.</summary>
@@ -360,6 +373,9 @@ namespace NightDuty
     {
         /// <summary>CCTV 채널 수(0~4). 연출 쪽 채널 ID는 <c>cctv.ch&lt;n&gt;</c>.</summary>
         public const int CctvChannels = 5;
+
+        /// <summary>103차 C3: 수업 종이 울리는(= 멈춰 있어야 하는) 시간(초).</summary>
+        public const float ClassBellSeconds = 8f;
 
         /// <summary>79차 K5: 전화가 울리는 시간(초) — 벨 8번 × 3초.</summary>
         public const float PhoneRingSeconds = 24f;
@@ -390,6 +406,8 @@ namespace NightDuty
                 new RuleTriggerScript { RuleId = "T1", Cue = FinalCues.Flush, Space = SpaceId.Toilet, DwellMin = 3f, DwellMax = 8f, Duration = 8f },
                 new RuleTriggerScript { RuleId = "T2", Cue = FinalCues.StallOccupied, Target = "toilet.stall.inner.inside", Space = SpaceId.Toilet, DwellMin = 1f, DwellMax = 4f, Duration = 20f },
                 new RuleTriggerScript { RuleId = "T5", Cue = FinalCues.StallLit, Space = SpaceId.Toilet, DwellMin = 4f, DwellMax = 9f, EndOnExit = true },
+                // 103차(민: 「수업 중에 움직이지 마십시오 → 수업 종이 울리면 정지하십시오, 교실에 들어가면 수업종이 곧 울리게」): 1-3 교실에 1.5~3초 있으면 수업 종 — 울리는 8초 동안 제자리.
+                new RuleTriggerScript { RuleId = "C3", Cue = FinalCues.BellStart, Space = SpaceId.Classroom, DwellMin = 1.5f, DwellMax = 3f, Duration = ClassBellSeconds, IgnoreGap = true },
                 new RuleTriggerScript { RuleId = "L2", Cue = FinalCues.Pages, Space = SpaceId.Library, DwellMin = 6f, DwellMax = 14f, Duration = 3f },
                 // 79차 K5: 경비실에 머물면 전화가 울린다 — 벨 8번(3초 간격) 동안. 받으면 연출(PhoneRinger)이 벨을 그친다.
                 new RuleTriggerScript { RuleId = "K5", Cue = FinalCues.PhoneRing, Space = SpaceId.SecurityRoom, DwellMin = 4f, DwellMax = 10f, Duration = PhoneRingSeconds },

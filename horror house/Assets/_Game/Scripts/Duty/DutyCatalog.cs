@@ -184,7 +184,7 @@ namespace NightDuty
             new DutyDef("W3", DutyKind.LightsOutCheck, SpaceId.Classroom_1_3, FearAxis.Auditory,
                 "교실의 상태를 확인해주십시오.", "1-3 교실 이상 없음.", "1-3 교실 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
             new DutyDef("W4", DutyKind.DoorTidy, SpaceId.Corridor, FearAxis.Layout,
-                "열어 둔 문들을 정리 해주십시오.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 0f, 2, 3, 4, 5),   // 67차(민): 제한 없음
+                "열어 둔 문들을 정리해주십시오.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 0f, 2, 3, 4, 5),   // 67차(민): 제한 없음 · 103차 띄어쓰기: 정리 해주십시오 → 정리해주십시오
             new DutyDef("W5", DutyKind.LogSign, SpaceId.SecurityRoom, FearAxis.Auditory,
                 "경비실 근무일지에 서명해주십시오.", "근무일지 서명이 기록되었습니다.", "근무일지 서명 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),
             // 92차(민: 「복도 끝 비상구를 응시 후 경비실에 복귀하십시오 <- 이건 폐지해줘」): W6 비상구 응시 폐기. ID W6은 다시 쓰지 않는다(ExitSignCheck 처리 코드는 남겨 둠).
@@ -200,12 +200,13 @@ namespace NightDuty
             // 「열쇠함은 경비실의 LibraryCardCatalogB에 열려있는 서랍에 두는 걸로 · 카드키 모델 · 문구도 출입 카드로」). 둘 다 열쇠함에 넣으면 완료.
             DutyDef.Card("W16", ScienceCardTarget, SpaceId.ScienceRoom, FearAxis.Layout, "과학실에 두고 간 출입 카드를 경비실 열쇠함에 넣어주십시오.",
                 "출입 카드 반납이 기록되었습니다.", "출입 카드 반납 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
-            DutyDef.Card("W17", ClassroomCardTarget, SpaceId.Classroom, FearAxis.Layout, "교실 교탁 서랍의 출입 카드를 가져와 주십시오.",
+            // 103차(민: 「교실 카드키 회수에 경비실 열쇠함에 넣으라는 것을 명시」): 옛 「교실 교탁 서랍의 출입 카드를 가져와 주십시오.」 — 어디로 가져오는지 없었다.
+            DutyDef.Card("W17", ClassroomCardTarget, SpaceId.Classroom, FearAxis.Layout, "교실 교탁 서랍 출입 카드를 경비실 열쇠함에 넣어주십시오.",
                 "출입 카드 회수가 기록되었습니다.", "출입 카드 회수 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
 
             // 80차(민: D1 채택 「유도등이 아니라 비상구라고 명시」). W18·W20은 폐기한 제안 번호라 쓰지 않는다.
             new DutyDef("W21", DutyKind.ExitFlash, SpaceId.Corridor, FearAxis.Illuminance,
-                "복도 끝 비상구 앞에서 손전등을 세 번 깜빡여 주십시오.", "비상구 신호가 기록되었습니다.", "비상구 신호 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+                "복도 끝 비상구 앞에서 손전등을 세 번 깜빡여주십시오.", "비상구 신호가 기록되었습니다.", "비상구 신호 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
 
             DutyDef.Pickup("W15", LibraryBookTarget, SpaceId.Library, FearAxis.Auditory, "도서관 안쪽 책상에 있는 biology 책을 습득하세요.", "biology 책 습득이 기록되었습니다.", "biology 책 습득 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 67차(민): 제한 없음
         };

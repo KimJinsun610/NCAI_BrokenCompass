@@ -22,8 +22,14 @@ public sealed class DutyLogBook : MonoBehaviour
     /// <summary>안내 줄.</summary>
     public const string PromptText = "[E] 근무일지 서명";
 
-    /// <summary>서명 소리 키(연출 소리 표). 지금은 표에 없어 소리 없이 태블릿 답장만 온다.</summary>
+    /// <summary>서명 소리 키(연출 소리 표). 103차: 표에 넣음(분필 긋는 소리 — 높여서 짧게).</summary>
     public const string SoundKey = "duty.sign";
+
+    /// <summary>103차(민: 「근무일지 서명할 때 서기 소리 짧게」): 서명 소리 길이(초) — 이만큼 내고 끝을 줄여 끊는다.</summary>
+    public const float SoundSeconds = 0.8f;
+
+    /// <summary>서명 소리 높이(분필을 펜 긁는 소리처럼).</summary>
+    public const float SoundPitch = 1.35f;
 
     private const float AimRadius = 0.06f;
 
@@ -112,8 +118,26 @@ public sealed class DutyLogBook : MonoBehaviour
         s.dopplerLevel = 0f;
         s.minDistance = 1f;
         s.maxDistance = 12f;
+        s.pitch = SoundPitch;
         s.Play();
-        Destroy(go, clip.length + 0.2f);
+        StartCoroutine(CutSound(s, Mathf.Min(SoundSeconds, clip.length / SoundPitch)));
+        Destroy(go, clip.length / SoundPitch + 0.2f);
+    }
+
+    /// <summary>103차: 서명 소리를 짧게 — 끝 0.15초 동안 줄여서 멈춘다.</summary>
+    private static System.Collections.IEnumerator CutSound(AudioSource s, float seconds)
+    {
+        const float fade = 0.15f;
+        float hold = Mathf.Max(0f, seconds - fade);
+        yield return new WaitForSeconds(hold);
+        float start = s != null ? s.volume : 0f;
+        for (float t = 0f; t < fade && s != null; t += Time.deltaTime)
+        {
+            s.volume = start * (1f - t / fade);
+            yield return null;
+        }
+
+        if (s != null) s.Stop();
     }
 
     private bool IsAimed()

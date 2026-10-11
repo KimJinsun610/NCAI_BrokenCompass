@@ -55,6 +55,18 @@ MonoBehaviour:
     volume: 0.6
     hits:
     - 5.8760624
+  - key: C3.cue
+    clip: {fileID: 8300000, guid: e3f42503db50c9c448eec2f31045b04e, type: 3}
+    more: []
+    volume: 0.8
+    hits:
+    - 5.8760624
+  - key: duty.sign
+    clip: {fileID: 8300000, guid: c5acaa50d4e5be249a1d42397fef4dc0, type: 3}
+    more: []
+    volume: 0.45
+    hits:
+    - 0.27347916
   - key: E.BoyBang.headbang
     clip: {fileID: 8300000, guid: de04e7190ec841d41b831fd161db348d, type: 3}
     more: []

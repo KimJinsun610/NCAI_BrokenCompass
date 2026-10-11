@@ -14,23 +14,46 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 창밖_노란_얼굴은_도서관_노란_얼굴_전날에만_나온다()
+        public void 창밖_노란_얼굴은_2_3일차_중_하루_도서관_노란_얼굴은_4_5일차_중_하루()
         {
             Band[] floors = { Band.Band0, Band.Band1, Band.Band1, Band.Band2, Band.Band3 };
+            bool[] windowSeen = new bool[6];
+            bool[] faceSeen = new bool[6];
             for (int seed = 0; seed < 40; seed++)
             {
                 ProgramDirector d = new ProgramDirector(new System.Random(seed));
-                Assert.AreEqual(ProgramDirector.DefaultFaceDay, d.FaceDay);
-                Assert.AreEqual(d.FaceDay - 1, d.WindowFaceDay);
+                Assert.That(d.WindowFaceDay, Is.InRange(ProgramDirector.WindowFaceFrom, ProgramDirector.WindowFaceTo));
+                Assert.That(d.FaceDay, Is.InRange(ProgramDirector.DefaultFaceDay, ProgramDirector.FaceTo));
+                windowSeen[d.WindowFaceDay] = true;
+                faceSeen[d.FaceDay] = true;
                 for (int day = 1; day <= 5; day++)
                 {
                     NightProgram p = d.Build(Request(day, floors[day - 1]));
-                    Assert.AreEqual(day == d.WindowFaceDay, p.HasEncounter(ProgramCatalog.SuitMan), "시드 " + seed + " · " + day + "일차 창밖\n" + p.Report);
-                    Assert.AreEqual(day == d.FaceDay, p.HasEncounter(ProgramCatalog.YellowFace), "시드 " + seed + " · " + day + "일차 문간\n" + p.Report);
-                    if (day == d.FaceDay) Assert.IsTrue(p.Has("L3"), "문간 노란 얼굴 밤 L3 — " + p.Report);
-                    if (day == d.WindowFaceDay) Assert.IsFalse(p.Has("L3"), "85차: 창밖 노란 얼굴 밤에는 L3 없음 — " + p.Report);
+                    bool window = day == d.WindowFaceDay;   // 103차(민): 2·3일차 중 하루 창밖
+                    bool face = day == d.FaceDay;           // 103차(민): 4·5일차 중 하루 도서관
+                    Assert.AreEqual(window, d.IsWindowFaceDay(day));
+                    Assert.AreEqual(face, d.IsFaceDay(day));
+                    Assert.AreEqual(window, p.HasEncounter(ProgramCatalog.SuitMan), "시드 " + seed + " · " + day + "일차 창밖\n" + p.Report);
+                    Assert.AreEqual(face, p.HasEncounter(ProgramCatalog.YellowFace), "시드 " + seed + " · " + day + "일차 문간\n" + p.Report);
+                    if (face) Assert.IsTrue(p.Has("L3"), "문간 노란 얼굴 밤 L3 — " + p.Report);
+                    if (window) Assert.IsFalse(p.Has("L3"), "85차: 창밖 노란 얼굴 밤에는 L3 없음 — " + p.Report);
                 }
             }
+
+            Assert.IsTrue(windowSeen[2] && windowSeen[3], "창밖 날은 회차마다 2·3일차 중에서 고른다");
+            Assert.IsTrue(faceSeen[4] && faceSeen[5], "도서관 날은 회차마다 4·5일차 중에서 고른다");
+        }
+
+        [Test]
+        public void 노란_얼굴_날짜는_시험용으로_정할_수_있고_구간_안으로_잘린다()
+        {
+            ProgramDirector d = new ProgramDirector(new System.Random(1));
+            d.SetFaceDays(3, 5);
+            Assert.AreEqual(3, d.WindowFaceDay);
+            Assert.AreEqual(5, d.FaceDay);
+            d.SetFaceDays(9, 1);
+            Assert.AreEqual(ProgramDirector.WindowFaceTo, d.WindowFaceDay);
+            Assert.AreEqual(ProgramDirector.DefaultFaceDay, d.FaceDay);
         }
 
         [Test]

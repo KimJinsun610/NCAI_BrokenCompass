@@ -984,12 +984,14 @@ namespace NightDuty
 
         private void TryRuleTriggers(float minute)
         {
-            if (!NightClock.IsJudging(minute) || Now - _lastRuleCue < RuleGap) return;
+            if (!NightClock.IsJudging(minute)) return;
+            bool gapOk = Now - _lastRuleCue >= RuleGap;
 
             for (int i = 0; i < _rules.Count; i++)
             {
                 RuleTriggerRun r = _rules[i];
                 if (r.Done || r.Running) continue;
+                if (!gapOk && !r.Script.IgnoreGap) continue;   // 103차: C3 수업 종은 간격을 보지 않는다
                 if (!RuleReady(r)) continue;
                 FireRule(r);
                 return;
@@ -1294,6 +1296,23 @@ namespace NightDuty
                     EndRule(_rules[i]);
                     return true;
                 }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 103차: 대면 중인 그 조우의 창을 지금 닫는다 — 연출이 먼저 끝났을 때(도서관 노란 얼굴이 빛에 쫓겨 달아남 · 놀람 뒤 달아남).
+        /// 다음 Tick에 창 닫힘(단서 끝 → 수칙 판정 마무리) → 결과로 이어진다. 대면 중이 아니면 false.
+        /// </summary>
+        public bool CloseWindowNow(string encounterId)
+        {
+            for (int i = 0; i < _runs.Count; i++)
+            {
+                EncounterRun r = _runs[i];
+                if (r.Def.Id != encounterId || r.State != EncounterRunState.Active) continue;
+                r.PhaseEnds = Now;
+                return true;
             }
 
             return false;

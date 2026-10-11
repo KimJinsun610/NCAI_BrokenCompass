@@ -284,7 +284,8 @@ namespace NightDuty.Tests
             NightProgram day3 = d.Build(Request(3, FixedBands.All(Band.Band1), FixedBands.All(Band.Band1), null));
 
             Assert.IsTrue(day3.HasEncounter(ProgramCatalog.ModelRush), day3.Report);
-            Assert.IsFalse(day3.HasEncounter(ProgramCatalog.SuitMan), "84차: 창밖 노란 얼굴은 날짜 사슬로만(2일차) — 예약은 무시한다. " + day3.Report);
+            Assert.AreEqual(d.IsWindowFaceDay(3), day3.HasEncounter(ProgramCatalog.SuitMan), "84·103차: 창밖 노란 얼굴은 날짜 사슬(2·3일차 중 하루)로만 — 예약은 무시한다. " + day3.Report);
+            Assert.AreEqual(ProgramCatalog.ModelRush, day3.At(EncounterSlot.A).Encounter.Id, day3.Report);
             Assert.IsTrue(day3.Has("S5") && !day3.Has("L5"), day3.Report);
             Assert.IsTrue(day3.At(EncounterSlot.A).Reserved, "예약이 앞 슬롯을 먼저 차지한다");
         }
@@ -294,12 +295,12 @@ namespace NightDuty.Tests
         {
             ProgramDirector d = new ProgramDirector(new System.Random(3));
             d.Build(Request(1, FixedBands.All(Band.Band0), FixedBands.All(Band.Band0), null));
-            ProgramRequest req = Request(4, FixedBands.All(Band.Band1), FixedBands.All(Band.Band1), null);   // 84차: 2·3일차는 도서관이 노란 얼굴 사슬(L3)로 찬다 — 도서관 강제는 4일차로
-            req.ForcedRules = new[] { "T7", "L4" };   // 79차: T5 폐기
+            ProgramRequest req = Request(4, FixedBands.All(Band.Band1), FixedBands.All(Band.Band1), null);   // 103차: 노란 얼굴 사슬(창밖 2·3일차 중 하루 · 문간 4·5일차 중 하루)이 도서관을 쓸 수 있다 — 도서관 밖 수칙으로
+            req.ForcedRules = new[] { "T7", "C4" };   // 79차: T5 폐기
 
             NightProgram p = d.Build(req);
 
-            Assert.IsTrue(p.Has("T7") && p.Has("L4"), p.Report);
+            Assert.IsTrue(p.Has("T7") && p.Has("C4"), p.Report);
         }
 
         [Test]
@@ -310,7 +311,7 @@ namespace NightDuty.Tests
             {
                 ProgramDirector d = new ProgramDirector(new System.Random(seed));
                 d.Build(Request(1, FixedBands.All(Band.Band0), FixedBands.All(Band.Band0), null));
-                NightProgram p = d.Build(Request(4, new FixedBands(Band.Band2, Band.Band0, Band.Band2), FixedBands.All(Band.Band1), null));   // 84차: 3일차는 노란 얼굴 사슬이 슬롯 하나를 쓴다 — 4일차로
+                NightProgram p = d.Build(Request(5, new FixedBands(Band.Band2, Band.Band0, Band.Band2), FixedBands.All(Band.Band1), null));   // 103차: 소년 머리 박기는 4일차부터(3일차 불가) · 4일차는 복도 끝(+노란 얼굴일 수 있음)이 앞 슬롯을 쓴다 — 5일차로
                 if (!p.HasEncounter(ProgramCatalog.BoyBang)) continue;
 
                 seen = true;

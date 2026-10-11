@@ -29,6 +29,12 @@ public sealed class CorpseDrop : MonoBehaviour
     /// <summary>착지 뒤 이만큼은 사라지지 않는다(초).</summary>
     public const float MinShowSeconds = 1.2f;
 
+    /// <summary>103차(민: 「시체 조우는 낙하 속도를 빠르게」): 처음 아래로 내리꽂는 속도(m/s). 옛 3.</summary>
+    public const float DropSpeed = 7f;
+
+    /// <summary>103차: 땅에 닿기 전까지 더하는 중력(m/s², 기본 중력 위에).</summary>
+    public const float ExtraGravity = 14f;
+
     /// <summary>몸무게 합(kg).</summary>
     public const float TotalMass = 40f;
 
@@ -252,8 +258,18 @@ public sealed class CorpseDrop : MonoBehaviour
         for (int i = 0; i < _bodies.Count; i++)
         {
             Rigidbody rb = _bodies[i];
-            rb.linearVelocity = Vector3.down * 3f + toPlayer * 0.4f;
+            rb.linearVelocity = Vector3.down * DropSpeed + toPlayer * 0.4f;
             rb.angularVelocity = side * Random.Range(1.5f, 2.5f) + Random.insideUnitSphere * 0.8f;
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        // 103차: 닿기 전까지 더 세게 끌어내린다(빠른 낙하).
+        if (_landedAt >= 0f || _gone || _frozen) return;
+        for (int i = 0; i < _bodies.Count; i++)
+        {
+            if (_bodies[i] != null && !_bodies[i].isKinematic) _bodies[i].AddForce(Vector3.down * ExtraGravity, ForceMode.Acceleration);
         }
     }
 
@@ -293,7 +309,7 @@ public sealed class CorpseDrop : MonoBehaviour
     {
         if (_gone) return;
         float now = Time.time;
-        if (_landedAt < 0f && now - _spawnedAt > 1.2f) _landedAt = now;   // 충돌을 못 받았어도 떨어진 것으로 본다
+        if (_landedAt < 0f && now - _spawnedAt > 0.8f) _landedAt = now;   // 103차: 빠른 낙하 — 1.2 → 0.8초   // 충돌을 못 받았어도 떨어진 것으로 본다
 
         if (!_frozen && _landedAt >= 0f && (now - _landedAt > 1.6f || (now - _landedAt > 0.8f && Resting())))
         {

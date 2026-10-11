@@ -43,7 +43,7 @@ MonoBehaviour:
     loop: 1
     fadeIn: 1.5
     keepPrevious: 1
-    keepVolumeScale: 0.2
+    keepVolumeScale: 0.6
     enterSound: {fileID: 8300000, guid: 21f71e4920bfb9244b5d5bb33b0bb26f, type: 3}
     enterVolume: 0.9
   openingBgm:
@@ -52,7 +52,7 @@ MonoBehaviour:
     loop: 1
     fadeIn: 1.5
     keepPrevious: 1
-    keepVolumeScale: 0.2
+    keepVolumeScale: 0.6
     enterSound: {fileID: 0}
     enterVolume: 0.9
   resultBgm:

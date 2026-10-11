@@ -20,6 +20,12 @@ public sealed class FlashlightPower : MonoBehaviour
     /// <summary>갈아 끼우는 키.</summary>
     public const KeyCode SwapKey = KeyCode.R;
 
+    /// <summary>
+    /// 102차(민: 「배터리 연속으로 먹어지는 현상」): R은 충전량과 상관없이 예비를 하나 써서 100%로 갈았다 — 갈기(1.2초) 동안 빛이 꺼져 안 된 줄 알고
+    /// 다시 누르면 막 끼운 새 배터리를 버리고 예비를 또 썼다. 충전량이 이 값 이상이면 R을 받지 않고 「아직 충분하다」만 알린다(디버그 <see cref="BeginSwap"/>는 그대로).
+    /// </summary>
+    public const float SwapBlockCharge = 0.9f;
+
     private const float DryFlashSeconds = 0.2f;
     private const float DryFlashIntensity = 0.12f;
     private static readonly Color Yellow = new Color(1f, 0.78f, 0.45f);
@@ -159,7 +165,11 @@ public sealed class FlashlightPower : MonoBehaviour
         else
         {
             if (Swapping && Time.time >= _swapUntil) FinishSwap(relay, b);
-            else if (!Swapping && ReadSwapInput()) BeginSwap();
+            else if (!Swapping && ReadSwapInput())
+            {
+                if (b.Charge >= SwapBlockCharge) DeskStarterKit.ShowStillCharged();   // 102차: 막 갈았거나 거의 가득 — 예비를 쓰지 않는다
+                else BeginSwap();
+            }
 
             if (relay.IsOn && !Swapping && !NightRun.BatteryFrozen)   // 71차: 개발자 모드 흐름 정지 중 배터리 무한
             {

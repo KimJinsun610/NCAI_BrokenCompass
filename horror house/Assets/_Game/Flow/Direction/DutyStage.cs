@@ -45,6 +45,9 @@ public sealed class DutyStage : MonoBehaviour
 
     /// <summary>65차 W15 줍기 대상 — 도서관 안쪽 책상 위 biology 책.</summary>
     public const string LibraryBookPath = "Interior/Library/Book16 (2)";
+
+    /// <summary>102차: biology 책 대역(Resources) — 벤더 <c>Book16</c> 프리팹(초록 Biology 표지)을 감쌈. 씬의 책은 정적 배칭이라 새까맣게 그려져 원본을 숨기고 이것을 세운다.</summary>
+    public const string LibraryBookVisual = "StandIns/prop.book.biology";
     private bool _built;
     private bool _bookBuilt;
 
@@ -100,6 +103,7 @@ public sealed class DutyStage : MonoBehaviour
         {
             _book = book.GetComponent<DutyPickupItem>();
             if (_book == null) _book = book.AddComponent<DutyPickupItem>();
+            _book.UseCleanVisual(LibraryBookVisual);
             _book.Setup(DutyCatalog.LibraryBookTarget, "W15", "[E] biology 책 줍기");
         }
         else Debug.LogWarning("[DutyStage] 도서관 biology 책을 찾지 못했습니다(W15): " + LibraryBookPath);

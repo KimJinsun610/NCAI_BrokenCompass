@@ -107,6 +107,7 @@ public static class StandInPrefabBuilder
             new Spec { Id = "prop.toilet.flush", WrapPrefab = KimHorror + "Toilet/HorrorProp_ToiletA_BloodFlush.prefab", Note = "79차 T1: 물 내림 단서 때 변기 물이 소용돌이치며 내려간다(김진선님 ToiletFlush — 「T1 물 내림 단서 연결은 Lee님 작업」). 런타임에 물·소용돌이를 맑은 물 재질로 바꾼다(ToiletFlushCue)" },
             new Spec { Id = "prop.toilet.bloodhair", WrapPrefab = KimHorror + "Toilet/HorrorProp_ToiletA_BloodHair.prefab", Note = "61차: T-1 이상 — 핏물·머리카락, 가까이(0.8m) 가면 핏물이 솟는다(김진선님 ToiletBloodGush)" },
             new Spec { Id = "prop.trashcan", WrapPrefab = "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/TrashCanBig_A.prefab", Note = "65차: H-4 쓰레기통 이상 — 걷어차인 듯 날아가는 물리 복제(씬 쓰레기통은 정적 배칭이라 원본을 숨기고 이것을 굴린다, TrashCanKick)" },
+            new Spec { Id = "prop.book.biology", WrapPrefab = "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/Books/Book16.prefab", Note = "102차(민: 「biology 책 텍스쳐 안보임」): W15 도서관 biology 책 — 씬의 책은 정적 배칭이라 새까맣게 그려져 원본을 숨기고 이것을 세운다(DutyPickupItem.UseCleanVisual)" },
             new Spec { Id = "fx.corpse.roaches", WrapPrefab = KimHorror + "HorrorEvent_BugSwarm.prefab", Note = "60차: 시체 낙하 때 천장에서 쏟아지는 바퀴벌레(김진선님 벌레 떼 — 구역 트리거·숫자 키는 끔, DirectionStage가 Play)" },
             new Spec { Id = "mob.tree", Model = NewEgg, Height = 2.8f, LoopClipModel = NewEgg, GazeFx = KimHumanTree, Note = "사람 나무 = 새 eggman tree(흔들림) + 김진선님 인간나무의 「바라보면 화면이 물듦」만 빌림" }
         };
@@ -637,7 +638,8 @@ public static class StandInPrefabBuilder
     /// <summary>표에서 빠진 대역 프리팹·반복 클립을 지운다(예전 매칭이 남아 다른 몹이 나오지 않게).</summary>
     private static string CleanStale()
     {
-        HashSet<string> keep = new HashSet<string>(StringComparer.Ordinal) { "prop.phantomdoor" };
+        // 102차: 손으로 만든 대역(92차 서랍 교탁 · 91차 사람 나무)도 남긴다 — 전에는 「다시 만들기」를 누르면 지워졌다.
+        HashSet<string> keep = new HashSet<string>(StringComparer.Ordinal) { "prop.phantomdoor", "prop.teachertable.drawer", "mob.humantree" };
         HashSet<string> loops = new HashSet<string>(StringComparer.Ordinal);
         foreach (Spec s in Specs())
         {

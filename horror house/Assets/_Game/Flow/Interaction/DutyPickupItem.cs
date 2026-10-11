@@ -29,6 +29,14 @@ public sealed class DutyPickupItem : MonoBehaviour
     private DutyDispatcher _takenIn;
     private bool _ownsPrompt;
     private bool _hidden;
+    private Renderer _staticOriginal;
+    private GameObject _visual;
+
+    /// <summary>102차: 정적 배칭 원본 대신 세운 깨끗한 복제(없으면 null). 시험·검수용.</summary>
+    public GameObject Visual
+    {
+        get { return _visual; }
+    }
 
     /// <summary>지금 겨누고 있고 [E]를 누르면 줍는 상태인가. 시험용.</summary>
     public bool IsReady { get; private set; }
@@ -45,8 +53,44 @@ public sealed class DutyPickupItem : MonoBehaviour
         _target = target ?? string.Empty;
         _dutyId = dutyId ?? string.Empty;
         _prompt = string.IsNullOrEmpty(prompt) ? "[E] 줍기" : prompt;
-        _renderers = GetComponentsInChildren<Renderer>(true);
+        Renderer[] all = GetComponentsInChildren<Renderer>(true);
+        System.Collections.Generic.List<Renderer> shown = new System.Collections.Generic.List<Renderer>(all.Length);
+        for (int i = 0; i < all.Length; i++)
+        {
+            if (all[i] != _staticOriginal) shown.Add(all[i]);   // 102차: 숨긴 정적 원본은 다시 켜지 않는다
+        }
+
+        _renderers = shown.ToArray();
         _colliders = GetComponentsInChildren<Collider>(true);
+    }
+
+    /// <summary>
+    /// 102차(민: 「biology 책 텍스쳐 안보임」): 씬의 책은 정적 배칭에 묶여 근무 씬에서 새까만 판으로 그려졌다(합친 메시 · 라이트맵을 꺼도 같음).
+    /// 그 렌더러를 끄고, 같은 원본 프리팹을 감싼 대역(<paramref name="resourcePath"/>, Resources)을 자식으로 같은 자리에 세운다 — 콜라이더는 원본 것만 쓴다.
+    /// 원본이 정적 배칭이 아니거나 대역이 없으면 아무것도 하지 않는다. <see cref="Setup"/>보다 먼저 부른다.
+    /// </summary>
+    public bool UseCleanVisual(string resourcePath)
+    {
+        if (_visual != null) return true;
+        Renderer own = GetComponent<Renderer>();
+        if (own == null || !own.isPartOfStaticBatch) return false;
+        GameObject source = Resources.Load<GameObject>(resourcePath);
+        if (source == null)
+        {
+            Debug.LogWarning("[DutyPickupItem] 대역 프리팹이 없습니다: " + resourcePath, this);
+            return false;
+        }
+
+        _visual = Instantiate(source, transform, false);
+        _visual.name = source.name + " (보이는 모형)";
+        _visual.transform.localPosition = Vector3.zero;
+        _visual.transform.localRotation = Quaternion.identity;
+        _visual.transform.localScale = Vector3.one;
+        foreach (Collider c in _visual.GetComponentsInChildren<Collider>(true)) DestroyImmediate(c);   // 겨눔은 원본 상자 콜라이더
+        foreach (Renderer r in _visual.GetComponentsInChildren<Renderer>(true)) r.shadowCastingMode = own.shadowCastingMode;
+        own.enabled = false;
+        _staticOriginal = own;
+        return true;
     }
 
     private void OnDisable()

@@ -367,11 +367,6 @@ public sealed partial class DevModePanel
                 NightRun.DebugForceCapture(a);
             });
         }
-        if (GUILayout.Button("붙잡힘: 인체 모형 응시")) Later(() =>
-        {
-            SetShow(false);
-            NightRun.DebugForceCapture(FixedMobStare.Axis, FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget);
-        });
         GUILayout.EndHorizontal();
     }
 
@@ -381,7 +376,7 @@ public sealed partial class DevModePanel
 
         BeginSection("밤");
         GUILayout.BeginHorizontal();
-        if (GUILayout.Button("밤 종료 요청(05:00 정산)")) Later(() => NightRun.RequestEndNight());
+        if (GUILayout.Button("밤 종료 요청(" + NightClock.Clock(NightClock.ShiftEnd) + " 정산)")) Later(() => NightRun.RequestEndNight());
         if (GUILayout.Button("붙잡힌 뒤 재시작")) Later(() => NightRun.RestartAfterCapture());
         GUILayout.EndHorizontal();
 
@@ -752,11 +747,11 @@ public sealed partial class DevModePanel
         EndSection();
     }
 
-    /// <summary>70차: 복도 끝에 선 인체 모형(모형 급습 전날) — 오래 보면 배치가 올라 붙잡힘, 2.5초 보면 목이 꺾임.</summary>
+    /// <summary>70차: 복도 끝에 선 인체 모형(모형 급습 전날) — 2.5초 보면 목이 꺾임(92차부터 오래 봐도 붙잡히지 않음).</summary>
     private void DrawHallFigure()
     {
         HallFigure h = HallFigure.Active;
-        BeginSection("복도 끝 인체 모형", "모형 급습 전날 밤 내내 복도 끝 비상등 아래에 서 있음(움직이지 않음). 오래 보면 배치가 오름(유예 1일 2.5 · 2일 2 · 3일~ 1.5초) → 붙잡히면 인체 모형 컷신. 2.5초 보면 목이 꺾임.");
+        BeginSection("복도 끝 인체 모형", "모형 급습 전날 밤 내내 복도 끝 비상등 아래에 서 있음(움직이지 않음). 2.5초 보면 목이 꺾임. 오래 봐도 붙잡히지 않음(92차) — 인체 모형 사망 컷신은 배치 축 붙잡힘(97차).");
         ProgramDirector pd = NightRun.Programs;
         if (pd != null) GUILayout.Label("이번 회차: 복도 끝 " + pd.HallFigureDay + "일차 → 모형 급습 " + pd.RushDay + "일차", small);
         FixedMobStare stare = NightRun.Stare;
@@ -784,7 +779,6 @@ public sealed partial class DevModePanel
             FearAxis a = axis;
             if (GUILayout.Button(AxisNames[(int)a])) Later(() => PreviewCapture(a, null));
         }
-        if (GUILayout.Button("인체 모형 응시")) Later(() => PreviewCapture(FixedMobStare.Axis, FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget));
         if (GUILayout.Button("회차 바꾸기")) Later(() => captureRepeat = captureRepeat % 3 + 1);
         GUILayout.EndHorizontal();
         EndSection();
@@ -1676,7 +1670,7 @@ public sealed partial class DevModePanel
                 GUILayout.BeginHorizontal();
                 string text = def.Order.Replace("\n", " ");
                 if (text.Length > 48) text = text.Substring(0, 47) + "…";
-                GUILayout.Label("<b>" + def.Id + "</b> <color=#ccc>" + Escape(text) + "</color>" + (def.Seconds > 0f ? " <color=#888>" + def.Seconds.ToString("0") + "초</color>" : string.Empty), small, GUILayout.Width(380f));
+                GUILayout.Label("<b>" + def.Id + "</b> <color=#ccc>" + Escape(text) + "</color>" + (DutyCatalog.EffectiveSeconds(def) > 0f ? " <color=#888>" + DutyCatalog.EffectiveSeconds(def).ToString("0") + "초</color>" : string.Empty), small, GUILayout.Width(380f));
                 string id = def.Id;
                 if (GUILayout.Button("내리기", GUILayout.Width(56f))) Later(() => Note(NightRun.DebugIssueDuty(id) ? "근무 지시 " + id + " 내림" : "<color=#f77>근무 지시 " + id + "를 내릴 수 없음(진행 중인 지시가 있거나 조건이 안 맞음)</color>"));
                 GUILayout.EndHorizontal();

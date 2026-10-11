@@ -20,6 +20,7 @@ using UnityEngine.SceneManagement;
 /// 씬은 고치지 않는다. 근무 씬에 자동으로 선다.
 /// </summary>
 [DisallowMultipleComponent]
+[DefaultExecutionOrder(30)]   // 102차: BatteryStash(40)·PlayerInteractor(50)보다 먼저 — 카드를 겨눈 프레임에 배터리 안내·서랍 닫기를 막는다
 public sealed class DutyCards : MonoBehaviour
 {
     /// <summary>경비실 열쇠함(카드 목록함) — 씬 경로.</summary>
@@ -50,6 +51,27 @@ public sealed class DutyCards : MonoBehaviour
     public const string SoundKey = "duty.pickup";
 
     private const float AimRadius = 0.06f;
+
+    /// <summary>
+    /// 102차(민: 「교실 서랍 열고 카드키 잘 못꺼내는 거」): 서랍 안 카드는 서랍 메시 콜라이더 안에 누워 있어 구(0.06m)를 쏘면 서랍 옆판·앞판에 먼저 맞았다.
+    /// 배터리 줍기(<see cref="BatteryStash"/>)처럼 조준선에서 떨어진 거리로 겨눈다 — 이 값 + 거리×3%.
+    /// </summary>
+    public const float CardAimSlack = 0.09f;
+
+    /// <summary>102차: 서랍이 이만큼(m) 나와 있어야 서랍 안 카드를 집는다(교탁 서랍은 0.26m 열린다) — 닫힌 서랍 앞판 너머로 집히지 않게.</summary>
+    public const float DrawerOpenMin = 0.12f;
+
+    /// <summary>102차: 서랍 안 카드 가운데를 서랍 앞판 안쪽에서 이만큼(m) 들인다 — 서랍 가운데에 두면 열어도 교탁 윗판 밑에 반쯤 가렸다.</summary>
+    public const float CardFrontInset = 0.08f;
+
+    private static int s_cardAimFrame = -1;
+    private static Vector3 s_drawerClosedLocal;
+
+    /// <summary>102차: 이번 프레임에 카드를 겨누고 있는지 — <see cref="BatteryStash"/>가 보고 배터리 안내를 내지 않는다(같은 서랍에 배터리가 있어도 [E]가 카드로 간다).</summary>
+    public static bool AimingCardThisFrame
+    {
+        get { return s_cardAimFrame == Time.frameCount; }
+    }
 
     /// <summary>열쇠함 서랍 바닥 두께(m) — 서랍 상자 아랫면에서.</summary>
     private const float DrawerFloor = 0.018f;
@@ -95,6 +117,7 @@ public sealed class DutyCards : MonoBehaviour
     private static void Install()
     {
         Active = null;
+        s_cardAimFrame = -1;
         SceneManager.sceneLoaded -= OnSceneLoaded;
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
@@ -197,8 +220,10 @@ public sealed class DutyCards : MonoBehaviour
             return;
         }
 
-        if (_card != null && want != null && Aimed(_card.transform))
+        if (_card != null && want != null && AimedCard())
         {
+            s_cardAimFrame = Time.frameCount;
+            PlayerInteractor.SuppressThisFrame();   // 102차: [E]가 서랍을 같이 닫지 않게
             InteractionOutline.Request(_card.transform);
             ClaimPrompt("[E] 출입 카드 줍기");
             if (Pressed()) Take();
@@ -266,15 +291,21 @@ public sealed class DutyCards : MonoBehaviour
             if (drawer == null) return false;
             Renderer r = drawer.GetComponentInChildren<Renderer>();
             Bounds b = r != null ? r.bounds : new Bounds(drawer.transform.position, new Vector3(0.4f, 0.12f, 0.3f));
+            // 102차: 서랍 가운데가 아니라 앞판 쪽 — 서랍이 나오는 쪽(교탁 forward, 열기 동작이 Drawer를 로컬 +z로 민다)으로 들인다.
+            Vector3 outward = drawer.transform.parent != null ? drawer.transform.parent.forward : drawer.transform.forward;
+            outward.y = 0f;
+            outward = outward.sqrMagnitude > 1e-4f ? outward.normalized : Vector3.forward;
+            float half = Mathf.Abs(outward.x) * b.extents.x + Mathf.Abs(outward.z) * b.extents.z;
+            Vector3 spot = b.center + outward * Mathf.Max(0f, half - CardFrontInset);
             float bottom = b.min.y + 0.012f;
             RaycastHit hit;
-            if (Physics.Raycast(new Vector3(b.center.x, b.max.y - 0.004f, b.center.z), Vector3.down, out hit, b.size.y + 0.05f, ~0, QueryTriggerInteraction.Ignore)
+            if (Physics.Raycast(new Vector3(spot.x, b.max.y - 0.004f, spot.z), Vector3.down, out hit, b.size.y + 0.05f, ~0, QueryTriggerInteraction.Ignore)
                 && hit.collider.transform.IsChildOf(drawer.transform))
             {
                 bottom = hit.point.y;
             }
 
-            at = new Vector3(b.center.x, bottom + CardSize.y * 0.5f + 0.002f, b.center.z);
+            at = new Vector3(spot.x, bottom + CardSize.y * 0.5f + 0.002f, spot.z);
             rot = drawer.transform.rotation * Quaternion.Euler(0f, 12f, 0f);
             parent = drawer.transform;
             return true;
@@ -426,6 +457,7 @@ public sealed class DutyCards : MonoBehaviour
         Transform inner = table.transform.Find("TeacherTable");
         Transform drawer = inner != null ? inner.Find("Drawer") : null;
         ClassroomDrawer = drawer;
+        if (drawer != null) s_drawerClosedLocal = drawer.localPosition;   // 102차: 막 세운 교탁의 서랍은 닫혀 있다 — 열림 판단의 기준
         if (DirectionStage.Verbose) Debug.Log("[DutyCards] 교실(1-3) 교탁을 서랍 교탁으로 바꿈 @ " + table.transform.position.ToString("F2") + " 서랍 쪽 " + teacher.ToString("F1"));
         return drawer != null;
     }
@@ -556,6 +588,49 @@ public sealed class DutyCards : MonoBehaviour
         RaycastHit hit;
         if (!Physics.SphereCast(cam.transform.position, AimRadius, cam.transform.forward, out hit, Reach, ~0, QueryTriggerInteraction.Ignore)) return false;
         return hit.transform == target || hit.transform.IsChildOf(target);
+    }
+
+    /// <summary>
+    /// 102차: 카드를 겨눴는지 — 조준선에서 카드까지의 거리(<see cref="CardAimSlack"/> + 거리×3%) 안이고, 눈에서 카드까지 카드·서랍·플레이어 말고는 가린 것이 없을 때.
+    /// 서랍 안 카드는 서랍이 <see cref="DrawerOpenMin"/> 넘게 나와 있어야 한다.
+    /// </summary>
+    private bool AimedCard()
+    {
+        Camera cam = Camera.main;
+        if (cam == null || _card == null) return false;
+        Transform drawer = _card.transform.parent;
+        if (drawer != null)
+        {
+            if (drawer != ClassroomDrawer || !ClassroomDrawerOpen()) return false;
+        }
+
+        Vector3 o = cam.transform.position;
+        Vector3 f = cam.transform.forward;
+        Vector3 p = _card.transform.position + Vector3.up * 0.008f;
+        float t = Vector3.Dot(p - o, f);
+        if (t <= 0f || t > Reach) return false;
+        if (Vector3.Distance(p, o + f * t) > CardAimSlack + 0.03f * t) return false;
+        Vector3 d = p - o;
+        float len = d.magnitude;
+        if (len < 1e-3f) return true;
+        PlayerSensors hub = PlayerSensors.Active;
+        foreach (RaycastHit h in Physics.RaycastAll(o, d / len, len - 0.005f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            Transform ht = h.collider.transform;
+            if (ht == _card.transform || ht.IsChildOf(_card.transform)) continue;
+            if (drawer != null && (ht == drawer || ht.IsChildOf(drawer))) continue;   // 열린 서랍 자기 몸(앞판·옆판)
+            if (hub != null && hub.PlayerRoot != null && ht.IsChildOf(hub.PlayerRoot)) continue;
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>102차: 교실 교탁 서랍이 열려 있는지(닫힌 자리에서 <see cref="DrawerOpenMin"/> 넘게 나왔는지).</summary>
+    public static bool ClassroomDrawerOpen()
+    {
+        Transform drawer = ClassroomDrawer;
+        return drawer != null && (drawer.localPosition - s_drawerClosedLocal).magnitude >= DrawerOpenMin;
     }
 
     private static bool Pressed()

@@ -244,6 +244,13 @@ public sealed class BatteryStash : MonoBehaviour
         }
 
         VisibleCount = visible;
+        if (DutyCards.AimingCardThisFrame)
+        {
+            // 102차: 출입 카드를 겨눈 프레임은 카드 차례(교실 교탁 서랍에 배터리가 같이 있으면 [E]가 배터리로 가 카드가 안 집혔다).
+            ReleasePrompt();
+            return;
+        }
+
         Cache aimed = live && visible > 0 && CanInteract() ? Aim() : null;
         if (aimed == null)
         {

@@ -47,7 +47,9 @@ public static class MoonlightOff
     {
         if (l == null || !l.enabled) return false;
         if (l.type != LightType.Directional) return false;
-        if (l.lightmapBakeType == LightmapBakeType.Baked) return false;
+        // 런타임 Light에는 lightmapBakeType이 없다(에디터 전용 API — 2026-10-11 빌드 실패) — 구운 결과는 bakingOutput으로 읽는다.
+        // 굽지 않은 방향광은 isBaked가 false라 실시간으로 보고 끈다(원래 의도와 같다).
+        if (l.bakingOutput.isBaked && l.bakingOutput.lightmapBakeType == LightmapBakeType.Baked) return false;
         return l.GetComponentInParent<Camera>() == null;
     }
 }

@@ -21,6 +21,20 @@ using UnityEngine.SceneManagement;
 /// <para>
 /// 씬에 놓지 않아도 된다 — 씬이 로드될 때 스스로 선다. 값은 <see cref="PrefsKey"/>로 저장된다.
 /// </para>
+///
+/// <para>
+/// 99차(민: 「설정에서 라이팅 수치를 변경하면 화면이 뿌예지는 버그가 아직 있어」): 실내·실외 보정 프로필의 Lift(리프트·감마·게인)가
+/// 검은 바닥을 청록 회색(약 34/255)으로 띄워 둔다. 노출만 내리면 장면은 어두워지는데 이 바닥은 그대로라, 어두운 끝(옛 −1.5EV)에서 화면 전체가
+/// 그 회색 한 장으로 뭉개졌다(보안실 PlayScene 재현). 이제 어두운 쪽은 노출을 덜 내리고(<see cref="MinOffset"/> −1) 내린 만큼 리프트도 함께 내려
+/// (<see cref="LiftPerEv"/>) 검정이 검정으로 남는다.
+/// </para>
+///
+/// <para>
+/// 100차(민: 「화면이 좀 덜 뿌옜으면 좋겠어 · 밝기를 올리면 좀 뿌예지는 거」): 밝기 값과 상관없이 늘 <b>안개 걷기</b>를 얹는다 — 리프트 바닥을 내리고
+/// (<see cref="DehazeLift"/>) 대비를 올리고(<see cref="DehazeContrast"/>) 그만큼 어두워진 중간 톤을 노출로 조금 되돌린다(<see cref="DehazeExposure"/>).
+/// 보안실 실측(손전등 켬, 밝기 0.5): 검정 바닥 34 → 0, 중간 45 → 28, 밝은 쪽 88 → 93/255 · 표준편차 24.5 → 37. 밝은 쪽 끝에서도 리프트를 조금 더 내리고 대비를 더해
+/// (<see cref="LiftPerEvBright"/>·<see cref="ContrastPerEvBright"/>) 노출을 올려도 바닥이 뜨지 않는다(옛 최대 바닥 34 → 2).
+/// </para>
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(-900)]
@@ -29,11 +43,29 @@ public sealed class BrightnessSettings : MonoBehaviour
     /// <summary>저장 키.</summary>
     public const string PrefsKey = "nightduty.brightness";
 
-    /// <summary>슬라이더 0일 때의 보정(EV). 어두운 쪽 끝.</summary>
-    public const float MinOffset = -1.5f;
+    /// <summary>슬라이더 0일 때의 보정(EV). 어두운 쪽 끝(99차 −1.5 → −1).</summary>
+    public const float MinOffset = -1f;
 
-    /// <summary>슬라이더 1일 때의 보정(EV). 밝은 쪽 끝.</summary>
-    public const float MaxOffset = 1.5f;
+    /// <summary>99차: 노출을 1EV 내릴 때 리프트(밝기 축 w)를 함께 내리는 양 — 어두운 쪽(100차: 안개 걷기가 이미 바닥을 내려 0.025 → 0.011).</summary>
+    public const float LiftPerEv = 0.011f;
+
+    /// <summary>100차: 늘 얹는 리프트 보정(w) — 프로필의 청록 회색 바닥(+0.01)을 거의 검정으로.</summary>
+    public const float DehazeLift = -0.014f;
+
+    /// <summary>100차: 늘 얹는 대비(색 조정 Contrast, 프로필 값에 더함).</summary>
+    public const float DehazeContrast = 8f;
+
+    /// <summary>100차: 늘 얹는 노출(EV) — 바닥을 내리고 대비를 올려 어두워진 중간 톤을 되돌린다.</summary>
+    public const float DehazeExposure = 0.3f;
+
+    /// <summary>100차: 밝은 쪽에서 1EV 올릴 때마다 리프트를 더 내리는 양.</summary>
+    public const float LiftPerEvBright = 0.006f;
+
+    /// <summary>100차: 밝은 쪽에서 1EV 올릴 때마다 더하는 대비.</summary>
+    public const float ContrastPerEvBright = 3f;
+
+    /// <summary>슬라이더 1일 때의 보정(EV). 밝은 쪽 끝(100차 1.5 → 1.2 — 안개 걷기 노출 +0.3을 늘 얹어 끝의 총량은 옛 +1.5 그대로).</summary>
+    public const float MaxOffset = 1.2f;
 
     /// <summary>기본값. <b>0.5가 「제작자가 맞춰 둔 그대로」</b>다.</summary>
     public const float Default = 0.5f;
@@ -43,6 +75,8 @@ public sealed class BrightnessSettings : MonoBehaviour
 
     // 프로필마다 «원래 적혀 있던 노출»을 기억한다. 이걸 안 하면 조절할 때마다 값이 누적된다.
     private static readonly Dictionary<ColorAdjustments, float> s_baseline = new Dictionary<ColorAdjustments, float>();
+    private static readonly Dictionary<LiftGammaGain, Vector4> s_liftBaseline = new Dictionary<LiftGammaGain, Vector4>();
+    private static readonly Dictionary<ColorAdjustments, float> s_contrastBaseline = new Dictionary<ColorAdjustments, float>();
 
     // 86차: 밝기를 얹는 볼륨 — 씬에 처음부터 있고 프로필 에셋이 노출(postExposure)을 정하는 것만(실내·실외 보정).
     // 옛 Apply는 씬의 모든 볼륨을 훑어, 조도 톤(IlluminanceMap)·조우 화면 효과처럼 런타임에 만든 볼륨까지
@@ -60,8 +94,17 @@ public sealed class BrightnessSettings : MonoBehaviour
         }
     }
 
-    /// <summary>지금 보정값(EV). 화면에 숫자로 보여 줄 때 쓴다.</summary>
-    public static float Offset { get { return Mathf.Lerp(MinOffset, MaxOffset, Value); } }
+    /// <summary>지금 보정값(EV). 0.5 = 0(제작 그대로), 0 = <see cref="MinOffset"/>, 1 = <see cref="MaxOffset"/>(양쪽 범위가 달라 반씩 나눠 잇는다).</summary>
+    public static float Offset { get { return OffsetFor(Value); } }
+
+    /// <summary>슬라이더 값(0~1)의 보정값(EV).</summary>
+    public static float OffsetFor(float value)
+    {
+        value = Mathf.Clamp01(value);
+        return value < Default
+            ? Mathf.Lerp(MinOffset, 0f, value / Default)
+            : Mathf.Lerp(0f, MaxOffset, (value - Default) / (1f - Default));
+    }
 
     /// <summary>값이 바뀔 때. 화면의 숫자 표시가 듣는다.</summary>
     public static event System.Action<float> Changed;
@@ -71,6 +114,8 @@ public sealed class BrightnessSettings : MonoBehaviour
     {
         // 플레이를 껐다 켜면 볼륨 인스턴스가 새로 생긴다. 옛 기준값을 들고 있으면 안 된다.
         s_baseline.Clear();
+        s_liftBaseline.Clear();
+        s_contrastBaseline.Clear();
         s_targets.Clear();
         s_loaded = false;
         Changed = null;
@@ -192,7 +237,31 @@ public sealed class BrightnessSettings : MonoBehaviour
             }
 
             color.postExposure.overrideState = true;
-            color.postExposure.value = baseline + offset;
+            color.postExposure.value = baseline + DehazeExposure + offset;
+
+            // 100차: 안개 걷기 — 대비(프로필 값 + 늘 + 밝은 쪽 더).
+            float contrast;
+            if (!s_contrastBaseline.TryGetValue(color, out contrast))
+            {
+                contrast = color.contrast.overrideState ? color.contrast.value : 0f;
+                s_contrastBaseline[color] = contrast;
+            }
+
+            color.contrast.overrideState = true;
+            color.contrast.value = Mathf.Clamp(contrast + DehazeContrast + ContrastPerEvBright * Mathf.Max(0f, offset), -100f, 100f);
+
+            // 99차: 어두운 쪽은 리프트도 함께 내린다(청록 회색 바닥에 화면이 뭉개지지 않게). 100차: 늘 바닥을 내리고 밝은 쪽에서도 조금 더. 리프트를 안 쓰는 프로필은 그대로.
+            LiftGammaGain lgg;
+            if (!profile.TryGet<LiftGammaGain>(out lgg) || !lgg.lift.overrideState) continue;
+            Vector4 lift;
+            if (!s_liftBaseline.TryGetValue(lgg, out lift))
+            {
+                lift = lgg.lift.value;
+                s_liftBaseline[lgg] = lift;
+            }
+
+            lift.w += DehazeLift + LiftPerEv * Mathf.Min(0f, offset) - LiftPerEvBright * Mathf.Max(0f, offset);
+            lgg.lift.value = lift;
         }
     }
 

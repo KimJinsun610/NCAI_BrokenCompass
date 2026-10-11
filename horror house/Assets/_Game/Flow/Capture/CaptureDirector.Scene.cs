@@ -586,7 +586,8 @@ public sealed partial class CaptureDirector
 
             if (head != null)
             {
-                if (cam != null) ScareFace.Stare.Attach(go, head, cam);
+                // 99차(민: 「살짝 좌측을 바라보고 있어 — 정확히 플레이어를」): 얼굴 앞 = 머리뼈 +z(선 자세의 고개가 몸 앞에서 17° 돌아가 있다), 무게 1.
+                if (cam != null) ScareFace.Stare.Attach(go, head, cam, 1f, Vector3.forward);
                 return head.position + Vector3.up * LayoutEyeLift * go.transform.lossyScale.y;
             }
         }

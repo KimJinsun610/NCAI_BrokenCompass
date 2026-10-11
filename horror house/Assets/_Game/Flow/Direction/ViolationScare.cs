@@ -95,14 +95,174 @@ public sealed class ViolationScare : MonoBehaviour
     /// <paramref name="mob"/>의 놀람 연출을 시작한다. 83차: 원래 모델을 숨기는 그 프레임에 놀람 모델(대역 <paramref name="faceStandIn"/>)이 원래 모델의 자리에 서서
     /// 눈앞으로 덮쳐 와 화면을 채우고, 다시 그 자리로 물러난 뒤 원래 모델로 바뀌어 <paramref name="onFlee"/>(도망)를 한다 — 둘이 한 장면에 함께 있지 않다. 시작하지 못하면 false.
     /// </summary>
-    public static bool Play(GameObject mob, string faceStandIn, string mobId, Action onFlee)
+    public static bool Play(GameObject mob, string faceStandIn, string mobId, Action onFlee, bool blackoutWhileDown = false)
     {
         if (Busy || s_host == null || mob == null || !NightRun.IsNightActive || NightRun.IsCaptured) return false;
-        s_host.StartCoroutine(s_host.Run(mob, faceStandIn, mobId, onFlee));
+        s_host.StartCoroutine(s_host.Run(mob, faceStandIn, mobId, onFlee, blackoutWhileDown));
         return true;
     }
 
-    private IEnumerator Run(GameObject mob, string faceStandIn, string mobId, Action onFlee)
+    /// <summary>
+    /// 91차(민: 「인체 모형이 플레이어를 뚫고 쌩 지나가면 플레이어가 넘어졌다가 일어나게」): 얼굴 없이 넘어졌다 일어나기만 — 입력 잠금·태블릿 숨김·넘어짐·일어남.
+    /// <paramref name="backward"/>면 뒤로 나자빠진다(정면에서 들이받힘). 붙잡힘이 일어나 있거나 다른 놀람 중이면 false.
+    /// </summary>
+    public static bool Knockdown(string sourceId, bool backward, bool blackout = false)
+    {
+        if (Busy || s_host == null || !NightRun.IsNightActive || NightRun.IsCaptured) return false;
+        s_host.StartCoroutine(s_host.KnockRun(sourceId, backward, blackout));
+        return true;
+    }
+
+    private IEnumerator KnockRun(string sourceId, bool backward, bool blackout)
+    {
+        Busy = true;
+        Debug.Log("[놀람] 넘어짐 — " + sourceId);
+        Camera cam = Camera.main;
+        FPController fp = FindAnyObjectByType<FPController>();
+        bool fpWas = fp != null && fp.enabled;
+        if (fp != null) fp.enabled = false;
+        CursorLockMode cursorWas = Cursor.lockState;
+        bool cursorVisibleWas = Cursor.visible;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        Transform ct = cam != null ? cam.transform : null;
+        Vector3 lp = ct != null ? ct.localPosition : Vector3.zero;
+        Quaternion lr = ct != null ? ct.localRotation : Quaternion.identity;
+        PlayerTablet tablet = cam != null ? cam.GetComponentInChildren<PlayerTablet>(true) : null;
+        GameObject viewmodel = tablet != null ? tablet.gameObject : null;
+        bool viewmodelWas = viewmodel != null && viewmodel.activeSelf;
+        if (viewmodel != null) viewmodel.SetActive(false);
+
+        if (ct != null) yield return FallAndRise(ct, lp, lr, blackout, backward);
+
+        if (viewmodel != null) viewmodel.SetActive(viewmodelWas);
+        if (fp != null && fpWas && !NightRun.IsCaptured) fp.enabled = true;
+        Cursor.lockState = cursorWas;
+        Cursor.visible = cursorVisibleWas;
+        if (fp != null && fp.enabled)
+        {
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+
+        Busy = false;
+    }
+
+    /// <summary>91차: 쓰러진 동안 암전(소년 놀람) — 바닥에 누운 채 이만큼(초) 검다가, 일어서며 눈을 뜬다.</summary>
+    public const float BlackDownSeconds = 1.6f;
+
+    /// <summary>91차: 뒤로 나자빠질 때 위를 보는 각(°).</summary>
+    public const float BackwardPitchUpDegrees = 38f;
+
+    private static UnityEngine.UI.Image s_black;
+
+    /// <summary>화면을 덮는 검은 판(지연 생성, 정렬 460 — 붙잡힘 화면(500) 아래).</summary>
+    private UnityEngine.UI.Image Black()
+    {
+        if (s_black != null) return s_black;
+        GameObject go = new GameObject("놀람 암전");
+        go.transform.SetParent(transform, false);
+        Canvas c = go.AddComponent<Canvas>();
+        c.renderMode = RenderMode.ScreenSpaceOverlay;
+        c.sortingOrder = 460;
+        GameObject img = new GameObject("black", typeof(RectTransform));
+        img.transform.SetParent(go.transform, false);
+        RectTransform rt = (RectTransform)img.transform;
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        s_black = img.AddComponent<UnityEngine.UI.Image>();
+        s_black.color = new Color(0f, 0f, 0f, 0f);
+        s_black.raycastTarget = false;
+        return s_black;
+    }
+
+    private void SetBlack(float a)
+    {
+        UnityEngine.UI.Image img = Black();
+        if (img != null) img.color = new Color(0f, 0f, 0f, Mathf.Clamp01(a));
+    }
+
+    /// <summary>
+    /// 넘어졌다 일어난다 — 눈높이를 바닥 가까이로 떨어뜨리며 옆으로(뒤로) 기울고, 툭·헉 소리, 잠시 뒤 일어나 원래 자세로.
+    /// 91차 <paramref name="blackout"/>: 쓰러지며 화면이 검게 감기고(눈을 감음) 누운 동안 검다가, 일어서며 깜빡이듯 다시 뜬다.
+    /// </summary>
+    private IEnumerator FallAndRise(Transform ct, Vector3 lp, Quaternion lr, bool blackout, bool backward, Action onBlack = null)
+    {
+        float drop = Mathf.Max(0f, ct.position.y - FloorY(ct.position) - EyeAboveFloorDown);
+        Vector3 down = ct.parent != null ? ct.parent.InverseTransformDirection(Vector3.down) * drop : Vector3.down * drop;
+        float side = UnityEngine.Random.value < 0.5f ? -1f : 1f;
+        Quaternion lying = backward
+            ? lr * Quaternion.Euler(-BackwardPitchUpDegrees, 0f, FallRollDegrees * 0.35f * side)
+            : lr * Quaternion.Euler(-FallPitchUpDegrees, 0f, FallRollDegrees * side);
+        float t = 0f;
+        while (t < FallSeconds && ct != null)
+        {
+            t += Time.deltaTime;
+            float k = Mathf.Clamp01(t / FallSeconds);
+            k = k * k;
+            ct.localPosition = lp + down * k;
+            ct.localRotation = Quaternion.Slerp(lr, lying, k);
+            if (blackout) SetBlack(Mathf.InverseLerp(0.4f, 1f, k));
+            yield return null;
+        }
+
+        if (ct == null)
+        {
+            SetBlack(0f);
+            if (onBlack != null) onBlack();
+            yield break;
+        }
+
+        BodyMeter.Jolt(3f);
+        DirectionStage.PlaySound("capture.gasp", ct.position, 1f, 0f);
+        DirectionStage.PlaySound("body.breath", ct.position, 1f, 0f);
+        if (blackout) SetBlack(1f);
+        if (onBlack != null)
+        {
+            // 다 검어진 다음 프레임에(검은 판이 그려진 뒤) — 보이는 동안 사라지지 않게.
+            yield return null;
+            try { onBlack(); }
+            catch (Exception ex) { Debug.LogException(ex); }
+            onBlack = null;
+        }
+
+        yield return new WaitForSeconds(blackout ? BlackDownSeconds : DownSeconds);
+
+        t = 0f;
+        Vector3 lowPos = ct.localPosition;
+        Quaternion lowRot = ct.localRotation;
+        while (t < RiseSeconds && ct != null)
+        {
+            t += Time.deltaTime;
+            float u = t / RiseSeconds;
+            float k = Mathf.SmoothStep(0f, 1f, u);
+            ct.localPosition = Vector3.Lerp(lowPos, lp, k);
+            ct.localRotation = Quaternion.Slerp(lowRot, lr, k);
+            if (blackout) SetBlack(EyesOpen(u));
+            yield return null;
+        }
+
+        if (ct != null)
+        {
+            ct.localPosition = lp;
+            ct.localRotation = lr;
+        }
+
+        SetBlack(0f);
+    }
+
+    /// <summary>91차: 일어서며 눈 뜨기 — 반쯤 떴다(0.35) 한 번 감겼다(0.85) 다 뜬다. 0~1 진행에 대한 검은 판 불투명도.</summary>
+    public static float EyesOpen(float u)
+    {
+        u = Mathf.Clamp01(u);
+        if (u < 0.3f) return Mathf.Lerp(1f, 0.35f, u / 0.3f);
+        if (u < 0.45f) return Mathf.Lerp(0.35f, 0.85f, (u - 0.3f) / 0.15f);
+        return Mathf.Lerp(0.85f, 0f, (u - 0.45f) / 0.55f);
+    }
+
+    private IEnumerator Run(GameObject mob, string faceStandIn, string mobId, Action onFlee, bool blackoutWhileDown)
     {
         Busy = true;
         s_mob = mob;
@@ -131,31 +291,69 @@ public sealed class ViolationScare : MonoBehaviour
         //    원래 모델을 숨기는 그 프레임에 놀람 모델이 원래 모델의 자리·방향에 서서, 눈앞 얼굴 자리까지 덮쳐 온다. 둘이 같이 보이는 프레임이 없다.
         List<Renderer> hidden = new List<Renderer>();
         HideAll(mob, hidden);
-        GameObject face = ct != null ? Face(faceStandIn, ct) : null;
         Vector3 homePos = mob.transform.position;
         Quaternion homeRot = mob.transform.rotation;
-        Vector3 facePos = face != null ? face.transform.position : homePos;
-        Quaternion faceRot = face != null ? face.transform.rotation : homeRot;
-        if (face != null) face.transform.SetPositionAndRotation(homePos, homeRot);
+        // 95차(민: 「놀람 연출이 전부 평면적 — 진짜 얼굴을 코앞까지 들이민 것 같은 느낌」): ScareFace — 머리 크기 맞춤 · 가속 들이밈과 파고듦 · 시야각 펀치 · 움찔 · 빛·심도.
+        ScareFace sf = ct != null ? ScareFace.Create(faceStandIn, cam, homePos, homeRot) : null;
+        GameObject face = sf != null ? sf.Go : null;
+        if (sf != null)
+        {
+            sf.BeginFx();
+            sf.Pose(sf.HoldDistance * ScareFace.Overshoot, 0f, Vector3.zero, homePos, homeRot, 0f);
+        }
 
-        Vector3 faceAt = ct != null ? ct.position + ct.forward * FaceDistance : mob.transform.position;
+        Vector3 faceAt = ct != null ? ct.position + ct.forward * 0.4f : mob.transform.position;
         DirectionStage.PlaySound(StingerSound, faceAt, 2f, 0.2f);
         BodyMeter.Startle();
 
         float t = 0f;
-        while (t < FaceSeconds)
+        float lunge = ScareFace.LungeSeconds;
+        float settle = ScareFace.SettleSeconds;
+        float holdFor = Mathf.Max(0.1f, FaceSeconds - lunge - settle);
+        float total = lunge + settle + holdFor;
+        float tiltSign = UnityEngine.Random.value < 0.5f ? -1f : 1f;
+        while (t < total)
         {
             t += Time.deltaTime;
             HideAll(mob, hidden);   // 다른 코드가 다시 켜도 놀람 모델이 있는 동안은 숨긴 채로
-            if (face != null)
+            float punch = 0f, hold = 0f, shakeK = 0f;
+            if (sf != null)
             {
-                float w = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / LungeSeconds));
-                face.transform.SetPositionAndRotation(Vector3.LerpUnclamped(homePos, facePos, w), Quaternion.SlerpUnclamped(homeRot, faceRot, w));
+                float H = sf.HoldDistance;
+                if (t < lunge)
+                {
+                    float u = t / lunge;
+                    sf.Pose(H * ScareFace.Overshoot, 0f, Vector3.zero, homePos, homeRot, u * u * u);   // 점점 빨라지며 날아와 파고든다
+                    sf.CameraFx(0f, 0f, u);
+                }
+                else if (t < lunge + settle)
+                {
+                    float u = (t - lunge) / settle;
+                    float back = 1f + 2.2f * Mathf.Pow(u - 1f, 3f) + 1.2f * Mathf.Pow(u - 1f, 2f);   // 튕기듯(ease-out back)
+                    sf.Pose(H * Mathf.LerpUnclamped(ScareFace.Overshoot, 1f, back), 0f, Vector3.zero, homePos, homeRot, 1f);
+                    punch = 1f - u;
+                    hold = u;
+                    shakeK = 1f;
+                    sf.CameraFx(punch, hold, 1f);
+                }
+                else
+                {
+                    float u = Mathf.Clamp01((t - lunge - settle) / holdFor);
+                    float d = H * Mathf.Lerp(1f, ScareFace.Creep, Mathf.SmoothStep(0f, 1f, u));   // 머무는 동안 조금씩 더 다가온다
+                    float tilt = tiltSign * Mathf.Sin(u * Mathf.PI * 0.6f) * ScareFace.TiltDegrees;
+                    Vector3 jitter = new Vector3(UnityEngine.Random.Range(-1f, 1f), UnityEngine.Random.Range(-1f, 1f), 0f) * 1.2f;
+                    sf.Pose(d, tilt, jitter, homePos, homeRot, 1f);
+                    hold = 1f;
+                    shakeK = 1f - 0.5f * u;
+                    sf.CameraFx(0f, 1f, 1f);
+                }
             }
-            if (ct != null)
+
+            if (ct != null && shakeK > 0f)
             {
-                float k = 1f - 0.5f * (t / FaceSeconds);
-                ct.localRotation = lr * Quaternion.Euler(UnityEngine.Random.Range(-1f, 1f) * FaceShakeDegrees * k, UnityEngine.Random.Range(-1f, 1f) * FaceShakeDegrees * k, UnityEngine.Random.Range(-1f, 1f) * FaceShakeDegrees * 0.6f * k);
+                float k = shakeK * (0.6f + 0.8f * punch);
+                ct.localRotation = lr * Quaternion.Euler(-2.5f * Mathf.Max(punch, hold * 0.5f), 0f, 0f)   // 움찔 — 고개가 뒤로 젖혀진다
+                                   * Quaternion.Euler(UnityEngine.Random.Range(-1f, 1f) * FaceShakeDegrees * k, UnityEngine.Random.Range(-1f, 1f) * FaceShakeDegrees * k, UnityEngine.Random.Range(-1f, 1f) * FaceShakeDegrees * 0.6f * k);
             }
 
             yield return null;
@@ -169,67 +367,43 @@ public sealed class ViolationScare : MonoBehaviour
             {
                 t += Time.deltaTime;
                 float w = 1f - Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / PullBackSeconds));
-                face.transform.SetPositionAndRotation(Vector3.LerpUnclamped(homePos, facePos, w), Quaternion.SlerpUnclamped(homeRot, faceRot, w));
+                sf.Pose(sf.HoldDistance, 0f, Vector3.zero, homePos, homeRot, w);
+                sf.CameraFx(0f, w, w);
+                if (ct != null) ct.localRotation = Quaternion.Slerp(lr, ct.localRotation, w);
                 HideAll(mob, hidden);
                 yield return null;
             }
 
-            Destroy(face);
+            sf.EndFx();
+            if (ct != null) ct.localRotation = lr;
+
+            // 92차(민: 「소년 덮치는건 암전 도중 소년이 사라지게」): 암전이면 물러난 놀람 모델이 그 자리에 선 채로 쓰러짐을 지켜보다가, 화면이 다 검어진 동안 사라진다.
+            if (!blackoutWhileDown) Destroy(face);
         }
 
-        for (int i = 0; i < hidden.Count; i++)
+        Action release = () =>
         {
-            if (hidden[i] != null) hidden[i].enabled = true;
-        }
-
-        s_mob = null;   // 도망부터는 원래 조우의 정리 규칙대로
-        try
-        {
-            if (onFlee != null) onFlee();
-        }
-        catch (Exception ex)
-        {
-            Debug.LogException(ex);
-        }
-
-        // ③ 넘어짐 — 눈높이를 바닥 가까이로, 옆으로 기울며 위를 본다
-        if (ct != null)
-        {
-            float drop = Mathf.Max(0f, ct.position.y - FloorY(ct.position) - EyeAboveFloorDown);
-            Vector3 down = ct.parent != null ? ct.parent.InverseTransformDirection(Vector3.down) * drop : Vector3.down * drop;
-            float side = UnityEngine.Random.value < 0.5f ? -1f : 1f;
-            Quaternion lying = lr * Quaternion.Euler(-FallPitchUpDegrees, 0f, FallRollDegrees * side);
-            t = 0f;
-            while (t < FallSeconds)
+            if (face != null) Destroy(face);
+            for (int i = 0; i < hidden.Count; i++)
             {
-                t += Time.deltaTime;
-                float k = Mathf.Clamp01(t / FallSeconds);
-                k = k * k;
-                ct.localPosition = lp + down * k;
-                ct.localRotation = Quaternion.Slerp(lr, lying, k);
-                yield return null;
+                if (hidden[i] != null) hidden[i].enabled = true;
             }
 
-            BodyMeter.Jolt(3f);
-            DirectionStage.PlaySound("capture.gasp", ct.position, 1f, 0f);
-            DirectionStage.PlaySound("body.breath", ct.position, 1f, 0f);
-            yield return new WaitForSeconds(DownSeconds);
-
-            t = 0f;
-            Vector3 lowPos = ct.localPosition;
-            Quaternion lowRot = ct.localRotation;
-            while (t < RiseSeconds)
+            s_mob = null;   // 도망부터는 원래 조우의 정리 규칙대로
+            try
             {
-                t += Time.deltaTime;
-                float k = Mathf.SmoothStep(0f, 1f, t / RiseSeconds);
-                ct.localPosition = Vector3.Lerp(lowPos, lp, k);
-                ct.localRotation = Quaternion.Slerp(lowRot, lr, k);
-                yield return null;
+                if (onFlee != null) onFlee();
             }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        };
 
-            ct.localPosition = lp;
-            ct.localRotation = lr;
-        }
+        if (!blackoutWhileDown || ct == null) release();
+
+        // ③ 넘어짐 — 눈높이를 바닥 가까이로, 옆으로 기울며 위를 본다(91차: 소년은 쓰러진 동안 암전 → 일어설 때 눈을 뜬다 · 92차: 그 검은 동안 사라짐)
+        if (ct != null) yield return FallAndRise(ct, lp, lr, blackoutWhileDown, false, blackoutWhileDown ? release : null);
 
         if (viewmodel != null) viewmodel.SetActive(viewmodelWas);   // 일어나면 태블릿·손이 다시
         if (fp != null && fpWas && !NightRun.IsCaptured) fp.enabled = true;

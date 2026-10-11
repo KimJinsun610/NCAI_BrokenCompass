@@ -510,13 +510,13 @@ namespace NightDuty.Tests
             r.Board.RestoreState(board0);
             r.D.RestoreState(orders0);
             Assert.AreEqual(0, r.D.Orders.Count);
-            Assert.IsTrue(r.Board.IsIssued("K-1"), "보고한 항목");
+            Assert.IsFalse(r.Board.IsIssued("K-1"), "92차: 스냅샷 뒤의 보고도 되돌린다");
             Assert.IsFalse(r.Board.IsIssued("H-1"), "지시가 되돌려졌다");
 
             r.At(SpaceId.SecurityRoom, 34f, 46f);
             r.Wait(8.2f);
             Assert.AreEqual(1, r.D.Orders.Count);
-            Assert.AreEqual(SpaceId.Corridor, r.D.Orders[0].Space, "K-1은 이미 보고했으니 다음 공간부터");
+            Assert.AreEqual(SpaceId.SecurityRoom, r.D.Orders[0].Space, "92차: K-1 보고가 되돌려져 경비실부터 다시");
             Assert.AreEqual(1, r.D.Orders[0].Index);
         }
 
@@ -609,12 +609,12 @@ namespace NightDuty.Tests
             NightRun.DebugForceCapture(FearAxis.Layout);
             NightRun.RestartAfterCapture();
             Assert.AreEqual(0, NightRun.Orders.Orders.Count);
-            Assert.IsTrue(NightRun.Inspections.IsIssued("K-1"));
+            Assert.IsFalse(NightRun.Inspections.IsIssued("K-1"), "92차: 보고도 밤 시작으로");
             Assert.IsFalse(NightRun.Inspections.IsIssued("H-1"));
 
             Run(8.3f);
             Assert.AreEqual(1, NightRun.Orders.Orders.Count);
-            Assert.AreNotEqual(SpaceId.SecurityRoom, NightRun.Orders.Orders[0].Space);
+            Assert.AreEqual(SpaceId.SecurityRoom, NightRun.Orders.Orders[0].Space, "92차: K-1부터 다시");
         }
     }
 }

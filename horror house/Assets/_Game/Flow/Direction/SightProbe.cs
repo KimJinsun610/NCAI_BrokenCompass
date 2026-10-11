@@ -30,6 +30,9 @@ public sealed class SightProbe : MonoBehaviour
     private float _seenFor;
     private bool _done;
     private Renderer[] _renderers;
+    private bool _lookMode;
+    private Vector3 _lookPoint;
+    private float _lookAngle;
 
     /// <summary>지금까지 이어서 본 시간(초, 검수용).</summary>
     public float SeenFor
@@ -54,6 +57,20 @@ public sealed class SightProbe : MonoBehaviour
         p._seenFor = 0f;
         p._done = false;
         p._renderers = mob.GetComponentsInChildren<Renderer>(true);
+        p._lookMode = false;
+        return p;
+    }
+
+    /// <summary>
+    /// 92차(민: 「노란 얼굴의 조우가 진행될 때, 플레이어가 도서관 문 쪽으로 시야를 돌릴 때 조우 연출이 진행되도록」): 몹이 보이는지 대신
+    /// 카메라가 <paramref name="point"/> 쪽(화면 가운데에서 <paramref name="angle"/>° 안)을 <see cref="RecognizeSeconds"/>초 보면 알아본 것으로 친다 — 문짝에 반쯤 가려도.
+    /// </summary>
+    public static SightProbe AttachLookToward(GameObject mob, string encounterId, Action onSeen, Vector3 point, float angle, Func<bool> gate = null)
+    {
+        SightProbe p = Attach(mob, encounterId, onSeen, gate);
+        p._lookMode = true;
+        p._lookPoint = point;
+        p._lookAngle = angle;
         return p;
     }
 
@@ -86,6 +103,11 @@ public sealed class SightProbe : MonoBehaviour
         if (cam == null || !cam.isActiveAndEnabled) return false;
         CctvSystem cctv = CctvSystem.Active;
         if (cctv != null && cctv.IsViewing) return false;
+        if (_lookMode)
+        {
+            Vector3 to = _lookPoint - cam.transform.position;
+            return to.sqrMagnitude > 0.01f && to.magnitude <= MaxDistance && Vector3.Angle(cam.transform.forward, to) <= _lookAngle;
+        }
 
         Bounds b;
         if (!TryBounds(out b)) return false;

@@ -167,13 +167,14 @@ public sealed class TabletZoom : MonoBehaviour
             _limit.Reset();   // 새 밤
         }
 
-        // 61차: 주요 연출 중 — 확대를 풀고 손의 태블릿도 내린다(끝날 때까지 못 든다).
+        // 61차: 주요 연출 중 — 확대를 푼다(92차: 손의 태블릿은 내리지 않는다).
         bool busy = live && NightDuty.NightRun.Tension != null && NightDuty.NightRun.Tension.Busy;
         LoweredForDirection = busy;
         if (alwaysHeld)
         {
-            // 늘 든다 — CCTV를 들여다보는 동안·주요 연출 중에만 내린다.
-            if (cctv || busy)
+            // 늘 든다 — CCTV를 들여다보는 동안만 내린다. 92차(민: 「연출에서 태블릿이 먹통이 되는건 없애줘 — 조우 연출 중에 태블릿 화면이 안 나오는 것」):
+            // 61차 「주요 연출 중에는 내림(화면 꺼짐)」 폐기 — 연출 중에도 든 채 화면이 켜져 있다(확대만 풀리고, 연출 중에는 다시 확대하지 않는다).
+            if (cctv)
             {
                 _zoomTarget = false;
                 if (_tablet.IsOpened) _tablet.Close();

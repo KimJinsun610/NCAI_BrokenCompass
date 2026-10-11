@@ -261,9 +261,9 @@ namespace NightDuty
                 {
                     Id = ProgramCatalog.ModelRush, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.ScienceRoom, Dwell = 10f,
                     Cue = FinalCues.HallEnd, Window = 10f,
-                    Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.dummy",
+                    Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.dummy.stand",   // 91차: 구부정 → 선 모형(전날 복도 끝에 서 있던 그 모습으로 서 있다가 달려온다)
                     StageAnchor = StageAnchors.RushHall,   // 70차: 과학실 옆 복도 끝 비상등 아래에 세워 두고, 복도에서 알아보면 달려온다(MannequinRush)
-                    Note = "과학실 10초 체류 뒤 복도 끝 비상등 아래에 선다(안에서는 안 보임) → 복도에서 알아보면 달려와 덮친다. S5 — 불을 끄고 기다리면 어깨를 스치고 지나감."
+                    Note = "과학실 10초 체류 뒤 복도 끝 비상등 아래에 선다(안에서는 안 보임) → 복도에서 알아보면 0.8초 꼼짝 않다가 고개를 홱 돌리고 곧게 선 채 13m/s로 달려와 몸을 뚫고 지나간다(플레이어는 넘어졌다 일어남). S5 — 불을 끄고 기다리면 어깨를 스치고 지나감."
                 },
                 new EncounterScript
                 {

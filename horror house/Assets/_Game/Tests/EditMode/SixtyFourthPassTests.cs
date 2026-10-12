@@ -50,25 +50,14 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 유예_안에서는_오르지_않고_넘으면_오래_볼수록_빨리_오른다()
+        public void 사람_나무도_오래_봐도_축을_올리지_않고_시간만_센다()
         {
+            // 104차(민: 「복도로 나왔을 때 바라보면 화면 울렁임 + 감각 축 오름 — 붙잡힘을 없애라」): 92차 모형에 이어 사람 나무도 빠졌다.
+            Assert.IsFalse(FixedMobStare.Punishes(FinalCues.H1Object));
+            Assert.IsFalse(FixedMobStare.Punishes(FinalCues.HallFigureTarget));
             FixedMobStare s = new FixedMobStare();
-            // 92차: 복도 끝 인체 모형은 축을 올리지 않는다 — 사람 나무로.
-            Assert.AreEqual(0, Feed(s, FinalCues.H1Object, 1.5f, 3), "3일차 유예 1.5초");
-            Assert.AreEqual(1.5f, s.Seconds, 1e-3f);
-            int first = Feed(s, FinalCues.H1Object, 2f, 3);    // 0~2초: 3 + 0.5t
-            int second = Feed(s, FinalCues.H1Object, 2f, 3);   // 2~4초
-            Assert.AreEqual(7, first, "∫(3+0.5t) 0~2 = 7");
-            Assert.AreEqual(9, second, "∫(3+0.5t) 2~4 = 9");
-            Assert.Greater(second, first);
-        }
-
-        [Test]
-        public void 속도는_초당_10에서_멈춘다()
-        {
-            FixedMobStare s = new FixedMobStare();
-            Feed(s, FinalCues.H1Object, 1.5f + 20f, 3);
-            Assert.AreEqual(10, Feed(s, FinalCues.H1Object, 1f, 3));
+            Assert.AreEqual(0, Feed(s, FinalCues.H1Object, 1.5f + 30f, 3));
+            Assert.AreEqual(31.5f, s.Seconds, 1e-2f, "바라본 시간은 센다");
         }
 
         [Test]
@@ -131,12 +120,14 @@ namespace NightDuty.Tests
         [Test]
         public void 사람_나무도_같다()
         {
+            // 104차: 사람 나무도 오래 봐도 배치 축이 오르지 않고 붙잡히지 않는다(응시는 HumanTreeGrowth의 화면 울렁임 + 감각 축).
             NightRun.FixedMobStareEnabled = true;
             NightRun.BeginNight(4, () => 0);
             NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
             int before = NightRun.Axes.GetValue(FearAxis.Layout);
-            Gaze(FinalCues.H1Object, 3.5f);
-            Assert.AreEqual(before + 7, NightRun.Axes.GetValue(FearAxis.Layout));
+            Gaze(FinalCues.H1Object, 40f);
+            Assert.AreEqual(before, NightRun.Axes.GetValue(FearAxis.Layout));
+            Assert.IsFalse(NightRun.IsCaptured);
         }
 
         [Test]

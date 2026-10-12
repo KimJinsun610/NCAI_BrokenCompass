@@ -132,11 +132,15 @@ namespace NightDuty
         /// <summary>미완료 중 이상이 있던 항목 수(각 +8).</summary>
         public readonly int UnfinishedAnomalies;
 
+        /// <summary>103차(축 균형): 미완료(경고) 항목을 축별로 센 것 — 청각·조도·배치. 처벌을 그 원인 축에 준다.</summary>
+        public readonly int[] UnfinishedByAxis;
+
         /// <summary>결과를 만든다.</summary>
-        public InspectionSettlement(int unfinished, int unfinishedAnomalies)
+        public InspectionSettlement(int unfinished, int unfinishedAnomalies, int[] byAxis = null)
         {
             Unfinished = unfinished;
             UnfinishedAnomalies = unfinishedAnomalies;
+            UnfinishedByAxis = byAxis ?? new int[3];
         }
     }
 
@@ -238,6 +242,25 @@ namespace NightDuty
         }
 
         /// <summary>
+        /// 103차 QA 3회: 남은 항목 수 — <paramref name="banned"/> 공간(재입실 불가)의 항목은 세지 않는다. 그 항목은 지시도 보고도 할 수 없어,
+        /// 옛 <see cref="RemainingCount"/>로는 금지가 걸린 밤 내내 조기 퇴근이 막혔다.
+        /// </summary>
+        public int RemainingCountExcept(SpaceId banned)
+        {
+            if (banned == SpaceId.None) return RemainingCount;
+            int n = 0;
+            for (int i = 0; i < _plan.Assignments.Count; i++)
+            {
+                InspectionAssignment a = _plan.Assignments[i];
+                if (_held.Contains(a.Id) || StateOf(a.Id) != InspectionState.Pending) continue;
+                if (SpaceIds.Canonical(a.Item.Space) == banned) continue;
+                n++;
+            }
+
+            return n;
+        }
+
+        /// <summary>
         /// 순차 지시(50차) — 켜져 있으면 항목은 <see cref="MarkIssued"/>로 지시를 받은 뒤에만 열린다(<see cref="IsOpen"/>),
         /// 04:00 정산도 지시받은 항목만 센다. 꺼져 있으면(테스트·옛 동작) 늦은 공간만 호출 2에 열린다.
         /// </summary>
@@ -252,17 +275,25 @@ namespace NightDuty
         /// <summary>지시받았고 아직 보고하지 않은 항목 수.</summary>
         public int IssuedPendingCount
         {
-            get
-            {
-                int n = 0;
-                for (int i = 0; i < _plan.Assignments.Count; i++)
-                {
-                    string id = _plan.Assignments[i].Id;
-                    if (IsIssued(id) && StateOf(id) == InspectionState.Pending) n++;
-                }
+            get { return IssuedPendingCountExcept(SpaceId.None); }
+        }
 
-                return n;
+        /// <summary>
+        /// 103차 QA: 지시받았고 아직 보고하지 않은 항목 수 — <paramref name="banned"/> 공간(회피 불가 역설의 재입실 불가)의 항목은 세지 않는다.
+        /// 옛: 재입실 불가 공간에 지시받은 항목이 남으면 그 밤 내내 「밀린 점검」으로 세여 근무 지시가 멈췄다.
+        /// </summary>
+        public int IssuedPendingCountExcept(SpaceId banned)
+        {
+            int n = 0;
+            for (int i = 0; i < _plan.Assignments.Count; i++)
+            {
+                InspectionAssignment a = _plan.Assignments[i];
+                if (!IsIssued(a.Id) || StateOf(a.Id) != InspectionState.Pending) continue;
+                if (banned != SpaceId.None && SpaceIds.Canonical(a.Item.Space) == banned) continue;
+                n++;
             }
+
+            return n;
         }
 
         /// <summary>새 밤의 편성으로 시작한다. 보고 상태·한도·표시·지시를 모두 비운다.</summary>
@@ -419,7 +450,7 @@ namespace NightDuty
                     change = Raise(axes, axis, Deltas.TrustReverseReport, "T4:" + source, space);
                     break;
                 case ReportOutcome.ReverseViolated:
-                    axis = FearAxis.Layout;
+                    axis = FearAxis.Layout;   // 103차(축 균형 3회): 배치 고정 — 항목 축(T-1 = 청각)으로 보내면 청각이 넘침(미숙 포획 49% 청각) → 배치로 되돌림
                     change = Raise(axes, axis, Deltas.RuleViolation, "T4:" + source, space);
                     break;
             }
@@ -487,6 +518,7 @@ namespace NightDuty
         {
             int unfinished = 0;
             int anomalies = 0;
+            int[] byAxis = new int[3];
             for (int i = 0; i < _plan.Assignments.Count; i++)
             {
                 InspectionAssignment a = _plan.Assignments[i];
@@ -495,6 +527,8 @@ namespace NightDuty
                 if (IsHeld(a.Id)) continue;      // 51차: 묶인 채 끝난 항목(목격하지 못한 T4 변기)도 세지 않는다
 
                 unfinished++;
+                int ax = (int)a.Item.Axis;
+                if (ax >= 0 && ax < byAxis.Length) byAxis[ax]++;
                 if (!a.IsAnomaly) continue;
 
                 anomalies++;
@@ -504,7 +538,7 @@ namespace NightDuty
                 }
             }
 
-            return new InspectionSettlement(penalize ? unfinished : 0, anomalies);
+            return new InspectionSettlement(penalize ? unfinished : 0, anomalies, penalize ? byAxis : new int[3]);
         }
 
         /// <inheritdoc/>

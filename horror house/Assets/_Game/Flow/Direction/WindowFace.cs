@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -10,11 +11,15 @@ using UnityEngine.SceneManagement;
 /// <item>그 밤 편성에 <see cref="ProgramCatalog.SuitMan"/>(창밖 노란 얼굴 — 노란 얼굴 전날, 날짜 사슬)이 있으면, 조우가 대역을 세울 때(<see cref="Show"/> —
 /// 블라인드 L-2 단독 지시 뒤 도서관 6초) <b>그 블라인드 창</b>(도서관 입구 맞은편 서쪽 창 둘 중 플레이어에게 가까운 쪽) 밖에 노란 얼굴(<c>mob.windowman</c>)이 서서
 /// 블라인드 아래 유리 칸으로 들여다본다. 밤 내내 서 있지는 않는다. 블라인드 창을 못 찾으면 옛 북쪽 창 자리(<c>stage.window.man</c>).</item>
-/// <item>서 있는 동안 플레이어 쪽으로 몸을 천천히 돌려 바라본다(창 정면에서 ±<see cref="MaxTurnDegrees"/>°까지).</item>
+/// <item>서 있는 동안 몸은 창 정면 그대로, <b>고개만</b> 플레이어(카메라)를 따라 돌려 바라본다(<see cref="DoorDuck"/> 고개 돌림 — 103차 후속, 민: 「눈길을 따라 비켜서는 게 아니라 목만 움직이게」).
+/// 세울 때 자리를 정하면 옮기지 않는다.</item>
 /// <item>플레이어가 <see cref="FinalCues.WindowFaceTarget"/>을 2초 넘게 이어서 보면(<see cref="NightRun.WindowFaceFled"/>) 창 정면으로 돌아서 창 앞을 가로질러 달아난다
 /// (<see cref="StandInExit.Leave"/> — 기괴하게 빠른 걸음, 화면 밖이 되면 사라짐). 그 밤에는 다시 서지 않는다(재시작이면 다시).</item>
 /// <item>보지 않으면 조우가 끝나도 그 밤 내내 창밖에서 바라보고 있다. 다음 날(문간 노란 얼굴 밤)에는 창밖에 서지 않는다.</item>
 /// <item>수칙과 무관(85차: L3는 문간 노란 얼굴만). 사망 컷신이 도는 동안은 숨는다.</item>
+/// <item>103차 후속(민: 「작고 평면적이고 라이팅이 안 먹어 이질감」): 원본 색(Unlit, <see cref="TrueColor"/>)을 그만두고 빛을 받는 재질 그대로 둔다 —
+/// 얼굴 전용 조명(<see cref="FaceLightLayer"/> 렌더링 레이어만 비춤)이 옆 위에서 비추고, 손전등도 그대로 먹는다. <see cref="Scale"/>배로 키워
+/// 가운데 문설주를 피해 아래 유리 칸 하나(<see cref="SashOffset"/>)에 얼굴이 꽉 차게 유리 바로 뒤(<see cref="GlassInset"/>)에 붙어 선다.</item>
 /// </list>
 /// 근무 씬에 자동으로 선다. 씬은 고치지 않는다.
 /// </summary>
@@ -24,27 +29,12 @@ public sealed class WindowFace : MonoBehaviour
     /// <summary>대역 ID(문간 노란 얼굴과 같은 business duck — 창밖용 프리팹).</summary>
     public const string StandInId = "mob.windowman";
 
-    /// <summary>플레이어 쪽으로 도는 속도(°/초) — 천천히.</summary>
-    public const float TurnDegreesPerSecond = 70f;
-
-    /// <summary>창 정면에서 이만큼(°)까지만 돈다(벽 쪽을 보며 돌아서지 않게).</summary>
-    public const float MaxTurnDegrees = 75f;
-
     private GameObject _figure;
     private Quaternion _baseRotation;
     private Transform _aim;
-    private Vector3 _aimAt;
     private object _program;
     private bool _debug;
     private bool _fled;
-    private bool _follow;
-    private Vector3 _pane;
-    private Vector3 _outward;
-    private Vector3 _tangent;
-    private static Vector3 s_pane, s_outward, s_tangent;
-
-    /// <summary>94차: 눈길을 따라 옆으로 비켜 서는 빠르기(m/초).</summary>
-    public const float FollowSpeed = 1.2f;
 
     /// <summary>지금 근무 씬의 것. 없으면 null.</summary>
     public static WindowFace Active { get; private set; }
@@ -154,58 +144,7 @@ public sealed class WindowFace : MonoBehaviour
         if (_figure.activeSelf != show) _figure.SetActive(show);
         if (!show) return;
 
-        if (NightRun.WindowFaceFled && !_fled)
-        {
-            Flee();
-            return;
-        }
-
-        FacePlayer();
-        FollowEye();
-    }
-
-    /// <summary>
-    /// 94차(민: 「창밖에 노란 얼굴이 확인이 안 되네」): 서쪽 벽이 2m 두께라 유리 칸으로 보이는 각이 좁다 — 세울 때의 눈 한 번으로 정한 자리는
-    /// 플레이어가 움직이면 문설주·벽 뒤로 숨었다. 이제 늘 지금 눈에서 그 칸 가운데를 지나는 눈길 끝으로 천천히 비켜 선다(±<see cref="MaxSlide"/>m).
-    /// </summary>
-    private void FollowEye()
-    {
-        if (!_follow) return;
-        Camera cam = Camera.main;
-        if (cam == null) return;
-        Vector3 look = _pane - cam.transform.position;
-        look.y = 0f;
-        if (look.sqrMagnitude < 0.01f) return;
-        look.Normalize();
-        float dot = Vector3.Dot(look, _outward);
-        if (dot < 0.2f) return;   // 창 바깥쪽에 있다 — 그대로
-        float side = Mathf.Clamp(Vector3.Dot(look * (OutsideDistance / Mathf.Max(0.35f, dot)), _tangent), -MaxSlide, MaxSlide);
-        Vector3 want = _pane + _outward * OutsideDistance + _tangent * side;
-        Vector3 now = _figure.transform.position;
-        want.y = now.y;
-        Vector3 next = Vector3.MoveTowards(now, want, FollowSpeed * Time.deltaTime);
-        Vector3 delta = next - now;
-        if (delta.sqrMagnitude < 1e-8f) return;
-        _figure.transform.position = next;
-        _aimAt += delta;
-        if (_aim != null) _aim.position = _aimAt;
-    }
-
-    /// <summary>플레이어 쪽으로 몸을 천천히 돌린다(수평, 창 정면에서 ±<see cref="MaxTurnDegrees"/>°).</summary>
-    private void FacePlayer()
-    {
-        Camera cam = Camera.main;
-        if (cam == null) return;
-        Vector3 to = cam.transform.position - _figure.transform.position;
-        to.y = 0f;
-        if (to.sqrMagnitude < 0.01f) return;
-        Vector3 baseFwd = _baseRotation * Vector3.forward;
-        baseFwd.y = 0f;
-        float angle = Vector3.SignedAngle(baseFwd, to, Vector3.up);
-        angle = Mathf.Clamp(angle, -MaxTurnDegrees, MaxTurnDegrees);
-        Quaternion want = Quaternion.AngleAxis(angle, Vector3.up) * _baseRotation;
-        _figure.transform.rotation = Quaternion.RotateTowards(_figure.transform.rotation, want, TurnDegreesPerSecond * Time.deltaTime);
-        if (_aim != null) _aim.SetPositionAndRotation(_aimAt, _baseRotation);   // 응시 상자는 유리 안쪽 그 자리에(몸을 돌려도 따라 돌지 않게)
+        if (NightRun.WindowFaceFled && !_fled) Flee();
     }
 
     /// <summary>창 정면으로 돌아서 창 앞을 가로질러 달아난다(<see cref="StandInExit"/>). 걸음이 없는 대역이면 그냥 지운다.</summary>
@@ -228,43 +167,69 @@ public sealed class WindowFace : MonoBehaviour
     /// </summary>
     public static readonly string[] BlindWindows = { "Interior/Library/JalousieE (6)", "Interior/Library/JalousieE (7)" };
 
-    /// <summary>창(블라인드)에서 바깥으로 떨어져 서는 거리(m) — 서쪽 벽은 두께가 2m라(창틀 안쪽 x≈1.0) 그 밖 유리 너머에 선다.</summary>
-    public const float OutsideDistance = 1.45f;
+    /// <summary>창(블라인드)에서 바깥으로 떨어져 서는 거리(m, 발 자리) — 서쪽 벽은 두께가 2m라 그 밖 유리 너머에 선다.
+    /// 103차 후속: 1.45 → 1.25 — 얼굴이 유리 바로 뒤(약 0.2m)에 붙게.</summary>
+    public const float OutsideDistance = 1.25f;
+
+    /// <summary>103차 후속: 블라인드 면에서 창틀·유리 면까지(m, 바깥쪽). PlayScene 실측 — 블라인드 x 2.07, 창틀 x 1.29.
+    /// 보이는 구멍은 이 면의 유리 칸이라 눈길은 여기를 지난다(옛 계산은 블라인드 면을 지나게 해 비스듬히 보면 얼굴이 창틀 뒤로 숨었다).</summary>
+    public const float GlassInset = 0.78f;
+
+    /// <summary>103차 후속: 창 가운데(문설주)에서 아래 유리 칸 가운데까지(m). PlayScene 실측 — 칸 폭 약 0.28m, 문설주 0.07m.</summary>
+    public const float SashOffset = 0.175f;
+
+    /// <summary>103차 후속: 모형 크기 배율 — 얼굴이 유리 칸(0.28×0.4m)을 거의 채우게.</summary>
+    public const float Scale = 1.3f;
+
+    /// <summary>발 자리에서 얼굴 앞면까지(m, 키운 뒤 대략).</summary>
+    public const float FaceAhead = 0.25f;
+
+    /// <summary>유리 면에서 얼굴까지(m) — 세울 때 눈길을 따라 옆으로 비켜 서는 양을 정한다.</summary>
+    public const float FaceDepth = OutsideDistance - GlassInset - FaceAhead;
 
     /// <summary>블라인드 높이에서 발까지(m, 처음 자리 — 세운 뒤 머리 꼭대기를 블라인드 아랫단에 맞춘다).</summary>
     public const float FeetBelowBlind = 3.47f;
 
     /// <summary>머리 꼭대기가 블라인드 아랫단보다 이만큼(m) 위(음수 = 아래) — 블라인드 앞에 선 눈높이에서 블라인드 아래 유리 칸 가운데에 얼굴이 들어온다.</summary>
-    public const float HeadAboveBlindBottom = -0.02f;   // 94차: −0.2는 얼굴이 유리 칸 아랫단(창턱)에 걸려 반쯤 가렸다 — 칸 가운데로
+    public const float HeadAboveBlindBottom = 0.04f;   // 94차: −0.2는 얼굴이 유리 칸 아랫단(창턱)에 걸려 반쯤 가렸다 · 103차 후속: 1.3배라 정수리를 칸 위 가로살 뒤로 — 눈이 칸 위쪽, 턱이 창턱 위
 
-    /// <summary>창 가운데에서 유리 칸 가운데까지(m). 94차: 0 — PlayScene 실측으로 블라인드마다 아래 유리 칸은 하나(폭 0.8m, 블라인드 가운데)였다. 옛 0.33은 칸 가장자리(창틀 뒤)에 세워 얼굴이 거의 보이지 않았다.</summary>
-    public const float PaneOffset = 0f;
-
-    /// <summary>눈길을 따라 옆으로 비켜 서는 최대(m) — 벽 속으로 들어가지 않게.</summary>
-    public const float MaxSlide = 0.6f;
+    /// <summary>세울 때 그때 눈길을 따라 옆으로 비켜 서는 최대(m) — 칸 밖 창틀 뒤로 가지 않게(103차 후속: 0.6 → 0.25). 세운 뒤에는 옮기지 않는다.</summary>
+    public const float MaxSlide = 0.25f;
 
     private static float s_blindBottom = float.NaN;
 
-    /// <summary>94차(민: 「창밖에 노란 얼굴이 확인이 안 되네」): 원본 색(<see cref="TrueColor"/>, 노출을 덜어 낸 색)에 곱하는 밝기 — 창 너머 어둠에서도 얼굴을 알아보게.</summary>
-    public const float Brightness = 2.4f;
+    /// <summary>103차 후속: 얼굴 전용 조명이 비추는 렌더링 레이어(이 모형만 이 비트를 더 가진다 — 창틀·벽은 비추지 않는다).</summary>
+    public const int FaceLightLayer = 7;
 
-    /// <summary>그 아래 렌더러의 기본 색을 <paramref name="k"/>배로(이 인스턴스만 — 재질 블록).</summary>
-    private static void Brighten(GameObject go, float k)
+    /// <summary>얼굴 전용 조명 세기 — 창 너머 어둠에서도 알아보되 입체가 살게(옆 위에서 비추는 차가운 빛).</summary>
+    public const float FaceLightIntensity = 3f;
+
+    /// <summary>
+    /// 103차 후속(민: 「너무 평면적이고 라이팅 적용이 안 되는 것 같아 이질감」): 94차의 원본 색(Unlit × 2.4)은 빛·그림자가 없어 스티커처럼 떠 보였다 —
+    /// 빛을 받는 재질 그대로 두고, 얼굴 앞 옆 위에 이 모형만 비추는 스포트 조명을 단다(그림자 없음). 모형의 자식이라 몸을 돌려도·달아나도 같이 간다.
+    /// </summary>
+    private static Light AddFaceLight(GameObject go)
     {
-        MaterialPropertyBlock mpb = new MaterialPropertyBlock();
-        foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true))
-        {
-            Material[] mats = r.sharedMaterials;
-            for (int i = 0; i < mats.Length; i++)
-            {
-                Material m = mats[i];
-                if (m == null || !m.HasProperty("_BaseColor")) continue;
-                Color c = m.GetColor("_BaseColor");
-                r.GetPropertyBlock(mpb, i);
-                mpb.SetColor("_BaseColor", new Color(c.r * k, c.g * k, c.b * k, c.a));
-                r.SetPropertyBlock(mpb, i);
-            }
-        }
+        uint bit = 1u << FaceLightLayer;
+        foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true)) r.renderingLayerMask |= bit;
+        Bounds b = Bounds(go);
+        Vector3 face = new Vector3(b.center.x, b.max.y - 0.22f * Scale, b.center.z);
+        GameObject host = new GameObject("창밖 얼굴 조명");
+        host.transform.SetParent(go.transform, false);
+        host.transform.position = face + go.transform.right * 0.4f + Vector3.up * 0.4f + go.transform.forward * 0.9f;
+        host.transform.rotation = Quaternion.LookRotation(face - host.transform.position, Vector3.up);
+        Light light = host.AddComponent<Light>();
+        light.type = LightType.Spot;
+        light.color = new Color(0.78f, 0.85f, 1f);
+        light.intensity = FaceLightIntensity;
+        light.range = 3f;
+        light.spotAngle = 45f;
+        light.innerSpotAngle = 18f;
+        light.shadows = LightShadows.None;
+        UniversalAdditionalLightData data = host.GetComponent<UniversalAdditionalLightData>();
+        if (data == null) data = host.AddComponent<UniversalAdditionalLightData>();
+        data.renderingLayers = bit;
+        return light;
     }
 
     private void Place()
@@ -286,22 +251,16 @@ public sealed class WindowFace : MonoBehaviour
 
         bool blind = !float.IsNaN(s_blindBottom);
         _baseRotation = rot;
-        _follow = blind;
-        _pane = s_pane;
-        _outward = s_outward;
-        _tangent = s_tangent;
         _figure = StandInFactory.Create(StandInId, pos, rot, FinalCues.WindowFaceTarget);
         if (_figure == null) return;
+        _figure.transform.localScale *= Scale;   // 103차 후속: 맞추기(머리 꼭대기·응시 상자) 전에 키운다
         _aim = null;
-        if (blind)
-        {
-            _aim = FitToBlindPane(_figure);
-            if (_aim != null) _aimAt = _aim.position;
-        }
-
+        if (blind) _aim = FitToBlindPane(_figure);
         else if (at != null && at.GazeProxy != null) StandInFactory.ApplyGazeProxy(_figure, at.GazeProxy);
-        TrueColor.Apply(_figure);   // 어두운 창 밖에서도 노란 얼굴이 원래 색으로(사망·놀람 얼굴과 같은 처리)
-        Brighten(_figure, Brightness);   // 94차: 창 너머 어둠 속이라 놀람 얼굴보다 밝게 — 알아볼 수 있게
+        AddFaceLight(_figure);   // 103차 후속: 원본 색(Unlit) 대신 빛을 받는 재질 + 얼굴 전용 조명
+        DoorDuck.Attach(_figure, false);   // 103차 후속: 몸은 그대로, 고개만 플레이어를 따라 돈다(문간 노란 얼굴과 같은 고개 돌림)
+        StandInExit exit = _figure.GetComponent<StandInExit>();
+        if (exit != null) exit.RunFar = false;   // 달아날 때는 옛날처럼 창 앞을 가로질러(멀리 트인 쪽으로 뛰지 않게)
         _figure.name = "창밖 노란 얼굴";
         if (DirectionStage.Verbose) Debug.Log("[WindowFace] 창밖에 노란 얼굴을 세움 @" + pos.ToString("F1"));
     }
@@ -331,7 +290,7 @@ public sealed class WindowFace : MonoBehaviour
             if (c.transform != aim) c.enabled = false;
         }
 
-        Vector3 face = new Vector3(b.center.x, b.max.y - 0.3f, b.center.z);
+        Vector3 face = new Vector3(b.center.x, b.max.y - 0.25f * Scale, b.center.z);
         Vector3 inward = go.transform.forward;   // 안(플레이어 쪽)을 보고 선다
         inward.y = 0f;
         inward.Normalize();
@@ -420,9 +379,9 @@ public sealed class WindowFace : MonoBehaviour
         {
             for (int s = -1; s <= 1; s += 2)
             {
-                Vector3 pane = windows[w].position + tangent * (s * PaneOffset);
-                Vector3 probe = pane;
-                probe.y = s_blindBottom - 0.35f;
+                Vector3 pane = windows[w].position + tangent * (s * SashOffset);   // 103차 후속: 문설주 양옆 유리 칸 둘
+                Vector3 probe = pane + outward * GlassInset;   // 그 칸 유리 면 가운데
+                probe.y = s_blindBottom - 0.22f;
                 float score = (probe - inside).magnitude;
                 if (!LineClear(inside, probe)) score += 100f;   // 가려진 칸은 다른 칸이 모두 가려졌을 때만
                 if (score < bestScore)
@@ -434,17 +393,13 @@ public sealed class WindowFace : MonoBehaviour
         }
 
         // 그 칸 가운데를 지나는 눈길 끝에 선다(문설주 뒤에 숨지 않게).
-        s_pane = bestPane;
-        s_outward = outward;
-        s_tangent = tangent;
         pos = bestPane + outward * OutsideDistance;
-        Vector3 look = bestPane - inside;
+        Vector3 look = bestPane + outward * GlassInset - inside;
         look.y = 0f;
         if (look.sqrMagnitude > 0.01f)
         {
             look.Normalize();
-            Vector3 along = look * (OutsideDistance / Mathf.Max(0.35f, Vector3.Dot(look, outward)));
-            float side = Mathf.Clamp(Vector3.Dot(along, tangent), -MaxSlide, MaxSlide);
+            float side = Mathf.Clamp(Vector3.Dot(look, tangent) / Mathf.Max(0.35f, Vector3.Dot(look, outward)) * FaceDepth, -MaxSlide, MaxSlide);
             pos += tangent * side;
         }
 

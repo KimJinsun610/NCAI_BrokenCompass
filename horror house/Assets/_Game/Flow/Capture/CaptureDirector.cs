@@ -133,15 +133,26 @@ public sealed partial class CaptureDirector : MonoBehaviour
 
     private void OnCaptured(FearAxis axis)
     {
-        if (_running) return;
+        if (_running)
+        {
+            // 103차 최종 QA: 재시작 카드가 떠 있는 동안(밤은 이미 다시 열림) 다시 붙잡히면 옛 — 버려져 밤이 닫힌 채 멈췄다. 끝난 뒤 이어서 돈다.
+            _pendingCapture = true;
+            _pendingAxis = axis;
+            return;
+        }
+
         StartCoroutine(Run(axis));
     }
+
+    private bool _pendingCapture;
+    private FearAxis _pendingAxis;
 
     // ── 붙잡힘 ───────────────────────────────────────────────
 
     private IEnumerator Run(FearAxis axis)
     {
         _running = true;
+        _pendingCapture = false;
         LastFaceId = string.Empty;
 
         if (NightRun.RestartsTonight == 0) _counts.Clear();   // 새 밤의 첫 붙잡힘
@@ -219,6 +230,11 @@ public sealed partial class CaptureDirector : MonoBehaviour
         if (player != null) player.enabled = true;
         if (clock != null) clock.Release(this);
         _running = false;
+        if (_pendingCapture && NightRun.IsCaptured)
+        {
+            _pendingCapture = false;
+            StartCoroutine(Run(_pendingAxis));
+        }
     }
 
     private IEnumerator FadeFromBlack()

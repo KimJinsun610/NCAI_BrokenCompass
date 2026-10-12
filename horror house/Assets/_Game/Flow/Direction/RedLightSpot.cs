@@ -48,6 +48,21 @@ public sealed class RedLightSpot : MonoBehaviour
         get { return s_active; }
     }
 
+    /// <summary>103차 QA 3회: 이 자리 근처(수평 1.2m)의 등을 오늘 초록 등으로 물들였는지 — 조도 강조 등이 고르지 않게.</summary>
+    public bool OwnsLampNear(Vector3 p)
+    {
+        for (int i = 0; i < _tinted.Count; i++)
+        {
+            Renderer r = _tinted[i].Key;
+            if (r == null) continue;
+            Vector3 c = r.bounds.center;
+            float dx = c.x - p.x, dz = c.z - p.z;
+            if (dx * dx + dz * dz < 1.44f) return true;
+        }
+
+        return false;
+    }
+
     /// <summary>오늘 붉은 등 자리(없으면 null).</summary>
     public Vector3? Spot
     {

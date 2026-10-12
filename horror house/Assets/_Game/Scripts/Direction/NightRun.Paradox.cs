@@ -190,7 +190,11 @@ namespace NightDuty
         private static void ParadoxAfterRestore()
         {
             _paradox.ResetEpisode();
-            _unavoidable.ResetEpisode();
+            // 103차 QA 4회: 체크포인트(02:16) 전에 이미 울린 「나가라」 단서는 되돌린 세계에서도 울린 뒤다 — 그 단서는 다시 울리지 않으므로(TensionDirector.ResetToRest) 금지 조건을 남긴다.
+            NightSnapshot from = _checkpoint ?? _nightStart;
+            bool keepArmed = _unavoidableArmedAt >= 0 && from != null && _unavoidableArmedAt < from.StartMinute;
+            _unavoidable.ResetEpisode(keepArmed);
+            if (!keepArmed) _unavoidableArmedAt = -1;
             if (_paradox.Sent && _finalBook != null) _finalBook.MarkTriggered(_paradox.RuleId);
             RefreshRuleCards();   // 되돌린 위반의 얼룩을 지운다
         }

@@ -37,7 +37,7 @@ namespace NightDuty.Tests
             foreach (DutyDef d in DutyCatalog.All)
             {
                 bool free = d.Id == "W2" || d.Id == "W4" || d.Id == "W5" || d.Id == "W15";
-                Assert.AreEqual(free ? 0f : DutyCatalog.LimitSeconds, d.Seconds, d.Id);
+                Assert.AreEqual(free ? 0f : d.Id == "W21" ? DutyCatalog.ExitFlashSeconds : DutyCatalog.LimitSeconds, d.Seconds, d.Id);   // 103차: W21 90초
                 Assert.AreEqual(d.Order, DutyCatalog.MessageText(d, 1, 30f), d.Id);
                 Assert.LessOrEqual(d.Order.Length, d.Id == "W16" ? 33 : 32, d.Id + " 문장은 짧게: " + d.Order);   // 80차: W16은 민 문구 그대로(33자)
             }

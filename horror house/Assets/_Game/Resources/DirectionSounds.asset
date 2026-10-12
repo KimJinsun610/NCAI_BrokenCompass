@@ -127,10 +127,16 @@ MonoBehaviour:
     volume: 0.6
     hits:
     - 2.1831875
-  - key: E.YellowFace.confront
-    clip: {fileID: 8300000, guid: d9849999f25642043aee933aa49c0fd1, type: 3}
+  - key: tree.leave
+    clip: {fileID: 8300000, guid: 83c674ae489702743808c77b3cbab5af, type: 3}
     more: []
-    volume: 0.8
+    volume: 0.55
+    hits:
+    - 5.450896
+  - key: E.YellowFace.confront
+    clip: {fileID: 8300000, guid: 8e1f985fdf43d42468e3c77499de3b56, type: 3}
+    more: []
+    volume: 1
     hits:
     - 0
   - key: E.SuitMan.confront
@@ -330,7 +336,19 @@ MonoBehaviour:
     - 0.6673696
     - 0.64666665
   - key: stinger.corpse
-    clip: {fileID: 8300000, guid: 96a0dad7ec973e543bdd267870f5a261, type: 3}
+    clip: {fileID: 8300000, guid: 32afdd44b88d2244da31614fb21a04b5, type: 3}
+    more: []
+    volume: 1
+    hits:
+    - 0
+  - key: stinger.yellowface
+    clip: {fileID: 8300000, guid: 852aa80738effbb468ddfb2d4f023f9d, type: 3}
+    more: []
+    volume: 1
+    hits:
+    - 0
+  - key: stinger.toiletgirl
+    clip: {fileID: 8300000, guid: 064e3d39fe8abcd459d6400911914efb, type: 3}
     more: []
     volume: 1
     hits:
@@ -763,6 +781,12 @@ MonoBehaviour:
     volume: 0.6
     hits:
     - 2.3241875
+  - key: scare.breath
+    clip: {fileID: 8300000, guid: a73ed955a693d1441b57733c6cd8c940, type: 3}
+    more: []
+    volume: 0.7
+    hits:
+    - 0.1844375
   - key: phone.ring
     clip: {fileID: 8300000, guid: b7ff8f2cefc210a4294194bcf783ace4, type: 3}
     more: []

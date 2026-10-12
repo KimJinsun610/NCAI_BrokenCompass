@@ -38,6 +38,15 @@ namespace NightDuty
         private readonly IFearAxisReader _reader;
         private readonly Band[,] _shown;
         private readonly int[] _peak = new int[WorldAxisCount];
+        private readonly int[] _nightBase = new int[WorldAxisCount];   // 103차 후속: 이번 시도(밤 시작·재시작)를 시작할 때 값
+        private readonly int[] _nightPeak = new int[WorldAxisCount];   // 103차 후속: 이번 시도에서 오른 가장 높은 값
+
+        /// <summary>
+        /// 103차 후속(사용자 결정, 피드백 1번 「감각 연출이 실력과 무관」): 한 밤(시도) 안에서 그 축이 이만큼 오르면 그 밤 동안 연출만 그날 하한보다 한 구간 위.
+        /// 붙잡힘·판정에는 영향이 없다. 다음 밤(재시작 포함)은 다시 그날 하한에서 시작한다.
+        /// 시뮬(2~5일차 밤): 한 구간 오른 밤 숙련 15 · 보통 45 · 미숙 79%(옛 0 · 2 · 32%).
+        /// </summary>
+        public const int NightRiseBoost = 20;
         private Band _dayFloor = Band.Band0;
 
         /// <summary>해석기를 만든다. 초기 도달값은 현재 생존 수치다.</summary>
@@ -51,6 +60,8 @@ namespace NightDuty
             for (int a = 0; a < WorldAxes.Length; a++)
             {
                 _peak[a] = _reader.GetValue(WorldAxes[a]);
+                _nightBase[a] = _peak[a];
+                _nightPeak[a] = _peak[a];
             }
 
             for (int s = 0; s < PatrolSpaces.Length; s++)
@@ -78,6 +89,40 @@ namespace NightDuty
         /// 그날의 일차 하한을 건다. <b>덱을 짜기 전에</b> 부른다 — 카드 자격이 연출 구간을 보기 때문이다.
         /// 하한이 내려가도 이미 올라간 연출 구간은 내려가지 않는다.
         /// </summary>
+        /// <summary>
+        /// 103차 후속: 밤(또는 재시작한 시도)을 시작한다 — 「밤 안 상승」 기준을 지금 값으로 다시 잡고, 지난 밤의 상승으로 올라 있던 연출을 그날 기준으로 되돌린다.
+        /// <see cref="SetDayFloor"/> 뒤에 부른다.
+        /// </summary>
+        public void BeginNight()
+        {
+            for (int a = 0; a < WorldAxes.Length; a++)
+            {
+                _nightBase[a] = _reader.GetValue(WorldAxes[a]);
+                _nightPeak[a] = _nightBase[a];
+            }
+
+            for (int s = 0; s < PatrolSpaces.Length; s++)
+            {
+                SpaceId space = PatrolSpaces[s];
+                for (int a = 0; a < WorldAxes.Length; a++)
+                {
+                    FearAxis axis = WorldAxes[a];
+                    Band from = _shown[(int)space, a];
+                    Band to = Target(axis);
+                    if (to == from) continue;
+                    _shown[(int)space, a] = to;
+                    EventBus.RaiseBandChanged(space, axis, from, to);
+                }
+            }
+        }
+
+        /// <summary>103차 후속: 그 축이 이번 밤 안에서 <see cref="NightRiseBoost"/> 이상 올랐는지.</summary>
+        public bool RoseTonight(FearAxis axis)
+        {
+            int a = AxisSlot(axis);
+            return a >= 0 && _nightPeak[a] - _nightBase[a] >= NightRiseBoost;
+        }
+
         public void SetDayFloor(Band floor)
         {
             _dayFloor = floor;
@@ -113,6 +158,8 @@ namespace NightDuty
                 int restored = reached != null && a < reached.Length ? reached[a] : current;
                 // 도달값은 적어도 지금 생존 수치 이상이어야 한다(재시작 보정이 스냅샷보다 높게 시작할 일은 없지만 방어).
                 _peak[a] = Math.Max(restored, current);
+                _nightBase[a] = current;   // 103차 후속: 되돌린 시도는 「밤 안 상승」도 처음부터
+                _nightPeak[a] = current;
             }
 
             for (int s = 0; s < PatrolSpaces.Length; s++)
@@ -146,7 +193,10 @@ namespace NightDuty
                 return Bands.OfAxis(axis, _reader.GetValue(axis));
             }
 
-            return Bands.Higher(Bands.Of(_peak[a]), _dayFloor);
+            Band target = Bands.Higher(Bands.Of(_peak[a]), _dayFloor);
+            // 103차 후속: 이번 밤 안에서 크게 올랐으면 그 밤 동안 그날 하한보다 한 구간 위(연출만).
+            if (_nightPeak[a] - _nightBase[a] >= NightRiseBoost) target = Bands.Higher(target, (Band)Math.Min((int)Band.Band4, (int)_dayFloor + 1));
+            return target;
         }
 
         /// <summary>공간에 표시 중인 구간. 순찰 공간이 아니면 <see cref="Target"/>.</summary>
@@ -175,6 +225,8 @@ namespace NightDuty
             {
                 _peak[a] = value;
             }
+
+            if (value > _nightPeak[a]) _nightPeak[a] = value;   // 103차 후속
 
             for (int s = 0; s < PatrolSpaces.Length; s++)
             {

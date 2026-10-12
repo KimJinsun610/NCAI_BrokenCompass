@@ -269,7 +269,114 @@ public sealed class DirectionStage : MonoBehaviour
             return;
         }
 
+        if (e.SourceId == ProgramCatalog.PeopleTree && HumanTreeGrowth.Active != null)
+        {
+            // 104차(민: 「현관에 있는 나무와 사람 나무 조우를 합쳐줘」): 새 나무를 세우지 않는다 — 현관 나무가 안 보는 사이 복도로 나온다(TreeSpots가 고른 자리).
+            // 다시 세우기(오래 못 봄)면 지금 자리에서 연출이 붙인 것만 떼고, 안 보일 때 새 자리로 옮긴다.
+            Presented old = TakePresented(e.SourceId);
+            if (old != null && HumanTreeGrowth.Owns(old.Go)) Release(old.Go);
+            else if (old != null && old.Go != null) Destroy(old.Go);
+            StopPending(e.SourceId);
+            string treeId = e.SourceId;
+            _pendingPresent[e.SourceId] = StartCoroutine(TreeWhenHidden(e.SourceId, (tree, spot) => PresentTree(treeId, script, tree, spot)));
+            return;
+        }
+
         PresentNow(e, script);
+    }
+
+    private void StopPending(string id)
+    {
+        Coroutine waiting;
+        if (!_pendingPresent.TryGetValue(id, out waiting)) return;
+        _pendingPresent.Remove(id);
+        if (waiting != null) StopCoroutine(waiting);
+    }
+
+    /// <summary>104차: 사람 나무 — 처음 이만큼(초)은 플레이어 앞쪽 자리만 기다린다(앞에서 마주치게). 그 뒤로는 뒤·옆도 — 돌아보면 서 있다.</summary>
+    public const float TreeAheadWait = 6f;
+
+    /// <summary>104차: 이만큼(초) 못 고르면 플레이어에게서 가려진 자리(모퉁이 너머)도 — 걸어가다 마주친다.</summary>
+    public const float TreeSightWait = 20f;
+
+    /// <summary>104차: 나무 자리를 다시 고르는 간격(초).</summary>
+    private const float TreePollSeconds = 0.25f;
+
+    /// <summary>104차: 사람 나무 조우의 마지막 자리 고르기 결과(검수용).</summary>
+    public static string LastTreePick { get; private set; }
+
+    /// <summary>
+    /// 104차: 현관 나무를 복도로 — 나무가 지금 안 보이고(현관에서 보고 있으면 기다린다), 고른 자리가 화면 밖일 때 <paramref name="place"/>. 보는 앞에서 툭 나타나지 않는다.
+    /// 처음 <see cref="TreeAheadWait"/>초는 앞쪽 자리만, 그 뒤로는 뒤·옆도, <see cref="TreeSightWait"/>초 뒤로는 모퉁이 너머도. 중단·정리(<see cref="Cleanup"/>)가 멈춘다.
+    /// </summary>
+    private IEnumerator TreeWhenHidden(string id, Action<HumanTreeGrowth, TreeSpots.Spot> place)
+    {
+        float waited = 0f;
+        WaitForSeconds poll = new WaitForSeconds(TreePollSeconds);
+        while (NightRun.IsNightActive && !NightRun.IsCaptured)
+        {
+            HumanTreeGrowth tree = HumanTreeGrowth.Active;
+            if (tree == null) break;
+            Camera cam = Camera.main;
+            Transform root = PlayerRoot();
+            if (cam != null && root != null && !ViolationScare.Busy && DeathCutscene.Playing == null && !tree.SeenNow)
+            {
+                TreeSpots.Spot spot;
+                if (PickTreeSpot(tree, cam, root, waited >= TreeAheadWait, waited < TreeSightWait, true, out spot))
+                {
+                    _pendingPresent.Remove(id);
+                    place(tree, spot);
+                    yield break;
+                }
+            }
+
+            waited += TreePollSeconds;
+            yield return poll;
+        }
+
+        _pendingPresent.Remove(id);
+    }
+
+    /// <summary>104차: 자리 고르기 — <paramref name="anyDirection"/>가 아니면 앞쪽만, <paramref name="sight"/>면 플레이어에게서 트인 자리만, <paramref name="hidden"/>이면 화면 밖인 자리만.</summary>
+    private static bool PickTreeSpot(HumanTreeGrowth tree, Camera cam, Transform root, bool anyDirection, bool sight, bool hidden, out TreeSpots.Spot spot)
+    {
+        Transform own = tree.Tree != null ? tree.Tree.transform : null;
+        int valid;
+        Func<TreeSpots.Spot, bool> accept = null;
+        if (hidden) accept = s => TreeSpots.Hidden(s.Floor, s.Rotation, s.Height, cam, own);
+        if (!TreeSpots.Pick(root, cam.transform.forward, tree.WantLength, own, !anyDirection, sight, accept, out spot, out valid)) return false;
+        LastTreePick = (spot.Ahead ? "앞" : "뒤·옆") + (sight ? "" : "(모퉁이 너머 허용)") + " " + spot.Floor.ToString("F1") + " 거리 " + spot.Distance.ToString("F1") + " 키 " + spot.Height.ToString("F2") + " 통로 " + spot.Passage.ToString("F2") + " (맞는 자리 " + valid + ")";
+        return true;
+    }
+
+    /// <summary>104차: 대면이 먼저 왔을 때 — 이미 복도면 그 나무, 아니면 지금(보이든 말든) 고른 자리로 옮긴 나무. 못 고르면 null(옛 대역으로).</summary>
+    private static GameObject TreeNow(EncounterScript script)
+    {
+        HumanTreeGrowth tree = HumanTreeGrowth.Active;
+        if (tree == null) return null;
+        if (tree.Where == HumanTreeGrowth.Place.Corridor && tree.Tree != null)
+        {
+            Transform t = tree.Tree.transform;
+            if (tree.Returning) tree.ComeOut(t.position, t.rotation, tree.Length, script.AnchorId);   // 돌아가던 참 — 그 자리에서 다시(기준점 다시 붙임)
+            return tree.Tree;
+        }
+        Camera cam = Camera.main;
+        Transform root = PlayerRoot();
+        TreeSpots.Spot spot;
+        if (cam == null || root == null || !PickTreeSpot(tree, cam, root, true, true, false, out spot)) return null;
+        return tree.ComeOut(spot.Floor, spot.Rotation, spot.Height, script.AnchorId);
+    }
+
+    private void PresentTree(string id, EncounterScript script, HumanTreeGrowth tree, TreeSpots.Spot spot)
+    {
+        GameObject go = tree.ComeOut(spot.Floor, spot.Rotation, spot.Height, script.AnchorId);
+        if (go == null) return;
+        Presented pre = new Presented();
+        pre.Go = go;
+        pre.At = spot.Floor;
+        _presented[id] = pre;
+        SightProbe.Attach(go, id, () => NightRun.EncounterSeen(id));
+        if (Verbose) Debug.Log("[Direction] 사람 나무 — 현관 나무가 복도로(보기를 기다림) " + LastTreePick);
     }
 
     /// <summary>103차: 소년 자리가 보이지 않을 때까지 기다리는 대기(조우 ID별). 중단·정리 때 멈춘다.</summary>
@@ -386,7 +493,13 @@ public sealed class DirectionStage : MonoBehaviour
     {
         Presented pre = TakePresented(id);
         if (pre == null) return;
-        if (HallFigure.Owns(pre.Go) || WindowFace.Owns(pre.Go)) Release(pre.Go);   // 70차: 복도 끝 모형 · 84차: 창밖 노란 얼굴은 그대로 둔다
+        if (HumanTreeGrowth.Owns(pre.Go))
+        {
+            // 104차: 못 보고 끝난 사람 나무 — 지우지 않고 안 보일 때 현관으로(마주친 것으로 치지 않는다).
+            Release(pre.Go);
+            HumanTreeGrowth.Active.GoHome(false);
+        }
+        else if (HallFigure.Owns(pre.Go) || WindowFace.Owns(pre.Go)) Release(pre.Go);   // 70차: 복도 끝 모형 · 84차: 창밖 노란 얼굴은 그대로 둔다
         else if (pre.Go != null) Destroy(pre.Go);
         for (int i = pre.Holder.Undo.Count - 1; i >= 0; i--)
         {
@@ -419,6 +532,22 @@ public sealed class DirectionStage : MonoBehaviour
     {
         EncounterScript script = EncounterScripts.Find(e.SourceId);
         if (script == null) return;
+
+        if (e.SourceId == ProgramCatalog.PeopleTree && HumanTreeGrowth.Active != null && HumanTreeGrowth.Active.Where != HumanTreeGrowth.Place.Corridor
+            && !_presented.ContainsKey(e.SourceId))
+        {
+            // 104차: 사람 나무는 「있음」 조우라 세워 두기(Present) 없이 곧장 대면이 온다 — 옛 대역은 그 순간 플레이어 앞 8m에 툭 나타났다.
+            // 현관 나무가 안 보는 사이 복도로 나온 뒤에 대면을 잇는다(그동안 H1 기준점이 없어 판정도 없다).
+            StopPending(e.SourceId);
+            DirectionEvent held = e;
+            _pendingPresent[e.SourceId] = StartCoroutine(TreeWhenHidden(e.SourceId, (tree, spot) =>
+            {
+                if (tree.ComeOut(spot.Floor, spot.Rotation, spot.Height, script.AnchorId) == null) return;
+                if (Verbose) Debug.Log("[Direction] 사람 나무 — 현관 나무가 안 보는 사이 복도로, 대면 " + LastTreePick);
+                Confront(held);
+            }));
+            return;
+        }
 
         Presented pre = TakePresented(e.SourceId);   // 61차: 세워 둔 대역을 이어 쓴다
         Cleanup(e.SourceId, DirectionPhase.Aborted);
@@ -474,6 +603,10 @@ public sealed class DirectionStage : MonoBehaviour
                 go = pre.Go;
                 at = pre.At;
                 StartWalk(script.StageAnchor, go, at);
+            }
+            else if (e.SourceId == ProgramCatalog.PeopleTree && (go = TreeNow(script)) != null)
+            {
+                at = go.transform.position;   // 104차: 세워 두기 전에 대면이 왔다(드묾) — 현관 나무를 지금 고른 자리로
             }
             else
             {
@@ -1449,10 +1582,12 @@ public sealed class DirectionStage : MonoBehaviour
     private void OnRuleCue(DirectionEvent e)
     {
         Staged st = Stage(e.SourceId);
+        Vector3 doorAt = Vector3.zero;
         switch (e.SourceId)
         {
             case "H2":
-                OpenDoorAhead();
+                OpenDoorAhead(out doorAt);
+                if (doorAt == Vector3.zero) return;   // 103차 QA 3회: 열 문이 없으면 문 삐걱도 없다(옛: 플레이어 앞 3.5m 벽 너머에서 거짓 단서)
                 break;
             case "C4":
             {
@@ -1499,7 +1634,79 @@ public sealed class DirectionStage : MonoBehaviour
             }
         }
 
-        PlaySound(e.SourceId + ".cue", PointOr(e.Point, 3f));
+        // 103차(사용자: 「방향이 구분 안 되는 효과음 — 문 자동으로 열리는 소리 등」): 수칙 단서의 점은 플레이어 발밑(TensionDirector가 _feet를 싣는다)이라
+        // 유리 깨짐·책장 넘김·칸 안 부스럭·문 삐걱이 모두 머리 위에서 났다 — 소리 나는 물건 쪽(연 문 · 칸 · 그 방의 떨어진 자리)에서 낸다.
+        PlaySound(e.SourceId + ".cue", CueSoundPoint(e, doorAt));
+    }
+
+    /// <summary>
+    /// 103차: 수칙 단서 소리를 낼 자리 — H2는 연 문, 판정 대상 구역(T2 칸 등)이 있으면 그 가운데, C1은 1-3 교실 안, 그 밖에는 그 공간 안에서 플레이어와
+    /// <see cref="CueNear"/>~<see cref="CueFar"/>m 떨어진 자리. 못 찾으면 플레이어 앞 <see cref="CueNear"/>m.
+    /// </summary>
+    private Vector3 CueSoundPoint(DirectionEvent e, Vector3 doorAt)
+    {
+        float ear = PlayerGroundY() + 1.4f;   // 귀 높이(루트는 캡슐 가운데라 바닥 + 0.85m)
+        if (doorAt != Vector3.zero) return doorAt + Vector3.up * 1.2f;
+        if (e.SourceId == "K2" && CctvSystem.Active != null && CctvSystem.Active.ScreenCenter != Vector3.zero) return CctvSystem.Active.ScreenCenter;   // 103차 QA: CCTV 잡음은 모니터에서
+        RuleTriggerScript script = RuleTriggers.Find(e.SourceId);
+        Bounds b;
+        if (script != null && !string.IsNullOrEmpty(script.Target) && Zones() != null && Zones().TryGetSignalZone(script.Target, out b))
+        {
+            return new Vector3(b.center.x, ear, b.center.z);
+        }
+
+        SpaceId space = e.SourceId == "C1" ? SpaceId.Classroom_1_3 : e.Space;
+        if (space == SpaceId.Classroom)
+        {
+            SpaceId here = ClassroomHere();
+            space = here != SpaceId.None ? here : SpaceId.Classroom_1_3;
+        }
+
+        if (space != SpaceId.None && space != SpaceId.Corridor && Zones() != null && Zones().TryGetSpaceBox(space, out b))
+        {
+            Vector3 p;
+            if (PointAwayIn(b, ear, out p)) return p;
+            return new Vector3(b.center.x, ear, b.center.z);   // 103차 QA 3회: 좁은 방 — 방 밖(플레이어 앞 3.5m) 대신 방 가운데 귀 높이
+        }
+
+        return PointOr(Vector3.zero, CueNear);
+    }
+
+    /// <summary>103차: 수칙 단서 소리 — 플레이어에게서 이만큼은 떨어진 곳(m).</summary>
+    private const float CueNear = 3.5f;
+
+    /// <summary>103차: 수칙 단서 소리 — 플레이어에게서 이보다 멀지 않은 곳(m).</summary>
+    private const float CueFar = 8f;
+
+    /// <summary>103차: 상자 안(가장자리 0.6m 안쪽) 귀 높이의 점 중 플레이어에게서 <see cref="CueNear"/>~<see cref="CueFar"/>m인 곳. 없으면 가장 먼 점.</summary>
+    private static bool PointAwayIn(Bounds box, float ear, out Vector3 point)
+    {
+        point = Vector3.zero;
+        Vector3 feet = PlayerFeet();
+        float bestGap = float.MaxValue;
+        for (int i = 0; i < 16; i++)
+        {
+            Vector3 p = new Vector3(
+                UnityEngine.Random.Range(box.min.x + 0.6f, Mathf.Max(box.min.x + 0.6f, box.max.x - 0.6f)),
+                ear,
+                UnityEngine.Random.Range(box.min.z + 0.6f, Mathf.Max(box.min.z + 0.6f, box.max.z - 0.6f)));
+            float d = SensingRules.HorizontalDistance(p, feet);
+            if (d >= CueNear && d <= CueFar)
+            {
+                point = p;
+                return true;
+            }
+
+            // 103차 QA: 범위 안이 없으면 범위에 가장 가까운 점(옛: 가장 먼 점 — 방 밖에서 반대쪽 구석·벽 너머로 갔다).
+            float gap = Mathf.Abs(d - Mathf.Clamp(d, CueNear, CueFar));
+            if (gap < bestGap)
+            {
+                bestGap = gap;
+                point = p;
+            }
+        }
+
+        return bestGap < float.MaxValue && SensingRules.HorizontalDistance(point, feet) > 1.5f;
     }
 
     /// <summary>
@@ -1510,8 +1717,9 @@ public sealed class DirectionStage : MonoBehaviour
     /// <summary>H2 연출이 먼저 고르는 문 — 레벨에서 자동 개방용으로 지정한 복도 문.</summary>
     private const string AutoOpenDoorId = "corridor.door.auto";
 
-    private void OpenDoorAhead()
+    private void OpenDoorAhead(out Vector3 doorAt)
     {
+        doorAt = Vector3.zero;
         Transform root = PlayerRoot();
         if (root == null) return;
         Vector3 fwd = root.forward;
@@ -1551,6 +1759,7 @@ public sealed class DirectionStage : MonoBehaviour
         DoorHandle chosen = DoorHandle.Of(best);
         best.BeginDirectionMove(2f);
         chosen.Open();
+        doorAt = chosen.Owner != null ? chosen.Owner.transform.position : best.transform.position;   // 103차: 삐걱 소리는 그 문에서
         if (Verbose) Debug.Log("[Direction] H2: 문 자동 개방 — " + best.DoorId);
     }
 
@@ -1739,6 +1948,14 @@ public sealed class DirectionStage : MonoBehaviour
             {
                 if (phase == DirectionPhase.Aborted) cue.Abort();
                 else cue.SetPhase(phase);
+            }
+
+            // 104차: 사람 나무 = 현관 나무 — 지우지 않고 H1 기준점을 떼어 안 보일 때 현관으로 돌려보낸다(붙잡힘·재시작은 HumanTreeGrowth가 그 밤에 맞게 다시 세운다).
+            if (HumanTreeGrowth.Owns(go))
+            {
+                Release(go);
+                HumanTreeGrowth.Active.GoHome(true);
+                continue;
             }
 
             // 84·85차: 창밖 노란 얼굴은 그 밤 내내 창밖에서 바라본다(2초 응시하면 WindowFace가 달아나게 한다) — 걸어 나가지도, 지워지지도 않는다.

@@ -63,7 +63,8 @@ public sealed class TabletBridge : MonoBehaviour
     private readonly Dictionary<string, string> _orderTexts = new Dictionary<string, string>();
     private readonly Dictionary<string, string> _dutyMessages = new Dictionary<string, string>();   // 문자 ID → 지시 ID(W1~W6)
     private readonly Dictionary<string, string> _dutyIssued = new Dictionary<string, string>();   // 74차: 지시 ID → 그 지시 문자 ID(완료하면 그 문자에 취소선)
-    private readonly Dictionary<string, string> _dutyIssuedText = new Dictionary<string, string>();   // 74차: 지시 문자 ID → 본문
+    private readonly Dictionary<string, string> _dutyIssuedText = new Dictionary<string, string>();
+    private readonly Dictionary<int, string> _hourMessages = new Dictionary<int, string>();   // 103차 후속: 정시 → 그 알림 문자 ID   // 74차: 지시 문자 ID → 본문
     private TabletMessageList _hooked;
 
     /// <summary>시각 없음(TabletMessageList: -1). 74차(민: 「타임라인도 지워줘」)에 모든 문자에 썼으나 92차(민: 「근무 메시지에서 타임스탬프는 찍혀있도록」)부터 점검표에만.</summary>
@@ -474,7 +475,9 @@ public sealed class TabletBridge : MonoBehaviour
             string issued, issuedText;
             if (message.CardId != null && _dutyIssued.TryGetValue(message.CardId, out issued) && _dutyIssuedText.TryGetValue(issued, out issuedText) && Contains(issued))
             {
-                messages.Add(issued, NightRun.StrikeOpen + issuedText + NightRun.StrikeClose, NoTime);   // 같은 ID — 본문만 고친다(알람 없음)
+                // 103차 후속: 신뢰가 오른 완료(회차에 두 번만 — NightRun.TrustLinesPerRun)는 취소선 아래에 「근무 평가에 반영되었습니다.」를 덧붙인다(옛: 코어가 붙여도 화면에 안 보였다).
+                string trust = message.Text.Contains(DutyCatalog.TrustLine) ? "\n" + DutyCatalog.TrustLine : string.Empty;
+                messages.Add(issued, NightRun.StrikeOpen + issuedText + NightRun.StrikeClose + trust, NoTime);   // 같은 ID — 본문만 고친다(알람 없음)
             }
 
             return;
@@ -499,7 +502,12 @@ public sealed class TabletBridge : MonoBehaviour
         _messageSerial++;
         // 92차: 받은 시각이 앞에 찍히므로 본문에서 시각은 뺀다(「02:00  [정시] 근무 종료까지 2시간」).
         string text = "[정시] " + (left > 0 ? "근무 종료까지 " + left + "시간" : "근무 종료");
-        messages.Add("clock.hour." + hour + "." + _messageSerial, text, hour * 60);
+        // 103차 후속: 00:00 재시작이면 같은 정시가 다시 울려 두 통이 됐다 — 그 정시의 옛 알림을 지우고 새로 넣는다.
+        string old;
+        if (_hourMessages.TryGetValue(hour, out old) && Contains(old)) messages.Remove(old);
+        string id = "clock.hour." + hour + "." + _messageSerial;
+        messages.Add(id, text, hour * 60);
+        _hourMessages[hour] = id;
     }
 
     private void OnMessageSent(ParadoxMessage message)

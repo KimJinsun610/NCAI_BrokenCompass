@@ -34,6 +34,62 @@ public static class StandInFactory
         return Create(id, floorPoint, rot, anchorId);
     }
 
+    /// <summary>
+    /// 103차(사용자: 「인체 나무에 어색한 조명 — 어둠에선 어둡게, 손전등을 비추면 라이팅이 적용되게」): 그 아래 렌더러 재질(인스턴스)의 발광을 끈다.
+    /// 사람 나무 모델(김진선님 Human_Tree 재질)은 발광 1·1·1이 켜져 있어 어둠 속에서도 스스로 밝았다 — 프리팹·재질은 고치지 않고 인스턴스만. 바꾼 재질 수.
+    /// </summary>
+    public static int KillGlow(GameObject go)
+    {
+        int n = 0;
+        if (go == null) return 0;
+        foreach (Renderer r in go.GetComponentsInChildren<Renderer>(true))
+        {
+            if (!(r is SkinnedMeshRenderer) && !(r is MeshRenderer)) continue;
+            bool any = false;
+            Material[] shared = r.sharedMaterials;
+            for (int i = 0; i < shared.Length; i++)
+            {
+                if (shared[i] != null && shared[i].HasProperty("_EmissionColor") && (shared[i].IsKeywordEnabled("_EMISSION") || shared[i].GetColor("_EmissionColor").maxColorComponent > 0f)) any = true;
+            }
+
+            if (!any) continue;
+            // 103차 QA: 원본 재질마다 발광을 끈 사본 하나를 캐시해 sharedMaterials로 끼운다 — r.materials 인스턴스는 나무를 지울 때 함께 지워지지 않아 밤마다 쌓였다.
+            Material[] mats = new Material[shared.Length];
+            for (int i = 0; i < shared.Length; i++)
+            {
+                mats[i] = Unlit(shared[i]);
+                if (mats[i] != shared[i]) n++;
+            }
+
+            r.sharedMaterials = mats;
+        }
+
+        return n;
+    }
+
+    private static readonly System.Collections.Generic.Dictionary<Material, Material> s_unlit = new System.Collections.Generic.Dictionary<Material, Material>();
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetUnlit()
+    {
+        s_unlit.Clear();
+    }
+
+    /// <summary>103차 QA: 발광을 끈 사본(원본 재질마다 하나, 캐시). 발광이 없는 재질은 그대로.</summary>
+    private static Material Unlit(Material m)
+    {
+        if (m == null || !m.HasProperty("_EmissionColor")) return m;
+        if (!m.IsKeywordEnabled("_EMISSION") && m.GetColor("_EmissionColor").maxColorComponent <= 0f) return m;
+        Material copy;
+        if (s_unlit.TryGetValue(m, out copy) && copy != null) return copy;
+        copy = new Material(m) { name = m.name + " (발광 끔)" };
+        copy.SetColor("_EmissionColor", Color.black);
+        copy.DisableKeyword("_EMISSION");
+        copy.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+        s_unlit[m] = copy;
+        return copy;
+    }
+
     /// <summary>정해 둔 자리·방향(<see cref="StageAnchor"/>)에 세운다.</summary>
     public static GameObject Create(string id, Vector3 floorPoint, Quaternion rotation, string anchorId)
     {
@@ -51,6 +107,7 @@ public static class StandInFactory
         }
 
         go.transform.rotation = rotation;
+        if (id == "mob.tree") KillGlow(go);   // 103차(사용자: 「인체 나무의 어색한 조명」): 어둠에선 어둡게, 손전등에만
         Dress(go, NeedsGazeCollider(id), anchorId);
         ProceduralIdle.AttachFor(id, go);   // 71차: 노란 얼굴·창밖 남자·앉은 소년의 아주 작은 숨·머리 움직임
         return go;

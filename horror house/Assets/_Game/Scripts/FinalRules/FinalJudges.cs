@@ -88,6 +88,7 @@ namespace NightDuty
                 case "C3": return new StayStillJudge(FinalCues.BellStart, FinalCues.Bell);   // 103차: 소년 단서 → 종(끝)이 아니라 수업 종이 울리는 동안
                 case "C4": return new LightOffJudge(FinalCues.RedLight, LightOffJudge.GraceSeconds);   // 52차: 붉은 불빛 아래에서는 손전등을 끈다
                 case "C5": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
+                case "C6": return new DwellSpaceJudge(SpaceId.Classroom, ProgramCatalog.ClassroomDwellRealSeconds);   // 103차: 교실에 실제 1분(게임 24분) 이어 머물면 위반
                 case "S1": return new NoPassageJudge(FinalCues.S1Center);
                 case "S2": return new LeaveAfterCueJudge(FinalCues.Glass, ScienceLeaveSeconds);   // 79차 민: 「5초로 하자」   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
                 case "S3": return new BeamAvoidJudge(FinalCues.ModelTarget, BeamAvoidJudge.LimitSeconds, ProgramCatalog.ModelRush);   // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」(미션처럼 읽히던 50차 문구 폐기)
@@ -1285,6 +1286,7 @@ namespace NightDuty
         private readonly SpaceId _space;
         private readonly float _limit;
         private float _dwell;
+        private int _serial = -1;
 
         /// <summary>만든다.</summary>
         public DwellSpaceJudge(SpaceId space, float limitSeconds)
@@ -1295,6 +1297,13 @@ namespace NightDuty
 
         internal override void Observe(in JudgeSignal s, FinalWorld w)
         {
+            // 103차 QA: 판정을 쉬는 동안(이완 구간) 나갔다 들어왔으면 연속이 아니다 — 옛: 쉬기 전 머문 시간에 이어 붙어 C6가 10초 만에 걸렸다.
+            if (w.SpaceSerial != _serial)
+            {
+                _serial = w.SpaceSerial;
+                _dwell = 0f;
+            }
+
             if (w.Space != _space)
             {
                 _dwell = 0f;
@@ -1307,7 +1316,7 @@ namespace NightDuty
             if (_dwell >= _limit)
             {
                 _dwell = 0f;
-                Violate("경비실에 " + _limit + "초 머묾");
+                Violate((_space == SpaceId.SecurityRoom ? "경비실" : _space == SpaceId.Classroom ? "교실" : _space.ToString()) + "에 " + _limit + "초 머묾");
             }
         }
 

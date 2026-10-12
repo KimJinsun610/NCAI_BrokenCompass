@@ -307,6 +307,12 @@ public sealed class BodyMeter : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 103차(사용자: 「전화기 호흡 소리가 플레이어에게도 가끔 들림 — 빼줘」): 머뭇거릴 때 등 뒤에서 들리던 먼 숨(<c>body.breath</c> = 전화 숨과 같은 거친 숨 판)을 끈다.
+    /// 옛 동작(53·56·61차)으로 돌리려면 true.
+    /// </summary>
+    public static readonly bool PassiveBreath = false;
+
     /// <summary>이만큼 제자리(0.6m 안)에 있으면 「소극적」으로 본다(초) — 53차.</summary>
     public const float PassiveSeconds = 12f;
 
@@ -337,7 +343,7 @@ public sealed class BodyMeter : MonoBehaviour
             }
         }
 
-        if (tier <= 0 || BodyRules.BreathInterval(tier) <= 0f)
+        if (!PassiveBreath || tier <= 0 || BodyRules.BreathInterval(tier) <= 0f)
         {
             _breathTimer = -1f;
             return;

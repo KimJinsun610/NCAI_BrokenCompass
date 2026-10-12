@@ -20,6 +20,9 @@ public sealed class PhoneRinger : MonoBehaviour
     /// <summary>받았을 때 수화기 너머 소리.</summary>
     public const string BreathSound = "phone.breath";
 
+    /// <summary>103차: 수화기 숨소리 3D 최소 거리(m) — 받는 자리(1.8m 안)에서 줄지 않게.</summary>
+    public const float BreathMinDistance = 2f;
+
     /// <summary>받기 안내.</summary>
     public const string AnswerLine = "[E] 전화 받기";
 
@@ -116,9 +119,9 @@ public sealed class PhoneRinger : MonoBehaviour
         Debug.Log("[전화기] K5 전화 받음 — 벨 " + Rings + "번째", this);
         NightRun.Send(JudgeSignal.PhoneAnswer());
         Stop();
-        Camera cam = Camera.main;
-        Vector3 ear = cam != null ? cam.transform.position + cam.transform.right * 0.15f : transform.position;
-        DirectionStage.PlaySound(BreathSound, ear, 1f, 0f);   // 80차(민: 「숨소리가 오른쪽에서만 들린다」): 수화기 너머 소리는 2D 가운데로
+        // 103차(사용자: 「전화기 호흡 소리 — 방향이 구분이 안 됨」): 2D 가운데(80차)였던 것을 전화기 자리의 3D로 — 수화기 쪽에서 들린다.
+        // (80차 「오른쪽에서만 들린다」는 귀 오른쪽 0.15m에 둔 탓이었다 — 전화기는 조준한 정면에 있다.)
+        DirectionStage.PlaySound(BreathSound, transform.position + Vector3.up * 0.1f, BreathMinDistance, 1f);
     }
 
     private void Stop()

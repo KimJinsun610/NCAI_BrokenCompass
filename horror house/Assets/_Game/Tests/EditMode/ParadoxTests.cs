@@ -77,7 +77,9 @@ namespace NightDuty.Tests
             for (int seed = 0; seed < 30; seed++)
             {
                 ParadoxPlan plan = Sent(seed).Plan(3, Band.Band3, Deck("K3", "C1"));
-                Assert.AreEqual("C1", plan.Ambiguous, "씨앗 " + seed);
+                Assert.AreNotEqual("K3", plan.Ambiguous, "씨앗 " + seed);
+                // 103차 후속: 구간 3부터는 처음 보는 수칙도 변조한다 — C1이 변조되면 같은 수칙에 역설을 걸지 않는다.
+                if (plan.Tampered != "C1") Assert.AreEqual("C1", plan.Ambiguous, "씨앗 " + seed);
             }
         }
 
@@ -103,15 +105,26 @@ namespace NightDuty.Tests
         public void 변조는_이전_밤에_본_수칙만_고른다()
         {
             ParadoxPlanner p = Sent(3);
-            ParadoxPlan first = p.Plan(2, Band.Band3, Deck("H2", "C1", "G1"));
+            ParadoxPlan first = p.Plan(2, Band.Band2, Deck("H2", "C1", "G1"));   // 103차: 미세 변조는 구간 2부터(TamperMinBand)
             Assert.IsNull(first.Tampered, "처음 보는 수칙은 변조하지 않는다");
 
-            ParadoxPlan second = p.Plan(3, Band.Band3, Deck("H2", "C1", "G1"));
+            ParadoxPlan second = p.Plan(3, Band.Band2, Deck("H2", "C1", "G1"));
             Assert.IsNotNull(second.Tampered);
             Assert.AreNotEqual(second.Ambiguous, second.Tampered, "같은 수칙에 역설과 변조를 함께 걸지 않는다");
-            Assert.AreEqual(ParadoxCatalog.Subtle(ProgramCatalog.Rule(second.Tampered).Text), second.TamperText, "구간 3은 미세 변조");
+            Assert.AreEqual(ParadoxCatalog.Subtle(ProgramCatalog.Rule(second.Tampered).Text), second.TamperText, "구간 2는 미세 변조(103차, 옛 3)");
             StringAssert.EndsWith("?.", second.TamperText);
             Assert.IsNull(second.Blacked, "검은 줄은 구간 4만");
+        }
+
+        [Test]
+        public void 신뢰가_높으면_처음_보는_수칙도_변조돼_나온다()
+        {
+            // 103차 후속(사용자: 「변조는 수칙이 처음 등장해도 신뢰가 높다면 변조돼서 처음 등장할 수 있는 게 원래 의도」)
+            ParadoxPlanner p = Sent(3);
+            ParadoxPlan plan = p.Plan(3, Band.Band3, Deck("H2", "C1", "G1"));
+            Assert.IsNotNull(plan.Tampered, "구간 3(붕괴형)부터는 처음 보는 수칙도");
+            Assert.AreEqual(ParadoxCatalog.Find(plan.Tampered).Variant, plan.TamperText);
+            Assert.AreEqual(ParadoxPlanner.CollapseMinBand, ParadoxPlanner.UnseenTamperMinBand);
         }
 
         [Test]
@@ -141,8 +154,8 @@ namespace NightDuty.Tests
                 if (Sent(seed).Plan(3, Band.Band1, Deck("H2"), s => false).WillSend) without++;
             }
 
-            Assert.That(withAnomaly, Is.InRange(260, 340), "75%");
-            Assert.That(without, Is.InRange(60, 140), "25%");
+            Assert.That(withAnomaly, Is.InRange(330, 390), "90%(103차, 옛 75%)");
+            Assert.That(without, Is.InRange(160, 240), "50%(103차, 옛 25%)");
         }
 
         // ── 안전한 읽기 ─────────────────────────────────────────
@@ -267,7 +280,9 @@ namespace NightDuty.Tests
             Assert.IsTrue(NightRun.DebugSendParadox(id));
             Assert.AreEqual(1, messages);
             Assert.AreEqual(id, got.CardId);
-            Assert.AreEqual(ParadoxCatalog.Find(id).Message, got.Text);
+            // 103차 QA 3회: K2 문구는 그날 빈 방 채널을 채운다(「CAM{0}」) — 덱 뽑기에 따라 K2가 걸리면 원문과 다르다(무작위 실패).
+            if (id == "K2") StringAssert.StartsWith("공실 CAM", got.Text);
+            else Assert.AreEqual(ParadoxCatalog.Find(id).Message, got.Text);
             Assert.IsTrue(NightRun.FinalRules.Judge(id).Triggered);
             Assert.IsTrue(NightRun.Paradoxes.SentInRun);
 
@@ -433,13 +448,13 @@ namespace NightDuty.Tests
         public void 회피_불가는_신뢰_3이면_가짜_4면_진짜_회차_첫_회피_불가는_가짜()
         {
             ParadoxPlanner p = new ParadoxPlanner(new Random(1));
-            Assert.IsNull(p.PlanUnavoidable(3, Band.Band2, null), "구간 2 이하는 없음");
-            UnavoidableDef fake = p.PlanUnavoidable(3, Band.Band3, null);
+            Assert.IsNull(p.PlanUnavoidable(5, Band.Band2, null), "구간 2 이하는 없음");
+            UnavoidableDef fake = p.PlanUnavoidable(5, Band.Band3, null);
             Assert.IsNotNull(fake);
             Assert.IsFalse(fake.Real);
-            Assert.IsFalse(p.PlanUnavoidable(3, Band.Band4, null).Real, "회차의 첫 회피 불가는 가짜");
+            Assert.IsFalse(p.PlanUnavoidable(5, Band.Band4, null).Real, "회차의 첫 회피 불가는 가짜");
             p.MarkUnavoidable();
-            Assert.IsTrue(p.PlanUnavoidable(3, Band.Band4, null).Real);
+            Assert.IsTrue(p.PlanUnavoidable(5, Band.Band4, null).Real);
         }
 
         [Test]
@@ -451,10 +466,11 @@ namespace NightDuty.Tests
             Assert.IsFalse(UnavoidableCatalog.Feasible(UnavoidableCatalog.Find("K1xK-1"), 5, null), "5일차 경비실은 K4");
             for (int seed = 0; seed < 20; seed++)
             {
+                // 103차: H4×T1은 사슬 조우(부르는 목소리 — 청각 구간 3)가 그날 하한으로 나올 수 있는 5일차부터
                 ParadoxPlanner p = new ParadoxPlanner(new Random(seed));
-                Assert.AreEqual("H4xT1", p.PlanUnavoidable(3, Band.Band3, null).Id, "점검이 없으면 가짜는 나서며 쌍뿐");
+                Assert.AreEqual("H4xT1", p.PlanUnavoidable(5, Band.Band3, null).Id, "점검이 없으면 가짜는 나서며 쌍뿐");
                 p.MarkUnavoidable();
-                Assert.AreEqual("S5xH3", p.PlanUnavoidable(3, Band.Band4, null).Id, "점검이 없으면 진짜는 겹침 쌍뿐");
+                Assert.AreEqual("S5xH3", p.PlanUnavoidable(5, Band.Band4, null).Id, "점검이 없으면 진짜는 겹침 쌍뿐");
             }
         }
 

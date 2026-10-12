@@ -3,18 +3,18 @@ using NUnit.Framework;
 
 namespace NightDuty.Tests
 {
-    /// <summary>신뢰 전용 구간(2026-09-30 최종 기획서 15/30/45/65).</summary>
+    /// <summary>신뢰 전용 구간(103차 10/18/26/42 — 옛 2026-09-30 최종 기획서 15/30/45/65).</summary>
     public sealed class TrustBandTests
     {
         [TestCase(0, Band.Band0)]
-        [TestCase(14, Band.Band0)]
-        [TestCase(15, Band.Band1)]
-        [TestCase(29, Band.Band1)]
-        [TestCase(30, Band.Band2)]
-        [TestCase(44, Band.Band2)]
-        [TestCase(45, Band.Band3)]
-        [TestCase(64, Band.Band3)]
-        [TestCase(65, Band.Band4)]
+        [TestCase(9, Band.Band0)]
+        [TestCase(10, Band.Band1)]
+        [TestCase(17, Band.Band1)]
+        [TestCase(18, Band.Band2)]
+        [TestCase(25, Band.Band2)]
+        [TestCase(26, Band.Band3)]
+        [TestCase(41, Band.Band3)]
+        [TestCase(42, Band.Band4)]
         [TestCase(100, Band.Band4)]
         public void 신뢰는_전용경계로_구간을_읽는다(int trust, Band expected)
         {
@@ -27,7 +27,7 @@ namespace NightDuty.Tests
             FearAxisSystem axes = new FearAxisSystem();
             BandResolver bands = new BandResolver(axes);
             axes.ValueChanged += bands.OnValueChanged;
-            axes.Apply(FearAxis.Trust, 30, "준수", SpaceId.None);
+            axes.Apply(FearAxis.Trust, 20, "준수", SpaceId.None);   // 103차: 신뢰 경계 10/18/26/42 — 20은 구간 2
 
             Assert.AreEqual(Band.Band2, axes.GetBand(FearAxis.Trust));
             Assert.AreEqual(Band.Band2, bands.Shown.GetBand(FearAxis.Trust));

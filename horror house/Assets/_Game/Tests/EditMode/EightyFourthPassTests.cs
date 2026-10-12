@@ -14,7 +14,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 창밖_노란_얼굴은_2_3일차_중_하루_도서관_노란_얼굴은_4_5일차_중_하루()
+        public void 창밖_노란_얼굴은_3일차_도서관_노란_얼굴은_4_5일차_중_하루()
         {
             Band[] floors = { Band.Band0, Band.Band1, Band.Band1, Band.Band2, Band.Band3 };
             bool[] windowSeen = new bool[6];
@@ -29,7 +29,7 @@ namespace NightDuty.Tests
                 for (int day = 1; day <= 5; day++)
                 {
                     NightProgram p = d.Build(Request(day, floors[day - 1]));
-                    bool window = day == d.WindowFaceDay;   // 103차(민): 2·3일차 중 하루 창밖
+                    bool window = day == d.WindowFaceDay;   // 103차(민): 2·3일차 중 하루 창밖 · 103차 후속: 3일차
                     bool face = day == d.FaceDay;           // 103차(민): 4·5일차 중 하루 도서관
                     Assert.AreEqual(window, d.IsWindowFaceDay(day));
                     Assert.AreEqual(face, d.IsFaceDay(day));
@@ -40,7 +40,7 @@ namespace NightDuty.Tests
                 }
             }
 
-            Assert.IsTrue(windowSeen[2] && windowSeen[3], "창밖 날은 회차마다 2·3일차 중에서 고른다");
+            Assert.IsTrue(windowSeen[3] && !windowSeen[2], "103차 후속(사용자 결정): 창밖 날은 3일차 고정(옛 2·3일차 중 하루 — 2일차가 회차에서 가장 무거운 밤이 됐다)");
             Assert.IsTrue(faceSeen[4] && faceSeen[5], "도서관 날은 회차마다 4·5일차 중에서 고른다");
         }
 

@@ -33,6 +33,10 @@ public sealed class ViolationScare : MonoBehaviour
     /// <summary>얼굴이 나올 때 소리(연출 소리 표).</summary>
     public const string StingerSound = "stinger.strong";
 
+    /// <summary>103차 후속(민: 「놀람 연출 때 빼기로 했던 긴 숨소리가 들렸어 — 다시 빼고 다른 숨소리로」): 넘어진 뒤 숨 —
+    /// 옛 <c>body.breath</c>(거친 숨 6.6~9초, 일어난 뒤에도 길게 이어짐) 대신 짧은 숨막힘(1.5초).</summary>
+    public const string FallBreathSound = "scare.breath";
+
     /// <summary>얼굴 가운데 = 머리뼈 + 이만큼 위(m).</summary>
     public const float FaceAboveHeadBone = 0.09f;
 
@@ -217,7 +221,7 @@ public sealed class ViolationScare : MonoBehaviour
 
         BodyMeter.Jolt(3f);
         DirectionStage.PlaySound("capture.gasp", ct.position, 1f, 0f);
-        DirectionStage.PlaySound("body.breath", ct.position, 1f, 0f);
+        DirectionStage.PlaySound(FallBreathSound, ct.position, 1f, 0f);   // 103차 후속: 긴 거친 숨(body.breath 6.6~9초) 대신 짧은 숨막힘
         if (blackout) SetBlack(1f);
         if (onBlack != null)
         {

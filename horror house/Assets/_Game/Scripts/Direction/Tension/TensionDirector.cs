@@ -427,7 +427,13 @@ namespace NightDuty
             for (int i = 0; i < _runs.Count; i++)
             {
                 EncounterRun held = _runs[i];
-                if (held.Def.Id == encounterId && held.State == EncounterRunState.Waiting) held.State = EncounterRunState.Done;   // 제 슬롯 몫은 이것으로 갈음
+                if (held.Def.Id == encounterId && held.State == EncounterRunState.Waiting)
+                {
+                    held.State = EncounterRunState.Done;   // 제 슬롯 몫은 이것으로 갈음
+                    // 103차 QA 3회: 재시작(ResetToRest)이 「아직 안 본 조우」로 되돌려 제 슬롯에서 한 번 더 나오던 것 — 역설은 되돌리지 않는다.
+                    held.Forced = true;
+                    held.ConfrontMinute = _minute;
+                }
             }
 
             EncounterRun run = new EncounterRun { Slot = EncounterSlot.A, Def = def, Script = script, Forced = true };

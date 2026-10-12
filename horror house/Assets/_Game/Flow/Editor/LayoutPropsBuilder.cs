@@ -16,6 +16,11 @@ public static class LayoutPropsBuilder
         { "walled_door", "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/WalledDoor.prefab", "1" },
         { "ceiling_chair", "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/TeacherChair.prefab", "1" },
         { "blood_drip", "Assets/3.2 Programmer_Kim/03 Prefebs/04 Horror/Bloody/HorrorProp_CeilingBloodDrip.prefab", "1" },
+        // 104차 배치 지도(교실 — 사용자: 「천장에 책상과 의자, 벽시계 복제, 칠판 복제, 핏물」)
+        { "ceiling_desk", "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/StudentDeskB_Plastic_RED.prefab", "1" },
+        { "wall_clock", "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/ClockC.prefab", "1" },
+        { "blackboard", "Assets/NOT_Lonely/HQ_AbandonedSchool/Prefabs/BlackboardSmall.prefab", "1" },
+        { "blood_pool", "Assets/3.2 Programmer_Kim/03 Prefebs/04 Horror/Bloody/BloodyFontain/Decal_WetSpot_DarkRed.prefab", "1" },
     };
 
     [MenuItem("야간근무/연출/배치 지도 소품 다시 만들기")]

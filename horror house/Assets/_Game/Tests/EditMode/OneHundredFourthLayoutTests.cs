@@ -36,6 +36,10 @@ namespace NightDuty.Tests
         [TestCase("walled_door")]
         [TestCase("ceiling_chair")]
         [TestCase("blood_drip")]
+        [TestCase("ceiling_desk")]
+        [TestCase("wall_clock")]
+        [TestCase("blackboard")]
+        [TestCase("blood_pool")]
         public void 배치_지도_소품이_있다(string name)
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Game/Resources/LayoutProps/" + name + ".prefab");

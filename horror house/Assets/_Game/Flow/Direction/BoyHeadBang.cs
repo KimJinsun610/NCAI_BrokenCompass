@@ -9,6 +9,8 @@
 /// 60차(민: 「머리 치는 게 조금 더 길고, 바라보면 점점 더 빨라지면 · 칠 때마다 약간의 흔들림」): 아트 동작을 되풀이해 최소 <see cref="MinSeconds"/>초,
 /// 플레이어가 소년을 바라보는 동안은 박는 속도가 초당 <see cref="SpeedUpPerSecond"/>씩 빨라지고(최대 <see cref="MaxSpeed"/>배) 바라보는 한 계속한다(최대 <see cref="MaxSeconds"/>초).
 /// 눈을 떼면 천천히 원래 속도로 돌아오고 <see cref="LookAwayGrace"/>초 뒤 다음 박기에서 엎드려 멈춘다. 박을 때마다 화면이 툭 흔들린다(가까울수록·빠를수록 세게, <see cref="BodyMeter.Jolt"/>).
+/// 103차(민: 「소년이 나타나고 머리 박기를 시작하면, 플레이어가 교실을 나가거나 밖에 있어도 계속 박다가 사라지게」): 조우가 건 머리 박기(<see cref="UntilGone"/>)는
+/// 눈을 떼도·교실을 나가도 멈추지 않고 대역이 거둬질 때(창이 끝나 시야 밖에서 사라질 때)까지 박는다. 3초 이어 바라보면 놀람은 그대로.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class BoyHeadBang : MonoBehaviour
@@ -91,18 +93,27 @@ public sealed class BoyHeadBang : MonoBehaviour
         get { return _played; }
     }
 
+    /// <summary>103차: 대역이 사라질 때까지 멈추지 않고 박는지(조우가 건 머리 박기).</summary>
+    public bool UntilGone
+    {
+        get { return _untilGone; }
+    }
+
+    private bool _untilGone;
+
     /// <summary>엎드려 멈췄는지.</summary>
     public bool Stopped
     {
         get { return _stopped; }
     }
 
-    /// <summary>머리 박기를 시작한다(이미 하고 있으면 그대로).</summary>
-    public static BoyHeadBang Play(GameObject boy)
+    /// <summary>머리 박기를 시작한다(이미 하고 있으면 그대로). <paramref name="untilGone"/>면 대역이 거둬질 때까지 멈추지 않는다(103차).</summary>
+    public static BoyHeadBang Play(GameObject boy, bool untilGone = false)
     {
         if (boy == null) return null;
         BoyHeadBang b = boy.GetComponent<BoyHeadBang>();
         if (b == null) b = boy.AddComponent<BoyHeadBang>();
+        if (untilGone) b._untilGone = true;
         return b;
     }
 
@@ -178,7 +189,7 @@ public sealed class BoyHeadBang : MonoBehaviour
 
         int index = Mathf.FloorToInt(t / Cycle);
         float a;
-        if (index >= Bangs)
+        if (index >= Bangs && (!_untilGone || _scared))
         {
             a = DownDegrees * 0.85f;   // 엎드린 채 멈춤
         }
@@ -221,7 +232,7 @@ public sealed class BoyHeadBang : MonoBehaviour
         if (watched) _lastWatched = Time.time;
         float dt = Time.deltaTime;
         _speed = watched ? Mathf.Min(MaxSpeed, _speed + SpeedUpPerSecond * dt) : Mathf.Max(1f, _speed - 0.6f * dt);
-        if (!_stopping && t >= MinSeconds && (t >= MaxSeconds || Time.time - _lastWatched > LookAwayGrace))
+        if (!_stopping && !_untilGone && t >= MinSeconds && (t >= MaxSeconds || Time.time - _lastWatched > LookAwayGrace))
         {
             _stopping = true;
             _watchedToEnd = t >= MaxSeconds && Time.time - _lastWatched <= LookAwayGrace;   // 80차

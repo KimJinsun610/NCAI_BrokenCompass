@@ -217,14 +217,14 @@ namespace NightDuty
 
             new RuleDef("C1", SpaceId.Classroom, A, true, "교실은 판서가 끝난 뒤에 들어가십시오.", isWaitType: true),   // 57차 민: 앞에 「교실」을 밝힘
             new RuleDef("C2", SpaceId.Classroom, A, true, "교실의 _? 는 무시하십시오.", boundEncounter: BoyBang),   // 52차 민: 앉은 소년과 묶음(C2 + C3 + 소년) — 3초 바라보면 책상에 머리를 박는다
-            new RuleDef("C3", SpaceId.Classroom, A, true, "수업 중에 움직이지 마십시오.", isThreat: true, isWaitType: true, boundEncounter: BoySeated),
+            new RuleDef("C3", SpaceId.Classroom, A, true, "수업 종이 울리면 정지하십시오.", isThreat: true, isWaitType: true, boundEncounter: BoySeated),   // 103차(민): 옛 「수업 중에 움직이지 마십시오.」
             new RuleDef("C4", SpaceId.Classroom, I, true, "초록 불빛 아래에서는 손전등을 끄십시오.", usesFlashlight: true),   // 52차 민: 늘 켜고 다니니 「끄라」로 — 등은 맵 어딘가 하나(RedLightSpot). 66차 민: 「조도 축이 오르면 전체 조명이 붉어지니 수칙의 빨간 불빛은 초록으로」
             new RuleDef("C5", SpaceId.Classroom, L, true, "교실의 문은 모두 부서져 있습니다. 성한 문으로는 나가지 마십시오.", boundEncounter: PhantomDoor),
 
             new RuleDef("S1", SpaceId.ScienceRoom, L, true, "과학실은 통로가 아닙니다. 통로로 사용하지 마십시오."),
             new RuleDef("S2", SpaceId.ScienceRoom, A, true, "깨지는 소리가 나면 과학실을 나가 다시 오지 마십시오."),
             new RuleDef("S3", SpaceId.ScienceRoom, I, true, "인체 모형에는 빛을 비추지 마십시오.", usesFlashlight: true),
-            new RuleDef("S4", SpaceId.ScienceRoom, I, true, "정전 중에는 손전등을 키지 마십시오.", usesFlashlight: true, boundEncounter: ScienceBlackout),   // 79차 민: T3 합침 — 과학실·화장실 소등 모두, 3초 유예
+            new RuleDef("S4", SpaceId.ScienceRoom, I, true, "정전 중에는 손전등을 켜지 마십시오.", usesFlashlight: true, boundEncounter: ScienceBlackout),   // 79차 민: T3 합침 — 과학실·화장실 소등 모두, 3초 유예 · 103차 맞춤법: 키지 → 켜지
             new RuleDef("S5", SpaceId.ScienceRoom, I, true, "복도 끝에 _?이 서 있으면 빛을 끄고 기다리십시오.", isThreat: true, usesFlashlight: true, isWaitType: true, boundEncounter: HallEndFigure),
 
             new RuleDef("T1", SpaceId.Toilet, A, true, "화장실에서 물이 다 내려가기 전에 나오십시오."),   // 79차 민

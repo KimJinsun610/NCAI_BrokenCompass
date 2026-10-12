@@ -126,7 +126,7 @@ namespace NightDuty
             new InspectionItem("L-5", "쓰레기통", SpaceId.Library, FearAxis.Layout, AnomalyTemplate.Move, "도서관 쓰레기통이 세워져 있는지 확인해주십시오."),   // 66차 — 씬에서 원래 누워 있다. 이상이면 누가 세워 놓았다
 
             new InspectionItem("K-1", "CCTV 전 채널", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Switch, "CCTV 모든 채널이 정상인지 확인해주십시오."),
-            new InspectionItem("K-2", "접이식 의자", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Move, "접이식 의자 둘이 같은 쪽을 보는지 확인해주십시오."),   // 66차 — 이상이면 하나가 돌아앉음
+            new InspectionItem("K-2", "접이식 의자", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Move, "경비실 접이식 의자 둘이 같은 쪽을 보는지 확인해주십시오."),   // 66차 — 이상이면 하나가 돌아앉음 · 103차(민): 경비실 명시
             new InspectionItem("K-3", "화분", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Move, "경비실 화분이 제자리인지 확인해주십시오.")   // 66차 — 이상이면 쓰러져 있다
         };
 

@@ -87,13 +87,13 @@ namespace NightDuty
             Add("H4", null, SafeReadPattern.None, null, null, null);
             Add("C1", "교실에서 소리가 나면 즉시 점검하십시오.", SafeReadPattern.StandStill, FinalCues.Chalk, null, "판서 가 끝나기 전 에는? 들어가지 마시오.");
             Add("C2", "교실 소음의 원인을 응시해주십시오.", SafeReadPattern.EyesOnly, FinalCues.BoySeated, FinalCues.BoyTarget, "교실 의 _? 는 무시 대상 입니 다.");   // 52차: 소년이 앉은 뒤에 온다(예고하지 않음) — 따르면(바라보면) C2를 어긴다
-            Add("C3", null, SafeReadPattern.None, null, null, "수업 중 이동 은 금지입니 ㄷ ㅏ.");   // 민 2026-10-04: 역설 폐기(몬스터를 과하게 예고해 긴장 저하)
+            Add("C3", null, SafeReadPattern.None, null, null, "수업 종 이 울리면 정지 하십시 ㅇ ㅗ.");   // 103차: C3 문구 「수업 종이 울리면 정지하십시오.」에 맞춤   // 민 2026-10-04: 역설 폐기(몬스터를 과하게 예고해 긴장 저하)
             Add("C4", "조명에 이상이 있을 시 손전등으로 확인해주십시오.", SafeReadPattern.StandStill, FinalCues.RedLight, null, "초록 불빛 아래 손전등 은 켜지 마. 켜지 마.");   // 52차: 끄라는 수칙 — 따르면(켜면) 어긴다, 등 아래를 꺼진 채 지나가면 안전한 읽기. 66차: 붉은 → 초록
             Add("C5", null, SafeReadPattern.None, null, null, "성한 문 으로는? 나가지 마시오. 교실 의 문은 부서졌다.");   // 민 2026-10-04: 역설 폐기
             Add("S1", "반대편 문이 열렸습니다. 지금 점검하십시오.", SafeReadPattern.EyesOnly, null, null, "과학 실은 통로 입니까?. 아니오.");
             Add("S2", "지금 과학실의 훼손 물품을 점검하십시오.", SafeReadPattern.EyesOnly, FinalCues.Glass, null, "깨지는 소리 가 나면? 과학실 을 나가. 다시 오지 마.");   // 민 2026-10-04: CCTV로 → 눈으로만
             Add("S3", null, SafeReadPattern.None, null, null, null);   // 민 2026-10-04: 수칙 문구를 「빛으로 확인」으로 바꾸며 변조본 폐기
-            Add("S4", null, SafeReadPattern.None, null, null, "정전 중 에는 손전등 을? 키지 마 십시오.");   // 79차: T3 합침·문구 반대로
+            Add("S4", null, SafeReadPattern.None, null, null, "정전 중 에는 손전등 을? 켜지 마 십시오.");   // 79차: T3 합침·문구 반대로 · 103차: 원문 맞춤법(켜지)에 맞춤
             Add("S5", "복도 끝 출구를 즉시 확인하십시오.", SafeReadPattern.StandStill, FinalCues.HallEnd, null, "복도 끝 에 _?이 서 있습니까?. 끄고 기다리 십시오.");
             Add("T1", "변기 수압을 점검해주십시오.", SafeReadPattern.EyesOnly, FinalCues.Flush, null, null);   // 79차 민: 물 내려가는 변기에 「점검」 상호작용(ToiletFlushCheck)
             Add("T2", null, SafeReadPattern.None, null, null, "사용 중 인 칸은? 열지 마 십시오.");

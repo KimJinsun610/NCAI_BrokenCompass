@@ -20,6 +20,9 @@ namespace NightDuty
         public const string BoyTarget = "rule.C2.boy";
         public const string BoySeated = "cue.boy.seated";
         public const string Bell = "cue.bell";
+
+        /// <summary>103차(민: C3 「수업 종이 울리면 정지하십시오」): 교실에 들어가면 곧 울리는 수업 종 — 울리는 동안(단서 길이) 제자리.</summary>
+        public const string BellStart = "cue.bell.start";
         public const string RedLight = "cue.redlight";
         public const string PhantomDoor = "cue.phantomdoor";
         public const string PhantomDoorZone = "classroom.phantomdoor";
@@ -82,7 +85,7 @@ namespace NightDuty
                 case "H4": return new DontAnswerJudge(FinalCues.Voice);
                 case "C1": return new NoEntryDuringCueJudge(FinalCues.Chalk, SpaceId.Classroom, 1f);
                 case "C2": return new DontStareJudge(FinalCues.BoySeated, FinalCues.BoyTarget, 3f);   // 52차: 앉은 소년을 3초 바라보면 위반 → 머리 박기
-                case "C3": return new StayStillJudge(FinalCues.BoySeated, FinalCues.Bell);
+                case "C3": return new StayStillJudge(FinalCues.BellStart, FinalCues.Bell);   // 103차: 소년 단서 → 종(끝)이 아니라 수업 종이 울리는 동안
                 case "C4": return new LightOffJudge(FinalCues.RedLight, LightOffJudge.GraceSeconds);   // 52차: 붉은 불빛 아래에서는 손전등을 끈다
                 case "C5": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
                 case "S1": return new NoPassageJudge(FinalCues.S1Center);
@@ -603,7 +606,7 @@ namespace NightDuty
 
         protected override void OnEnd(FinalWorld w)
         {
-            Pass("수업 중 정지");
+            Pass("종이 그칠 때까지 정지");
         }
 
         protected override void OnSignal(in JudgeSignal s, FinalWorld w)

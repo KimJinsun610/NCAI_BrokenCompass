@@ -12,7 +12,7 @@ namespace NightDuty.Tests
         [Test]
         public void 수칙_문구와_폐기()
         {
-            Assert.AreEqual("정전 중에는 손전등을 키지 마십시오.", ProgramCatalog.Rule("S4").Text);
+            Assert.AreEqual("정전 중에는 손전등을 켜지 마십시오.", ProgramCatalog.Rule("S4").Text);   // 103차 맞춤법
             Assert.AreEqual("화장실에서 물이 다 내려가기 전에 나오십시오.", ProgramCatalog.Rule("T1").Text);
             Assert.AreEqual("화장실 거울을 3초 이상 보지 마십시오.", ProgramCatalog.Rule("T7").Text);
             Assert.AreEqual("도서관에서는 손전등을 천장으로 향하지 마십시오.", ProgramCatalog.Rule("L6").Text);

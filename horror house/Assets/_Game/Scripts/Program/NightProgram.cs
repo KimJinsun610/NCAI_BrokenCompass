@@ -265,32 +265,68 @@ namespace NightDuty
         {
             _rushDay = DefaultRushDay;
             _hallDay = DefaultRushDay - 1;
-            _faceDay = DefaultFaceDay;
-            _windowDay = DefaultFaceDay - 1;
+            RollFaceDays();
+        }
+
+        /// <summary>103차: 창밖 노란 얼굴은 2·3일차 중 하루, 도서관 노란 얼굴은 4·5일차 중 하루 — 난수 한 번으로 둘 다 고른다.</summary>
+        private void RollFaceDays()
+        {
+            int roll = _rng.Next(4);
+            _windowDay = WindowFaceFrom + (roll & 1);
+            _faceDay = DefaultFaceDay + (roll >> 1);
+        }
+
+        /// <summary>시험 · 개발용: 이 회차의 노란 얼굴 날짜를 정한다(각 구간 안으로 자른다).</summary>
+        public void SetFaceDays(int windowDay, int faceDay)
+        {
+            _windowDay = Math.Max(WindowFaceFrom, Math.Min(WindowFaceTo, windowDay));
+            _faceDay = Math.Max(DefaultFaceDay, Math.Min(FaceTo, faceDay));
         }
 
         // ── 84차: 창밖 노란 얼굴 → 다음 날 도서관 노란 얼굴 ─────────────
 
         /// <summary>
         /// 84차(민: 「현재 복도 조우가 복도 급습의 빌드업이 되는 것처럼, 창밖의 노란 얼굴 조우가 도서관 노란 얼굴 조우의 빌드업이 되면 좋겠어」) —
-        /// 도서관 노란 얼굴(문간)이 나오는 날(기본 3일차). 그 전날(<see cref="WindowFaceDay"/>)에는 창밖 노란 얼굴이 도서관 북쪽 창 밖에 서 있다.
-        /// 둘은 슬롯 뽑기에서 빠지고 이 날짜로만 들어간다(복도 끝 → 모형 급습과 같은 규칙, 날은 겹치지 않는다 — 2·3일차 / 4·5일차).
+        /// 도서관 노란 얼굴(문간)이 나오는 첫날. 둘은 슬롯 뽑기에서 빠지고 이 날짜로만 들어간다(복도 끝 → 모형 급습과 같은 규칙).
+        /// 103차(민: 「2일 3일 중 하루 창문, 4일 5일 중 하루 노란 얼굴」): 회차마다 창밖 노란 얼굴은 <see cref="WindowFaceFrom"/>~<see cref="WindowFaceTo"/>일차 중 하루,
+        /// 도서관 노란 얼굴은 <see cref="DefaultFaceDay"/>~<see cref="FaceTo"/>일차 중 하루(<see cref="RollFaceDays"/>). <see cref="DefaultFaceDay"/>는 도서관 쪽 첫 후보일.
         /// </summary>
-        public const int DefaultFaceDay = 3;
+        public const int DefaultFaceDay = 4;
+
+        /// <summary>103차: 도서관 노란 얼굴이 나올 수 있는 마지막 날(포함).</summary>
+        public const int FaceTo = 5;
+
+        /// <summary>103차: 창밖 노란 얼굴이 설 수 있는 첫날·마지막 날(포함).</summary>
+        public const int WindowFaceFrom = 2;
+
+        /// <inheritdoc cref="WindowFaceFrom"/>
+        public const int WindowFaceTo = 3;
 
         private int _faceDay;
         private int _windowDay;
 
-        /// <summary>그 회차에 도서관 노란 얼굴이 나오는 날.</summary>
+        /// <summary>그 회차에 도서관 노란 얼굴이 나오는 날(4·5일차 중 하루).</summary>
         public int FaceDay
         {
             get { return _faceDay; }
         }
 
-        /// <summary>그 회차에 창밖 노란 얼굴이 서는 날(노란 얼굴 전날).</summary>
+        /// <summary>그 회차에 창밖 노란 얼굴이 서는 날(2·3일차 중 하루).</summary>
         public int WindowFaceDay
         {
             get { return _windowDay; }
+        }
+
+        /// <summary>103차: 그날 밤 창밖 노란 얼굴이 서는지.</summary>
+        public bool IsWindowFaceDay(int day)
+        {
+            return day == _windowDay;
+        }
+
+        /// <summary>103차: 그날 밤 도서관 노란 얼굴이 나오는지.</summary>
+        public bool IsFaceDay(int day)
+        {
+            return day == _faceDay;
         }
 
         /// <summary>
@@ -483,9 +519,9 @@ namespace NightDuty
             ApplyRushReservation(day, reserved);
             if (day == _hallDay) PlaceChain(d, ProgramCatalog.HallEndFigure);
             if (day == _rushDay) PlaceChain(d, ProgramCatalog.ModelRush);
-            // 84차: 창밖 노란 얼굴(노란 얼굴 전날) · 도서관 노란 얼굴 — 같은 날짜 사슬.
-            if (day == _windowDay) PlaceChain(d, ProgramCatalog.SuitMan);
-            if (day == _faceDay) PlaceChain(d, ProgramCatalog.YellowFace);
+            // 84차: 창밖 노란 얼굴 → 도서관 노란 얼굴 — 날짜 사슬. 103차: 2·3일차 중 하루 창밖 · 4·5일차 중 하루 도서관.
+            if (IsWindowFaceDay(day)) PlaceChain(d, ProgramCatalog.SuitMan);
+            if (IsFaceDay(day)) PlaceChain(d, ProgramCatalog.YellowFace);
 
             // 2) 강제 수칙.
             List<string> forced = new List<string>();
@@ -597,16 +633,22 @@ namespace NightDuty
             while (deck.Count > target)
             {
                 RuleDef drop = null;   // G1(복도에서 뛰지 마십시오)은 매일 남긴다 — 달리기 판정·시험이 기대는 공통 수칙
+                List<RuleDef> can = new List<RuleDef>();
                 for (int pass = 0; pass < 2 && drop == null; pass++)
                 {
-                    for (int i = deck.Count - 1; i >= 0 && drop == null; i--)
+                    can.Clear();
+                    for (int i = deck.Count - 1; i >= 0; i--)
                     {
                         RuleDef r = deck[i];
                         if (d.Locked.Contains(r.Id) || r.Space == SpaceId.SecurityRoom || r.Space == SpaceId.None) continue;
                         if (r.HasAxis && r.Axis == lowest && deck.FindAll(x => x.HasAxis && x.Axis == lowest).Count <= 1) continue;
                         if (pass == 0 && CountIn(_planForFill, r.Space) > 0) continue;   // 먼저 그날 가지 않는 공간의 수칙
-                        drop = r;
+                        can.Add(r);
                     }
+
+                    // 103차(민: 「특정 수칙들이 동시에 세트로 나오는 현상」): 옛날엔 늘 덱 끝(도서관·과학실·화장실 쪽)부터 빼서
+                    // 복도·교실 채움(H2·C4 …)만 남아 같은 조합이 되풀이됐다 — 뺄 수 있는 것 중에서 고르게 뽑는다.
+                    if (can.Count > 0) drop = can[_rng.Next(can.Count)];
                 }
 
                 if (drop == null)

@@ -82,6 +82,7 @@ namespace NightDuty.Tests
             NightRun.InspectionDripEnabled = true;
             List<InspectionOrder> sent = new List<InspectionOrder>();
             EventBus.InspectionOrdered += sent.Add;
+            NightRun.Programs.SetFaceDays(2, ProgramDirector.DefaultFaceDay);   // 103차: 창밖 노란 얼굴은 2·3일차 중 하루 — 시험은 2일차로 고정
             NightRun.BeginNight(2, () => _clock);
             Assert.IsTrue(NightRun.Program.HasEncounter(ProgramCatalog.SuitMan), NightRun.Program.Report);
             Assert.IsFalse(NightRun.Program.Has("L3"), "창밖 밤에는 L3 없음");
@@ -114,7 +115,8 @@ namespace NightDuty.Tests
         {
             NightRun.ProgramEnabled = true;
             NightRun.DutiesEnabled = true;
-            NightRun.BeginNight(3, () => _clock);
+            NightRun.Programs.SetFaceDays(ProgramDirector.WindowFaceFrom, 4);   // 103차: 도서관 노란 얼굴은 4·5일차 중 하루 — 시험은 4일차로 고정
+            NightRun.BeginNight(4, () => _clock);
             Assert.IsTrue(NightRun.Program.HasEncounter(ProgramCatalog.YellowFace), NightRun.Program.Report);
             Assert.IsTrue(NightRun.Program.Has("L3"), "문간 밤 L3");
 

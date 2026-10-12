@@ -6,6 +6,8 @@ namespace NightDuty
     /// 64차(플레이테스트 2026-10-07: 「고정된 몹(인체모형, 인체나무) 계속 보면 바로 수치 계속 떨구고, 엔딩 보도록」) — 고정 몹 응시.
     /// 복도 끝에 선 인체 모형(<see cref="FinalCues.HallFigureTarget"/>, 70차 — 전에는 과학실 모형)이나 사람 나무(<see cref="FinalCues.H1Object"/>)를 계속 바라보면
     /// 유예(<see cref="GraceFor"/>) 뒤부터 배치 축이 오르고, 오래 볼수록 빨리 올라 끝내 붙잡힌다(100).
+    /// 104차(민: 「복도로 나왔을 때 바라보면 화면 울렁임 + 감각 축 오름 — 붙잡힘을 없애라」): 사람 나무도 빠져 지금은 어느 고정 몹도 축을 올리지 않는다(<see cref="Punishes"/>) —
+    /// 바라본 시간(<see cref="Seconds"/>)만 센다. 사람 나무 응시는 현관 나무와 같이 <c>HumanTreeGrowth</c>가 화면 울렁임 + 감각 축(1초마다 무작위 하나)으로 다룬다.
     /// <list type="bullet">
     /// <item>유예는 역설 「눈으로만」 읽기(<c>ParadoxRun.EyesOnlySeconds</c> 1초)보다 길다 — 「확인하십시오」를 따른 짧은 확인은 벌하지 않는다.
     /// 1일차 2.5초 · 2일차 2초 · 3일차부터 1.5초(공포 그라데이션).</item>
@@ -61,10 +63,11 @@ namespace NightDuty
         /// <summary>
         /// 오래 바라보면 축이 올라 붙잡히는 고정 몹인지. 92차(민: 「인체 모형이 복도에 서있는 연출에서, 오래 쳐다보면 죽는 걸 빼줘」):
         /// 복도 끝 인체 모형은 빠졌다 — 사람 나무만. 모형은 바라본 시간(<see cref="Seconds"/>)만 센다(목 꺾임 연출이 읽는다).
+        /// 104차: 사람 나무도 빠졌다(붙잡힘 없음 — 응시는 화면 울렁임 + 감각 축). 이제 아무것도 벌하지 않는다.
         /// </summary>
         public static bool Punishes(string id)
         {
-            return id == FinalCues.H1Object;
+            return false;
         }
 
         /// <summary>그날의 유예(초) — 이만큼 바라본 뒤부터 오른다.</summary>

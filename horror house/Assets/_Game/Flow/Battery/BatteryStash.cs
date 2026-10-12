@@ -63,13 +63,19 @@ public sealed class BatteryStash : MonoBehaviour
     /// 67차(민: 「배터리가 책장이나 선반 같은 곳에도 놓여 있게」): 이름이 이것으로 시작하거나 이것을 품은 소품의 칸 위도 배터리 자리다(문이 없는 열린 칸).
     /// 문이 달린 책장 아래 수납장(Storage)은 따로 — 그 몸통이 아니라 위 칸 판자 위만 쓴다.
     /// </summary>
-    public static readonly string[] ShelfNames = { "Bookcase", "BookShelving", "Shelf", "Shelves", "Rack", "Cupboard" };
+    public static readonly string[] ShelfNames = { "Bookcase", "BookShelving", "Shelf", "Shelves", "Rack", "Cupboard", "LibraryTable" };   // 104차: 도서관 열람 탁자 위(책장 칸이 빠진 자리)
 
-    /// <summary>열린 칸으로 칠 높이(바닥에서, m) — 허리 아래 무릎 위부터 눈높이 조금 위까지.</summary>
+    /// <summary>104차: 이름에 이것이 든 책장(<c>BookShelvingDouble_booksA</c> 등)은 열린 자리로 쓰지 않는다 — 칸마다 책이 차 있는데 책에 충돌체가 없어, 빈 칸 검사를 지나 배터리가 책 사이에 묻혔다(도서관 다섯 자리 전부).</summary>
+    public const string BookFilled = "_books";
+
+    /// <summary>열린 칸으로 칠 높이(바닥에서, m) — 허리 아래 무릎 위부터 가슴 높이까지.</summary>
     public const float ShelfMinHeight = 0.45f;
 
-    /// <inheritdoc cref="ShelfMinHeight"/>
-    public const float ShelfMaxHeight = 1.75f;
+    /// <summary>
+    /// 열린 칸 높이 상한. 104차(사용자: 「찾기 너무 힘든 위치들」): 1.75 → 1.45 — 눈높이(1.70m) 칸은 눕힌 배터리가 옆면 한 줄로만 보였다
+    /// (1-3 교실 책장 꼭대기 칸). 눈보다 25cm 아래면 윗면이 보인다.
+    /// </summary>
+    public const float ShelfMaxHeight = 1.45f;
 
     /// <summary>소품 하나에서 뽑는 열린 자리 수 상한.</summary>
     public const int SpotsPerShelf = 1;
@@ -314,7 +320,7 @@ public sealed class BatteryStash : MonoBehaviour
             float weight = 1f + Vector3.Distance(p, GuardRoom) / 15f;
             bool locker = d.Owner.name.StartsWith("Locker") && !PlayerInteractor.IsCorridorLocker(d.Owner);   // 60차: 복도 관물대는 늘 열린 칸(라커룸 사물함만 밤마다 몇 개 풀림)
             bool starter = id.Contains("/Classroom02/") || id.Contains("/science classroom/");   // 67차: 1-1(Classroom01 묶음)은 쓰지 않는다 — 1-3 교실 · 과학실
-            list.Add(new BatteryCache(id, weight, locker, starter));
+            list.Add(new BatteryCache(id, weight, locker, starter, SpaceOf(zones, d.Owner.transform.position)));
         }
 
         CollectShelves(list);
@@ -331,17 +337,19 @@ public sealed class BatteryStash : MonoBehaviour
         _shelves.Clear();
         SpaceZones zones = FindAnyObjectByType<SpaceZones>();
         HashSet<Transform> done = new HashSet<Transform>();
-        foreach (Renderer r in FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+        Renderer[] all = FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+        foreach (Renderer r in all)
         {
             Transform owner = ShelfOwner(r.transform);
             if (owner == null || !done.Add(owner)) continue;
+            if (owner.name.IndexOf(BookFilled, System.StringComparison.OrdinalIgnoreCase) >= 0) continue;   // 104차: 책이 꽉 찬 책장 — 책 메시에 충돌체가 없어 배터리가 책 사이에 묻혔다
             if (!BatteryRules.Upright(owner.up.y)) continue;
             Bounds b = BoundsOf(owner);
             if (b.size.y < 0.6f || b.size.x * b.size.z < 0.08f) continue;
             if (zones != null && !InDutySpace(zones, b.center)) continue;
 
             ShelfSpot spot;
-            if (!FindShelfSpot(owner, b, out spot)) continue;
+            if (!FindShelfSpot(owner, b, Clutter(all, owner, b, transform), out spot)) continue;
             string id = PathOf(owner) + "#open";
             if (_doors.ContainsKey(id) || _shelves.ContainsKey(id)) continue;
             _shelves[id] = spot;
@@ -349,7 +357,7 @@ public sealed class BatteryStash : MonoBehaviour
             p.y = 0f;
             float weight = 1f + Vector3.Distance(p, GuardRoom) / 15f;
             bool starter = id.Contains("/Classroom02/") || id.Contains("/science classroom/");   // 1일차 순찰 공간(1-3 교실 · 과학실)
-            list.Add(new BatteryCache(id, weight, false, starter));
+            list.Add(new BatteryCache(id, weight, false, starter, SpaceOf(zones, spot.At)));
         }
     }
 
@@ -372,6 +380,25 @@ public sealed class BatteryStash : MonoBehaviour
         Bounds b = rs.Length > 0 ? rs[0].bounds : new Bounds(owner.position, Vector3.zero);
         for (int i = 1; i < rs.Length; i++) b.Encapsulate(rs[i].bounds);
         return b;
+    }
+
+    /// <summary>104차: 칸이 든 공간 — 방 상자를 먼저 묻고(복도 상자가 도서관·과학실 가장자리를 덮는다) 복도는 마지막. 못 찾으면 <see cref="SpaceId.None"/>.</summary>
+    private static SpaceId SpaceOf(SpaceZones zones, Vector3 at)
+    {
+        if (zones == null) return SpaceId.None;
+        for (int pass = 0; pass < 2; pass++)
+        {
+            for (int i = 0; i < BatterySpaces.Length; i++)
+            {
+                if ((BatterySpaces[i] == SpaceId.Corridor) != (pass == 1)) continue;
+                Bounds box;
+                if (!zones.TryGetSpaceBox(BatterySpaces[i], out box)) continue;
+                box.Expand(new Vector3(0.6f, 4f, 0.6f));
+                if (box.Contains(at)) return BatterySpaces[i];
+            }
+        }
+
+        return SpaceId.None;
     }
 
     /// <summary>86차: 배터리가 놓이는 공간 — 화장실·복도·과학실·도서관·교실(1-3).</summary>
@@ -413,6 +440,7 @@ public sealed class BatteryStash : MonoBehaviour
     {
         new KeyValuePair<string, float[]>("BookShelving", new[] { 0.74f, 1.06f, 1.38f, 1.70f }),            // BookShelvingSingle/Double(_booksA·B): 0.10 · 0.42 · 0.74 · 1.06 · 1.38 · 1.70 · 2.22(꼭대기)
         new KeyValuePair<string, float[]>("Bookcase", new[] { 0.56f, 0.81f, 1.06f, 1.30f, 1.55f }),          // Bookcase · BookcaseBroken A/B/C · Bookcase_static: 0.06 · 0.31 · 0.56 · 0.81 · 1.06 · 1.30 · 1.55 · 1.80
+        new KeyValuePair<string, float[]>("LibraryTable", new[] { 0.77f }),                                  // 104차: 도서관 둥근 탁자 윗면(경계 상자 꼭대기 · 메시 충돌체가 통째라 몸통으로 빠진다)
     };
 
     private static float[] HeightsOf(Transform owner)
@@ -433,7 +461,42 @@ public sealed class BatteryStash : MonoBehaviour
         return cb.size.y > b.size.y * 0.6f && cb.size.x * cb.size.z > b.size.x * b.size.z * 0.4f;
     }
 
-    private static bool FindShelfSpot(Transform owner, Bounds b, out ShelfSpot spot)
+    /// <summary>잡동사니로 칠 그림 크기 상한(m) — 책·상자·책 더미. 벽·바닥처럼 큰 것은 뺀다.</summary>
+    private const float ClutterMaxSize = 1.5f;
+
+    /// <summary>
+    /// 104차(사용자: 「찾기 너무 힘든 위치들」): 소품 위·안에 놓인 작은 물건(책·상자)의 그림 상자. 책·책 더미는 충돌체가 없어 빈 칸 검사를 지나
+    /// 배터리가 책 밑에 묻혔다(도서관 탁자 위 책). 자리 점이 이 상자 안이면 쓰지 않는다.
+    /// </summary>
+    private static List<Bounds> Clutter(Renderer[] all, Transform owner, Bounds b, Transform skip)
+    {
+        List<Bounds> list = new List<Bounds>();
+        Bounds near = b;
+        near.Expand(0.1f);
+        for (int i = 0; i < all.Length; i++)
+        {
+            Renderer r = all[i];
+            if (r == null || !r.enabled || r.transform.IsChildOf(owner) || r.transform.IsChildOf(skip)) continue;   // 자기 몸 · 지난밤 배터리 모형(파괴가 프레임 끝이라 아직 있다)
+            Bounds rb = r.bounds;
+            if (rb.size.x > ClutterMaxSize || rb.size.y > ClutterMaxSize || rb.size.z > ClutterMaxSize || !near.Intersects(rb)) continue;
+            rb.Expand(new Vector3(0.05f, 0.02f, 0.05f));
+            list.Add(rb);
+        }
+
+        return list;
+    }
+
+    private static bool InClutter(List<Bounds> clutter, Vector3 at)
+    {
+        for (int i = 0; i < clutter.Count; i++)
+        {
+            if (clutter[i].Contains(at)) return true;
+        }
+
+        return false;
+    }
+
+    private static bool FindShelfSpot(Transform owner, Bounds b, List<Bounds> clutter, out ShelfSpot spot)
     {
         spot = default;
         float floor = b.min.y;
@@ -483,6 +546,7 @@ public sealed class BatteryStash : MonoBehaviour
                     if (height < ShelfMinHeight || height > ShelfMaxHeight) continue;
                     Vector3 at = new Vector3(col.x, here[l] + 0.022f, col.z);
                     if (Blocked(Physics.OverlapSphere(at + Vector3.up * 0.06f, 0.04f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore), owner, b)) continue;   // 책이 꽉 찬 칸
+                    if (InClutter(clutter, at + Vector3.up * 0.02f)) continue;   // 104차: 충돌체 없는 책·상자 밑
                     Vector3 eye = new Vector3(eyeBase.x + widthAxis.x * (at.x - b.center.x) * widthAxis.x, floor + 1.7f, eyeBase.z + widthAxis.z * (at.z - b.center.z) * widthAxis.z);
                     if (!Visible(eye, at + Vector3.up * 0.03f, owner, b)) continue;   // 앞에서 안 보인다(벽에 붙은 뒷면·가린 칸·문 달린 칸)
                     float score = -Mathf.Abs(height - 1.15f) - 0.05f * Mathf.Abs(widths[wi]);   // 허리~가슴 높이를 먼저

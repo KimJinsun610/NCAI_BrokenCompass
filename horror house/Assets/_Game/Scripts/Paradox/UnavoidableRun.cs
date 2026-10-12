@@ -32,6 +32,7 @@ namespace NightDuty
 
         private readonly UnavoidableDef _def;
         private float _armedFor = -1f;
+        private bool _exitArmed;   // 103차 QA 3회: 이번 시도에 단서가 울렸는지(재시작 뒤에는 단서가 다시 울려야 나가기 금지가 걸린다)
 
         /// <summary>그날 쌍으로 만든다(null이면 아무것도 하지 않는다).</summary>
         public UnavoidableRun(UnavoidableDef def)
@@ -72,8 +73,10 @@ namespace NightDuty
 
             if (Staged)
             {
+                if (!_exitArmed && IsCue(s) && SpaceIds.Canonical(current) == _def.Space) _exitArmed = true;
+
                 // 진짜 「나가라」: 점검이 남은 채 그 공간을 나가면(=경고를 고름) 당일 재입실 불가.
-                if (_def.Real && _def.Kind == UnavoidableKind.ExitBeforeInspection && Banned == SpaceId.None
+                if (_exitArmed && _def.Real && _def.Kind == UnavoidableKind.ExitBeforeInspection && Banned == SpaceId.None
                     && s.Kind == SignalKind.SpaceExited && SpaceIds.Canonical(s.Space) == _def.Space
                     && spacePending != null && spacePending(_def.Space))
                 {
@@ -125,15 +128,26 @@ namespace NightDuty
             return _def == null || Staged ? UnavoidableStep.None : Stage();
         }
 
-        /// <summary>진행 중이던 누적을 버린다(재시작) — 걸린 것·재입실 금지는 남는다.</summary>
-        public void ResetEpisode()
+        /// <summary>
+        /// 진행 중이던 누적을 버린다(재시작) — 걸린 것·재입실 금지는 남는다.
+        /// <paramref name="keepExitArmed"/>: 단서가 돌아가는 지점(체크포인트) 전에 이미 울렸으면 true — 되돌린 세계에서도 단서는 울린 뒤라 나가면 금지가 걸린다.
+        /// </summary>
+        public void ResetEpisode(bool keepExitArmed = false)
         {
             _armedFor = -1f;
+            _exitArmed = keepExitArmed && _exitArmed;   // 103차 QA 3회: 옛 — 재시작 뒤 단서 없이 그 공간을 잠깐 나가기만 해도 금지가 걸렸다 · 4회: 체크포인트 전에 울린 단서는 남긴다
+        }
+
+        /// <summary>103차 QA 4회: 이번 시도에 단서가 울려 나가면 금지가 걸리는 상태인지.</summary>
+        public bool ExitArmed
+        {
+            get { return _exitArmed; }
         }
 
         private UnavoidableStep Stage()
         {
             Staged = true;
+            _exitArmed = true;
             _armedFor = -1f;
             return UnavoidableStep.Staged;
         }

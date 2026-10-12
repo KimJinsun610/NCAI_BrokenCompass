@@ -16,6 +16,7 @@ using UnityEngine.SceneManagement;
 /// <item><b>소등</b>: 복도 구간만큼 <b>좌측 복도 끝부터</b>(x 오름차순) 형광등을 끄고, 3구간부터 <b>과학실 앞 복도</b> 등도 끈다. 발광(LampFluo)도 함께
 /// (<see cref="MaterialPropertyBlock"/> — 공유 머티리얼은 그대로). 조우 소등(<see cref="LightGroup"/>)이 다시 켜도 다음 프레임에 맞춘다.</item>
 /// <item><b>화장실 조명이 붉어짐</b>: 화장실 구간 2부터.</item>
+/// <item><b>일부 등만 붉어지거나 깜빡임</b>(103차): 공간 구간 3부터 그 공간의 켜진 천장 등 4분의 1(구간 4는 5분의 2, 적어도 하나)을 골라 깜빡이거나 붉게(공간·밤마다 번갈아). 밤마다 다른 등. 화장실은 빼고(이미 붉다), 구간 소등한 등·꺼 둔 교실 등·원래 깜빡이는 등·조우가 물들인 등은 건드리지 않는다.</item>
 /// <item><b>모든 천장 등이 미세하게 붉어짐</b>(66차 민: 「조도 축이 오르면 전체 조명이 미세하게 붉어지고」): 등마다 제 공간 구간의 <see cref="IlluminanceTint.Amount"/>만큼 빛 색을 붉은 쪽으로(4초에 걸쳐). 다른 연출이 물들인 등(C4 단서 · 화장실 붉은 등)은 건드리지 않는다.</item>
 /// </list>
 /// 옛 SpaceLights(구간마다 등 8/6/4/2/0개 + 등 색온도)는 9.20V·최종 기획서와 달라 이 컴포넌트로 대신한다.
@@ -67,7 +68,35 @@ public sealed class IlluminanceMap : MonoBehaviour
         public Light Light;
         public Color Base;
         public SpaceId Space;
+        public int Key;
+        public float BaseIntensity;   // 103차 QA: 처음(설치 때) 세기 — 강조 등이 물든 세기를 기준으로 잡지 않게
     }
+
+    /// <summary>103차: 구간 3부터 붉어지거나 깜빡이는 등 하나.</summary>
+    private sealed class Accent
+    {
+        public Tintable Source;
+        public Lamp Lamp;
+        public bool Red;
+        public float Seed;
+        public bool Applied;
+        public bool Dark;
+    }
+
+    /// <summary>103차: 등을 고르지 않는 공간(화장실은 구간 2부터 이미 붉다).</summary>
+    private static readonly SpaceId[] AccentSpaces =
+    {
+        SpaceId.Corridor, SpaceId.Classroom_1_1, SpaceId.Classroom_1_3, SpaceId.ScienceRoom, SpaceId.Library, SpaceId.SecurityRoom
+    };
+
+    /// <summary>깜빡이는 등이 한 번 깜빡이는 간격(초, 등마다 조금씩 다름).</summary>
+    private const float FlickerPeriod = 3.4f;
+
+    /// <summary>깜빡임 한 번의 길이(초) — 그 안에서 빠르게 꺼졌다 켜진다.</summary>
+    private const float FlickerBurst = 0.5f;
+
+    /// <summary>깜빡여 어두울 때 남는 세기 비율.</summary>
+    private const float FlickerDim = 0.06f;
 
     /// <summary>66차: 조도가 오를 때 천장 등이 옮겨 가는 붉은 색.</summary>
     public static readonly Color RedTint = new Color(IlluminanceTint.R, IlluminanceTint.G, IlluminanceTint.B);
@@ -95,6 +124,8 @@ public sealed class IlluminanceMap : MonoBehaviour
     private readonly List<Lamp> _toilet = new List<Lamp>();
     private readonly List<Tintable> _tintable = new List<Tintable>();
     private readonly HashSet<Light> _redLamps = new HashSet<Light>();
+    private readonly Dictionary<Light, Accent> _accents = new Dictionary<Light, Accent>();
+    private readonly Dictionary<SpaceId, int> _accentKey = new Dictionary<SpaceId, int>();   // 103차 QA: 공간마다 고른 (일차·구간) — 같으면 다시 고르지 않는다
     private readonly Dictionary<SpaceId, float> _tintWant = new Dictionary<SpaceId, float>();
     private readonly Dictionary<SpaceId, float> _tintNow = new Dictionary<SpaceId, float>();
     private readonly List<KeyValuePair<SpaceId, Bounds>> _tintRooms = new List<KeyValuePair<SpaceId, Bounds>>();
@@ -156,6 +187,22 @@ public sealed class IlluminanceMap : MonoBehaviour
     public int TintableCount
     {
         get { return _tintable.Count; }
+    }
+
+    /// <summary>103차: 지금 붉어졌거나 깜빡이는 등 수(붉은 등, 깜빡이는 등). 시험용.</summary>
+    public string AccentSummary
+    {
+        get
+        {
+            int red = 0, flicker = 0;
+            foreach (Accent a in _accents.Values)
+            {
+                if (a.Red) red++;
+                else flicker++;
+            }
+
+            return red + " / " + flicker;
+        }
     }
 
     /// <summary>모은 등 수(좌측 복도, 과학실 앞, 화장실). 시험용.</summary>
@@ -361,7 +408,7 @@ public sealed class IlluminanceMap : MonoBehaviour
             if (lamp == null || !lamp.name.StartsWith("LampFluo")) continue;
             if (l.GetComponentInParent<FlashlightRelay>() != null || l.GetComponentInParent<CctvSystem>() != null) continue;
             Vector3 p = l.transform.position;
-            _tintable.Add(new Tintable { Light = l, Base = l.color, Space = TintSpaceOf(p) });
+            _tintable.Add(new Tintable { Light = l, Base = l.color, Space = TintSpaceOf(p), Key = Mathf.RoundToInt(p.x * 10f) * 73856093 ^ Mathf.RoundToInt(p.y * 10f) * 19349663 ^ Mathf.RoundToInt(p.z * 10f) * 83492791, BaseIntensity = l.intensity });
 
             if (hasToilet && Wide(toilet).Contains(p))
             {
@@ -459,7 +506,9 @@ public sealed class IlluminanceMap : MonoBehaviour
         }
 
         if (night) _snapped = true;
+        if (!night && _accents.Count > 0) ReleaseAllAccents();   // 103차 QA 3회: 밤이 끝나도(결과 화면까지) 깜빡이던 것
         EnforceLamps();
+        DriveAccents();
         TintLamps(dt);
     }
 
@@ -501,6 +550,192 @@ public sealed class IlluminanceMap : MonoBehaviour
         SpaceId[] tintSpaces = { SpaceId.Corridor, SpaceId.Classroom_1_1, SpaceId.Classroom_1_3, SpaceId.ScienceRoom, SpaceId.Toilet, SpaceId.Library, SpaceId.SecurityRoom };
         for (int i = 0; i < tintSpaces.Length; i++) _tintWant[tintSpaces[i]] = IlluminanceTint.Amount(NightRun.ShownBand(tintSpaces[i], FearAxis.Illuminance));
         _toiletBand = NightRun.ShownBand(SpaceId.Toilet, FearAxis.Illuminance);
+        PlanAccents();
+    }
+
+    // ─────────────────────────────── 103차: 일부 등이 붉어지거나 깜빡임 ───────────────────────────────
+
+    /// <summary>
+    /// 공간 조도 구간이 3 이상이면 그 공간 천장 등 일부(<see cref="IlluminanceTint.AccentCount"/>)를 고른다 — 순서대로 깜빡임·붉음 번갈아.
+    /// 밤마다 다른 등(<see cref="IlluminanceTint.AccentRank"/>), 같은 밤에는 같은 등. 구간이 내려가면(재시작) 되돌린다.
+    /// </summary>
+    private void PlanAccents()
+    {
+        Dictionary<Light, bool> want = new Dictionary<Light, bool>();
+        Dictionary<Light, Tintable> source = new Dictionary<Light, Tintable>();
+        HashSet<Light> fresh = new HashSet<Light>();   // 103차 QA 3회: 새로 고른 등 — 옛 강조가 남아 있어도 기준 발광을 새로 잡는다(전날 초록 C4 발광을 이어 쓰던 것)
+        int day = NightRun.Day;
+
+        // 구간 소등으로 꺼 둔 등(좌측 복도·과학실 앞)은 고르지 않는다.
+        HashSet<Light> mapOff = new HashSet<Light>();
+        // 103차 QA: 지금 꺼진 상태(Off)가 아니라 이번 구간에서 끌 등으로 본다 — 같은 폴링 뒤 EnforceLamps가 끄기 전에 골라, 곧 꺼질 등이 뽑히던 것.
+        int leftOff = LeftOffFor(_corridorBand);
+        for (int i = 0; i < _left.Count && i < leftOff; i++) mapOff.Add(_left[i].Light);
+        if (_corridorBand >= _table.scienceFrontOffFrom) for (int i = 0; i < _scienceFront.Count; i++) mapOff.Add(_scienceFront[i].Light);
+
+        for (int s = 0; s < AccentSpaces.Length; s++)
+        {
+            Band band = NightRun.ShownBand(AccentSpaces[s], FearAxis.Illuminance);
+            int key = band < IlluminanceTint.AccentFrom ? -1 : day * 10 + (int)band;
+            int was;
+            if (key >= 0 && _accentKey.TryGetValue(AccentSpaces[s], out was) && was == key)
+            {
+                // 103차 QA: 같은 밤·같은 구간이면 고른 등을 그대로 둔다(조우 소등·물듦으로 켜진 등 수가 잠깐 바뀌어도 다시 고르지 않는다).
+                foreach (KeyValuePair<Light, Accent> kv in _accents)
+                {
+                    if (kv.Key == null || kv.Value.Source.Space != AccentSpaces[s] || mapOff.Contains(kv.Key)) continue;
+                    want[kv.Key] = kv.Value.Red;
+                    source[kv.Key] = kv.Value.Source;
+                }
+
+                continue;
+            }
+
+            if (key < 0)
+            {
+                _accentKey.Remove(AccentSpaces[s]);
+                continue;
+            }
+
+            // 켜져 있는 등만(꺼 둔 교실 등 · 원래 깜빡이는 등 · 조우가 물들인 등은 빼고).
+            List<Tintable> here = new List<Tintable>();
+            for (int i = 0; i < _tintable.Count; i++)
+            {
+                Tintable t = _tintable[i];
+                if (t.Light == null || t.Space != AccentSpaces[s] || mapOff.Contains(t.Light) || !t.Light.enabled || LightGroup.IsLightTinted(t.Light)) continue;
+                if (t.Light.transform.parent != null && t.Light.transform.parent.name.IndexOf("flicker", System.StringComparison.OrdinalIgnoreCase) >= 0) continue;
+                if (RedLightSpot.Active != null && RedLightSpot.Active.OwnsLampNear(t.Light.transform.position)) continue;   // 103차 QA 3회: C4 초록 등은 고르지 않는다
+                here.Add(t);
+            }
+
+            int n = IlluminanceTint.AccentCount(here.Count, band);
+            if (n == 0) continue;   // 켜진 등이 없으면 다음 폴링에 다시 본다(열쇠를 적지 않는다)
+            _accentKey[AccentSpaces[s]] = key;
+            here.Sort((a, b) => IlluminanceTint.AccentRank(a.Key, day).CompareTo(IlluminanceTint.AccentRank(b.Key, day)));
+            for (int k = 0; k < n; k++)
+            {
+                fresh.Add(here[k].Light);
+                want[here[k].Light] = IlluminanceTint.AccentRed(k + s + day);   // 공간마다·밤마다 깜빡임과 붉음이 번갈아(공간에 한 개뿐이어도 둘 다 보이게)
+                source[here[k].Light] = here[k];
+            }
+        }
+
+        List<Light> drop = new List<Light>();
+        foreach (KeyValuePair<Light, Accent> kv in _accents)
+        {
+            bool red;
+            if (!want.TryGetValue(kv.Key, out red) || red != kv.Value.Red || fresh.Contains(kv.Key)) drop.Add(kv.Key);
+        }
+
+        for (int i = 0; i < drop.Count; i++)
+        {
+            ReleaseAccent(_accents[drop[i]]);
+            _accents.Remove(drop[i]);
+        }
+
+        foreach (KeyValuePair<Light, bool> kv in want)
+        {
+            if (_accents.ContainsKey(kv.Key)) continue;
+            Tintable t = source[kv.Key];
+            Lamp lamp = MakeLamp(kv.Key, kv.Key.transform.parent);
+            lamp.BaseIntensity = t.BaseIntensity;   // 103차 QA: 지금(물든·깜빡이는 중일 수 있는) 세기가 아니라 처음 세기
+            _accents[kv.Key] = new Accent
+            {
+                Source = t,
+                Lamp = lamp,
+                Red = kv.Value,
+                Seed = (IlluminanceTint.AccentRank(t.Key, 7) % 1000u) / 100f,
+            };
+        }
+    }
+
+    /// <summary>매 프레임 — 붉은 등은 한 번 물들이고, 깜빡이는 등은 세기·발광을 흔든다. 꺼진 등·조우가 물들인 등은 건드리지 않는다.</summary>
+    private void DriveAccents()
+    {
+        if (_accents.Count == 0) return;
+        float now = Time.time;
+        foreach (Accent a in _accents.Values)
+        {
+            Light l = a.Lamp.Light;
+            if (l == null) continue;
+            if (!l.enabled || LightGroup.IsLightTinted(l))
+            {
+                // 구간 소등·조우 소등 중이면 손대지 않는다(다시 켜지면 이어서).
+                if (a.Applied && !a.Red) l.intensity = a.Lamp.BaseIntensity;
+                a.Applied = false;
+                continue;
+            }
+
+            if (a.Red)
+            {
+                if (a.Applied) continue;
+                l.color = _table.toiletRed;
+                l.intensity = a.Lamp.BaseIntensity * _table.toiletRedIntensity;
+                _redLamps.Add(l);
+                SetGlow(a.Lamp, _table.toiletRed, 1f);
+                a.Applied = true;
+                continue;
+            }
+
+            if (InspectionAnomalies.PhotosensitiveSafe)
+            {
+                // 103차 QA: 광과민 옵션이면 빠른 깜빡임 대신 느린 맥동(점검 이상 T-3과 같은 상한).
+                float pulse = 0.55f + 0.45f * Mathf.Sin((now + a.Seed) * Mathf.PI * 2f * AnomalyLook.SlowFlickerMaxHz * 0.5f);
+                l.intensity = a.Lamp.BaseIntensity * pulse;
+                SetGlow(a.Lamp, Color.white, pulse);
+                a.Applied = true;
+                a.Dark = false;
+                continue;
+            }
+
+            float period = FlickerPeriod + a.Seed * 0.15f;
+            float phase = Mathf.Repeat(now + a.Seed, period);
+            bool dark = phase < FlickerBurst && Mathf.PerlinNoise(a.Seed * 3.1f, now * 22f) < 0.55f;
+            if (a.Applied && dark == a.Dark) continue;
+            l.intensity = a.Lamp.BaseIntensity * (dark ? FlickerDim : 1f);
+            SetGlow(a.Lamp, Color.white, dark ? FlickerDim : 1f);
+            a.Dark = dark;
+            a.Applied = true;
+        }
+    }
+
+    private void SetGlow(Lamp lamp, Color tint, float scale)
+    {
+        for (int i = 0; i < lamp.Glow.Length; i++)
+        {
+            Renderer r = lamp.Glow[i];
+            if (r == null) continue;
+            r.GetPropertyBlock(_block);
+            _block.SetColor(EmissionId, lamp.GlowBase[i] * tint * scale);
+            r.SetPropertyBlock(_block);
+        }
+    }
+
+    private void ReleaseAllAccents()
+    {
+        foreach (Accent a in _accents.Values) ReleaseAccent(a);
+        _accents.Clear();
+        _accentKey.Clear();
+    }
+
+    private void ReleaseAccent(Accent a)
+    {
+        Light l = a.Lamp.Light;
+        if (l == null) return;
+        if (a.Red)
+        {
+            _redLamps.Remove(l);
+            if (!LightGroup.IsLightTinted(l)) l.color = a.Source.Base;   // 다음 프레임 TintLamps가 다시 미세하게 물들인다
+        }
+
+        l.intensity = a.Lamp.BaseIntensity;
+        if (l.enabled)
+        {
+            for (int i = 0; i < a.Lamp.Glow.Length; i++)
+            {
+                if (a.Lamp.Glow[i] != null) a.Lamp.Glow[i].SetPropertyBlock(null);
+            }
+        }
     }
 
     private void UpdateCurrentSpace()
@@ -643,6 +878,9 @@ public sealed class IlluminanceMap : MonoBehaviour
         all.AddRange(_scienceFront);
         for (int i = 0; i < all.Count; i++) SetOff(all[i], false);
         for (int i = 0; i < _toilet.Count; i++) SetRed(_toilet[i], false);
+        foreach (Accent a in _accents.Values) ReleaseAccent(a);
+        _accents.Clear();
+        _accentKey.Clear();
         for (int i = 0; i < _tintable.Count; i++)
         {
             if (_tintable[i].Light != null && !LightGroup.IsLightTinted(_tintable[i].Light)) _tintable[i].Light.color = _tintable[i].Base;

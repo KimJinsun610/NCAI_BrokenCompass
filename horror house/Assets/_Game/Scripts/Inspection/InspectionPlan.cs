@@ -200,6 +200,12 @@ namespace NightDuty
         /// <summary>2일차부터 늦은 공간(호출 2)에 묶는 항목 수 상한. 나머지는 먼저 열린다.</summary>
         public const int LateItemsMax = 2;
 
+        /// <summary>
+        /// 103차(사용자: 「진짜 회피 불가가 0번 — 2번(K-1을 4일차에도)으로」): 이날 경비실을 점검하면 CCTV 전 채널(K-1)을 다시 낸다.
+        /// 가짜 회피 불가 K1·K2×K-1을 걸 수 있는 날 — 회차의 첫 회피 불가(가짜)가 4일차에 나와야 5일차에 진짜가 나온다(옛: K-1은 1일차 뒤 덜 나온 K-2·K-3에 밀려 4일차 0%).
+        /// </summary>
+        public const int CctvRecheckDay = 4;
+
         private readonly Random _rng;
         private readonly HashSet<SpaceId> _seen = new HashSet<SpaceId>();
         private readonly Dictionary<string, int> _used = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -328,10 +334,14 @@ namespace NightDuty
 
             List<SpaceId> spaces = null;
             List<InspectionItem> eligible = null;
+            InspectionItem recheck = null;
             for (int attempt = 0; attempt < Attempts; attempt++)
             {
                 spaces = PickSpaces();
                 eligible = AnomalyCandidates(spaces, shown);
+                // 103차: 4일차 경비실은 K-1을 정상 항목으로 먼저 둔다(이상 후보에서는 뺀다 — 공간 조합을 고를 때부터, QA).
+                recheck = day == CctvRecheckDay && spaces.Contains(SpaceId.SecurityRoom) ? InspectionCatalog.Find(InspectionCatalog.FirstInspection) : null;
+                if (recheck != null) eligible.RemoveAll(x => x.Id == recheck.Id);
                 if (eligible.Count >= wanted) break;
             }
 
@@ -344,6 +354,7 @@ namespace NightDuty
             }
 
             List<InspectionAssignment> list = new List<InspectionAssignment>();
+            if (recheck != null) list.Add(new InspectionAssignment(recheck, false, Band.Band0, false));
 
             // 1) 이상 — 연출 구간 가중치로 뽑는다.
             for (int n = 0; n < anomalies; n++)

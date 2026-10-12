@@ -134,6 +134,9 @@ namespace NightDuty
         /// <summary>호출·따라잡기도 직전 지시 뒤 이만큼은 띄운다(알람 두 번이 겹치지 않게).</summary>
         public const float ForcedGap = 8f;
 
+        /// <summary>103차 QA 4회: 따라잡기 둘째 통부터 — 밀린 점검이 남아 있어도 이만큼(실제 초) 지나면 다음 통을 낸다.</summary>
+        public const float CatchUpChainGap = 30f;
+
         /// <summary>호출·따라잡기가 조우를 기다리는 최대 초.</summary>
         public const float ForcedBusyWaitMax = 30f;
 
@@ -362,6 +365,7 @@ namespace NightDuty
         {
             if (input.Dt > 0f) Now += input.Dt;
             if (input.DirectorBusy) _busyEndedAt = Now;
+            _banned = input.Banned;
 
             float minute = input.Minute;
             int whole = minute < 0f ? -1 : (int)Math.Floor(minute);
@@ -373,6 +377,7 @@ namespace NightDuty
                 if (Now < _witness[i].Value || Now - _lastIssue < ForcedGap) continue;
                 string id = _witness[i].Key;
                 _witness.RemoveAt(i);
+                if (input.Banned != SpaceId.None && SpaceOf(id) == input.Banned) { i--; continue; }   // 103차 QA 3회: 재입실 불가 공간 — 보고할 수 없는 지시를 내지 않는다(묶인 채 정산에서 빠진다)
                 if (!_board.Release(id)) return null;
                 return Issue(OrderKind.Witness, whole, new List<string> { id });
             }
@@ -448,6 +453,17 @@ namespace NightDuty
                 bool tight = Slack(minute, input.Banned) < SlackMin;
                 if (deadline || tight)
                 {
+                    // 103차 QA 4회: 한 통에 한 항목이 된 뒤로 따라잡기가 8초마다 잇달아 나갔다(알람 폭주) — 둘째 통부터는 평소 간격을 두고,
+                    // 밀린 점검이 둘 이상이면 보고를 기다린다(보고하지 않아도 CatchUpChainGap마다는 낸다 — 미루기만으로 미완료를 피하지 못하게).
+                    // 여유가 빠듯하면(tight) 옛 그대로 8초 간격 — 남은 시간 안에 다 내야 한다.
+                    bool chained = _orders.Count > 0 && _orders[_orders.Count - 1].Kind == OrderKind.CatchUp;
+                    if (chained && !tight)
+                    {
+                        float since = Now - _lastIssue;
+                        if (since < MinGap) return Hold("따라잡기 — 지시 간격");
+                        if (_board.IssuedPendingCountExcept(input.Banned) > 1 && since < CatchUpChainGap) return Hold("따라잡기 — 앞 지시 보고를 기다림");
+                    }
+
                     if (!ForcedReady(input.DirectorBusy)) return Hold("따라잡기 — 조우 끝을 기다림");
                     if (!_call1Done && minute >= NightClock.Call1) _call1Done = true;
                     List<string> rest = EarlyUnissued(minute, input.Banned, true);
@@ -508,12 +524,69 @@ namespace NightDuty
             return !busy || Now - _forcedSince >= ForcedBusyWaitMax;
         }
 
+        /// <summary>
+        /// 103차(사용자: 「과학실에 점검 두 개를 하라는 지시가 하나의 타임스탬프에 와 버려 — 다른 장소도 그렇다」): 지시 한 통에 담는 항목 수.
+        /// 옛 50차는 공간 단위 묶음(그 공간의 남은 항목 전부)이었다. 남은 항목은 다음 지시로 — 같은 공간을 먼저 끝낸다(<see cref="SpaceUnfinished"/>).
+        /// </summary>
+        public const int OrderItemsMax = 1;
+
+        /// <summary>103차: 지시한 공간에 남은 항목을 이어서 낼 때까지 근무 지시를 미루는 최대 시간(실제 초).</summary>
+        public const float ContinueWindowSeconds = 90f;
+
+        /// <summary>103차: 지난 지시 공간의 남은 항목을 먼저 내도록 더하는 공간 점수.</summary>
+        public const float ContinueBonus = 3f;
+
+        private SpaceId _lastOrderSpace = SpaceId.None;
+        private readonly Dictionary<string, float> _issuedAt = new Dictionary<string, float>();   // 103차 후속: 항목 → 지시받은 때(Now)
+
+        /// <summary>
+        /// 103차 후속(사용자 7번): 지시받고 아직 보고하지 않은 항목 중 가장 오래 미룬 것의 실제 초(재입실 불가 공간·묶인 항목은 빼고). 없으면 0.
+        /// </summary>
+        public float OldestPendingSeconds(SpaceId banned)
+        {
+            float oldest = 0f;
+            foreach (InspectionAssignment a in _board.Plan.Assignments)
+            {
+                if (!_board.IsIssued(a.Id) || _board.IsHeld(a.Id) || _board.StateOf(a.Id) != InspectionState.Pending) continue;
+                if (banned != SpaceId.None && SpaceIds.Canonical(a.Item.Space) == banned) continue;
+                float at;
+                if (!_issuedAt.TryGetValue(a.Id, out at)) continue;
+                oldest = Math.Max(oldest, Now - at);
+            }
+
+            return oldest;
+        }
+        private SpaceId _banned = SpaceId.None;   // 103차 QA: 마지막 Tick의 재입실 불가 공간(SpaceUnfinished가 낼 수 없는 항목을 세지 않게)
+
+        /// <summary>103차: 방금 지시한 공간에 아직 지시하지 않은 항목이 남았다(<see cref="ContinueWindowSeconds"/> 안) — 근무 지시는 기다린다.</summary>
+        public bool SpaceUnfinished
+        {
+            get { return _lastOrderSpace != SpaceId.None && Now - _lastIssue < ContinueWindowSeconds && UnissuedIn(_lastOrderSpace, _banned).Count > 0; }
+        }
+
         private InspectionOrder Issue(OrderKind kind, int minute, List<string> ids)
         {
-            List<string> issued = new List<string>();
-            for (int i = 0; i < ids.Count; i++)
+            // 103차: 한 통에 한 항목 — 가까운 공간의 항목부터(따라잡기는 여러 공간이 섞인다).
+            List<string> ordered = new List<string>(ids);
+            ordered.Sort((p, q) =>
             {
-                if (_board.MarkIssued(ids[i])) issued.Add(ids[i]);
+                // 103차 QA 3회: 호출 1은 아껴 둔 공간의 항목부터(옛: 따라잡기 항목이 섞이면 가까운 다른 방이 호출 1로 나갔다).
+                if (kind == OrderKind.Call1 && _reserved != SpaceId.None)
+                {
+                    int rp = SpaceOf(p) == _reserved ? 0 : 1, rq = SpaceOf(q) == _reserved ? 0 : 1;
+                    if (rp != rq) return rp.CompareTo(rq);
+                }
+
+                return Cost(SpaceOf(p)).CompareTo(Cost(SpaceOf(q)));
+            });
+            List<string> issued = new List<string>();
+            for (int i = 0; i < ordered.Count && issued.Count < OrderItemsMax; i++)
+            {
+                if (_board.MarkIssued(ordered[i]))
+                {
+                    issued.Add(ordered[i]);
+                    _issuedAt[ordered[i]] = Now;   // 103차 후속: 미룬 시간(독촉)
+                }
             }
 
             _forcedSince = -1f;
@@ -535,6 +608,7 @@ namespace NightDuty
             InspectionOrder order = new InspectionOrder(_orders.Count + 1, kind, minute, issued, space);
             _orders.Add(order);
             _lastIssue = Now;
+            _lastOrderSpace = space != SpaceId.None ? SpaceIds.Canonical(space) : SpaceId.None;
             Waiting = string.Empty;
             return order;
         }
@@ -706,7 +780,7 @@ namespace NightDuty
             List<SpaceId> list = new List<SpaceId>();
             foreach (InspectionAssignment a in _board.Plan.Assignments)
             {
-                if (a.IsLate || !Eligible(a, banned)) continue;
+                if ((a.IsLate && !_call2Done) || !Eligible(a, banned)) continue;   // 103차: 호출 2 뒤에는 늦은 공간의 남은 항목도(한 통에 한 항목)
                 SpaceId s = SpaceIds.Canonical(a.Item.Space);
                 if (keepReserved && s == _reserved) continue;
                 if (Waits(s, minute)) continue;   // 53차: 슬롯 B·C 조우 방은 그 슬롯이 열릴 때까지
@@ -721,6 +795,7 @@ namespace NightDuty
         {
             float score = -Cost(space) / 10f;
             if (Armed(space, minute)) score += 1.5f;
+            if (space == _lastOrderSpace) score += ContinueBonus;   // 103차: 지시한 공간의 남은 항목 먼저
 
             Wing here = SpaceIds.WingOf(PlayerSpaceForWing());
             Wing there = SpaceIds.WingOf(space);
@@ -804,7 +879,7 @@ namespace NightDuty
         /// <summary>평소 지시를 낼 까닭(없으면 빈 문자열).</summary>
         private string DueReason(float minute, SpaceId pick, bool beforeCall1, DispatchInput input)
         {
-            int backlog = _board.IssuedPendingCount;
+            int backlog = _board.IssuedPendingCountExcept(input.Banned);   // 103차 QA: 재입실 불가 공간의 항목은 세지 않는다
             float since = Math.Max(_lastReport, _lastIssue);
             int issued = EarlyIssued();
             int allowed = minute < 0f ? int.MaxValue / 2 : Allowed(minute);
@@ -903,7 +978,7 @@ namespace NightDuty
             List<string> ids = new List<string>();
             foreach (InspectionAssignment a in _board.Plan.Assignments)
             {
-                if (a.IsLate || !Eligible(a, banned)) continue;
+                if ((a.IsLate && !_call2Done) || !Eligible(a, banned)) continue;   // 103차: 호출 2 뒤 남은 늦은 항목도 따라잡기에
                 if (!includeReserved && SpaceIds.Canonical(a.Item.Space) == _reserved) continue;
                 if (Waits(SpaceIds.Canonical(a.Item.Space), minute)) continue;
                 ids.Add(a.Id);
@@ -993,6 +1068,9 @@ namespace NightDuty
             _guardSince = -1f;
             _space = SpaceId.None;
             _hasPose = false;
+            _issuedAt.Clear();   // 103차 후속: 재시작 — 지시받은 항목은 지금부터 다시 센다
+            foreach (InspectionAssignment a in _board.Plan.Assignments) if (_board.IsIssued(a.Id)) _issuedAt[a.Id] = Now;
+            _lastOrderSpace = SpaceId.None;   // 103차 QA: 재시작 직후 「지시한 공간을 먼저 끝냄」이 근무 지시를 90초 막던 것
             Waiting = string.Empty;
         }
 

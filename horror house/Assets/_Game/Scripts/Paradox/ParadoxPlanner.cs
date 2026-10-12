@@ -99,6 +99,8 @@ namespace NightDuty
     {
         private readonly Random _rng;
         private readonly HashSet<string> _seen = new HashSet<string>(StringComparer.Ordinal);
+        private readonly HashSet<string> _tamperedInRun = new HashSet<string>(StringComparer.Ordinal);   // 103차: 회차에 이미 변조한 수칙
+        private readonly HashSet<string> _unavoidableInRun = new HashSet<string>(StringComparer.Ordinal);   // 103차: 회차에 이미 건(문자를 보낸) 회피 불가 쌍(같은 쌍은 한 번)
 
         /// <summary>만든다. 시험은 씨앗을 준다.</summary>
         public ParadoxPlanner(Random rng = null)
@@ -118,10 +120,12 @@ namespace NightDuty
         /// <summary>회차에서 회피 불가 역설이 한 번이라도 걸렸는지(회차의 첫 회피 불가는 반드시 가짜).</summary>
         public bool UnavoidableInRun { get; private set; }
 
-        /// <summary>회피 불가 역설이 실제로 걸렸다(문자를 보냈다).</summary>
-        public void MarkUnavoidable()
+        /// <summary>회피 불가 역설이 실제로 걸렸다(문자를 보냈다). 걸린 쌍은 회차에 다시 고르지 않는다(103차).</summary>
+        /// <param name="def">걸린 쌍(없으면 기록만 하지 않는다).</param>
+        public void MarkUnavoidable(UnavoidableDef def = null)
         {
             UnavoidableInRun = true;
+            if (def != null) _unavoidableInRun.Add(def.Id);
         }
 
         /// <summary>그날의 빈 방 채널(0~4)을 고른다 — K2 단서·K2 역설의 「CAM0n」.</summary>
@@ -134,7 +138,8 @@ namespace NightDuty
         /// 그날 회피 불가 역설을 고른다(<b>덱 편성 전</b> — 쌍의 수칙을 강제 편성한다). 신뢰 구간 3이면 가짜, 4면 진짜(회차의 첫 회피 불가면 가짜).
         /// 그날 점검 편성으로 걸 수 없는 쌍은 뺀다. 없으면 null.
         /// </summary>
-        public UnavoidableDef PlanUnavoidable(int day, Band trustBand, InspectionPlan inspections)
+        /// <param name="canForce">그날 그 수칙을 강제 편성할 수 있는지(103차 — 경비실·CCTV 날짜). null이면 묻지 않는다.</param>
+        public UnavoidableDef PlanUnavoidable(int day, Band trustBand, InspectionPlan inspections, Func<string, bool> canForce = null)
         {
             if ((int)trustBand < 3) return null;
             bool real = (int)trustBand >= 4 && UnavoidableInRun;
@@ -142,6 +147,8 @@ namespace NightDuty
             IReadOnlyList<UnavoidableDef> all = UnavoidableCatalog.All;
             for (int i = 0; i < all.Count; i++)
             {
+                if (_unavoidableInRun.Contains(all[i].Id)) continue;   // 103차: 같은 쌍은 회차에 한 번
+                if (canForce != null && !Array.TrueForAll(all[i].Rules, canForce.Invoke)) continue;   // 103차: 경비실 자리·CCTV 사람 한 번
                 if (all[i].Real == real && UnavoidableCatalog.Feasible(all[i], day, inspections)) pool.Add(all[i]);
             }
 
@@ -154,11 +161,35 @@ namespace NightDuty
             SentInRun = true;
         }
 
-        /// <summary>이상이 있는 공간이면 모호 역설을 보낼 확률(%).</summary>
-        public const int SendPercentAnomaly = 75;
+        /// <summary>이상이 있는 공간이면 모호 역설을 보낼 확률(%). 103차(민: 「변조/역설 수칙들이 잘 나오도록」): 75 → 90.</summary>
+        public const int SendPercentAnomaly = 90;
 
-        /// <summary>이상이 없는 공간이면 모호 역설을 보낼 확률(%).</summary>
-        public const int SendPercentClear = 25;
+        /// <summary>이상이 없는 공간이면 모호 역설을 보낼 확률(%). 103차: 25 → 50(「문자 = 약한 단서」 기울기는 남긴다).</summary>
+        public const int SendPercentClear = 50;
+
+        /// <summary>103차: 미세 변조가 열리는 신뢰 구간(옛 3).</summary>
+        public const int TamperMinBand = 2;
+
+        /// <summary>103차: 붕괴형 변조가 열리는 신뢰 구간(옛 4). 검은 줄은 4 그대로.</summary>
+        public const int CollapseMinBand = 3;
+
+        /// <summary>
+        /// 103차(민: 「역설/변조가 적절히 나오고」): 이 날부터는 신뢰 구간 1에서도 미세 변조를 건다 — 신뢰가 낮은 플레이어도 회차 후반에 변조를 본다
+        /// (옛: 미숙 플레이어 약 40%가 회차 내내 변조를 못 봄).
+        /// </summary>
+        public const int TamperLateDay = 3;   // 103차: 4 → 3 — 2일차 첫 역설 → 3일차 첫 변조 → 5일차 붕괴형·회피 불가로 날마다 새것이 하나씩
+
+        /// <summary>
+        /// 103차 후속(사용자: 「변조는 수칙이 처음 등장해도 신뢰가 높다면 변조돼서 처음 등장할 수 있는 게 원래 의도」): 이 신뢰 구간부터는 처음 보는 수칙도 변조 후보.
+        /// 그 아래(미세 변조)는 원본을 본 적 있는 수칙만 — 원본을 모르면 「?.」 미세 변조는 알아챌 수 없다. 붕괴형 구간(<see cref="CollapseMinBand"/>)과 같게 둔다.
+        /// </summary>
+        public const int UnseenTamperMinBand = CollapseMinBand;
+
+        /// <summary>그날 그 신뢰 구간에서 변조를 거는지.</summary>
+        public static bool TamperOpen(int day, int band)
+        {
+            return band >= TamperMinBand || (day >= TamperLateDay && band >= 1);
+        }
 
         /// <summary>
         /// 그날 편성. 끝나면 그날 덱을 「본 수칙」에 더한다(다음 밤부터 변조 후보).
@@ -176,32 +207,47 @@ namespace NightDuty
             if (unavoidable != null) note.Append("회피 불가 ").Append(unavoidable).Append(' ');
             SpaceId emptySpace = ParadoxRun.SpaceOfChannel(emptyRoomChannel);
 
-            // 1) 변조(신뢰 3+) — 모호 역설과 같은 수칙에 걸지 않으므로 먼저 고른다.
+            // 1) 변조(신뢰 구간 TamperMinBand+, 103차: 3 → 2) — 모호 역설과 같은 수칙에 걸지 않으므로 먼저 고른다.
             string tampered = null;
             string tamperText = null;
-            if (band >= 3)
+            if (TamperOpen(day, band))
             {
                 List<string> pool = new List<string>();
+                List<int> weights = new List<int>();
                 for (int i = 0; i < deck.Count; i++)
                 {
                     string id = deck[i].Id;
                     ParadoxEntry e = ParadoxCatalog.Find(id);
-                    if (e == null || !e.HasVariant || Excluded(id) || !_seen.Contains(id)) continue;
+                    if (e == null || !e.HasVariant || Excluded(id)) continue;
+                    if (!_seen.Contains(id) && band < UnseenTamperMinBand) continue;   // 103차 후속(사용자: 「신뢰가 높다면 처음 등장하는 수칙도 변조돼서 나올 수 있는 게 원래 의도」)
                     if (unavoidable != null && unavoidable.Has(id)) continue;
                     if (id == ProgramCatalog.FirstParadoxRule && day == 2) continue;
                     pool.Add(id);
+                    // 103차: 회차에 이미 변조한 수칙은 거의 다시 고르지 않고, 위협 수칙(S5 등)보다 평소 수칙을 앞세운다(옛: 5일차 변조의 60%가 S5).
+                    RuleDef def0 = ProgramCatalog.Rule(id);
+                    weights.Add((_tamperedInRun.Contains(id) ? 1 : 6) * (def0 != null && (def0.IsThreat || def0.Space == SpaceId.None) ? 1 : 2));   // 공통 수칙(G4)도 한 단 아래
                 }
 
                 if (pool.Count > 0)
                 {
-                    tampered = pool[_rng.Next(pool.Count)];
+                    int sum = 0;
+                    for (int i = 0; i < weights.Count; i++) sum += weights[i];
+                    int roll = _rng.Next(sum);
+                    tampered = pool[pool.Count - 1];
+                    for (int i = 0; i < pool.Count; i++)
+                    {
+                        roll -= weights[i];
+                        if (roll < 0) { tampered = pool[i]; break; }
+                    }
+
+                    _tamperedInRun.Add(tampered);
                     RuleDef def = ProgramCatalog.Rule(tampered);
-                    tamperText = band >= 4 ? ParadoxCatalog.Find(tampered).Variant : ParadoxCatalog.Subtle(def != null ? def.Text : string.Empty);
-                    note.Append("변조 ").Append(tampered).Append(band >= 4 ? "(붕괴형) " : "(미세) ");
+                    tamperText = band >= CollapseMinBand ? ParadoxCatalog.Find(tampered).Variant : ParadoxCatalog.Subtle(def != null ? def.Text : string.Empty);
+                    note.Append("변조 ").Append(tampered).Append(band >= CollapseMinBand ? "(붕괴형) " : "(미세) ");
                 }
                 else
                 {
-                    note.Append("변조 후보 없음(이전 밤에 본 수칙 중 변조본이 있는 것이 없음) ");
+                    note.Append(band >= UnseenTamperMinBand ? "변조 후보 없음(변조본이 있는 수칙이 없음) " : "변조 후보 없음(이전 밤에 본 수칙 중 변조본이 있는 것이 없음) ");
                 }
             }
 
@@ -278,11 +324,17 @@ namespace NightDuty
                 unavoidable, emptyRoomChannel);
         }
 
-        /// <summary>겨누지도 변조하지도 않는 수칙.</summary>
+        /// <summary>
+        /// 겨누지도 변조하지도 않는 수칙 — T4·K4·G1·G3(<see cref="ParadoxCatalog"/> 주석 그대로).
+        /// 103차 QA 4회(사용자 결정): G1(복도에서 뛰지 마십시오)은 매일 고정인 기본 수칙이라 검은 줄로 가리면 억울한 위반이 된다 — 옛: T4·K4만 빠져 신뢰 구간 4 밤에 G1이 가려졌다(2000밤 중 126번).
+        /// </summary>
         public static bool Excluded(string id)
         {
-            return id == ProgramCatalog.ReverseReportRule || id == ProgramCatalog.FinaleRule;
+            return id == ProgramCatalog.ReverseReportRule || id == ProgramCatalog.FinaleRule || id == CommonRunRule || id == ProgramCatalog.FinaleBlankRule;
         }
+
+        /// <summary>공통 수칙 G1(복도에서 뛰지 마십시오).</summary>
+        public const string CommonRunRule = "G1";
 
         private static bool Has(IReadOnlyList<RuleDef> deck, string id)
         {

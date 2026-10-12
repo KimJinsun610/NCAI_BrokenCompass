@@ -135,6 +135,21 @@ namespace NightDuty
         public static bool Feasible(UnavoidableDef def, int day, InspectionPlan inspections)
         {
             if (def == null) return false;
+            // 103차(민: 「소년 착석과 머리 박기는 하나의 연출」·C2×C-3을 5일차에서 빼기): C2는 소년(머리 박기)을 부른다 — 소년은 2일차 첫 역설(C2)로 이미 나왔으니
+            // 3일차부터는 걸지 않는다(소년이 회차에 두 번 나오던 것).
+            if (day > 2 && def.Has(ProgramCatalog.FirstParadoxRule)) return false;
+            // 103차(신뢰 경계 10/18/26/42로 구간 3이 4일차로 당겨진 뒤): 사슬 조우(H4×T1 → 부르는 목소리)는 그날 그 조우가 원래 나올 수 있을 때만
+            // — 4일차에 목소리를 끌어와 사람 나무 자리를 빼앗고 5일차에 또 부르던 것.
+            if (!string.IsNullOrEmpty(def.ChainEncounter))
+            {
+                EncounterDef chain = ProgramCatalog.Encounter(def.ChainEncounter);
+                if (chain != null)
+                {
+                    Band floor = DayFloor.Of(day);
+                    for (int i = 0; i < chain.Requires.Length; i++) if (chain.Requires[i].Value > floor) return false;
+                }
+            }
+
             for (int i = 0; i < def.Rules.Length; i++)
             {
                 RuleDef r = ProgramCatalog.Rule(def.Rules[i]);

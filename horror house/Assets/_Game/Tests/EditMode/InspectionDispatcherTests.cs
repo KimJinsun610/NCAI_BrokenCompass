@@ -141,6 +141,7 @@ namespace NightDuty.Tests
             public bool Busy;
             public TensionPacer Pacer;
             public bool AutoReport;
+            public SpaceId Banned = SpaceId.None;
 
             public Rig(int day, IEnumerable<KeyValuePair<EncounterSlot, SpaceId>> encounters, params InspectionAssignment[] rows)
                 : this(day, string.Empty, encounters, rows)
@@ -166,7 +167,7 @@ namespace NightDuty.Tests
                 int n = Mathf.RoundToInt(seconds * 10f);
                 for (int i = 0; i < n; i++)
                 {
-                    InspectionOrder o = D.Tick(new DispatchInput { Minute = Minute, Dt = 0.1f, DirectorBusy = Busy, Pacer = Pacer });
+                    InspectionOrder o = D.Tick(new DispatchInput { Minute = Minute, Dt = 0.1f, DirectorBusy = Busy, Pacer = Pacer, Banned = Banned });
                     if (o == null) continue;
                     Orders.Add(o);
                     if (!AutoReport) continue;
@@ -288,9 +289,13 @@ namespace NightDuty.Tests
 
             r.Minute = NightClock.Call1;
             r.Wait(10f);
-            InspectionOrder last = r.Orders[r.Orders.Count - 1];
-            Assert.AreEqual(OrderKind.Call1, last.Kind);
-            Assert.AreEqual(SpaceId.ScienceRoom, last.Space);
+            // 103차: 한 통에 한 항목 — 호출 1이 과학실 첫 항목을, 보고 뒤 바로 같은 과학실 남은 항목이 이어진다.
+            InspectionOrder call = r.Orders.Find(o => o.Kind == OrderKind.Call1);
+            Assert.IsNotNull(call);
+            Assert.AreEqual(SpaceId.ScienceRoom, call.Space);
+            Assert.AreEqual(1, call.ItemIds.Count);
+            r.Wait(30f);
+            Assert.IsTrue(r.Board.IsIssued("S-1") && r.Board.IsIssued("S-2"), "과학실 두 항목 모두");
             Assert.IsFalse(r.Board.IsIssued("H-3"), "늦은 공간은 호출 2");
         }
 
@@ -387,7 +392,84 @@ namespace NightDuty.Tests
             InspectionOrder call = r.Orders[r.Orders.Count - 1];
             Assert.AreEqual(OrderKind.Call1, call.Kind);
             Assert.AreEqual(SpaceId.Classroom, call.Space);
-            CollectionAssert.AreEquivalent(new[] { "C-1", "C-2" }, call.ItemIds);
+            Assert.AreEqual(1, call.ItemIds.Count, "103차: 한 통에 한 항목");
+            Assert.IsTrue(r.D.SpaceUnfinished, "교실에 남은 항목 — 근무 지시는 기다린다");
+            r.Wait(30f);
+            Assert.IsTrue(r.Board.IsIssued("C-1") && r.Board.IsIssued("C-2"), "교실 남은 항목이 이어서");
+            Assert.AreEqual(SpaceId.Classroom, r.Orders[r.Orders.Count - 1].Space);
+            Assert.IsFalse(r.D.SpaceUnfinished);
+        }
+
+        [Test]
+        public void 재입실_불가나_재시작이면_지시한_공간_끝내기가_근무를_막지_않는다()
+        {
+            Rig r = new Rig(2, new[] { Enc(EncounterSlot.A, SpaceId.Classroom_1_3) }, Row("K-1"), Row("H-1"), Row("C-1"), Row("C-2"), Row("L-1", true));
+            object start = r.D.CaptureState();
+            r.AutoReport = true;
+            r.Minute = 20f;
+            r.Wait(200f);
+            r.Minute = NightClock.Call1;
+            r.Wait(0.2f);
+            Assert.IsTrue(r.D.SpaceUnfinished);
+
+            r.Banned = SpaceId.Classroom;
+            r.Wait(0.1f);
+            Assert.IsFalse(r.D.SpaceUnfinished, "103차 QA: 다시 못 들어가는 공간의 남은 항목은 기다릴 까닭이 아니다");
+
+            r.Banned = SpaceId.None;
+            r.Wait(0.1f);
+            Assert.IsTrue(r.D.SpaceUnfinished);
+            r.D.RestoreState(start);
+            Assert.IsFalse(r.D.SpaceUnfinished, "103차 QA: 재시작 직후 90초 동안 근무 지시가 막히던 것");
+        }
+
+        [Test]
+        public void 따라잡기는_8초마다_잇달아_나가지_않는다()
+        {
+            Rig r = new Rig(2, null, Row("K-1"), Row("H-1"), Row("H-2"), Row("S-1"), Row("S-2"));
+            r.Minute = InspectionDispatcher.EarlyDeadline + 2f;   // 01:42 — 아무것도 내지 않은 채 마감이 지났다
+            Assert.GreaterOrEqual(r.D.Slack(r.Minute, SpaceId.None), InspectionDispatcher.SlackMin, "전제: 빠듯하지는 않다(빠듯하면 옛 8초 간격)");
+            int CatchUps()
+            {
+                int n = 0;
+                foreach (InspectionOrder o in r.Orders) if (o.Kind == OrderKind.CatchUp) n++;
+                return n;
+            }
+
+            for (int i = 0; i < 120 && CatchUps() == 0; i++) r.Wait(0.5f);
+            Assert.AreEqual(1, CatchUps(), "첫 따라잡기");
+            r.Wait(InspectionDispatcher.CatchUpChainGap - 5f);
+            Assert.AreEqual(1, CatchUps(), "103차 QA 4회: 밀린 점검이 둘 이상이면 보고를 기다린다(옛: 8초마다 한 통)");
+            r.Wait(6f);
+            Assert.AreEqual(2, CatchUps(), "보고하지 않아도 30초마다는 낸다");
+
+            foreach (InspectionOrder o in r.Orders) foreach (string id in o.ItemIds) if (r.Board.StateOf(id) == InspectionState.Pending) r.Report(id);
+            r.Wait(InspectionDispatcher.MinGap + 1f);
+            Assert.AreEqual(3, CatchUps(), "보고했으면 평소 간격(14초) 뒤 다음 통");
+        }
+
+        [Test]
+        public void 목격_뒤_지시도_재입실_불가_공간이면_내지_않는다()
+        {
+            Rig r = new Rig(2, null, Row("K-1"), Row("L-2"));
+            Assert.IsTrue(r.Board.Hold("L-2"));
+            r.D.QueueWitness("L-2", 0f);
+            r.Banned = SpaceId.Library;
+            r.Minute = 20f;
+            r.Wait(20f);
+            Assert.IsFalse(r.Board.IsIssued("L-2"), "103차 QA 3회: 보고할 수 없는 지시");
+            Assert.IsTrue(r.Board.IsHeld("L-2"), "묶인 채 남아 정산에서 빠진다");
+        }
+
+        [Test]
+        public void 재입실_불가_공간의_지시받은_항목은_밀린_점검에_세지_않는다()
+        {
+            Rig r = new Rig(2, null, Row("K-1"), Row("C-1"));
+            r.Board.MarkIssued("K-1");
+            r.Board.MarkIssued("C-1");
+            Assert.AreEqual(2, r.Board.IssuedPendingCount);
+            Assert.AreEqual(1, r.Board.IssuedPendingCountExcept(SpaceId.Classroom));
+            Assert.AreEqual(2, r.Board.IssuedPendingCountExcept(SpaceId.None));
         }
 
         [Test]
@@ -412,7 +494,9 @@ namespace NightDuty.Tests
             Rig r = new Rig(3, null, Row("H-1"), Row("H-2"), Row("H-3"), Row("S-1"), Row("S-2"), Row("L-1"), Row("T-1", true));
             r.Minute = 2f;
             r.Wait(9f);
-            Assert.AreEqual(3, r.Board.IssuedCount, "첫 지시 = 복도 셋");
+            Assert.AreEqual(1, r.Board.IssuedCount, "첫 지시 = 복도 하나(103차: 한 통에 한 항목)");
+            r.Board.MarkIssued("H-2");
+            r.Board.MarkIssued("H-3");
             r.Board.MarkIssued("S-1");
             r.Board.MarkIssued("S-2");
             Assert.GreaterOrEqual(r.Board.IssuedCount, r.D.Allowed(NightClock.Call1) + 1, "01:00 시간표보다 한 공간 앞섬");
@@ -437,7 +521,10 @@ namespace NightDuty.Tests
             InspectionOrder call = r.Orders[r.Orders.Count - 1];
             Assert.AreEqual(OrderKind.Call2, call.Kind);
             Assert.AreEqual(SpaceId.Library, call.Space);
-            Assert.AreEqual(2, call.ItemIds.Count);
+            Assert.AreEqual(1, call.ItemIds.Count, "103차: 한 통에 한 항목");
+            r.Wait(30f);
+            Assert.IsTrue(r.Board.IsIssued("L-1") && r.Board.IsIssued("L-2"), "도서관 남은 항목이 이어서(호출 2 뒤 늦은 항목도 평소 지시로)");
+            Assert.AreEqual(SpaceId.Library, r.Orders[r.Orders.Count - 1].Space);
         }
 
         [Test]
@@ -447,13 +534,17 @@ namespace NightDuty.Tests
             r.Minute = 30f;
             r.Wait(30f);
             Assert.Less(r.Board.IssuedCount, 4);
+            int before = r.Orders.Count;
             r.Minute = InspectionDispatcher.EarlyDeadline;
-            r.Wait(InspectionDispatcher.ForcedGap + 1f);
+            r.Wait((InspectionDispatcher.ForcedGap + 0.5f) * 4f);
             // 51차: 시간표 끝(01:40)이 호출 2(02:16)보다 앞이다 — 호출 2 전에 먼저 열릴 항목이 모두 나간다.
             foreach (InspectionOrder o in r.Orders) Assert.AreNotEqual(OrderKind.Call2, o.Kind, o.ToString());
-            InspectionOrder last = r.Orders[r.Orders.Count - 1];
-            Assert.AreEqual(OrderKind.Call1, last.Kind, "호출 1이 아직이면 호출 1이 따라잡기를 겸한다");
-            Assert.AreEqual(SpaceId.None, last.Space, "여러 공간을 한 통으로");
+            Assert.AreEqual(OrderKind.Call1, r.Orders[before].Kind, "호출 1이 아직이면 호출 1이 따라잡기를 겸한다");
+            for (int i = before; i < r.Orders.Count; i++) Assert.AreEqual(1, r.Orders[i].ItemIds.Count, "103차: 따라잡기도 한 통에 한 항목");
+            // 103차 QA 4회: 빠듯하지 않은 따라잡기는 둘째 통부터 보고를 기다린다(보고하지 않아도 30초마다) — 보고하는 플레이어면 14초 간격으로 다 나간다.
+            r.AutoReport = true;
+            foreach (InspectionOrder o in r.Orders) foreach (string id in o.ItemIds) if (r.Board.StateOf(id) == InspectionState.Pending) r.Report(id);
+            r.Wait((InspectionDispatcher.MinGap + 0.5f) * 3f);
             foreach (string id in new[] { "K-1", "H-1", "S-1", "T-1" }) Assert.IsTrue(r.Board.IsIssued(id), id);
         }
 
@@ -481,7 +572,8 @@ namespace NightDuty.Tests
             r.Wait(1.5f);
             InspectionOrder last = r.Orders[r.Orders.Count - 1];
             Assert.AreEqual(OrderKind.CatchUp, last.Kind);
-            Assert.AreEqual(7, r.Board.IssuedCount);
+            r.Wait((InspectionDispatcher.ForcedGap + 0.5f) * 6f);
+            Assert.AreEqual(7, r.Board.IssuedCount, "103차: 따라잡기도 한 통에 한 항목씩 — 남은 것이 모두 나간다");
         }
 
         [Test]

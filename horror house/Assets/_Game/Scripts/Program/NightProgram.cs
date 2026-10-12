@@ -203,16 +203,18 @@ namespace NightDuty
     /// </list>
     /// 경비실은 2일차부터 하루 1장(CCTV 사람이 편성되면 K1, 5일차는 K4, 아니면 K2·K3), 공통 G1은 매일(G2는 2026-10-04 폐기).
     /// </summary>
-    public sealed class ProgramDirector
+    public sealed class ProgramDirector : ISnapshotable
     {
         /// <summary>
-        /// 그날 수칙 수 — 74차(민: 「1일차에 등장하는 수칙들은 4개, 2일~4일차 5개, 5일차 6개」). 옛 57차는 매일 6장.
+        /// 그날 수칙 수 — 74차(민: 「1일차에 등장하는 수칙들은 4개, 2일~4일차 5개, 5일차 6개」). 옛 57차는 매일 6장. 103차: 2~4일차 6 · 5일차 7(가짜 수칙 자리).
         /// </summary>
         public static int RulesFor(int day)
         {
+            // 103차(사용자: 「가짜 수칙은 첫날에 원래 수칙 4개 + 가짜 2개로 첫날에만」): 2~5일차에 한 줄씩 끼던 가짜 수칙 자리를 진짜 수칙으로 — 2~4일차 5 → 6, 5일차 6 → 7.
+            // 태블릿 줄 수는 그대로(1일차 4 + 가짜 2 = 6). 잘 안 나오던 수칙(도서관 L1·L2 13 → 37%)·변조(회차 1.5 → 2.5번)가 는다.
             if (day <= 1) return 4;
-            if (day >= 5) return 6;
-            return 5;
+            if (day >= 5) return 7;
+            return 6;
         }
 
         /// <summary>1일차 수칙 후보(57차, 민: 「1~2일차 수칙이 너무 풀이 좁다」) — 조우에 묶이지 않은 수칙 중 1일차 점검 공간(복도·교실·과학실·경비실)의 것. S1·G1은 고정.</summary>
@@ -224,6 +226,9 @@ namespace NightDuty
         private int _reverseAssigned;
         private InspectionPlan _planForFill;
         private int _corpseDay;
+        private readonly HashSet<string> _lastDeck = new HashSet<string>(StringComparer.Ordinal);   // 103차(편성 다양성): 지난 밤 덱 — 채움에서 덜 뽑는다
+        private readonly HashSet<string> _runRules = new HashSet<string>(StringComparer.Ordinal);   // 103차: 회차에 덱에 올랐던 수칙(변조 후보 — ParadoxPlanner.TamperLateDay부터 조금 더 뽑는다)
+        private int _buildDay;
 
         private static bool PlanHas(InspectionPlan plan, string itemId)
         {
@@ -236,6 +241,7 @@ namespace NightDuty
             _rng = rng ?? new Random();
             _corpseDay = RollCorpseDay();
             ResetRushChain();
+            _cctvDay = RollCctvDay();
         }
 
         // ── 70차: 복도 끝에 선 자 → 다음 날 모형 급습 ─────────────
@@ -265,32 +271,72 @@ namespace NightDuty
         {
             _rushDay = DefaultRushDay;
             _hallDay = DefaultRushDay - 1;
-            _faceDay = DefaultFaceDay;
-            _windowDay = DefaultFaceDay - 1;
+            RollFaceDays();
+        }
+
+        /// <summary>103차: 창밖 노란 얼굴은 2·3일차 중 하루, 도서관 노란 얼굴은 4·5일차 중 하루 — 난수 한 번으로 둘 다 고른다.</summary>
+        private void RollFaceDays()
+        {
+            int roll = _rng.Next(4);
+            _windowDay = Math.Min(WindowFaceTo, WindowFaceFrom + (roll & 1));   // 103차 후속: 창밖은 3일차 고정(난수는 그대로 한 번 — 도서관 쪽 날짜 분포를 바꾸지 않게)
+            _faceDay = DefaultFaceDay + (roll >> 1);
+        }
+
+        /// <summary>시험 · 개발용: 이 회차의 노란 얼굴 날짜를 정한다(각 구간 안으로 자른다).</summary>
+        public void SetFaceDays(int windowDay, int faceDay)
+        {
+            _windowDay = Math.Max(WindowFaceFrom, Math.Min(WindowFaceTo, windowDay));
+            _faceDay = Math.Max(DefaultFaceDay, Math.Min(FaceTo, faceDay));
         }
 
         // ── 84차: 창밖 노란 얼굴 → 다음 날 도서관 노란 얼굴 ─────────────
 
         /// <summary>
         /// 84차(민: 「현재 복도 조우가 복도 급습의 빌드업이 되는 것처럼, 창밖의 노란 얼굴 조우가 도서관 노란 얼굴 조우의 빌드업이 되면 좋겠어」) —
-        /// 도서관 노란 얼굴(문간)이 나오는 날(기본 3일차). 그 전날(<see cref="WindowFaceDay"/>)에는 창밖 노란 얼굴이 도서관 북쪽 창 밖에 서 있다.
-        /// 둘은 슬롯 뽑기에서 빠지고 이 날짜로만 들어간다(복도 끝 → 모형 급습과 같은 규칙, 날은 겹치지 않는다 — 2·3일차 / 4·5일차).
+        /// 도서관 노란 얼굴(문간)이 나오는 첫날. 둘은 슬롯 뽑기에서 빠지고 이 날짜로만 들어간다(복도 끝 → 모형 급습과 같은 규칙).
+        /// 103차(민: 「2일 3일 중 하루 창문, 4일 5일 중 하루 노란 얼굴」): 회차마다 창밖 노란 얼굴은 <see cref="WindowFaceFrom"/>~<see cref="WindowFaceTo"/>일차 중 하루,
+        /// 도서관 노란 얼굴은 <see cref="DefaultFaceDay"/>~<see cref="FaceTo"/>일차 중 하루(<see cref="RollFaceDays"/>). <see cref="DefaultFaceDay"/>는 도서관 쪽 첫 후보일.
         /// </summary>
-        public const int DefaultFaceDay = 3;
+        public const int DefaultFaceDay = 4;
+
+        /// <summary>103차: 도서관 노란 얼굴이 나올 수 있는 마지막 날(포함).</summary>
+        public const int FaceTo = 5;
+
+        /// <summary>
+        /// 103차: 창밖 노란 얼굴이 설 수 있는 첫날·마지막 날(포함).
+        /// 103차 후속(사용자 결정, 조우 강도 곡선): 2 → 3 — 2일차에 걸리면 그 밤이 회차에서 가장 무거웠다(강도 합 11.0: 머리 박기 4 · 시체 낙하 2 · 창밖 3 · 여분 2).
+        /// 3일차 고정이면 일차별 강도 합 9.0 → 9.1 → 9.5 → 9.5(옛 10.0 → 8.1 → 9.5 → 9.5), 조우 13개 목격은 그대로.
+        /// </summary>
+        public const int WindowFaceFrom = 3;
+
+        /// <inheritdoc cref="WindowFaceFrom"/>
+        public const int WindowFaceTo = 3;
 
         private int _faceDay;
         private int _windowDay;
 
-        /// <summary>그 회차에 도서관 노란 얼굴이 나오는 날.</summary>
+        /// <summary>그 회차에 도서관 노란 얼굴이 나오는 날(4·5일차 중 하루).</summary>
         public int FaceDay
         {
             get { return _faceDay; }
         }
 
-        /// <summary>그 회차에 창밖 노란 얼굴이 서는 날(노란 얼굴 전날).</summary>
+        /// <summary>그 회차에 창밖 노란 얼굴이 서는 날(2·3일차 중 하루).</summary>
         public int WindowFaceDay
         {
             get { return _windowDay; }
+        }
+
+        /// <summary>103차: 그날 밤 창밖 노란 얼굴이 서는지.</summary>
+        public bool IsWindowFaceDay(int day)
+        {
+            return day == _windowDay;
+        }
+
+        /// <summary>103차: 그날 밤 도서관 노란 얼굴이 나오는지.</summary>
+        public bool IsFaceDay(int day)
+        {
+            return day == _faceDay;
         }
 
         /// <summary>
@@ -309,7 +355,8 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 시체 낙하(겹침 조우)가 나오는 그 회차의 하루 — 2일차 또는 3일차 중 하나, 회차에 딱 한 번(59차 민: 「무서운 연출은 똑같은 게 반복되면 재미없다 — 2~3일차에 한 번만」).
+        /// 시체 낙하(겹침 조우)가 나오는 그 회차의 하루 — 회차에 딱 한 번(59차 민: 「무서운 연출은 똑같은 게 반복되면 재미없다 — 2~3일차에 한 번만」).
+        /// 103차(사용자: 「시체 낙하의 강도를 낮춰서 조금 더 일찍」): 늘 2일차(옛: 2·3일차 반반), 강도 3 → 2.
         /// </summary>
         public int CorpseDay
         {
@@ -320,11 +367,102 @@ namespace NightDuty
         public const int CorpseDayFrom = 2;
 
         /// <summary>시체 낙하가 나올 수 있는 마지막 날(포함).</summary>
-        public const int CorpseDayTo = 3;
+        public const int CorpseDayTo = 2;   // 103차: 3 → 2(늘 2일차)
 
         private int RollCorpseDay()
         {
             return CorpseDayFrom + _rng.Next(CorpseDayTo - CorpseDayFrom + 1);
+        }
+
+        // ── 103차: CCTV에만 보이는 사람 → 겹침 조우 ─────────────
+
+        /// <summary>
+        /// 103차(민: 「모든 조우 연출을 목격할 수 있도록」) — CCTV에만 보이는 사람은 화면 속에서만 지나가 공간·슬롯을 차지할 까닭이 없다.
+        /// 회차에 한 번, <see cref="CctvDayFrom"/>~<see cref="CctvDayTo"/>일차 중 하루에 겹침 조우(<see cref="NightProgram.Extras"/>)로 걸고 경비실 수칙은 K1로 둔다.
+        /// 옛: 슬롯 하나를 먹어 회차당 조우 15개 중 11~12개만 나왔다.
+        /// </summary>
+        public const int CctvDayFrom = 3;
+
+        /// <inheritdoc cref="CctvDayFrom"/>
+        public const int CctvDayTo = 4;   // 5일차 경비실은 K4
+
+        private int _cctvDay;
+
+        /// <summary>그 회차에 CCTV에만 보이는 사람이 나오는 날.</summary>
+        public int CctvDay
+        {
+            get { return _cctvDay; }
+        }
+
+        /// <summary>
+        /// 103차: 그날 그 수칙을 강제 편성(회피 불가 쌍)할 수 있는지 — 공간당 하루 한 장 · 회차에 한 번 나오는 조우를 지킨다(편성에서 떨어져 그날 회피 불가가 취소되던 것).
+        /// 날짜 사슬 조우가 그 공간을 차지하는 날은 안 된다(5일차 과학실 = 급습 S5). K1(CCTV 사람)은 CCTV 날 이전·당일에만, 다른 경비실 수칙은 CCTV 날이 아닐 때만.
+        /// 조우에 묶인 수칙은 그 조우가 회차에 이미 나왔으면 안 된다(S5×H3이 발소리를 다시 부르던 것).
+        /// </summary>
+        /// <param name="ruleId">수칙 ID.</param>
+        /// <param name="day">편성할 일차.</param>
+        public bool CanForce(string ruleId, int day)
+        {
+            RuleDef r = ProgramCatalog.Rule(ruleId);
+            if (r == null) return false;
+            SpaceId space = SpaceIds.Canonical(r.Space);
+
+            // 날짜 사슬 조우(복도 끝·급습 S5 · 도서관 노란 얼굴 L3 …)가 그날 그 공간을 먼저 차지한다 — 그 수칙이면 이미 들어온다.
+            List<RuleDef> chained = ChainRulesOn(day);
+            for (int i = 0; i < chained.Count; i++) if (chained[i].Id == r.Id) return true;
+            for (int i = 0; i < chained.Count; i++) if (space != SpaceId.None && SpaceIds.Canonical(chained[i].Space) == space) return false;
+
+            if (space == SpaceId.SecurityRoom)
+            {
+                if (r.BoundEncounter == ProgramCatalog.CctvPerson) return day <= _cctvDay && !_seen.Contains(ProgramCatalog.CctvPerson);
+                return day != _cctvDay;
+            }
+
+            // 조우에 묶인 수칙은 그 조우를 함께 부른다 — 회차에 이미 나온 조우(발소리·부르는 목소리 …)는 다시 부르지 않는다.
+            if (!r.IsStandalone && !string.IsNullOrEmpty(r.BoundEncounter))
+            {
+                string bound = MergedInto(r.BoundEncounter);
+                if (IsChained(bound) || _seen.Contains(bound)) return false;
+            }
+
+            return true;
+        }
+
+        private List<RuleDef> ChainRulesOn(int day)
+        {
+            List<RuleDef> list = new List<RuleDef>();
+            // 103차 QA: 모형 급습 예약(S3 위반)이 있으면 편성 때 복도 끝 날이 오늘로 당겨진다(ApplyRushReservation) — 미리 그렇게 본다.
+            bool pulled = _reserved.Contains(ProgramCatalog.ModelRush) && day < _hallDay;
+            int hallDay = pulled ? day : _hallDay;
+            int rushDay = pulled ? day + 1 : _rushDay;
+            if (day == hallDay) AddRulesOf(list, ProgramCatalog.HallEndFigure);
+            if (day == rushDay) AddRulesOf(list, ProgramCatalog.ModelRush);
+            if (IsWindowFaceDay(day)) AddRulesOf(list, ProgramCatalog.SuitMan);
+            if (IsFaceDay(day)) AddRulesOf(list, ProgramCatalog.YellowFace);
+            return list;
+        }
+
+        private void AddRulesOf(List<RuleDef> list, string encounterId)
+        {
+            EncounterDef e = ProgramCatalog.Encounter(encounterId);
+            if (e == null) return;
+            List<RuleDef> rules = RulesOf(e);
+            for (int i = 0; i < rules.Count; i++) if (rules[i] != null) list.Add(rules[i]);
+        }
+
+        private int RollCctvDay()
+        {
+            return CctvDayFrom + _rng.Next(CctvDayTo - CctvDayFrom + 1);
+        }
+
+        private static bool PlaceCctv(Draft d)
+        {
+            RuleDef k1 = ProgramCatalog.Rule("K1");
+            if (k1 == null) return false;
+            if (d.Has(k1.Id)) return true;
+            if (d.In(SpaceId.SecurityRoom).Count > 0) return false;
+            Place(d, k1, true);
+            return true;
         }
 
         /// <summary>회차에 이미 편성한 조우.</summary>
@@ -351,8 +489,11 @@ namespace NightDuty
             _seen.Clear();
             _reserved.Clear();
             _reverseAssigned = 0;
+            _lastDeck.Clear();
+            _runRules.Clear();
             _corpseDay = RollCorpseDay();
             ResetRushChain();
+            _cctvDay = RollCctvDay();
         }
 
         /// <summary>
@@ -362,6 +503,27 @@ namespace NightDuty
         public void Reserve(string encounterId)
         {
             if (ProgramCatalog.Encounter(encounterId) != null) _reserved.Add(encounterId);
+        }
+
+        /// <inheritdoc/>
+        public string SnapshotKey
+        {
+            get { return "ProgramReserved"; }
+        }
+
+        /// <summary>103차 QA: 밤 동안 쌓인 조우 예약(S3 위반 → 모형 급습)도 재시작·결근에 되돌린다 — 옛: 재시작해서 S3를 지켜도 예약이 남아 급습이 당겨졌다.</summary>
+        public object CaptureState()
+        {
+            return new List<string>(_reserved);
+        }
+
+        /// <inheritdoc/>
+        public void RestoreState(object state)
+        {
+            List<string> s = state as List<string>;
+            if (s == null) return;
+            _reserved.Clear();
+            for (int i = 0; i < s.Count; i++) _reserved.Add(s[i]);
         }
 
         /// <summary>그날 편성을 만든다. 요청에 예약 조우를 따로 넣지 않으면 <see cref="Reserve"/>로 쌓인 것을 쓴다.</summary>
@@ -377,10 +539,18 @@ namespace NightDuty
             _reserved.Clear();
 
             _planForFill = request.Inspections;
+            _buildDay = day;
             NightProgram program = day == 1 ? BuildDay1(request) : BuildRegular(day, request, reserved);
 
             for (int i = 0; i < program.Slots.Count; i++) _seen.Add(program.Slots[i].Encounter.Id);
+            for (int i = 0; i < program.Extras.Count; i++) _seen.Add(program.Extras[i].Id);
             if (program.Has(ProgramCatalog.ReverseReportRule)) _reverseAssigned++;
+            _lastDeck.Clear();
+            for (int i = 0; i < program.Deck.Count; i++)
+            {
+                _lastDeck.Add(program.Deck[i].Id);
+                _runRules.Add(program.Deck[i].Id);
+            }
             return program;
         }
 
@@ -393,21 +563,26 @@ namespace NightDuty
             // 57차: 고정 4장(H2·C4·S1·G1) → S1·G1 고정 + 후보(Day1Pool)에서 넷, 모두 여섯 장. 한 공간 두 장까지, 경비실 한 장, 손전등 한도.
             List<RuleDef> picked = new List<RuleDef> { ProgramCatalog.Rule("S1") };   // 51차: S3(모형을 비추지 마)는 2일차부터 — 1일차는 모형 위치를 익히는 날
             List<string> pool = new List<string>(Day1Pool);
+            // 103차(편성 균형): 1일차도 감각 세 축을 한 장씩 — S1(배치)·G1(청각)에 없는 축(조도)부터 후보에서 고른다.
+            FearAxis[] need = { FearAxis.Illuminance, FearAxis.Auditory, FearAxis.Layout };
+            for (int a = 0; a < need.Length && picked.Count < RulesFor(1) - 1; a++)
+            {
+                bool has = need[a] == FearAxis.Auditory;   // G1
+                for (int i = 0; i < picked.Count; i++) if (picked[i].HasAxis && picked[i].Axis == need[a]) has = true;
+                if (has) continue;
+                List<string> withAxis = pool.FindAll(id => { RuleDef x = ProgramCatalog.Rule(id); return x != null && x.HasAxis && x.Axis == need[a]; });
+                if (withAxis.Count == 0) continue;
+                string pickId = withAxis[_rng.Next(withAxis.Count)];
+                pool.Remove(pickId);
+                if (Day1Fits(picked, ProgramCatalog.Rule(pickId))) picked.Add(ProgramCatalog.Rule(pickId));
+            }
+
             while (picked.Count < RulesFor(1) - 1 && pool.Count > 0)
             {
                 string id = pool[_rng.Next(pool.Count)];
                 pool.Remove(id);
                 RuleDef r = ProgramCatalog.Rule(id);
-                if (r == null) continue;
-                int sameSpace = 0, flash = 0;
-                for (int i = 0; i < picked.Count; i++)
-                {
-                    if (picked[i].Space == r.Space) sameSpace++;
-                    if (picked[i].UsesFlashlight) flash++;
-                }
-
-                if (sameSpace >= (r.Space == SpaceId.SecurityRoom ? 1 : 2)) continue;
-                if (r.UsesFlashlight && flash >= ProgramCatalog.FlashlightPerDay) continue;
+                if (r == null || !Day1Fits(picked, r)) continue;
                 picked.Add(r);
             }
 
@@ -420,6 +595,20 @@ namespace NightDuty
             for (int i = 0; i < picked.Count; i++) if (picked[i].Space == SpaceId.SecurityRoom) deck.Add(picked[i]);
             deck.Add(ProgramCatalog.Rule("G1"));
             return new NightProgram(1, new List<SlotEncounter>(), deck, "1일차 덱(조우 없음)");
+        }
+
+        private static bool Day1Fits(List<RuleDef> picked, RuleDef r)
+        {
+            if (r == null) return false;
+            int sameSpace = 0, flash = 0;
+            for (int i = 0; i < picked.Count; i++)
+            {
+                if (picked[i].Space == r.Space) sameSpace++;
+                if (picked[i].UsesFlashlight) flash++;
+            }
+
+            if (sameSpace >= (r.Space == SpaceId.SecurityRoom ? 1 : 2)) return false;
+            return !(r.UsesFlashlight && flash >= ProgramCatalog.FlashlightPerDay);
         }
 
         // ── 2일차부터 ──────────────────────────────────────────
@@ -483,9 +672,10 @@ namespace NightDuty
             ApplyRushReservation(day, reserved);
             if (day == _hallDay) PlaceChain(d, ProgramCatalog.HallEndFigure);
             if (day == _rushDay) PlaceChain(d, ProgramCatalog.ModelRush);
-            // 84차: 창밖 노란 얼굴(노란 얼굴 전날) · 도서관 노란 얼굴 — 같은 날짜 사슬.
-            if (day == _windowDay) PlaceChain(d, ProgramCatalog.SuitMan);
-            if (day == _faceDay) PlaceChain(d, ProgramCatalog.YellowFace);
+            // 84차: 창밖 노란 얼굴 → 도서관 노란 얼굴 — 날짜 사슬. 103차: 2·3일차 중 하루 창밖 · 4·5일차 중 하루 도서관.
+            if (IsWindowFaceDay(day)) PlaceChain(d, ProgramCatalog.SuitMan);
+            if (IsFaceDay(day)) PlaceChain(d, ProgramCatalog.YellowFace);
+            bool cctv = day == _cctvDay && PlaceCctv(d);   // 103차: 겹침 조우
 
             // 2) 강제 수칙.
             List<string> forced = new List<string>();
@@ -500,8 +690,16 @@ namespace NightDuty
                 // 조우에 묶인 수칙은 혼자 들어가면 방아쇠가 오지 않는다 — 그 조우를 함께 건다(2일차 C2 → 천장 다리).
                 if (!r.IsStandalone)
                 {
+                    if (r.BoundEncounter == ProgramCatalog.CctvPerson)   // 103차: CCTV 사람은 겹침 조우로(회피 불가 K1·K2×K-1)
+                    {
+                        if (!cctv) cctv = PlaceCctv(d);
+                        if (cctv && day < _cctvDay) _cctvDay = day;
+                        if (!cctv) d.Note.Append(r.Id).Append(" 강제 편성 실패(경비실 충돌). ");
+                        continue;
+                    }
+
                     if (d.Has(r.Id)) continue;   // 70차: 이미 조우가 그 수칙을 들여놓았다(S5 = 복도 끝·급습 날)
-                    EncounterDef bound = ProgramCatalog.Encounter(r.BoundEncounter);
+                    EncounterDef bound = ProgramCatalog.Encounter(MergedInto(r.BoundEncounter));   // 103차: C3(소년 착석) → 머리 박기
                     if (bound != null && IsChained(bound.Id))
                     {
                         d.Note.Append(r.Id).Append(" 강제 편성 실패(복도 끝·급습은 정해진 날에만). ");
@@ -525,9 +723,10 @@ namespace NightDuty
             // 3) 예약 조우.
             for (int i = 0; i < reserved.Count; i++)
             {
-                EncounterDef e = ProgramCatalog.Encounter(reserved[i]);
-                if (e == null) continue;
+                EncounterDef e = ProgramCatalog.Encounter(MergedInto(reserved[i]));
+                if (e == null || Chosen(d, e.Id)) continue;
                 if (IsChained(e.Id)) continue;   // 70차: 날짜 사슬로만
+                if (e.Id == ProgramCatalog.CctvPerson) continue;   // 103차: 겹침 조우 날짜로만
                 if (ProgramCatalog.IsEncounterRetired(e.Id)) continue;   // 79차: 대응 수칙을 폐기한 조우(L5 창밖 정장 남자)
                 if (!CanPlaceEncounter(d, e)) { d.Note.Append(e.Id).Append(" 예약 편성 실패(공간 충돌). "); continue; }
                 PlaceEncounter(d, e, true);
@@ -535,17 +734,14 @@ namespace NightDuty
 
             // 4) 슬롯 조우.
             int slotCount = day == 2 ? 2 : (SlotCAtStart(request) ? 3 : 2);
-            while (d.Slots.Count < slotCount)
+            int extrasTonight = (day == _corpseDay ? 1 : 0) + (cctv ? 1 : 0);   // 103차: 겹침 조우도 그날 조우 수에 센다
+            // 103차: 창밖 노란 얼굴(수칙 없는 짧은 빌드업)은 슬롯 수·조우 수에 세지 않는다 — 슬롯 글자(A·B·C)는 셋까지.
+            while (CountedSlots(d) < slotCount && d.Slots.Count < SlotLetters && CountedSlots(d) + extrasTonight < EncounterCap(day))
             {
-                EncounterDef pick = PickEncounter(d, day, request);
+                // 103차: 창밖 노란 얼굴 덕에 생긴 여분 칸은 가벼운 조우(강도 ≤ LightIntensity)만 — 2일차가 가장 무거운 밤이 되지 않게.
+                EncounterDef pick = PickEncounter(d, day, request, d.Slots.Count >= slotCount ? LightIntensity : int.MaxValue);
                 if (pick == null) { d.Note.Append("걸 수 있는 조우가 없어 슬롯 ").Append(d.Slots.Count).Append("개. "); break; }
                 PlaceEncounter(d, pick, false);
-            }
-
-            // 경비실.
-            if (d.In(SpaceId.SecurityRoom).Count == 0)
-            {
-                Place(d, ProgramCatalog.Rule(SecurityPool[_rng.Next(SecurityPool.Length)]), false);   // 79차: K5(전화) 추가
             }
 
             // 7) 남은 칸.
@@ -559,19 +755,26 @@ namespace NightDuty
                 else d.Note.Append(space).Append(" 수칙을 채우지 못했습니다. ");
             }
 
+            // 경비실 — 79차: K5(전화) 추가. 103차(편성 균형): 채움 뒤에, 덱에 가장 적은 축의 경비실 수칙을 먼저(K2 조도 · K3 배치 · K5 청각).
+            if (d.In(SpaceId.SecurityRoom).Count == 0) Place(d, PickSecurity(d), false);
+
             EnsureLowestAxis(d, shown);
+            EnsureEverySensoryAxis(d, shown);   // 103차(축 균형): 조도 단독 수칙이 덱에서 사라지던 것 — 감각 축마다 한 장씩
 
             List<RuleDef> deck = new List<RuleDef>();
             for (int s = 0; s < ProgramCatalog.RuleSpaces.Length; s++) deck.AddRange(d.In(ProgramCatalog.RuleSpaces[s]));
             deck.AddRange(d.In(SpaceId.SecurityRoom));
             deck.Add(ProgramCatalog.Rule("G1"));
-            bool tabletRule = HasTabletRule(day);   // 79차: G4는 짝수 날 — 한 장 자리를 비워 두고 넣는다
-            TrimDeck(d, deck, LowestShown(shown), tabletRule ? RulesFor(day) - 1 : RulesFor(day));
-            if (tabletRule && deck.Count < RulesFor(day)) deck.Add(ProgramCatalog.Rule(TabletRule));   // 조우 수칙만으로 꽉 찬 날은 넣지 않는다
+            // 79차: G4는 짝수 날. 103차(편성 균형): 줄이기 전에 넣어 축 세기에 들어가게 한다(옛: 줄인 뒤 끝에 붙여 조도만 둘·배치 0장인 날이 생김).
+            // 조우 수칙만으로 꽉 찬 날은 줄이기에서 G4가 먼저 빠진다.
+            // 103차(사용자: 「앞선 날 수칙 반복 개선」): G4는 회차에 한 번 — 2일차에 나왔으면 4일차엔 넣지 않는다(2일차에 빠졌으면 4일차에).
+            if (HasTabletRule(day) && !_runRules.Contains(TabletRule)) deck.Add(ProgramCatalog.Rule(TabletRule));
+            TrimDeck(d, deck, LowestShown(shown), RulesFor(day));
 
             d.Slots.Sort((a, b) => a.Slot.CompareTo(b.Slot));
             List<EncounterDef> extras = new List<EncounterDef>();
             if (day == _corpseDay) extras.Add(ProgramCatalog.Encounter(ProgramCatalog.CeilingLegs));   // 59차: 시체 낙하는 회차에 한 번 — 2·3일차 중 고른 하루(겹침 조우)
+            if (cctv) extras.Add(ProgramCatalog.Encounter(ProgramCatalog.CctvPerson));   // 103차
             NightProgram program = new NightProgram(day, d.Slots, deck, null, extras);
             return new NightProgram(day, d.Slots, deck, d.Note.Length > 0 ? d.Note + program.ToString() : program.ToString(), extras);
         }
@@ -597,25 +800,45 @@ namespace NightDuty
             while (deck.Count > target)
             {
                 RuleDef drop = null;   // G1(복도에서 뛰지 마십시오)은 매일 남긴다 — 달리기 판정·시험이 기대는 공통 수칙
+                List<RuleDef> can = new List<RuleDef>();
                 for (int pass = 0; pass < 2 && drop == null; pass++)
                 {
-                    for (int i = deck.Count - 1; i >= 0 && drop == null; i--)
+                    can.Clear();
+                    for (int i = deck.Count - 1; i >= 0; i--)
                     {
                         RuleDef r = deck[i];
                         if (d.Locked.Contains(r.Id) || r.Space == SpaceId.SecurityRoom || r.Space == SpaceId.None) continue;
                         if (r.HasAxis && r.Axis == lowest && deck.FindAll(x => x.HasAxis && x.Axis == lowest).Count <= 1) continue;
+                        if (r.HasAxis && r.Axis != FearAxis.Trust && deck.FindAll(x => x.HasAxis && x.Axis == r.Axis).Count <= 1) continue;   // 103차(축 균형): 감각 축마다 마지막 한 장은 남긴다
                         if (pass == 0 && CountIn(_planForFill, r.Space) > 0) continue;   // 먼저 그날 가지 않는 공간의 수칙
-                        drop = r;
+                        can.Add(r);
                     }
+
+                    // 103차(민: 「특정 수칙들이 동시에 세트로 나오는 현상」): 옛날엔 늘 덱 끝(도서관·과학실·화장실 쪽)부터 빼서
+                    // 복도·교실 채움(H2·C4 …)만 남아 같은 조합이 되풀이됐다 — 뺄 수 있는 것 중에서 고르게 뽑는다.
+                    // 103차(민: 「회차에 아직 안 나온 수칙을 남기도록」): 이번 회차에 이미 나온 수칙부터 뺀다 — S1·L7처럼 5일 내내 한 번도 안 보이던 수칙이 한 번씩은 나오게.
+                    List<RuleDef> seenBefore = can.FindAll(x => _runRules.Contains(x.Id));
+                    if (seenBefore.Count > 0) drop = seenBefore[_rng.Next(seenBefore.Count)];
+                    else if (can.Count > 0) drop = can[_rng.Next(can.Count)];
                 }
 
+                // 103차 QA: 경비실 수칙(2일차부터 하루 1장)보다 G4(회차에 한 번 · 짝수 날)를 먼저 뺀다 — 빠진 G4는 4일차에 나온다.
+                // 옛 순서(경비실 먼저)로는 2일차 덱의 27%에 경비실 수칙이 없었다(소년 C2·C3 + G1·G4 + 창밖 노란 얼굴 날의 화장실 여자아이 T4).
+                if (drop == null) drop = deck.Find(r => r.Id == TabletRule && !d.Locked.Contains(r.Id) && !LastOfAxis(deck, r));
                 if (drop == null)
                 {
-                    RuleDef k = deck.Find(r => r.Space == SpaceId.SecurityRoom && !d.Locked.Contains(r.Id));
+                    // 103차(편성 균형): 경비실 수칙도 그 축의 마지막 한 장이면 먼저 피한다(K3 배치·K2 조도 — 옛: 경비실을 빼서 배치 0장인 날이 생김).
+                    RuleDef k = deck.Find(r => r.Space == SpaceId.SecurityRoom && !d.Locked.Contains(r.Id) && !LastOfAxis(deck, r));
                     drop = k;
                 }
 
                 // 79차: 조우·고정 수칙만으로 장수가 꽉 찼으면 가장 낮은 축의 마지막 채움도 뺀다(하루 장수가 우선).
+                // 103차(축 균형): 마지막 대체 경로도 감각 축마다 마지막 한 장은 먼저 피한다 — 그래도 없으면 옛 규칙.
+                if (drop == null) drop = deck.FindLast(r => !d.Locked.Contains(r.Id) && r.Space != SpaceId.SecurityRoom && r.Space != SpaceId.None
+                                                     && !(r.HasAxis && r.Axis != FearAxis.Trust && deck.FindAll(x => x.HasAxis && x.Axis == r.Axis).Count <= 1));
+                if (drop == null) drop = deck.Find(r => r.Id == TabletRule && !LastOfAxis(deck, r));   // 103차: G4는 축 보호 다음, 마지막 대체 경로 앞
+                if (drop == null) drop = deck.Find(r => r.Space == SpaceId.SecurityRoom && !d.Locked.Contains(r.Id));
+                if (drop == null) drop = deck.Find(r => r.Id == TabletRule);
                 if (drop == null) drop = deck.FindLast(r => !d.Locked.Contains(r.Id) && r.Space != SpaceId.SecurityRoom && r.Space != SpaceId.None);
 
                 if (drop == null) break;
@@ -624,16 +847,57 @@ namespace NightDuty
             }
         }
 
+        private static bool LastOfAxis(List<RuleDef> deck, RuleDef r)
+        {
+            return r.HasAxis && r.Axis != FearAxis.Trust && deck.FindAll(x => x.HasAxis && x.Axis == r.Axis).Count <= 1;
+        }
+
         /// <summary>보너스 슬롯 C: 3일차부터, 밤 시작에 가장 높은 감각 축의 생존 수치가 49 이하일 때(긴장 디렉터 「잘하는 중」).</summary>
         private static bool SlotCAtStart(ProgramRequest request)
         {
             if (request.Day < 3 || request.Survival == null) return false;
             int max = Math.Max(request.Survival.GetValue(FearAxis.Auditory),
                 Math.Max(request.Survival.GetValue(FearAxis.Illuminance), request.Survival.GetValue(FearAxis.Layout)));
-            return max <= 49;
+            return max <= (request.Day >= LateSlotCDay ? LateSlotCMax : 49);
         }
 
-        private EncounterDef PickEncounter(Draft d, int day, ProgramRequest request)
+        /// <summary>
+        /// 103차(편성 상승감·미숙 플레이어 조우 목격): 이 날부터는 보너스 슬롯 C를 「위험」(75 이상)만 아니면 편성한다(3일차는 그대로 49 이하).
+        /// 런타임이 다시 거른다 — 위험 분위기면 C를 걸지 않고(<c>TensionDirector.SlotOpen</c>), 재시작 k≥2면 끈다(장치 1).
+        /// 옛: 미숙 플레이어는 4·5일차에 C가 자주 꺼져 조우 13갈래를 다 보는 회차가 21%, 5일차 조우가 2.2개로 3일차(4.0)보다 적었다.
+        /// </summary>
+        public const int LateSlotCDay = 4;
+
+        /// <inheritdoc cref="LateSlotCDay"/>
+        public const int LateSlotCMax = 74;
+
+        /// <summary>
+        /// 103차(민: 「날이 갈수록 변화를 명확히 인지」): 그날 조우 수 상한(슬롯 + 겹침 조우). 2·3일차 3 · 4·5일차 4.
+        /// 옛: 겹침 조우(시체 낙하·창밖 노란 얼굴·CCTV 사람)가 2·3일차에 몰려 3일차 조우(3.9)가 5일차(2.9)보다 많았다.
+        /// </summary>
+        public static int EncounterCap(int day)
+        {
+            return day >= LateSlotCDay ? 4 : 3;
+        }
+
+        /// <summary>슬롯 글자 수(A·B·C).</summary>
+        public const int SlotLetters = 3;
+
+        /// <summary>103차: 조우 수 상한에 세는 슬롯 — 창밖 노란 얼굴(수칙 없는 짧은 빌드업)은 세지 않는다.</summary>
+        private static int CountedSlots(Draft d)
+        {
+            int n = 0;
+            for (int i = 0; i < d.Slots.Count; i++) if (d.Slots[i].Encounter.Id != ProgramCatalog.SuitMan) n++;
+            return n;
+        }
+
+        /// <summary>103차: 이 날부터 조우 점수에 강도를 더한다 — 끝으로 갈수록 센 조우가 남는다.</summary>
+        public const int ClimaxFromDay = 4;
+
+        /// <summary>103차: 창밖 노란 얼굴이 낸 여분 칸에 들일 수 있는 조우 강도 상한.</summary>
+        public const int LightIntensity = 2;
+
+        private EncounterDef PickEncounter(Draft d, int day, ProgramRequest request, int maxIntensity = int.MaxValue)
         {
             SlotEncounter prev = d.Slots.Count > 0 ? d.Slots[d.Slots.Count - 1] : null;
             List<EncounterDef> best = new List<EncounterDef>();
@@ -644,7 +908,10 @@ namespace NightDuty
             {
                 EncounterDef e = all[i];
                 if (Chosen(d, e.Id)) continue;
-                if (e.Id == ProgramCatalog.CeilingLegs) continue;   // 59차: 시체 낙하는 슬롯 밖 겹침 조우(Extras)로 늘 건다
+                if (e.Id == ProgramCatalog.CeilingLegs || e.Id == ProgramCatalog.CctvPerson) continue;
+                if (MergedInto(e.Id) != e.Id) continue;   // 103차: 소년 착석은 머리 박기의 앞부분 — 따로 뽑지 않는다
+                if (e.Intensity > maxIntensity) continue;
+                if (FamilySeen(e)) continue;   // 103차(민: 「하나의 연출로」): 회차에 본 조우(같은 갈래 포함)는 평소 뽑기에서 다시 걸지 않는다 — 강제·예약만 예외   // 59차: 시체 낙하는 슬롯 밖 겹침 조우(Extras)로 늘 건다 · 103차: CCTV 사람도
                 if (IsChained(e.Id)) continue;   // 70차: 복도 끝에 선 자·모형 급습은 날짜 사슬로만
                 if (ProgramCatalog.IsEncounterRetired(e.Id)) continue;   // 79차: L5 폐기 → 창밖 정장 남자도 걸지 않는다
                 if (!e.Satisfied(request.Shown)) continue;
@@ -652,12 +919,17 @@ namespace NightDuty
                 if (prev != null && prev.Encounter.Mob == e.Mob) continue;
                 if (!CanPlaceEncounter(d, e)) continue;
                 if (!WithinBudget(d, e, day)) continue;
+                if (!FitsDeck(d, e, day)) continue;   // 103차: 고정 수칙(조우·강제·CCTV 겹침 K1)이 하루 장수를 넘지 않게(G1 한 장 자리)
+                if (SharesRule(d, e)) continue;   // 103차: 같은 수칙을 쓰는 조우(과학실·화장실 소등 · 소년 착석·머리 박기)는 한 밤에 하나
 
                 int score = 2 * (int)request.Shown.GetBand(e.Axis)
-                            + (_seen.Contains(e.Id) ? 0 : 3)
+                            + (FamilySeen(e) ? 0 : UnseenBonus)
+                            + (AxisGap(d, e) ? AxisGapBonus : 0)
                             + (e.IsCross ? 2 : 0)
                             - (prev != null && prev.Encounter.Axis == e.Axis ? 2 : 0)
-                            + (IsDayFocus(day, e.Id) ? DayFocusBonus : 0);
+                            + (IsDayFocus(day, e.Id) ? DayFocusBonus : 0)
+                            + (day >= ClimaxFromDay ? e.Intensity : 0)
+                            + _rng.Next(EncounterJitter + 1);   // 103차: 회차마다 같은 날 같은 조우만 나오지 않게
 
                 if (score > bestScore)
                 {
@@ -674,8 +946,123 @@ namespace NightDuty
             return best.Count == 0 ? null : best[_rng.Next(best.Count)];
         }
 
-        /// <summary>그날 무게를 둘 조우에 더하는 점수(51차 분배).</summary>
-        public const int DayFocusBonus = 4;
+        /// <summary>그날 무게를 둘 조우에 더하는 점수(51차 분배). 103차(편성 다양성): 4 → 3.</summary>
+        public const int DayFocusBonus = 3;
+
+        /// <summary>103차(민: 「너무 중복되지 않으며」): 조우 점수에 더하는 흔들림(0~이 값) — 옛: 3일차는 화장실 여자아이·발소리가 거의 늘 같이 나왔다.</summary>
+        public const int EncounterJitter = 2;
+
+        /// <summary>
+        /// 회차에 아직 안 본 조우에 더하는 점수. 103차(민: 「모든 조우 연출을 목격할 수 있도록」): 3 → 9 — 구간·날짜 무게(최대 8+4)보다 앞서
+        /// 같은 조우가 되풀이되는 일을 막는다(옛: 회차당 조우 15개 중 약 11개, 화장실 여자아이·소년이 이틀씩 나옴).
+        /// </summary>
+        public const int UnseenBonus = 9;
+
+        /// <summary>103차(편성 균형): 대응 수칙의 축이 아직 그날 덱에 없는 조우에 더하는 점수(5일차 배치 0장 → 없던 문).</summary>
+        public const int AxisGapBonus = 3;
+
+        private static bool AxisGap(Draft d, EncounterDef e)
+        {
+            string id = e.ResponseRule.Length > 0 ? e.ResponseRule : e.SecondRule;
+            RuleDef r = ProgramCatalog.Rule(id);
+            return r != null && r.HasAxis && r.Axis != FearAxis.Trust && CountAxis(d, r.Axis) == 0;
+        }
+
+        /// <summary>103차: 회차에 그 조우나 같은 수칙을 쓰는 조우(과학실·화장실 소등 · 소년 착석·머리 박기)를 이미 봤는지.</summary>
+        private bool FamilySeen(EncounterDef e)
+        {
+            if (_seen.Contains(e.Id)) return true;
+            foreach (string id in _seen)
+            {
+                EncounterDef o = ProgramCatalog.Encounter(id);
+                if (o == null) continue;
+                if (Same(e.ResponseRule, o.ResponseRule) || Same(e.ResponseRule, o.SecondRule) || Same(e.SecondRule, o.ResponseRule) || Same(e.SecondRule, o.SecondRule)) return true;
+            }
+
+            return false;
+        }
+
+        private bool FitsDeck(Draft d, EncounterDef e, int day)
+        {
+            int locked = 0;
+            foreach (KeyValuePair<SpaceId, List<RuleDef>> kv in d.Spaces)
+            {
+                for (int i = 0; i < kv.Value.Count; i++) if (d.Locked.Contains(kv.Value[i].Id)) locked++;
+            }
+
+            List<RuleDef> rules = RulesOf(e);
+            for (int i = 0; i < rules.Count; i++) if (!d.Has(rules[i].Id)) locked++;
+            return locked <= RulesFor(day) - 1;
+        }
+
+        private static bool SharesRule(Draft d, EncounterDef e)
+        {
+            for (int i = 0; i < d.Slots.Count; i++)
+            {
+                EncounterDef o = d.Slots[i].Encounter;
+                if (Same(e.ResponseRule, o.ResponseRule) || Same(e.ResponseRule, o.SecondRule) || Same(e.SecondRule, o.ResponseRule) || Same(e.SecondRule, o.SecondRule)) return true;
+            }
+
+            return false;
+        }
+
+        private static bool Same(string a, string b)
+        {
+            return a.Length > 0 && a == b;
+        }
+
+        private RuleDef PickSecurity(Draft d)
+        {
+            int min = int.MaxValue;
+            for (int i = 0; i < SecurityPool.Length; i++)
+            {
+                RuleDef r = ProgramCatalog.Rule(SecurityPool[i]);
+                if (r != null && r.HasAxis) min = Math.Min(min, CountAxis(d, r.Axis));
+            }
+
+            List<RuleDef> c = new List<RuleDef>();
+            List<int> w = new List<int>();
+            for (int i = 0; i < SecurityPool.Length; i++)
+            {
+                RuleDef r = ProgramCatalog.Rule(SecurityPool[i]);
+                if (r == null) continue;
+                c.Add(r);
+                w.Add((r.HasAxis && CountAxis(d, r.Axis) == min ? 3 : 1) * (_lastDeck.Contains(r.Id) ? 1 : 2));
+            }
+
+            return Weighted(c, w);
+        }
+
+        /// <summary>
+        /// 103차(편성 다양성·변조): 지난 밤에 있던 채움은 덜(1), 처음 보는 채움은 보통(3), <see cref="ParadoxPlanner.TamperLateDay"/>(103차 3일차)부터는 이틀 전 이전에 본 변조본 있는 채움을 조금 더(4) —
+        /// 변조는 「이전 밤에 원본을 본 수칙」만 거는데, 덱이 고르게 바뀌면서 4일차 변조 후보가 모자랐다.
+        /// </summary>
+        private int RecencyWeight(RuleDef r)
+        {
+            if (_lastDeck.Contains(r.Id)) return 1;
+            if (_buildDay >= ParadoxPlanner.TamperLateDay && _runRules.Contains(r.Id))
+            {
+                ParadoxEntry e = ParadoxCatalog.Find(r.Id);
+                if (e != null && e.HasVariant) return 4;
+            }
+
+            return 3;
+        }
+
+        private RuleDef Weighted(List<RuleDef> c, List<int> w)
+        {
+            if (c.Count == 0) return null;
+            int sum = 0;
+            for (int i = 0; i < w.Count; i++) sum += w[i];
+            int roll = _rng.Next(sum);
+            for (int i = 0; i < c.Count; i++)
+            {
+                roll -= w[i];
+                if (roll < 0) return c[i];
+            }
+
+            return c[c.Count - 1];
+        }
 
         /// <summary>
         /// 51차(민: 「1~5일차에 밸런스 있게, 점점 무서워지도록」) — 일차별로 무게를 둘 조우.
@@ -807,6 +1194,16 @@ namespace NightDuty
             return true;
         }
 
+        /// <summary>
+        /// 103차(민: 「소년 착석과 머리 박기는 합쳐진 조우야. 소년이 착석하고, 머리를 박는 걸로 하나의 연출로」) — 편성에서 그 조우를 대신하는 조우.
+        /// 소년 착석은 머리 박기(<see cref="ProgramCatalog.BoyBang"/>, 앉음 → 바라보면 박기 · C2·C3 두 장)로만 들어간다.
+        /// 착석 정의·대본은 남겨 둔다(디버그 강제·연출 시험).
+        /// </summary>
+        public static string MergedInto(string encounterId)
+        {
+            return encounterId == ProgramCatalog.BoySeated ? ProgramCatalog.BoyBang : encounterId;
+        }
+
         /// <summary>70차: 날짜 사슬로만 들어가는 조우(복도 끝에 선 자 → 다음 날 모형 급습).</summary>
         public static bool IsChained(string encounterId)
         {
@@ -858,23 +1255,73 @@ namespace NightDuty
                 if (r.Id == "S3" && PlanHas(_planForFill, "S-1")) continue;   // 51차: 모형을 비추지 말라는 날에 모형 점검은 없다
                 if (onlyAxis.HasValue && r.Axis != onlyAxis.Value) continue;
                 candidates.Add(r);
-                weights.Add(r.Axis == highest ? 2 : 1);
+                weights.Add((r.Axis == highest ? 2 : 1) * RecencyWeight(r));
             }
 
-            if (candidates.Count == 0) return null;
-            int sum = 0;
-            for (int i = 0; i < weights.Count; i++) sum += weights[i];
-            int roll = _rng.Next(sum);
-            for (int i = 0; i < candidates.Count; i++)
-            {
-                roll -= weights[i];
-                if (roll < 0) return candidates[i];
-            }
-
-            return candidates[candidates.Count - 1];
+            return Weighted(candidates, weights);
         }
 
         /// <summary>가장 낮은 감각 축(연출 구간, 동점이면 생존 수치가 낮은 쪽)의 수칙이 한 장도 없으면 채움 한 장을 그 축으로 바꾼다.</summary>
+        /// <summary>
+        /// 103차(축 균형): 감각 축(청각·조도·배치)마다 수칙이 한 장도 없으면, 같은 축이 둘 이상인 채움 한 장을 그 축 채움으로 바꾼다(조우·강제 수칙은 그대로).
+        /// 옛: 조우 수칙·G1·G4로 덱이 차서 조도 단독 수칙(C4·S3·L6)이 거의 남지 않았다 — 조도가 1~3일차에 움직이지 않다 4·5일차에 몰아서 올랐다.
+        /// </summary>
+        private void EnsureEverySensoryAxis(Draft d, IFearAxisReader shown)
+        {
+            FearAxis highest = HighestShown(shown);
+            FearAxis[] axes = { FearAxis.Illuminance, FearAxis.Auditory, FearAxis.Layout };
+            for (int a = 0; a < axes.Length; a++)
+            {
+                FearAxis want = axes[a];
+                if (CountAxisInDeck(d, want) > 0) continue;   // 103차 QA: 공통 G1(청각)·짝수 날 G4(배치)도 센다 — 옛: 청각이 있는데도 채움 한 장을 청각으로 바꿨다
+                bool fixedIt = false;
+                for (int s = 0; s < ProgramCatalog.RuleSpaces.Length && !fixedIt; s++)
+                {
+                    SpaceId space = ProgramCatalog.RuleSpaces[s];
+                    List<RuleDef> here = d.In(space);
+                    if (here.Count != 1 || d.Locked.Contains(here[0].Id)) continue;
+                    RuleDef old = here[0];
+                    if (old.HasAxis && old.Axis != FearAxis.Trust && CountAxisInDeck(d, old.Axis) <= 1) continue;   // 다른 축의 마지막 한 장은 건드리지 않는다
+                    here.Clear();
+                    RuleDef swap = PickFiller(d, space, highest, want);
+                    if (swap != null)
+                    {
+                        here.Add(swap);
+                        fixedIt = true;
+                        break;
+                    }
+
+                    here.Add(old);
+                }
+            }
+        }
+
+        /// <summary>103차 QA: 덱에 들어갈 공통 수칙(G1 · 그날 들어갈 G4)까지 센 축 장수.</summary>
+        private int CountAxisInDeck(Draft d, FearAxis axis)
+        {
+            int n = CountAxis(d, axis);
+            RuleDef g1 = ProgramCatalog.Rule("G1");
+            if (g1 != null && g1.HasAxis && g1.Axis == axis) n++;
+            if (HasTabletRule(_buildDay) && !_runRules.Contains(TabletRule))
+            {
+                RuleDef g4 = ProgramCatalog.Rule(TabletRule);
+                if (g4 != null && g4.HasAxis && g4.Axis == axis) n++;
+            }
+
+            return n;
+        }
+
+        private static int CountAxis(Draft d, FearAxis axis)
+        {
+            int n = 0;
+            foreach (KeyValuePair<SpaceId, List<RuleDef>> kv in d.Spaces)
+            {
+                for (int i = 0; i < kv.Value.Count; i++) if (kv.Value[i].HasAxis && kv.Value[i].Axis == axis) n++;
+            }
+
+            return n;
+        }
+
         private void EnsureLowestAxis(Draft d, IFearAxisReader shown)
         {
             FearAxis lowest = LowestShown(shown);

@@ -86,7 +86,8 @@ namespace NightDuty.Tests
                 Assert.AreEqual(1, count, "seed " + seed + " — 회차에 딱 한 번");
             }
 
-            CollectionAssert.AreEquivalent(new[] { 2, 3 }, days, "2일차·3일차 둘 다 나올 수 있고 그 밖의 날은 없다");
+            CollectionAssert.AreEquivalent(new[] { 2 }, days, "103차: 늘 2일차(옛 2·3일차 반반)");
+            Assert.AreEqual(2, ProgramCatalog.Encounter(ProgramCatalog.CeilingLegs).Intensity, "103차: 강도 3 → 2");
         }
 
         [Test]

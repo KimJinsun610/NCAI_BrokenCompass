@@ -27,5 +27,28 @@
             if (space == SpaceId.None) return;
             _axes.Apply(FixedMobStare.Axis, delta, FixedMobStare.SourcePrefix + _stare.TargetId, space);
         }
+
+        /// <summary>103차: 현관 인체 나무 응시가 축을 올릴 때의 출처 ID.</summary>
+        public const string LobbyTreeSource = "stare.lobbytree";
+
+        /// <summary>103차: 현관 인체 나무 응시 1초마다 오르는 축 값(이상·이하, 무작위).</summary>
+        public const int LobbyTreeMin = 1;
+
+        /// <inheritdoc cref="LobbyTreeMin"/>
+        public const int LobbyTreeMax = 2;
+
+        /// <summary>
+        /// 103차(민: 「인체 나무는 제대로 응시하면 1초마다 축이 랜덤하게 조금씩 올라가게 · 화면 울렁임과 함께」): 현관 인체 나무를 1초 이어 바라볼 때마다
+        /// 연출(<c>HumanTreeGrowth</c>)이 부른다 — 감각 축(청각·조도·배치) 중 하나에 <paramref name="delta"/>를 더한다.
+        /// 고정 몹 응시와 같은 스위치(<see cref="FixedMobStareEnabled"/>)·판정 시간창·붙잡힘 규칙을 따른다. 올렸으면 true.
+        /// </summary>
+        public static bool AddLobbyTreeStare(FearAxis axis, int delta)
+        {
+            if (delta <= 0 || axis == FearAxis.Trust || _axes == null || !FixedMobStareEnabled || !IsNightActive || !IsJudgingNow || IsCaptured) return false;
+            SpaceId space = _currentSpace != SpaceId.None ? _currentSpace : SpaceId.Corridor;   // 현관은 공간 상자 밖일 수 있다 — 복도로 친다
+            _axes.Apply(axis, delta, LobbyTreeSource, space);
+            CloseIfCaptured();
+            return true;
+        }
     }
 }

@@ -30,13 +30,13 @@ namespace NightDuty.Tests
         public void 빠진_ID는_되살리지_않는다()
         {
             Assert.IsNull(InspectionCatalog.Find("L-3"), "65차에 뺀 반납 상자");
-            Assert.AreEqual("쓰레기통", InspectionCatalog.Find("H-4").Name, "49차에 뺀 복도 사물함이 아니다");
+            Assert.AreEqual("복도 쓰레기통", InspectionCatalog.Find("H-4").Name, "49차에 뺀 복도 사물함이 아니다");   // 104차(사용자 결정): 옛 이름 「쓰레기통」(L-5와 같았음)
         }
 
         [Test]
         public void 도서관_쓰레기통은_원래_쓰러져_있다()
         {
-            StringAssert.Contains("세워져", InspectionCatalog.Find("L-5").TabletLine, "76차 민 문구 — 씬의 도서관 쓰레기통은 누워 있다, 이상이면 누가 세워 놓았다");
+            StringAssert.Contains("누워 있는지", InspectionCatalog.Find("L-5").TabletLine, "104차(사용자 결정) — 씬의 도서관 쓰레기통은 누워 있다(정상), 이상이면 누가 세워 놓았다. 옛 76차 「세워져 있는지」는 정상·이상이 문장과 반대였다");
             StringAssert.Contains("제자리", InspectionCatalog.Find("C-4").TabletLine, "76차 민 문구 — 이상이면 바닥에 떨어져 있다");
         }
 

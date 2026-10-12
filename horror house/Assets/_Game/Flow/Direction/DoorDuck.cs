@@ -66,8 +66,8 @@ public sealed class DoorDuck : MonoBehaviour
         get { return _yaw; }
     }
 
-    /// <summary>붙인다(이미 있으면 그것).</summary>
-    public static DoorDuck Attach(GameObject go)
+    /// <summary>붙인다(이미 있으면 그것). 103차: <paramref name="stepIn"/>이 거짓이면 문 안으로 몇 걸음 들어오지 않는다(도서관 노란 얼굴은 <see cref="LibraryDuck"/>가 걷는다) — 고개 돌림만.</summary>
+    public static DoorDuck Attach(GameObject go, bool stepIn = true)
     {
         if (go == null) return null;
         DoorDuck d = go.GetComponent<DoorDuck>();
@@ -78,7 +78,7 @@ public sealed class DoorDuck : MonoBehaviour
         d._neck = Find(go.transform, "Neck");
         d._head = Find(go.transform, "Head");
         d._anim = go.GetComponentInChildren<Animator>();
-        if (fresh) d.PlanStepIn();   // 세워 둘 때(보기를 기다릴 때) 한 번 — 대면 때 다시 붙여도 걸음은 이어진다
+        if (fresh && stepIn) d.PlanStepIn();   // 세워 둘 때(보기를 기다릴 때) 한 번 — 대면 때 다시 붙여도 걸음은 이어진다
         return d;
     }
 

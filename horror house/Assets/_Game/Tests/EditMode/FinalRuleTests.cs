@@ -304,25 +304,30 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void C3_수업_중_움직이면_20_종까지_버티면_3()
+        public void C3_수업_종이_울리는_동안_움직이면_20_종이_그칠_때까지_버티면_3()
         {
+            // 103차(민: 「수업 종이 울리면 정지하십시오」): 단서 = 수업 종(교실에 들어가면 곧), 끝 = 종이 그침.
             FinalFixture f = new FinalFixture("C3");
-            f.Enter(SpaceId.Classroom_1_1).Pose(0f, 0f).Cue(FinalCues.BoySeated);
+            f.Enter(SpaceId.Classroom_1_1).Pose(0f, 0f).Cue(FinalCues.BellStart);
             f.Pose(0.1f, 0f).Wait(5f);
             Assert.IsNull(f.Last("C3"), "0.2m 안은 정지");
-            f.Cue(FinalCues.Bell);
+            f.End(FinalCues.BellStart);
             Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("C3"));
 
             FinalFixture g = new FinalFixture("C3");
-            g.Enter(SpaceId.Classroom_1_1).Pose(0f, 0f).Cue(FinalCues.BoySeated).Pose(0.5f, 0f);
+            g.Enter(SpaceId.Classroom_1_1).Pose(0f, 0f).Cue(FinalCues.BellStart).Pose(0.5f, 0f);
             Assert.AreEqual(Deltas.ThreatFailure, g.Value(FearAxis.Auditory));
+
+            FinalFixture h = new FinalFixture("C3");
+            h.Enter(SpaceId.Classroom_1_1).Pose(0f, 0f).Cue(FinalCues.BoySeated).Pose(0.5f, 0f);
+            Assert.IsFalse(h.Book.Judge("C3").Triggered, "103차: 소년이 나타나는 것만으로는 C3가 시작되지 않는다(종이어야)");
         }
 
         [Test]
         public void C3_교실_밖이면_해당없음()
         {
             FinalFixture f = new FinalFixture("C3");
-            f.Enter(SpaceId.Corridor).Pose(0f, 0f).Cue(FinalCues.BoySeated).Pose(3f, 0f).Cue(FinalCues.Bell);
+            f.Enter(SpaceId.Corridor).Pose(0f, 0f).Cue(FinalCues.BellStart).Pose(3f, 0f).End(FinalCues.BellStart);
             Assert.AreEqual(0, f.Book.Results.Count);
             Assert.IsFalse(f.Book.Judge("C3").Triggered);
         }
@@ -586,9 +591,9 @@ namespace NightDuty.Tests
             FinalFixture f = new FinalFixture("K2");
             f.Cue(FinalCues.EmptyRoom + "@cctv.ch3");
             f.Samples(() => JudgeSignal.CctvView("cctv.ch1", 0.1f), 5f);
-            Assert.AreEqual(0, f.Value(FearAxis.Auditory));
+            Assert.AreEqual(0, f.Value(FearAxis.Illuminance));
             f.Samples(() => JudgeSignal.CctvView("cctv.ch3", 0.1f), 3.1f);
-            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Auditory));
+            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance), "103차 편성 균형: K2는 조도(화면)");
         }
 
         [Test]
@@ -623,10 +628,14 @@ namespace NightDuty.Tests
 
             Assert.IsNotNull(NightRun.FinalRules);
             Assert.Greater(NightRun.TodayDeck.Count, 0, "태블릿에는 새 수칙 + 점검표가 나간다");
+            int fakes = 0;
             foreach (RuleSO card in NightRun.TodayDeck)
             {
-                Assert.IsTrue(NightRun.Program.Has(card.CardId) || card.CardId.StartsWith(InspectionCatalog.TargetPrefix), "태블릿 표시 카드: " + card.CardId);
+                bool fake = card.CardId.StartsWith(FakeRuleCatalog.IdPrefix) && ProgramCatalog.Rule(card.CardId) == null;   // 103차: 1일차 가짜 수칙 두 줄(판정 없음)
+                if (fake) fakes++;
+                Assert.IsTrue(NightRun.Program.Has(card.CardId) || card.CardId.StartsWith(InspectionCatalog.TargetPrefix) || fake, "태블릿 표시 카드: " + card.CardId);
             }
+            Assert.AreEqual(FakeRuleCatalog.CountFor(1), fakes, "1일차 가짜 수칙 두 줄");
             Assert.IsNotNull(NightRun.FinalRules.Judge("G1"), "1일차 공통 G1");
 
             List<FinalRuleResult> raised = new List<FinalRuleResult>();

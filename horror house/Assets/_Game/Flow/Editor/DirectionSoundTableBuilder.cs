@@ -32,6 +32,8 @@ public static class DirectionSoundTableBuilder
         { "E.BoySeated.release", Au + "class/SFX_CLASS_SchoolBell.wav", "0.6" },
         { "E.BoyBang.confront", Au + "class/SFX_CLASS_SeatCreak_*", "0.9" },
         { "E.BoyBang.release", Au + "class/SFX_CLASS_SchoolBell.wav", "0.6" },
+        { "C3.cue", Au + "class/SFX_CLASS_SchoolBell.wav", "0.8" },   // 103차: C3 「수업 종이 울리면 정지하십시오」 — 교실에 들어가면 곧 울리는 수업 종
+        { "duty.sign", Au + "class/SFX_CLASS_ChalkStroke.wav", "0.45" },   // 103차(민: 「근무일지 서명할 때 서기 소리 짧게」): 분필 긋는 소리를 높여 짧게(DutyLogBook이 0.8초에서 끊는다) — 펜 긁는 소리 대용
         { "E.BoyBang.headbang", Au + "class/SFX_CLASS_BoyHeadBang.mp3", "1" },   // 75차(민 제공 「책상_둔탁음」): 소년이 책상에 머리를 박을 때마다 — 옛 HeadThud
 
         // 천장 다리: 쿵쿵(전조) → 먼지
@@ -42,8 +44,9 @@ public static class DirectionSoundTableBuilder
         { "E.Footsteps.confront", Au + "hall/SFX_HALL_H3_BarefootRun.wav", "0.9" },
         { "E.CallingVoice.confront", Au + "voice/VO_Hey.wav", "0.85" },
         { "E.PeopleTree.confront", Au + "creature/SFX_TREE_BranchCreak.wav", "0.8" },
-        { "E.PeopleTree.confront+", Au + "creature/SFX_TREE_HumanMurmur.wav", "0.6" },
-        { "E.YellowFace.confront", Amb + "Stingers/stinger_breath.ogg", "0.8" },
+        // 104차(사용자: 「인체나무 괴성은 그냥 제거해줘 — 너무 시끄럽네」): E.PeopleTree.confront+ (SFX_TREE_HumanMurmur 웅얼거림) 뺐다 — 현관에서 알아볼 때·복도 대면 모두 가지 삐걱만.
+        { "tree.leave", Au + "creature/SFX_TREE_BranchCreak.wav", "0.55" },   // 104차: 현관 나무가 복도로 떠날 때(멀리서 — 가지 삐걱만)
+        { "E.YellowFace.confront", Au + "library/SFX_LIBRARY_YellowFaceEncounter.mp3", "1" },   // 103차(민 제공 「노란_얼굴_조우시」): 옛 Stingers/stinger_breath
         { "E.SuitMan.confront", Au + "library/SFX_LIBRARY_WindowTap.wav", "1" },
         { "E.SuitMan.confront+", Au + "library/SFX_LIBRARY_BlindRattle_*", "0.6" },
         { "E.HallEndFigure.confront", Kim + "SFX_MosterBreath.wav", "0.8" },
@@ -76,7 +79,9 @@ public static class DirectionSoundTableBuilder
         { "stinger.mid", Au + "stinger/SFX_STING_Mid_*", "0.95" },
         { "stinger.strong", Au + "stinger/SFX_STING_Strong_*", "1" },
         { "stinger.high", Au + "stinger/SFX_STING_High_*", "0.75" },
-        { "stinger.corpse", Au + "stinger/SFX_STING_Corpse.mp3", "1" },   // 60차: 민 제공 시체 점프스케어
+        { "stinger.corpse", Au + "stinger/SFX_STING_CorpseDrop.mp3", "1" },   // 103차(민 제공 「시체_낙하시_」): 옛 SFX_STING_Corpse(60차 민 제공)
+        { "stinger.yellowface", Au + "stinger/SFX_STING_YellowFace.mp3", "1" },   // 103차(민 제공 「발자국_앞으로지나감,노란얼굴_놀람연출」): 노란 얼굴 점프스케어(옛 공용 중 스팅어)
+        { "stinger.toiletgirl", Au + "stinger/SFX_STING_ToiletGirl.mp3", "1" },   // 103차(민 제공 「화장실_소녀_놀람연출」): 화장실 여자아이 점프스케어(옛 공용 중 스팅어)
         { "corpse.fall", Au + "class/SFX_CLASS_CorpseFall.mp3", "1" },   // 75차(민 제공 「시체_낙하음」): 천장 시체가 바닥에 처음 부딪힐 때 — 옛 HeadThud
         { "cctv.face", Au + "ui/SFX_TABLET_Glitch.wav", "0.9" },
         { "C1.cue", Au + "class/SFX_CLASS_ChalkStroke.wav", "1" },
@@ -157,6 +162,7 @@ public static class DirectionSoundTableBuilder
         { "body.breath", Au + "body/SFX_BODY_RoughBreath_*", "0.6" },
         { "body.breath.stop", Au + "body/SFX_BODY_BreathStop.wav", "0.85" },
         { "body.sigh", Au + "body/SFX_BODY_LongSigh.wav", "0.6" },
+        { "scare.breath", Au + "capture/CAP_COM_10_ChokedBreath.wav", "0.7" },   // 103차 후속: 놀람 연출 넘어진 뒤 짧은 숨막힘(긴 body.breath 대신)
 
         // 79차(민: 「벨소리는 phone_ring_3.wav, 숨소리는 추천한 사운드로」): 경비실 전화 — 벨(디자인 프롤로그 샘플을 복사) · 수화기 너머 숨
         { "phone.ring", Au + "common/SFX_COMMON_PhoneRing.wav", "1" },   // 80차: 0.9 → 1(민: 너무 작다)

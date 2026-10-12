@@ -153,10 +153,12 @@ namespace NightDuty
         private static bool LeadDutyDue(float minute)
         {
             if (_duties == null || _leadDuty == null || minute < 0f || _duties.WasIssued(_leadDuty)) return false;
+            if (minute >= NightClock.JudgingEnd) return false;   // 103차 QA 3회: 판정 끝 뒤에는 내자마자 닫혀 답장 없는 문자만 남았다
             if (_tension == null) return true;
             foreach (EncounterRun r in _tension.Runs)
             {
                 if (r.Script == null || r.Script.AfterDuty.Length == 0) continue;
+                if (LeadEncounterOver(r)) return false;   // 103차 QA 3회: 조우가 이미 지나갔으면 「조우 앞」 지시는 늦었다
                 return LeadDue(r, minute);
             }
 
@@ -166,7 +168,22 @@ namespace NightDuty
         /// <summary>조우 앞 [근무 지시]가 아직 나가지 않았고 판정 끝 전인지(조기 퇴근을 막는다).</summary>
         private static bool LeadDutyPending(float minute)
         {
-            return _duties != null && _leadDuty != null && !_duties.WasIssued(_leadDuty) && minute >= 0f && minute < NightClock.JudgingEnd;
+            if (_duties == null || _leadDuty == null || _duties.WasIssued(_leadDuty) || minute < 0f || minute >= NightClock.JudgingEnd) return false;
+            if (_tension != null)
+            {
+                foreach (EncounterRun r in _tension.Runs)
+                {
+                    if (r.Script == null || r.Script.AfterDuty.Length == 0) continue;
+                    return !LeadEncounterOver(r);   // 103차 QA 3회: 조우가 지나가 다시 나가지 않을 지시가 조기 퇴근을 막지 않게
+                }
+            }
+
+            return true;
+        }
+
+        private static bool LeadEncounterOver(EncounterRun r)
+        {
+            return r.State == EncounterRunState.Done || r.State == EncounterRunState.Missed;
         }
 
         // ── 방아쇠 ──────────────────────────────────────────────

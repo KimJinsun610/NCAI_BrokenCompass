@@ -72,13 +72,31 @@ public sealed class DeskStarterKit : MonoBehaviour
         Notice("손전등이 없습니다 — 경비실 책상을 확인하십시오");
     }
 
-    /// <summary>66차: 다 닳은 손전등 — 예비가 있으면 R, 없으면 책상 배터리를 안내.</summary>
+    /// <summary>104차: 예비도 책상 배터리도 없을 때 — 그 밤 남은 배터리가 있으면.</summary>
+    public const string EmptySearchText = "손전등 배터리가 비었습니다 — 서랍·사물함·책장·탁자에서 배터리를 찾으십시오 (경비실 지도에 표시)";
+
+    /// <summary>104차: 예비도 책상 배터리도 없고 그 밤 놓인 배터리도 다 주웠을 때.</summary>
+    public const string EmptyNoneLeftText = "손전등 배터리가 비었습니다 — 오늘 밤 남은 배터리가 없습니다";
+
+    /// <summary>
+    /// 66차: 다 닳은 손전등 — 예비가 있으면 R, 없으면 책상 배터리를 안내. 104차(사용자: 「빈 손전등 안내도 추가해줘」): 둘 다 없으면
+    /// 그 밤 남은 배터리를 찾으라고(<see cref="EmptySearchText"/>), 남은 것도 없으면 그렇다고(<see cref="EmptyNoneLeftText"/>) — 전에는 2일차부터 아무 말이 없었다.
+    /// </summary>
     public static void ShowEmptyHint()
     {
+        string text = EmptyHintText();
+        if (text != null) Notice(text);
+    }
+
+    /// <summary>104차: 지금 보일 빈 손전등 안내(다 닳지 않았으면 null). 시험용으로 열어 둔다.</summary>
+    public static string EmptyHintText()
+    {
         FlashlightBattery b = NightRun.Battery;
-        if (b == null || !b.IsEmpty) return;
-        if (b.Spare > 0) Notice("[R] 배터리 갈아 끼우기");
-        else if (NightRun.DeskKit != null && NightRun.DeskKit.BatteryOnDesk) Notice("손전등 배터리가 비어 있습니다 — 책상 위 배터리를 주우십시오");
+        if (b == null || !b.IsEmpty) return null;
+        if (b.Spare > 0) return "[R] 배터리 갈아 끼우기";
+        if (NightRun.DeskKit != null && NightRun.DeskKit.BatteryOnDesk) return "손전등 배터리가 비어 있습니다 — 책상 위 배터리를 주우십시오";
+        BatteryPlan plan = NightRun.BatteryPlan;
+        return plan != null && plan.Remaining <= 0 ? EmptyNoneLeftText : EmptySearchText;
     }
 
     /// <summary>102차: 충전량이 넉넉한데 R을 눌렀다 — 예비를 쓰지 않고 잠깐 안내.</summary>
@@ -398,7 +416,6 @@ public sealed class DeskStarterKit : MonoBehaviour
 
     private static bool Clear(Vector3 from, Vector3 to)
     {
-        RaycastHit hit;
         foreach (RaycastHit h in Physics.RaycastAll(from, (to - from).normalized, Vector3.Distance(from, to), Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
         {
             if (h.collider.name.StartsWith("Inspect ")) continue;   // 점검 대상 상자(모니터 K-1)는 보이는 벽이 아니다

@@ -30,7 +30,7 @@ namespace NightDuty
             return OrderMessagePrefix + index;
         }
 
-        /// <summary>목격 뒤 지시(T4)의 칸 표시 — 여자아이가 들어가는 변기 점검 칸.</summary>
+        /// <summary>목격 뒤 지시(T4)의 칸 표시 — 여자아이가 들어가는 변기 점검 칸. 104차: T-1 문구(「화장실 3번 칸 변기의 …」)가 칸을 품어 지시 줄에 따로 붙이지 않는다(값은 시험·기록용으로 남김).</summary>
         public const string WitnessStallLabel = "3번 칸";
 
         /// <summary>
@@ -209,6 +209,7 @@ namespace NightDuty
         private static bool DutyTurnNow(float minute)
         {
             if (_duties == null || _lastInstruction != LastInstruction.Inspection) return false;
+            if (_orders != null && _orders.SpaceUnfinished) return false;   // 103차: 지시한 공간의 남은 점검을 먼저
             if (_instructionClock - _lastInstructionAt > TurnWaitMax + DutyDispatcher.GapSeconds) return false;
             return _duties.CanIssueSoon(minute);
         }
@@ -311,11 +312,19 @@ namespace NightDuty
                 if (l.Left > 0f) continue;
                 l.Expired = true;
                 changed = true;
-                AddWarning(1, "order.late." + l.Index);
+                AddWarning(1, "order.late." + l.Index, OrderAxis(FindOrder(l.Index)));   // 103차: 처벌 원인 축
                 UnityEngine.Debug.Log("[NightRun] 점검 지시 #" + l.Index + " 기한 지남(" + DutyCatalog.DeadlineText(l.IssuedMinute, l.Seconds) + ") — 경고 1");
             }
 
             if (changed) EventBus.RaiseTabletTextChanged();
+        }
+
+        /// <summary>103차: 점검 지시의 원인 축(첫 항목의 축). 모르면 null.</summary>
+        private static FearAxis? OrderAxis(InspectionOrder order)
+        {
+            if (order == null || order.ItemIds == null || order.ItemIds.Count == 0) return null;
+            InspectionItem item = InspectionCatalog.Find(order.ItemIds[0]);
+            return item != null ? item.Axis : (FearAxis?)null;
         }
 
         private static InspectionOrder FindOrder(int index)
@@ -446,20 +455,13 @@ namespace NightDuty
         }
 
         /// <summary>
-        /// 88차: 지시 문자 한 줄 = 그 항목의 지시 문장. 85차 단독 변기 지시(목격)는 칸을 문장 안에 넣는다(「화장실 변기(3번 칸)의 상태 보고.」).
+        /// 88차: 지시 문자 한 줄 = 그 항목의 지시 문장.
+        /// 104차(사용자 결정): 85차 단독 변기 지시(목격)에 「변기(3번 칸)」을 끼우던 것을 뗐다 — T-1 문구가 이제 「화장실 3번 칸 변기의 상태를 보고해주십시오.」라 「3번 칸 변기(3번 칸)」이 되었다.
         /// </summary>
         public static string OrderLine(InspectionOrder order, InspectionAssignment a)
         {
             if (a == null) return string.Empty;
-            string line = a.Item.TabletLine;
-            if (order != null && order.Kind == OrderKind.Witness && a.Id == InspectionCatalog.ReverseReportItem)
-            {
-                string tagged = a.Item.Name + "(" + WitnessStallLabel + ")";
-                int at = line.IndexOf(a.Item.Name, StringComparison.Ordinal);
-                line = at >= 0 ? line.Substring(0, at) + tagged + line.Substring(at + a.Item.Name.Length) : line + " (" + WitnessStallLabel + ")";
-            }
-
-            return line;
+            return a.Item.TabletLine;
         }
 
         /// <summary>74차: 완료 표시 — TMP 취소선(민: 「완료가 된 지시들은 줄이 그어지는 걸로만」).</summary>

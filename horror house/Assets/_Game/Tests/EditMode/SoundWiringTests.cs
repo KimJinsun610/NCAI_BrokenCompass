@@ -30,12 +30,14 @@ namespace NightDuty.Tests
             "punish.stamp", "punish.auditory", "punish.illuminance", "punish.layout", "punish.hit", "punish.cut",
             "tablet.buzz", "tablet.corrupt", "ui.ready", "ui.confirm", "inspect.near",
             "body.heart.62", "body.heart.72", "body.heart.86", "body.heart.104", "body.ear", "body.tinnitus",
-            "body.heart.boundary", "body.breath", "body.breath.stop", "body.sigh",
+            "body.heart.boundary", "body.breath", "body.breath.stop", "body.sigh", "scare.breath", "tree.leave",
             "map.hall.1", "map.hall.1b", "map.hall.2", "map.hall.3", "map.hall.3+", "map.hall.4",
             "map.class.1", "map.class.2", "map.class.3", "map.class.3+", "map.class.4",
             "map.lab.1", "map.lab.2", "map.lab.3", "map.lab.4", "map.toilet.2", "map.layout.3", "map.layout.4", "map.lamp.off",
             "cross.toilet.water", "cross.guard.breath", "trust.guard.rattle",
             "react.C1", "react.L1", "react.L2", "react.L5", "react.S2", "react.G1", "react.K2",
+            // 103차 QA 3회: 민 제공 효과음·전화·서명·수업 종 — 빠져도 조용히 옛 소리로 넘어가므로 표에서 지킨다
+            "stinger.corpse", "stinger.yellowface", "stinger.toiletgirl", "E.YellowFace.confront", "C3.cue", "phone.ring", "phone.breath", "duty.sign",
         };
 
         private static readonly string[] Surfaces = { "CLASS", "HALL", "LIBRARY", "TOILET", "LAB", "GUARD" };

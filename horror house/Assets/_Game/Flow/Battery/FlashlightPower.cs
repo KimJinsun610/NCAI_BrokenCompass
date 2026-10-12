@@ -177,6 +177,7 @@ public sealed class FlashlightPower : MonoBehaviour
                 {
                     relay.SetOn(false);
                     Debug.Log("[손전등] 배터리가 다 닳았다 — 꺼짐");
+                    DeskStarterKit.ShowEmptyHint();   // 104차: 꺼지는 순간에도 — 예비 R · 책상 · 남은 배터리 찾기
                 }
             }
         }

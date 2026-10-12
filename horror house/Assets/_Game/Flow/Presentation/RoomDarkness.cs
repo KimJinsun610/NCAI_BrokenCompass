@@ -383,7 +383,9 @@ public sealed class RoomDarkness : MonoBehaviour
         if (!SystemInfo.IsFormatSupported(format, GraphicsFormatUsage.Render) || !SystemInfo.IsFormatSupported(format, GraphicsFormatUsage.Sample)) return null;
         RenderTexture rt = new RenderTexture(source.width, source.height, 0, format);
         rt.Create();
+        RenderTexture before = RenderTexture.active;
         Graphics.Blit(source, rt, blit);
+        RenderTexture.active = before;   // 103차 QA 4회: Blit이 rt를 활성으로 둔 채 Release해 「Releasing render texture that is set to be RenderTexture.active!」 경고가 매번 났다
         Texture2D copy = new Texture2D(source.width, source.height, format, TextureCreationFlags.None);
         copy.name = source.name + " (어둡게)";
         copy.wrapMode = source.wrapMode;

@@ -36,17 +36,18 @@ namespace NightDuty.Tests
     public sealed class InspectionCatalogTests
     {
         [Test]
-        public void 점검_항목은_27개다_복도6_교실5_과학실6_화장실4_도서관3_경비실3()
+        public void 점검_항목은_27개다_복도6_교실5_과학실6_화장실3_도서관3_경비실3()   // 104차: T-2 폐기로 화장실 4 → 3(정의는 27개 그대로)
         {
             Assert.AreEqual(27, InspectionCatalog.All.Count, "66차: 16 → 29(민: 「점검은 안 겹칠수록 좋아」) · 80차: L-4 칠판 폐기 → 28 · 81차: T-4 세면대 폐기 → 27");
             Assert.IsNull(InspectionCatalog.Find("T-4"), "81차(민): 세면대 물 퀄리티 부족 — 항목 폐기");
             Assert.IsNull(InspectionCatalog.Find("L-4"), "80차(민): 「이 보고하지마」 칠판 폐기");
             Assert.AreEqual(6, InspectionCatalog.InSpace(SpaceId.Corridor).Count);
-            Assert.AreEqual("쓰레기통", InspectionCatalog.Find("H-4").Name, "65차: H-4 = 쓰레기통(49차에 뺀 복도 사물함이 아니다)");
+            Assert.AreEqual("복도 쓰레기통", InspectionCatalog.Find("H-4").Name, "65차: H-4 = 쓰레기통(49차에 뺀 복도 사물함이 아니다)");   // 104차(사용자 결정): 옛 이름 「쓰레기통」
             Assert.IsNull(InspectionCatalog.Find("L-3"), "65차: 반납 상자는 [근무 지시] W15 biology 책 줍기로");
             Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Classroom).Count);
             Assert.AreEqual(6, InspectionCatalog.InSpace(SpaceId.ScienceRoom).Count);
-            Assert.AreEqual(4, InspectionCatalog.InSpace(SpaceId.Toilet).Count);
+            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Toilet).Count, "104차(사용자: 「T-2는 그냥 폐기해줘」): T-1 · T-3 · T-5");
+            Assert.IsNotNull(InspectionCatalog.Find("T-2"), "104차: 폐기한 T-2는 정의가 남아 있다(되살릴 수 있게)");
             Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Library).Count);
             Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.SecurityRoom).Count);
             Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Classroom_1_3).Count, "옛 교실 값도 새 교실로 읽는다");
@@ -244,11 +245,12 @@ namespace NightDuty.Tests
         [Test]
         public void 정확한_이상보고는_5씩_축마다_밤당_10까지_뺀다()
         {
-            InspectionBoard board = Board(Row("H-2", true), Row("S-1", true), Row("C-1", true));
+            // 103차 축 균형: H-2(식수대)가 조도로 옮겨 배치 항목은 H-6(벤치)으로
+            InspectionBoard board = Board(Row("H-6", true), Row("S-1", true), Row("C-1", true));
             FearAxisSystem axes = new FearAxisSystem();
             axes.Apply(FearAxis.Layout, 30, "준비", SpaceId.None);
 
-            Assert.AreEqual(ReportOutcome.CorrectAnomaly, board.Report("H-2", true, -1, axes, SpaceId.Corridor).Outcome);
+            Assert.AreEqual(ReportOutcome.CorrectAnomaly, board.Report("H-6", true, -1, axes, SpaceId.Corridor).Outcome);
             Assert.AreEqual(25, axes.GetValue(FearAxis.Layout));
             Assert.AreEqual(-5, board.Report("S-1", true, -1, axes, SpaceId.ScienceRoom).Change);
             InspectionReport third = board.Report("C-1", true, -1, axes, SpaceId.Classroom);
@@ -292,7 +294,7 @@ namespace NightDuty.Tests
             other.SetReverseReport("T-1", true);
             InspectionReport broken = other.Report("T-1", true, -1, axes2, SpaceId.Toilet);
             Assert.AreEqual(ReportOutcome.ReverseViolated, broken.Outcome);
-            Assert.AreEqual(Deltas.RuleViolation, axes2.GetValue(FearAxis.Layout), "T4 위반 배치 +12, 오보를 따로 더하지 않음");
+            Assert.AreEqual(Deltas.RuleViolation, axes2.GetValue(FearAxis.Layout), "T4 위반은 배치 +12(103차 축 균형: 배치 고정 유지), 오보를 따로 더하지 않음");
         }
 
         [Test]
@@ -342,12 +344,13 @@ namespace NightDuty.Tests
         [Test]
         public void 스냅샷은_한도와_가까이와_보고를_되돌린다()
         {
-            InspectionBoard board = Board(Row("H-2", true), Row("S-1", true), Row("C-1", false));
+            // 103차 축 균형: H-2(식수대)가 조도로 옮겨 배치 항목은 H-6(벤치)으로
+            InspectionBoard board = Board(Row("H-6", true), Row("S-1", true), Row("C-1", false));
             FearAxisSystem axes = new FearAxisSystem();
             axes.Apply(FearAxis.Layout, 40, "준비", SpaceId.None);
             object saved = board.CaptureState();
 
-            board.Report("H-2", true, -1, axes, SpaceId.Corridor);
+            board.Report("H-6", true, -1, axes, SpaceId.Corridor);
             board.Startle("C-1", axes, SpaceId.Classroom);
             Assert.AreEqual(5, board.ReliefUsed(FearAxis.Layout));
 
@@ -355,7 +358,7 @@ namespace NightDuty.Tests
 
             Assert.AreEqual(0, board.ReliefUsed(FearAxis.Layout), "한도 사용량은 스냅샷으로");
             Assert.IsFalse(board.WasStartled("C-1"));
-            Assert.AreEqual(InspectionState.Pending, board.StateOf("H-2"), "92차: 스냅샷 뒤의 보고도 되돌린다");
+            Assert.AreEqual(InspectionState.Pending, board.StateOf("H-6"), "92차: 스냅샷 뒤의 보고도 되돌린다");
         }
     }
 
@@ -448,13 +451,14 @@ namespace NightDuty.Tests
         [Test]
         public void 판정정지_중_보고의_델타는_95에서_멈춘다()
         {
-            UsePlan(Row("H-2", true));
+            // 103차 축 균형: H-2(식수대)가 조도로 옮겨 배치 항목은 H-6(벤치)으로
+            UsePlan(Row("H-6", true));
             NightRun.JudgingWindowEnabled = true;
             _clock = (int)NightClock.JudgingEnd + 10;   // 판정은 끝났지만 보고는 근무 끝(67차 05:00)까지
             NightRun.BeginNight(2, () => _clock);
             NightRun.DebugAddAxis(FearAxis.Layout, 93);
 
-            InspectionReport r = NightRun.ReportInspection("inspect.H-2", false);
+            InspectionReport r = NightRun.ReportInspection("inspect.H-6", false);
 
             Assert.AreEqual(ReportOutcome.Missed, r.Outcome);
             Assert.AreEqual(Deltas.SoftCap, NightRun.Axes.GetValue(FearAxis.Layout));
@@ -464,11 +468,12 @@ namespace NightDuty.Tests
         [Test]
         public void 판정구간의_놓침으로는_붙잡힐_수_있다()
         {
-            UsePlan(Row("H-2", true));
+            // 103차 축 균형: H-2(식수대)가 조도로 옮겨 배치 항목은 H-6(벤치)으로
+            UsePlan(Row("H-6", true));
             NightRun.BeginNight(2, () => _clock);
             NightRun.DebugAddAxis(FearAxis.Layout, 93);
 
-            NightRun.ReportInspection("H-2", false);
+            NightRun.ReportInspection("H-6", false);
 
             Assert.IsTrue(NightRun.IsCaptured);
             Assert.AreEqual(FearAxis.Layout, NightRun.Cause.Axis);
@@ -506,11 +511,12 @@ namespace NightDuty.Tests
         [Test]
         public void 재시작하면_보고와_한도가_스냅샷으로_돌아간다()
         {
-            UsePlan(Row("H-2", true), Row("S-1", true), Row("C-1", true));
+            // 103차 축 균형: H-2(식수대)가 조도로 옮겨 배치 항목은 H-6(벤치)으로
+            UsePlan(Row("H-6", true), Row("S-1", true), Row("C-1", true));
             NightRun.DebugAddAxis(FearAxis.Layout, 45);
             NightRun.BeginNight(2, () => _clock);
 
-            NightRun.ReportInspection("H-2", true);
+            NightRun.ReportInspection("H-6", true);
             NightRun.ReportInspection("S-1", true);
             Assert.AreEqual(35, NightRun.Axes.GetValue(FearAxis.Layout));
 
@@ -519,9 +525,9 @@ namespace NightDuty.Tests
 
             Assert.AreEqual(40, NightRun.Axes.GetValue(FearAxis.Layout), "스냅샷 45 → max(min(45,40), 45−10)");
             // 92차(민: 「죽고 재시작할 때, 전에 보고했던 상태가 남아있는 오류」): 밤 시작 뒤의 보고는 지워진다 — 다시 보고해야 한다.
-            Assert.AreEqual(InspectionState.Pending, NightRun.Inspections.StateOf("H-2"));
+            Assert.AreEqual(InspectionState.Pending, NightRun.Inspections.StateOf("H-6"));
             Assert.AreEqual(0, NightRun.Inspections.ReliefUsed(FearAxis.Layout), "한도 사용량은 밤 시작 스냅샷으로");
-            Assert.AreEqual(ReportRejection.None, NightRun.ReportInspection("H-2", true).Rejection, "다시 보고할 수 있다");
+            Assert.AreEqual(ReportRejection.None, NightRun.ReportInspection("H-6", true).Rejection, "다시 보고할 수 있다");
             Assert.AreEqual(35, NightRun.Axes.GetValue(FearAxis.Layout));
         }
 

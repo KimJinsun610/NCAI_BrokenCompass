@@ -128,11 +128,13 @@ namespace NightDuty
                 _displayDeck.Add(DisplayCard(def.Id, def.Space, RuleCardText(def, paradox), string.Empty));
             }
 
-            // 79차(민: 가짜 수칙 「2일차부터 하나씩」 · 「따로 더해」): 판정 없는 한 줄을 날마다 다른 자리에 끼운다 — 하루 수칙 수에 세지 않는다.
-            string fake = FakeRuleCatalog.ForDay(Day);
-            if (fake != null)
+            // 79차(민: 가짜 수칙 「따로 더해」): 판정 없는 줄을 날마다 다른 자리에 끼운다 — 하루 수칙 수에 세지 않는다.
+            // 103차(사용자: 「첫날에 원래 수칙 4개 + 가짜 2개로 첫날에만」): 1일차에만 두 줄.
+            for (int k = 0; k < FakeRuleCatalog.CountFor(Day); k++)
             {
-                _displayDeck.Insert(FakeRuleCatalog.SlotFor(Day, _displayDeck.Count), DisplayCard(FakeRuleCatalog.IdForDay(Day), SpaceId.None, fake, string.Empty));
+                string fake = FakeRuleCatalog.ForDay(Day, k);
+                if (fake == null) continue;
+                _displayDeck.Insert(FakeRuleCatalog.SlotFor(Day, _displayDeck.Count, k), DisplayCard(FakeRuleCatalog.IdForDay(Day, k), SpaceId.None, fake, string.Empty));
             }
 
             // 5일차: 판정 없는 G3(빈칸)을 공통 수칙 뒤에 보인다 — 피날레에서 「당신」으로 채운다(FillFinaleBlank).

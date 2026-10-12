@@ -82,6 +82,9 @@ namespace NightDuty
         /// <summary>79차: 태블릿이 올라와 있는지(TabChanged — 판정에는 넘기지 않고 상태로만). G4.</summary>
         public bool TabletOpen { get; internal set; }
 
+        /// <summary>103차 QA: 공간이 바뀔 때마다(들어감·나감) 1씩 오른다 — 판정을 쉬는 동안의 드나듦도 센다(머문 시간 판정이 이완 구간을 건너 이어 붙지 않게).</summary>
+        public int SpaceSerial { get; internal set; }
+
         /// <summary>판정 시간(ms) — 판정 구간의 Tick 누적. 수칙의 제한 시간은 이 시계로 잰다.</summary>
         public int NowMs { get; internal set; }
 
@@ -101,15 +104,22 @@ namespace NightDuty
             }
         }
 
+        private void SetSpace(SpaceId space)
+        {
+            if (Space == space) return;
+            Space = space;
+            SpaceSerial++;
+        }
+
         internal void Apply(in JudgeSignal s)
         {
             switch (s.Kind)
             {
                 case SignalKind.SpaceEntered:
-                    Space = SpaceIds.Canonical(s.Space);
+                    SetSpace(SpaceIds.Canonical(s.Space));
                     break;
                 case SignalKind.SpaceExited:
-                    if (Space == SpaceIds.Canonical(s.Space)) Space = SpaceId.None;
+                    if (Space == SpaceIds.Canonical(s.Space)) SetSpace(SpaceId.None);
                     break;
                 case SignalKind.FlashlightChanged:
                     Flashlight = s.Flag;

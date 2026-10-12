@@ -253,6 +253,12 @@ namespace NightDuty
             return ok;
         }
 
+        /// <summary>103차: 연출이 먼저 끝난 조우의 대면 창을 닫는다(<see cref="TensionDirector.CloseWindowNow"/>). 대면 중이 아니면 false.</summary>
+        public static bool EndEncounterWindow(string encounterId)
+        {
+            return _tension != null && !string.IsNullOrEmpty(encounterId) && _tension.CloseWindowNow(encounterId);
+        }
+
         /// <summary>디버그: 진행 중인 조우를 다음 단계로 넘긴다.</summary>
         public static void DebugSkipDirectionPhase()
         {

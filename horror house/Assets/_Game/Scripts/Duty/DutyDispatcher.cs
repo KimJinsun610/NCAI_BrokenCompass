@@ -110,12 +110,14 @@ namespace NightDuty
         private readonly Random _rng;
         private readonly Func<string, bool> _planned;
         private readonly HashSet<string> _reserved = new HashSet<string>();
+        private readonly List<string> _issuedIds = new List<string>();   // 103차: 오늘 낸 지시(W5 제외) — 다음 밤에 되풀이를 피한다
 
         private DutyDef _active;
         private float _left;
         private bool _tainted;
         private int _issued;
         private bool _signed;
+        private bool _logOpen;   // 103차 QA 4회: 다른 지시가 열린 채 이완 구간이 와서 근무일지(W5)를 따로 낸 상태
         private float _gaze;
         private bool _inZone;
         private SpaceId _spaceNow = SpaceId.None;   // 88차: 지금 플레이어가 있는 공간(공간 신호로 — 정규화)
@@ -154,6 +156,18 @@ namespace NightDuty
         {
             get { return _active != null ? _left : 0f; }
         }
+
+        /// <summary>103차: 오늘 낸 지시 ID(W5 제외, 낸 순서).</summary>
+        public IReadOnlyList<string> IssuedIds
+        {
+            get { return _issuedIds; }
+        }
+
+        /// <summary>
+        /// 103차(민: 「너무 중복되지 않으며」): 지난 밤에 낸 지시인지 — 고르기(<see cref="Pick"/>)에서 다른 지시가 남아 있으면 뺀다.
+        /// 옛: 교실 카드(W17)가 15밤 중 13밤 나왔다.
+        /// </summary>
+        public Func<string, bool> RecentlyIssued { get; set; }
 
         /// <summary>오늘 낸 지시 수(W5 제외).</summary>
         public int IssuedToday
@@ -218,6 +232,14 @@ namespace NightDuty
         {
             _signed = true;
             ev = default;
+            if (_logOpen)
+            {
+                _logOpen = false;
+                _finished.Add(LogDutyId);
+                ev = new DutyEvent(DutyCatalog.Find(LogDutyId), DutyOutcome.Done, false);
+                return ev.Def != null;
+            }
+
             if (_active == null || _active.Kind != DutyKind.LogSign) return false;
             ev = Finish(DutyOutcome.Done);
             return true;
@@ -407,6 +429,25 @@ namespace NightDuty
             float minute = input.Minute;
             bool known = minute >= 0f;
 
+            // 103차 QA 4회: 근무일지(W5)는 진행 중인 다른 지시와 따로 낸다 — 옛: 01:52에 제한 없는 지시가 열려 있으면 서명 안내가 아예 나가지 않아 체크포인트를 놓쳤다.
+            if (_logOpen && known && minute >= NightClock.Call2)
+            {
+                _logOpen = false;
+                _finished.Add(LogDutyId);   // 서명할 수 없게 되는 호출 2에 조용히 닫는다(W5가 진행 중일 때와 같다)
+            }
+
+            if (_active != null && _active.Kind != DutyKind.LogSign && !_logOpen && known && !input.Finale
+                && minute >= NightClock.RelaxStart && minute < NightClock.Call2)
+            {
+                DutyDef sideLog = DutyCatalog.Find(LogDutyId);
+                if (sideLog != null && !_signed && !_finished.Contains(sideLog.Id) && sideLog.OnDay(_day))
+                {
+                    _logOpen = true;
+                    ev = new DutyEvent(sideLog, DutyOutcome.Issued, false);
+                    return true;
+                }
+            }
+
             if (_active != null)
             {
                 if (DutyCatalog.EffectiveSeconds(_active) <= 0f)   // 76차: 제한을 껐으면(기본) 모든 지시가 여기 — 조용히 닫는 때만 있다
@@ -418,7 +459,13 @@ namespace NightDuty
                     return false;
                 }
 
-                if (input.Dt > 0f) _left -= input.Dt;   // 67차 ②: 조우 중에도 흐른다 — 태블릿에 적힌 마감 시각(「02:08까지」)과 맞게
+                if (!DutyCatalog.TimeLimitsEnabled && known && minute >= NightClock.JudgingEnd)
+                {
+                    CloseSilently();   // 103차: 다시 건 제한도 판정 끝에는 조용히 닫는다(조우 중 멈춘 채 끝날 수 있다)
+                    return false;
+                }
+
+                if (input.Dt > 0f && !(input.DirectorBusy && !DutyCatalog.TimeLimitsEnabled)) _left -= input.Dt;   // 67차 ②: 조우 중에도 흘렀다 · 103차: 다시 건 제한(W19·W21)은 조우 중 멈춘다
                 if (_left > 0f) return false;
                 ev = Finish(DutyOutcome.Missed);
                 return true;
@@ -431,7 +478,7 @@ namespace NightDuty
             if (relax)
             {
                 DutyDef log = DutyCatalog.Find("W5");
-                if (log == null || _signed || _finished.Contains(log.Id) || !log.OnDay(_day)) return false;
+                if (log == null || _signed || _logOpen || _finished.Contains(log.Id) || !log.OnDay(_day)) return false;   // 103차 QA 4회: 따로 연 W5가 있으면 다시 내지 않는다(옛 리뷰: 진행 중 지시가 이완 구간에 끝나면 서명 안내가 두 통)
                 ev = Issue(log);
                 return true;
             }
@@ -525,6 +572,12 @@ namespace NightDuty
             }
 
             if (open.Count == 0) return null;
+            if (RecentlyIssued != null)
+            {
+                List<KeyValuePair<float, DutyDef>> fresh = open.FindAll(x => !RecentlyIssued(x.Value.Id));
+                if (fresh.Count > 0) open = fresh;
+            }
+
             open.Sort((a, b) => a.Key.CompareTo(b.Key));   // 안정 정렬이 아니어도 같은 거리면 카탈로그 순이 앞서게 아래에서 고른다
             if (_rng == null)
             {
@@ -579,8 +632,21 @@ namespace NightDuty
             else if (d.Kind == DutyKind.ExitSignCheck || d.Kind == DutyKind.ExitFlash) _inZone = _insideNow.Contains(DutyCatalog.ExitZone);
             _flashes = 0;
             _carrying = false;
-            if (d.Kind != DutyKind.LogSign) _issued++;
+            if (d.Kind != DutyKind.LogSign)
+            {
+                _issued++;
+                _issuedIds.Add(d.Id);
+            }
             return new DutyEvent(d, DutyOutcome.Issued, false);
+        }
+
+        /// <summary>근무일지 지시 ID.</summary>
+        public const string LogDutyId = "W5";
+
+        /// <summary>103차 QA 4회: 근무일지(W5)가 다른 지시와 따로 열려 있는지.</summary>
+        public bool LogOpen
+        {
+            get { return _logOpen; }
         }
 
         /// <summary>제한 없는 지시를 사건 없이 닫는다(67차 ②).</summary>
@@ -620,8 +686,11 @@ namespace NightDuty
             _issued = s.Issued;
             _signed = s.Signed;
             _active = null;
+            _logOpen = false;
             _carrying = false;
             _openDoors.Clear();
+            _insideNow.Clear();   // 103차 QA 3회: 점검 지시기·긴장 디렉터처럼 위치 상태를 비운다(붙잡힌 동안의 구역 나감 신호는 버려진다)
+            _spaceNow = SpaceId.None;
             _lastEnd = Now;
             _lastMessage = float.NegativeInfinity;
         }

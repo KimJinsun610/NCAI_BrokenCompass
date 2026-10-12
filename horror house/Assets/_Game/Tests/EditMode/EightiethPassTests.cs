@@ -35,7 +35,7 @@ namespace NightDuty.Tests
             DutyDef w16 = DutyCatalog.Find("W16");
             DutyDef w17 = DutyCatalog.Find("W17");
             Assert.AreEqual("과학실에 두고 간 출입 카드를 경비실 열쇠함에 넣어주십시오.", w16.Order);
-            Assert.AreEqual("교실 교탁 서랍의 출입 카드를 가져와 주십시오.", w17.Order);
+            Assert.AreEqual("교실 교탁 서랍 출입 카드를 경비실 열쇠함에 넣어주십시오.", w17.Order);   // 103차: 열쇠함 명시
             Assert.AreEqual(DutyKind.CardDelivery, w16.Kind);
             Assert.AreEqual(DutyCatalog.ScienceCardTarget, w16.Target);
             Assert.AreEqual(DutyCatalog.ClassroomCardTarget, w17.Target);

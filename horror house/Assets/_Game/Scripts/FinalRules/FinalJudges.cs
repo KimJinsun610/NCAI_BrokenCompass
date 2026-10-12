@@ -20,6 +20,9 @@ namespace NightDuty
         public const string BoyTarget = "rule.C2.boy";
         public const string BoySeated = "cue.boy.seated";
         public const string Bell = "cue.bell";
+
+        /// <summary>103차(민: C3 「수업 종이 울리면 정지하십시오」): 교실에 들어가면 곧 울리는 수업 종 — 울리는 동안(단서 길이) 제자리.</summary>
+        public const string BellStart = "cue.bell.start";
         public const string RedLight = "cue.redlight";
         public const string PhantomDoor = "cue.phantomdoor";
         public const string PhantomDoorZone = "classroom.phantomdoor";
@@ -82,9 +85,10 @@ namespace NightDuty
                 case "H4": return new DontAnswerJudge(FinalCues.Voice);
                 case "C1": return new NoEntryDuringCueJudge(FinalCues.Chalk, SpaceId.Classroom, 1f);
                 case "C2": return new DontStareJudge(FinalCues.BoySeated, FinalCues.BoyTarget, 3f);   // 52차: 앉은 소년을 3초 바라보면 위반 → 머리 박기
-                case "C3": return new StayStillJudge(FinalCues.BoySeated, FinalCues.Bell);
+                case "C3": return new StayStillJudge(FinalCues.BellStart, FinalCues.Bell);   // 103차: 소년 단서 → 종(끝)이 아니라 수업 종이 울리는 동안
                 case "C4": return new LightOffJudge(FinalCues.RedLight, LightOffJudge.GraceSeconds);   // 52차: 붉은 불빛 아래에서는 손전등을 끈다
                 case "C5": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
+                case "C6": return new DwellSpaceJudge(SpaceId.Classroom, ProgramCatalog.ClassroomDwellRealSeconds);   // 103차: 교실에 실제 1분(게임 24분) 이어 머물면 위반
                 case "S1": return new NoPassageJudge(FinalCues.S1Center);
                 case "S2": return new LeaveAfterCueJudge(FinalCues.Glass, ScienceLeaveSeconds);   // 79차 민: 「5초로 하자」   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
                 case "S3": return new BeamAvoidJudge(FinalCues.ModelTarget, BeamAvoidJudge.LimitSeconds, ProgramCatalog.ModelRush);   // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」(미션처럼 읽히던 50차 문구 폐기)
@@ -603,7 +607,7 @@ namespace NightDuty
 
         protected override void OnEnd(FinalWorld w)
         {
-            Pass("수업 중 정지");
+            Pass("종이 그칠 때까지 정지");
         }
 
         protected override void OnSignal(in JudgeSignal s, FinalWorld w)
@@ -1282,6 +1286,7 @@ namespace NightDuty
         private readonly SpaceId _space;
         private readonly float _limit;
         private float _dwell;
+        private int _serial = -1;
 
         /// <summary>만든다.</summary>
         public DwellSpaceJudge(SpaceId space, float limitSeconds)
@@ -1292,6 +1297,13 @@ namespace NightDuty
 
         internal override void Observe(in JudgeSignal s, FinalWorld w)
         {
+            // 103차 QA: 판정을 쉬는 동안(이완 구간) 나갔다 들어왔으면 연속이 아니다 — 옛: 쉬기 전 머문 시간에 이어 붙어 C6가 10초 만에 걸렸다.
+            if (w.SpaceSerial != _serial)
+            {
+                _serial = w.SpaceSerial;
+                _dwell = 0f;
+            }
+
             if (w.Space != _space)
             {
                 _dwell = 0f;
@@ -1304,7 +1316,7 @@ namespace NightDuty
             if (_dwell >= _limit)
             {
                 _dwell = 0f;
-                Violate("경비실에 " + _limit + "초 머묾");
+                Violate((_space == SpaceId.SecurityRoom ? "경비실" : _space == SpaceId.Classroom ? "교실" : _space.ToString()) + "에 " + _limit + "초 머묾");
             }
         }
 

@@ -19,13 +19,17 @@ namespace NightDuty
         /// <summary>1일차에 하나를 확정으로 두는 칸인지(순찰 공간 안 — 배우기).</summary>
         public readonly bool Starter;
 
+        /// <summary>104차: 칸이 든 공간(모르면 <see cref="SpaceId.None"/> — 공간 고르기 없이 칸 무게로만 뽑는다).</summary>
+        public readonly SpaceId Space;
+
         /// <summary>칸을 만든다.</summary>
-        public BatteryCache(string id, float weight, bool isLocker = false, bool starter = false)
+        public BatteryCache(string id, float weight, bool isLocker = false, bool starter = false, SpaceId space = SpaceId.None)
         {
             Id = id ?? string.Empty;
             Weight = weight > 0f ? weight : 0.01f;
             IsLocker = isLocker;
             Starter = starter;
+            Space = space;
         }
     }
 
@@ -33,7 +37,8 @@ namespace NightDuty
     /// 그 밤 배터리가 놓이는 칸(56차). 밤 시작에 빈 채로 만들고, 화면 쪽이 씬의 칸을 모아 <see cref="Fill"/>로 한 번 채운다.
     /// <list type="bullet">
     /// <item>잠긴 사물함 중 <see cref="BatteryRules.UnlockedLockers"/>개를 풀어 후보에 넣는다(<see cref="Unlocked"/>) — 어느 것이 풀렸는지는 열어 봐야 안다.</item>
-    /// <item>후보 중 <see cref="BatteryRules.PlacedOn"/>개를 무게대로 뽑는다(경비실에서 먼 칸일수록 잘 뽑힌다). 전날 놓였던 칸은 피한다(모자라면 쓴다).</item>
+    /// <item>후보 중 <see cref="BatteryRules.PlacedOn"/>개를 뽑는다. 104차: 먼저 공간을 고르고(<see cref="BatteryRules.SpaceShare"/> — 이미 놓인 공간은 <see cref="BatteryRules.RepeatShare"/>배,
+    /// <see cref="BatteryRules.MaxPerSpace"/>개까지), 그 공간 안에서 무게대로 뽑는다(경비실에서 먼 칸일수록 잘 뽑힌다). 전날 놓였던 칸은 피한다(모자라면 쓴다).</item>
     /// <item>1일차는 순찰 공간 칸(<see cref="BatteryCache.Starter"/>) 하나를 먼저 확정한다.</item>
     /// <item>재시작 스냅샷에는 <b>주운 칸</b>만 싣는다 — 놓인 자리는 밤 시작에 정해져 재시작해도 같다.</item>
     /// </list>
@@ -49,6 +54,7 @@ namespace NightDuty
         private readonly HashSet<string> _taken = new HashSet<string>(StringComparer.Ordinal);
         private readonly List<string> _unlocked = new List<string>();
         private readonly HashSet<string> _avoid;
+        private readonly Dictionary<SpaceId, int> _perSpace = new Dictionary<SpaceId, int>();
 
         /// <summary>그 밤의 빈 계획을 만든다. <paramref name="avoid"/>는 전날 놓였던 칸.</summary>
         public BatteryPlan(int day, IEnumerable<string> avoid, Random rng)
@@ -124,11 +130,52 @@ namespace NightDuty
                 if (starters.Count > 0) PickFrom(starters, pool);
             }
 
-            while (_placed.Count < want)
+            while (_placed.Count < want && pool.Count > 0)
             {
                 List<BatteryCache> fresh = pool.FindAll(c => !_avoid.Contains(c.Id));
-                PickFrom(fresh.Count > 0 ? fresh : pool, pool);
+                List<BatteryCache> from = fresh.Count > 0 ? fresh : pool;
+                List<BatteryCache> space = Spread(from);
+                PickFrom(space.Count > 0 ? space : from, pool);
             }
+        }
+
+        /// <summary>104차: 공간 하나를 몫대로 골라 그 공간의 후보만 돌려준다(고를 공간이 없으면 빈 목록 — 그때는 공간 없이 뽑는다).</summary>
+        private List<BatteryCache> Spread(List<BatteryCache> from)
+        {
+            Dictionary<SpaceId, float> share = new Dictionary<SpaceId, float>();
+            List<SpaceId> order = new List<SpaceId>();
+            for (int i = 0; i < from.Count; i++)
+            {
+                SpaceId s = from[i].Space;
+                if (share.ContainsKey(s)) continue;
+                int had;
+                _perSpace.TryGetValue(s, out had);
+                float w = had >= BatteryRules.MaxPerSpace(s) ? 0f : BatteryRules.SpaceShare(s, _day) * (float)Math.Pow(BatteryRules.RepeatShare, had);
+                share[s] = w;
+                order.Add(s);
+            }
+
+            float total = 0f;
+            for (int i = 0; i < order.Count; i++) total += share[order[i]];
+            if (total <= 0f) return new List<BatteryCache>();
+            double roll = _rng.NextDouble() * total;
+            SpaceId chosen = SpaceId.None;
+            for (int i = 0; i < order.Count; i++)
+            {
+                if (share[order[i]] > 0f) chosen = order[i];   // 반올림으로 끝까지 가면 마지막 몫 있는 공간
+            }
+
+            for (int i = 0; i < order.Count; i++)
+            {
+                roll -= share[order[i]];
+                if (share[order[i]] > 0f && roll <= 0d)
+                {
+                    chosen = order[i];
+                    break;
+                }
+            }
+
+            return from.FindAll(c => c.Space == chosen);
         }
 
         private void PickFrom(List<BatteryCache> from, List<BatteryCache> pool)
@@ -149,6 +196,9 @@ namespace NightDuty
 
             _placed.Add(chosen.Id);
             pool.Remove(chosen);
+            int had;
+            _perSpace.TryGetValue(chosen.Space, out had);
+            _perSpace[chosen.Space] = had + 1;
         }
 
         /// <inheritdoc/>

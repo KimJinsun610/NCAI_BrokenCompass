@@ -31,7 +31,7 @@ namespace NightDuty.Tests
             Assert.AreEqual("02:08까지", DutyCatalog.DeadlineText(80f));
             DutyDef w3 = DutyCatalog.Find("W3");   // 77차: W1 폐기 · 민 문구
             // 88차(민: 「그냥 지시 문구만 나오게」): 머리글 「[근무 지시] 」도 마감 줄도 붙이지 않는다.
-            Assert.AreEqual("교실의 상태를 확인해주십시오.", DutyCatalog.MessageText(w3, 1, 80f));
+            Assert.AreEqual("교실을 순찰해주십시오.", DutyCatalog.MessageText(w3, 1, 80f));   // 104차(사용자 결정): 옛 「교실의 상태를 확인해주십시오.」
             Assert.AreEqual("경비실 근무일지에 서명해주십시오.", DutyCatalog.MessageText(DutyCatalog.Find("W5"), 1, 145f));
             Assert.IsNull(DutyCatalog.Find("W6"), "92차 W6 폐지");
             foreach (DutyDef d in DutyCatalog.All)
@@ -99,7 +99,7 @@ namespace NightDuty.Tests
             for (int day = 2; day <= 5; day++)   // 74차: 1일차는 2개(민: 「초반에 나오는 배터리 갯수를 2개로」)
             {
                 int n = BatteryRules.PlacedOn(day);
-                Assert.GreaterOrEqual(n, 4, day + "일차");
+                Assert.GreaterOrEqual(n, 3, day + "일차");   // 104차(사용자: 4·4·4·3·3): 4 → 3
                 Assert.LessOrEqual(n, prev, "줄기만 한다");
                 Assert.LessOrEqual(prev == int.MaxValue ? 0 : prev - n, 1, "살짝");
                 prev = n;

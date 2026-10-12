@@ -13,7 +13,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(SpaceId.Corridor, item.Space);
             Assert.AreEqual(FearAxis.Auditory, item.Axis);   // 103차 축 균형: 배치 → 청각(걷어차이는 소리)
             Assert.AreEqual(AnomalyTemplate.Switch, item.Template, "걷어차이는 사건 — [옮김] 자리 풀이 아니다");
-            Assert.AreEqual("복도 쓰레기통의 상태를 보고해주십시오.", item.TabletLine);   // 76차 민 문구
+            Assert.AreEqual("도서관 문 옆 복도 쓰레기통이 제자리에 있는지 확인해주십시오.", item.TabletLine);   // 104차(사용자 결정): 옛 76차 민 문구 「복도 쓰레기통의 상태를 보고해주십시오.」
             Assert.IsTrue(AnomalyLook.HasLook(item));
         }
 

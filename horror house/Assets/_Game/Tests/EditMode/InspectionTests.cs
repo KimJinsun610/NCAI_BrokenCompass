@@ -36,17 +36,18 @@ namespace NightDuty.Tests
     public sealed class InspectionCatalogTests
     {
         [Test]
-        public void 점검_항목은_27개다_복도6_교실5_과학실6_화장실4_도서관3_경비실3()
+        public void 점검_항목은_27개다_복도6_교실5_과학실6_화장실3_도서관3_경비실3()   // 104차: T-2 폐기로 화장실 4 → 3(정의는 27개 그대로)
         {
             Assert.AreEqual(27, InspectionCatalog.All.Count, "66차: 16 → 29(민: 「점검은 안 겹칠수록 좋아」) · 80차: L-4 칠판 폐기 → 28 · 81차: T-4 세면대 폐기 → 27");
             Assert.IsNull(InspectionCatalog.Find("T-4"), "81차(민): 세면대 물 퀄리티 부족 — 항목 폐기");
             Assert.IsNull(InspectionCatalog.Find("L-4"), "80차(민): 「이 보고하지마」 칠판 폐기");
             Assert.AreEqual(6, InspectionCatalog.InSpace(SpaceId.Corridor).Count);
-            Assert.AreEqual("쓰레기통", InspectionCatalog.Find("H-4").Name, "65차: H-4 = 쓰레기통(49차에 뺀 복도 사물함이 아니다)");
+            Assert.AreEqual("복도 쓰레기통", InspectionCatalog.Find("H-4").Name, "65차: H-4 = 쓰레기통(49차에 뺀 복도 사물함이 아니다)");   // 104차(사용자 결정): 옛 이름 「쓰레기통」
             Assert.IsNull(InspectionCatalog.Find("L-3"), "65차: 반납 상자는 [근무 지시] W15 biology 책 줍기로");
             Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Classroom).Count);
             Assert.AreEqual(6, InspectionCatalog.InSpace(SpaceId.ScienceRoom).Count);
-            Assert.AreEqual(4, InspectionCatalog.InSpace(SpaceId.Toilet).Count);
+            Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Toilet).Count, "104차(사용자: 「T-2는 그냥 폐기해줘」): T-1 · T-3 · T-5");
+            Assert.IsNotNull(InspectionCatalog.Find("T-2"), "104차: 폐기한 T-2는 정의가 남아 있다(되살릴 수 있게)");
             Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.Library).Count);
             Assert.AreEqual(3, InspectionCatalog.InSpace(SpaceId.SecurityRoom).Count);
             Assert.AreEqual(5, InspectionCatalog.InSpace(SpaceId.Classroom_1_3).Count, "옛 교실 값도 새 교실로 읽는다");

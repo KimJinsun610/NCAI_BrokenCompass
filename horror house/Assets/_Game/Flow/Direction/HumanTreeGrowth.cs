@@ -18,7 +18,7 @@ using UnityEngine.SceneManagement;
 /// 복도에 있는 동안만 H1 「미분류 물체」 기준점이 붙고(1.2m 안 접근 = 위반), 바라보면 현관과 같이 화면이 울렁이고 감각 축이 오른다(옛: 오래 보면 배치 축이 올라 붙잡힘 — 뗐다, <see cref="FixedMobStare.Punishes"/>).
 /// 조우 창이 끝나면 다시 안 보는 사이 현관으로 돌아간다(<see cref="GoHome"/>, 붙잡힘·재시작이면 바로). 끌림은 복도에선 H1 밖 <see cref="CorridorPullStop"/>m에서 멈춘다.
 /// 현관 나무가 아직 서지 않는 밤(2일차, 3일차 배치 낮음)에 조우가 먼저 오면 그것이 첫 등장 — 그 뒤로는 이번 판 내내 현관에 선다(<see cref="SettledDay"/>).
-/// 현관에서 처음 알아볼 때(시선 <see cref="NoticeDegrees"/>° · <see cref="NoticeRange"/>m 안, 가림 없이) 사람 나무 대면 소리(가지 삐걱 + 웅얼거림)를 한 번 낸다. 플레이어가 멀리(<see cref="LeaveSoundDistance"/>m+) 있을 때 현관을 떠나면 현관에서 먼 가지 소리.
+/// 현관에서 처음 알아볼 때(시선 <see cref="NoticeDegrees"/>° · <see cref="NoticeRange"/>m 안, 가림 없이) 사람 나무 대면 소리(가지 삐걱 — 104차 사용자: 웅얼거림 「괴성」은 시끄러워 뺐다)를 한 번 낸다. 플레이어가 멀리(<see cref="LeaveSoundDistance"/>m+) 있을 때 현관을 떠나면 현관에서 먼 가지 소리.
 /// 옛 설명(94차, 천장):
 /// <list type="bullet">
 /// <item>91차 B(날마다 자람) → 94차(민: 「에그맨 트리가 화분에 나오는 건 폐기 · 경비실 옆 정문 앞 부분에, 천장에 매달려서 점점 자라나게 ·
@@ -318,7 +318,7 @@ public sealed class HumanTreeGrowth : MonoBehaviour
         PullTick(Time.deltaTime);
     }
 
-    /// <summary>104차: 현관에서 처음 알아볼 때 — 사람 나무 대면 소리(가지 삐걱 + 웅얼거림 층).</summary>
+    /// <summary>104차: 현관에서 처음 알아볼 때 — 사람 나무 대면 소리(가지 삐걱).</summary>
     private void NoticeTick()
     {
         if (_noticed || _pivot == null || NightRun.IsCaptured || _where != Place.Lobby) return;
@@ -326,7 +326,7 @@ public sealed class HumanTreeGrowth : MonoBehaviour
         _noticed = true;
         Vector3 at = _pivot.transform.position + Vector3.up * Mathf.Max(1f, _length * 0.6f);
         DirectionStage.PlaySound(ProgramCatalog.PeopleTree + ".confront", at, 5f, 0.85f);
-        if (DirectionStage.Verbose) Debug.Log("[HumanTreeGrowth] 현관 나무를 알아봄 — 삐걱 + 웅얼거림");
+        if (DirectionStage.Verbose) Debug.Log("[HumanTreeGrowth] 현관 나무를 알아봄 — 가지 삐걱");
     }
 
     /// <summary>

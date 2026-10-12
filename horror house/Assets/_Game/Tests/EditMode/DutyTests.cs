@@ -136,7 +136,7 @@ namespace NightDuty.Tests
             Assert.IsNotNull(r.D.Active, "1.9초");
             r.Gaze(string.Empty, 0.2f);
             Assert.AreEqual(DutyOutcome.Done, r.Last.Outcome);
-            Assert.AreEqual("교실의 상태를 확인해주십시오.", DutyCatalog.OrderText(r.Last.Def, 2));   // 77차 민 문구 · 88차 머리글 없음
+            Assert.AreEqual("교실을 순찰해주십시오.", DutyCatalog.OrderText(r.Last.Def, 2));   // 104차(사용자 결정): 옛 77차 민 문구 「교실의 상태를 확인해주십시오.」 · 88차 머리글 없음
         }
 
         [Test]
@@ -338,7 +338,7 @@ namespace NightDuty.Tests
             int before = NightRun.Warnings.Count + NightRun.Warnings.PendingPunishments * Deltas.WarningsForPunishment;
             Assert.IsTrue(NightRun.DebugIssueDuty("W3"));   // 77차: W1 폐기
             NightRun.Tick(DutyCatalog.Find("W3").Seconds + 1f);
-            Assert.AreEqual("1-3 교실 확인 기록이 없습니다.", texts[texts.Count - 1]);
+            Assert.AreEqual("교실 순찰 기록이 없습니다.", texts[texts.Count - 1]);   // 104차(사용자 결정): 옛 「1-3 교실 확인 기록이 없습니다.」
             int after = NightRun.Warnings.Count + NightRun.Warnings.PendingPunishments * Deltas.WarningsForPunishment;
             Assert.AreEqual(before + 1, after, "미완료는 경고 1");
         }

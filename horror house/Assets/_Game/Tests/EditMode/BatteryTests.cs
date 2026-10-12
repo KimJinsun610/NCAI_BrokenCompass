@@ -96,7 +96,7 @@ namespace NightDuty.Tests
         [Test]
         public void 일차가_지날수록_놓이는_배터리가_준다()
         {
-            int[] want = { 2, 6, 5, 5, 4 };   // 74차(민): 1일차 2   // 67차: 3·3·2·2·1 → 6·6·5·5·4(책장·선반 자리 추가)
+            int[] want = { 4, 4, 4, 3, 3 };   // 104차(사용자): 4·4·4·3·3   // 74차(민): 1일차 2   // 67차: 3·3·2·2·1 → 6·6·5·5·4(책장·선반 자리 추가)
             for (int day = 1; day <= 5; day++) Assert.AreEqual(want[day - 1], BatteryRules.PlacedOn(day), day + "일차");
         }
 

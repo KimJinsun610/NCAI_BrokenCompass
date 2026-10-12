@@ -442,7 +442,8 @@ public static class TreeSpots
 
     private static SpaceZones s_zones;
 
-    private static bool InCorridor(Vector3 p, float floorY)
+    /// <summary>복도 상자 안 · 방 상자(+0.6m) 밖 · 현관 밖인지(104차: 배치 지도도 쓴다).</summary>
+    public static bool InCorridor(Vector3 p, float floorY)
     {
         if (p.x >= LobbyMin.x && p.x <= LobbyMax.x && p.z >= LobbyMin.y && p.z <= LobbyMax.y) return false;
         if (s_zones == null) s_zones = Object.FindAnyObjectByType<SpaceZones>();

@@ -121,12 +121,6 @@ MonoBehaviour:
     volume: 0.8
     hits:
     - 5.450896
-  - key: E.PeopleTree.confront+
-    clip: {fileID: 8300000, guid: f7235a1d603046d48be29b973dd7a983, type: 3}
-    more: []
-    volume: 0.6
-    hits:
-    - 2.1831875
   - key: tree.leave
     clip: {fileID: 8300000, guid: 83c674ae489702743808c77b3cbab5af, type: 3}
     more: []

@@ -44,7 +44,7 @@ public static class DirectionSoundTableBuilder
         { "E.Footsteps.confront", Au + "hall/SFX_HALL_H3_BarefootRun.wav", "0.9" },
         { "E.CallingVoice.confront", Au + "voice/VO_Hey.wav", "0.85" },
         { "E.PeopleTree.confront", Au + "creature/SFX_TREE_BranchCreak.wav", "0.8" },
-        { "E.PeopleTree.confront+", Au + "creature/SFX_TREE_HumanMurmur.wav", "0.6" },
+        // 104차(사용자: 「인체나무 괴성은 그냥 제거해줘 — 너무 시끄럽네」): E.PeopleTree.confront+ (SFX_TREE_HumanMurmur 웅얼거림) 뺐다 — 현관에서 알아볼 때·복도 대면 모두 가지 삐걱만.
         { "tree.leave", Au + "creature/SFX_TREE_BranchCreak.wav", "0.55" },   // 104차: 현관 나무가 복도로 떠날 때(멀리서 — 가지 삐걱만)
         { "E.YellowFace.confront", Au + "library/SFX_LIBRARY_YellowFaceEncounter.mp3", "1" },   // 103차(민 제공 「노란_얼굴_조우시」): 옛 Stingers/stinger_breath
         { "E.SuitMan.confront", Au + "library/SFX_LIBRARY_WindowTap.wav", "1" },

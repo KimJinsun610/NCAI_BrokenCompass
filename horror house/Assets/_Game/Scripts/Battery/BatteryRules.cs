@@ -14,14 +14,15 @@ namespace NightDuty
     /// <item><see cref="DimBelow"/> 아래 빛이 누렇게 약해지고(세기·거리가 0%에 가까울수록 <see cref="DimIntensity"/>·<see cref="DimRange"/>배) 가끔 진짜로 깜빡인다.
     /// <see cref="LowBelow"/> 아래 깜빡임이 잦아지고 비춤 판정 거리가 <see cref="LowBeamRange"/>m.</item>
     /// <item>0%면 꺼진다(그때만 기존 「꺼짐」 판정 신호). 희미해도 판정은 「켜짐」 — 수칙 판정기는 고칠 것이 없다.</item>
-    /// <item>그날 칸에 놓이는 수 <see cref="PlacedOn"/>: 1일 2 · 2일 6 · 3·4일 5 · 5일 4(67차 — 서랍·칸 + 열린 책장·선반 위, 74차 — 1일차 2).</item>
+    /// <item>그날 칸에 놓이는 수 <see cref="PlacedOn"/>: 1·2·3일 4 · 4·5일 3(104차 — 67차 6·6·5·5·4 · 74차 1일차 2에서). 1일차는 책상 예비 1개가 따로 있다.</item>
+/// <item>104차: 공간을 먼저 고르고 그 안의 칸을 고른다(<see cref="SpaceShare"/> · <see cref="RepeatShare"/> · <see cref="MaxPerSpace"/>) — 한 공간(특히 멀리 있는 도서관)에 몰리지 않게.</item>
     /// </list>
     /// </summary>
     public static class BatteryRules
     {
         /// <summary>
         /// 완충으로 켜 둘 수 있는 실제 초. 59차(밤 15분 → 10분, 민: 「손전등 밸런스 조절도」): 240 → 160 — 밤 길이와 같은 2/3로 줄여
-        /// 「다 찾으면 1·2일 넉넉(약 1.3배) · 3·4일 빠듯(약 1배) · 5일 모자람(약 0.7배)」 비율을 그대로 둔다.
+        /// 104차 재검증(밤 600초 · 수요 480초=3칸 · 날 넘김 이월 · 4·4·4·3·3): 75% 찾으면 1.35 · 1.37 · 1.41 · 1.19 · 1.04배, 다 찾으면 1.7~2.3배(이월 상한 3칸 탓), 절반만 찾으면 1.0 · 0.8 · 0.8 · 0.6 · 0.5배.
         /// </summary>
         public const float FullSeconds = 160f;   // 67차(밤 10분 → 12분 30초): 160 → 200 — 밤과 같은 ×1.25(56차 설계 비율 유지) · 88차(밤 10분): 200 → 160
 
@@ -69,10 +70,28 @@ namespace NightDuty
         {
             // 67차(민: 「배터리가 나오는 빈도 수와 위치를 늘려야 해 — 책장·선반에도, 1~5일차가 될수록 빈도 수 살짝 떨어지게」): 3·3·2·2·1 → 6·6·5·5·4.
             // 74차(민: 「초반에 나오는 배터리 갯수를 2개로」): 1일차만 6 → 2(책상 위 예비 배터리는 따로).
-            if (day <= 1) return 2;
-            if (day <= 2) return 6;
-            if (day <= 4) return 5;
-            return 4;
+            // 104차(사용자: 「1일~5일 배터리 배치 갯수를 4 4 4 3 3으로」): 1일차가 가장 빠듯하던 것(3칸 = 수요 1.0배)을 풀고 2일차 넘침을 줄인다.
+            return day <= 3 ? 4 : 3;
+        }
+
+        /// <summary>104차: 공간 고르기 무게 — 도서관은 경비실에서 가장 멀어(칸 무게가 커) 몰리던 곳이라 절반, 1일차는 순찰 밖이라 0.</summary>
+        public static float SpaceShare(SpaceId space, int day)
+        {
+            if (space == SpaceId.Library) return day <= 1 ? 0f : LibraryShare;
+            return 1f;
+        }
+
+        /// <summary>104차: 도서관 공간 몫(다른 공간 1).</summary>
+        public const float LibraryShare = 0.5f;
+
+        /// <summary>104차: 그 밤 이미 놓인 공간은 하나마다 몫에 이것을 곱한다(먼저 다른 공간으로 퍼진다).</summary>
+        public const float RepeatShare = 0.25f;
+
+        /// <summary>104차: 한 밤 한 공간에 놓는 상한(도서관 1 · 그 밖 2 · 공간 모름은 제한 없음).</summary>
+        public static int MaxPerSpace(SpaceId space)
+        {
+            if (space == SpaceId.None) return int.MaxValue;
+            return space == SpaceId.Library ? 1 : 2;
         }
 
         /// <summary>충전량(0~1)의 빛 세기 배율.</summary>

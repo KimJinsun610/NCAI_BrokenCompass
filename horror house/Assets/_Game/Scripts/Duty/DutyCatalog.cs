@@ -12,7 +12,7 @@ namespace NightDuty
         /// <summary>W2 — 도서관 숨은 지점 네 곳을 지나 나온다.</summary>
         Patrol = 1,
 
-        /// <summary>W3 「교실의 상태를 확인해주십시오.」 — 1-3 교실 안에 <see cref="DutyCatalog.ClassroomCheckSeconds"/>초 머무른다(88차 — 옛: 문간에서 천장 등 1초 응시).</summary>
+        /// <summary>W3 「교실을 순찰해주십시오.」(104차 — 옛 「교실의 상태를 확인해주십시오.」) — 1-3 교실 안에 <see cref="DutyCatalog.ClassroomCheckSeconds"/>초 머무른다(88차 — 옛: 문간에서 천장 등 1초 응시).</summary>
         LightsOutCheck = 2,
 
         /// <summary>W4 — 플레이어가 열어 둔 문을 모두 닫는다.</summary>
@@ -185,7 +185,7 @@ namespace NightDuty
             new DutyDef("W2", DutyKind.Patrol, SpaceId.Library, FearAxis.Auditory,
                 "도서관을 순찰해주십시오.", "도서관 순찰이 기록되었습니다.", "도서관 순찰 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 57차: 120 → 150초 · 67차(민): 제한 없음
             new DutyDef("W3", DutyKind.LightsOutCheck, SpaceId.Classroom_1_3, FearAxis.Illuminance,   // 103차 축 균형: 청각 → 조도(소등 확인)
-                "교실의 상태를 확인해주십시오.", "1-3 교실 이상 없음.", "1-3 교실 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+                "교실을 순찰해주십시오.", "교실 순찰이 기록되었습니다.", "교실 순찰 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),   // 104차(사용자 결정): 점검 지시와 겹치지 않게 W2 도서관 순찰과 같은 꼴로 — 옛 「교실의 상태를 확인해주십시오.」 · 「1-3 교실 이상 없음.」 · 「1-3 교실 확인 기록이 없습니다.」
             new DutyDef("W4", DutyKind.DoorTidy, SpaceId.Corridor, FearAxis.Layout,
                 "열어 둔 문들을 정리해주십시오.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 0f, 2, 3, 4, 5),   // 67차(민): 제한 없음 · 103차 띄어쓰기: 정리 해주십시오 → 정리해주십시오
             new DutyDef("W5", DutyKind.LogSign, SpaceId.SecurityRoom, FearAxis.Auditory,

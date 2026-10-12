@@ -4,6 +4,8 @@
 /// 대역 프리팹에 실린 한 번짜리 동작 클립(58차, 아트 새 몹). 빌더(<c>StandInPrefabBuilder</c>)가 채운다.
 /// 상시 동작(숨쉬기·흔들림)은 프리팹 애니메이터의 반복 상태가 맡고, 여기의 클립은 연출 코드가 필요할 때 직접 굴린다 —
 /// 예: 앉은 소년의 머리 박기(<see cref="BoyHeadBang"/>)는 아트의 「kung」 동작에서 척추·목·머리 곡선만 떼어 낸 <see cref="Bang"/>을 쓴다(앉은 다리는 그대로).
+/// 104차: 여기 클립은 반드시 <b>레거시</b>(<c>AnimationClip.legacy</c>) — 대역에 애니메이터가 없어, 비레거시 클립의 <c>SampleAnimation</c>은
+/// 빌드(릴리스·개발 모두)에서 경고만 내고 뼈를 움직이지 않는다(편집기에서는 된다). 빌더가 레거시로 만든다.
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class StandInClips : MonoBehaviour

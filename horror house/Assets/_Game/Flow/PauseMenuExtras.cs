@@ -244,9 +244,26 @@ public sealed class PauseMenuExtras : MonoBehaviour
         private float _next;
         private FPController[] _players = new FPController[0];
         private HUDActions[] _screens = new HUDActions[0];
+        // 개발자 모드 패널(DevModePanel)은 「#if UNITY_EDITOR || DEVELOPMENT_BUILD」로 막혀 있어 릴리즈 빌드에는 타입 자체가 없다
+        // — 조건 없이 참조하면 Development Build를 끈 순간 CS0246으로 빌드가 멈춘다(2026-10-11·10-12 실제로 두 번).
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private DevModePanel _dev;
         private static readonly System.Reflection.FieldInfo DevShow =
             typeof(DevModePanel).GetField("show", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+#endif
+
+        /// <summary>개발자 패널이 열려 있는지 — 릴리즈 빌드에는 패널이 없으므로 늘 false.</summary>
+        private bool DevPanelOpen
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return _dev != null && DevShow != null && (bool)DevShow.GetValue(_dev);
+#else
+                return false;
+#endif
+            }
+        }
 
         private void Update()
         {
@@ -260,7 +277,9 @@ public sealed class PauseMenuExtras : MonoBehaviour
             PlayerOptions.ApplyMouseToNew();
             _players = FindObjectsByType<FPController>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             _screens = FindObjectsByType<HUDActions>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _dev = FindAnyObjectByType<DevModePanel>(FindObjectsInactive.Include);
+#endif
         }
 
         /// <summary>
@@ -278,7 +297,7 @@ public sealed class PauseMenuExtras : MonoBehaviour
             }
 
             if (!gameplay) return;
-            if (_dev != null && DevShow != null && (bool)DevShow.GetValue(_dev)) return;
+            if (DevPanelOpen) return;
 
             bool menu = false;
             for (int i = 0; i < _screens.Length; i++)

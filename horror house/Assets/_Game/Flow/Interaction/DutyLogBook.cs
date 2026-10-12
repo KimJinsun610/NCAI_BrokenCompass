@@ -22,14 +22,14 @@ public sealed class DutyLogBook : MonoBehaviour
     /// <summary>안내 줄.</summary>
     public const string PromptText = "[E] 근무일지 서명";
 
-    /// <summary>서명 소리 키(연출 소리 표). 103차: 표에 넣음(분필 긋는 소리 — 높여서 짧게).</summary>
+    /// <summary>서명 소리 키(연출 소리 표). 103차: 표에 넣음. 104차: 판서 소리 전용 클립 `SFX_CLASS_DutySign`(0.82초, 분필 획 넷).</summary>
     public const string SoundKey = "duty.sign";
 
-    /// <summary>103차(민: 「근무일지 서명할 때 서기 소리 짧게」): 서명 소리 길이(초) — 이만큼 내고 끝을 줄여 끊는다.</summary>
-    public const float SoundSeconds = 0.8f;
+    /// <summary>103차(민: 「근무일지 서명할 때 서기 소리 짧게」): 서명 소리 길이 상한(초) — 클립이 이보다 길 때만 끝을 줄여 끊는다. 104차: 전용 클립이 이미 짧아(0.82초) 그대로 끝까지.</summary>
+    public const float SoundSeconds = 1.0f;
 
-    /// <summary>서명 소리 높이(분필을 펜 긁는 소리처럼).</summary>
-    public const float SoundPitch = 1.35f;
+    /// <summary>서명 소리 높이. 104차: 판서 클립을 제 높이로(103차는 두드림 소리를 1.35배로 올려 썼다).</summary>
+    public const float SoundPitch = 1f;
 
     private const float AimRadius = 0.06f;
 
@@ -120,7 +120,7 @@ public sealed class DutyLogBook : MonoBehaviour
         s.maxDistance = 12f;
         s.pitch = SoundPitch;
         s.Play();
-        StartCoroutine(CutSound(s, Mathf.Min(SoundSeconds, clip.length / SoundPitch)));
+        if (clip.length / SoundPitch > SoundSeconds) StartCoroutine(CutSound(s, SoundSeconds));
         Destroy(go, clip.length / SoundPitch + 0.2f);
     }
 

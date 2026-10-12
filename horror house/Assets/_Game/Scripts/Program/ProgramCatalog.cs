@@ -163,7 +163,7 @@ namespace NightDuty
         /// <summary>
         /// 편성하지 않는 수칙(정의는 남겨 둔다 — 판정기·역설 표·시험이 참조). 60차 민: 「교실의 판서 근무 수칙은 폐기해줘. 별로인 것 같아」 → C1.
         /// </summary>
-        public static readonly string[] Retired = { "C1", "T3", "T5", "L5" };   // 79차 민: 「S4 T3 합침」·「T5 폐기」·「L5 폐기」
+        public static readonly string[] Retired = { "C1", "T3", "T5", "L5", "C5" };   // 79차 민: 「S4 T3 합침」·「T5 폐기」·「L5 폐기」 · 104차(사용자: 「C5는 폐기 — 너무 애매해」) → 없던 문 조우도 함께 빠짐(IsEncounterRetired)
 
         /// <summary>편성하지 않는 수칙인지.</summary>
         public static bool IsRetired(string ruleId)

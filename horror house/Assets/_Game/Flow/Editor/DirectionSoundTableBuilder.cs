@@ -45,6 +45,7 @@ public static class DirectionSoundTableBuilder
         { "E.CallingVoice.confront", Au + "voice/VO_Hey.wav", "0.85" },
         { "E.PeopleTree.confront", Au + "creature/SFX_TREE_BranchCreak.wav", "0.8" },
         { "E.PeopleTree.confront+", Au + "creature/SFX_TREE_HumanMurmur.wav", "0.6" },
+        { "tree.leave", Au + "creature/SFX_TREE_BranchCreak.wav", "0.55" },   // 104차: 현관 나무가 복도로 떠날 때(멀리서 — 가지 삐걱만)
         { "E.YellowFace.confront", Au + "library/SFX_LIBRARY_YellowFaceEncounter.mp3", "1" },   // 103차(민 제공 「노란_얼굴_조우시」): 옛 Stingers/stinger_breath
         { "E.SuitMan.confront", Au + "library/SFX_LIBRARY_WindowTap.wav", "1" },
         { "E.SuitMan.confront+", Au + "library/SFX_LIBRARY_BlindRattle_*", "0.6" },

@@ -30,7 +30,7 @@ namespace NightDuty.Tests
             "punish.stamp", "punish.auditory", "punish.illuminance", "punish.layout", "punish.hit", "punish.cut",
             "tablet.buzz", "tablet.corrupt", "ui.ready", "ui.confirm", "inspect.near",
             "body.heart.62", "body.heart.72", "body.heart.86", "body.heart.104", "body.ear", "body.tinnitus",
-            "body.heart.boundary", "body.breath", "body.breath.stop", "body.sigh", "scare.breath",
+            "body.heart.boundary", "body.breath", "body.breath.stop", "body.sigh", "scare.breath", "tree.leave",
             "map.hall.1", "map.hall.1b", "map.hall.2", "map.hall.3", "map.hall.3+", "map.hall.4",
             "map.class.1", "map.class.2", "map.class.3", "map.class.3+", "map.class.4",
             "map.lab.1", "map.lab.2", "map.lab.3", "map.lab.4", "map.toilet.2", "map.layout.3", "map.layout.4", "map.lamp.off",

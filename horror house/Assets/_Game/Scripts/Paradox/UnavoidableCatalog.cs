@@ -137,7 +137,10 @@ namespace NightDuty
             if (def == null) return false;
             // 103차(민: 「소년 착석과 머리 박기는 하나의 연출」·C2×C-3을 5일차에서 빼기): C2는 소년(머리 박기)을 부른다 — 소년은 2일차 첫 역설(C2)로 이미 나왔으니
             // 3일차부터는 걸지 않는다(소년이 회차에 두 번 나오던 것).
-            if (day > 2 && def.Has(ProgramCatalog.FirstParadoxRule)) return false;
+            if (day != ProgramCatalog.FirstParadoxDay && def.Has(ProgramCatalog.FirstParadoxRule)) return false;   // 104차: 고정 편성은 소년 날(4일차)만
+            // 104차(사용자: 「모든 연출에서 축 조건 제거 · 날짜 편성」): 고정 편성에서는 둘째 조우를 끌어오는 쌍(S5×H3 발소리 · H4×T1 부르는 목소리)을 걸지 않는다 —
+            // 조우는 날짜표대로 순서대로 열리고, 붙들어 둔(겹칠 때만 거는) 조우가 그 순서를 막으면 시계가 03:30에서 풀리지 않는다.
+            if (ProgramDirector.FixedSchedule && !string.IsNullOrEmpty(def.ChainEncounter)) return false;
             // 103차(신뢰 경계 10/18/26/42로 구간 3이 4일차로 당겨진 뒤): 사슬 조우(H4×T1 → 부르는 목소리)는 그날 그 조우가 원래 나올 수 있을 때만
             // — 4일차에 목소리를 끌어와 사람 나무 자리를 빼앗고 5일차에 또 부르던 것.
             if (!string.IsNullOrEmpty(def.ChainEncounter))

@@ -14,7 +14,16 @@ namespace NightDuty
         B = 1,
 
         /// <summary>보너스 슬롯 C. 재시작 k≥2면 끈다(장치 1).</summary>
-        C = 2
+        C = 2,
+
+        /// <summary>104차 고정 편성(<see cref="ProgramDirector.FixedSchedule"/>): 넷째 조우 — 순서대로 여는 밤(<see cref="NightProgram.Sequential"/>)에만 쓴다. 시간창은 C와 같다(옛 경로).</summary>
+        D = 3,
+
+        /// <summary>104차 고정 편성: 다섯째 조우.</summary>
+        E = 4,
+
+        /// <summary>104차 고정 편성: 여섯째 조우.</summary>
+        F = 5
     }
 
     /// <summary>그날 슬롯에 편성된 조우 하나.</summary>
@@ -53,6 +62,9 @@ namespace NightDuty
         private readonly List<SlotEncounter> _slots;
         private readonly List<RuleDef> _deck;
         private readonly List<EncounterDef> _extras;
+        private readonly List<string> _sequence;
+        private readonly HashSet<string> _optional;
+        private readonly List<EncounterSlot> _windows;
 
         /// <summary>일차.</summary>
         public readonly int Day;
@@ -61,13 +73,78 @@ namespace NightDuty
         public readonly string Report;
 
         /// <summary>만든다.</summary>
-        public NightProgram(int day, IEnumerable<SlotEncounter> slots, IEnumerable<RuleDef> deck, string report, IEnumerable<EncounterDef> extras = null)
+        public NightProgram(int day, IEnumerable<SlotEncounter> slots, IEnumerable<RuleDef> deck, string report, IEnumerable<EncounterDef> extras = null, IEnumerable<string> sequence = null, IEnumerable<string> optional = null, IEnumerable<EncounterSlot> windows = null)
         {
+            _windows = windows != null ? new List<EncounterSlot>(windows) : new List<EncounterSlot>();
+            _optional = optional != null ? new HashSet<string>(optional) : new HashSet<string>();
             Day = day;
             _slots = slots != null ? new List<SlotEncounter>(slots) : new List<SlotEncounter>();
             _extras = extras != null ? new List<EncounterDef>(extras) : new List<EncounterDef>();
             _deck = deck != null ? new List<RuleDef>(deck) : new List<RuleDef>();
+            _sequence = sequence != null ? new List<string>(sequence) : new List<string>();
             Report = report ?? string.Empty;
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「이월은 없어. 의도한 날짜에 무조건 목격해야 해」): 고정 편성의 조우 순서(슬롯·겹침 조우 모두). 비어 있지 않으면
+        /// 긴장 디렉터가 시간창 대신 이 순서대로 하나씩 연다(<see cref="Sequential"/>) — 놓침 없이 끝날 때까지 기다리고, 그동안 유도 지시를 낸다.
+        /// </summary>
+        public IReadOnlyList<string> Sequence
+        {
+            get { return _sequence; }
+        }
+
+        /// <summary>104차: 순서대로 여는 밤인지(고정 편성).</summary>
+        public bool Sequential
+        {
+            get { return _sequence.Count > 0; }
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「위반하면 결과가 따라오게」): 그 조우가 어제 위반의 후속(보장하지 않는 조우)인지 — 유도·시계 붙듦·조기 퇴근 막기를 하지 않고,
+        /// 차례에 잠시 기다려도 오지 않으면 그냥 지나간다.
+        /// </summary>
+        public bool IsOptional(string encounterId)
+        {
+            return encounterId != null && _optional.Contains(encounterId);
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「너무 조우 위주로 굴러가는 거 아니야? 원래 짜여져 있던 흐름이 있지 않았어?」): 순서대로 여는 밤에도 조우는 원래 시간 뼈대 안에서만 열린다 —
+        /// 그 조우가 열릴 수 있는 창(A 01:00~ · B 02:16~ · C 03:08~). 출근~01:00은 점검·근무 지시만, 01:52~02:16 이완(근무일지)에는 새 조우를 열지 않는다.
+        /// </summary>
+        public EncounterSlot WindowOf(string encounterId)
+        {
+            int at = _sequence.IndexOf(encounterId);
+            return at >= 0 && at < _windows.Count ? _windows[at] : EncounterSlot.A;
+        }
+
+        /// <summary>104차: 순서대로 여는 밤의 창 나누기 — 조우 n개를 A·B·C에 앞에서부터(클라이맥스인 마지막은 늘 가장 늦은 창).</summary>
+        public static List<EncounterSlot> SplitWindows(int n)
+        {
+            List<EncounterSlot> list = new List<EncounterSlot>();
+            if (n <= 0) return list;
+            if (n == 1)
+            {
+                list.Add(EncounterSlot.B);
+                return list;
+            }
+
+            if (n == 2)
+            {
+                list.Add(EncounterSlot.A);
+                list.Add(EncounterSlot.B);
+                return list;
+            }
+
+            // 셋 이상: C는 클라이맥스 하나(여섯 이상이면 둘), 나머지를 A·B에 앞이 많게.
+            int c = n >= 6 ? 2 : 1;
+            int rest = n - c;
+            int a = (rest + 1) / 2;
+            for (int i = 0; i < a; i++) list.Add(EncounterSlot.A);
+            for (int i = 0; i < rest - a; i++) list.Add(EncounterSlot.B);
+            for (int i = 0; i < c; i++) list.Add(EncounterSlot.C);
+            return list;
         }
 
         /// <summary>빈 편성.</summary>
@@ -242,6 +319,105 @@ namespace NightDuty
             _corpseDay = RollCorpseDay();
             ResetRushChain();
             _cctvDay = RollCctvDay();
+            RollBlackouts();
+        }
+
+        // ── 104차: 고정 날짜 편성 ─────────────────────────────
+
+        /// <summary>
+        /// 104차(사용자: 「모든 연출에서 축 조건 제거 · 날짜 편성 — 이월은 없어. 의도한 날짜에 무조건 목격해야 해」): 참이면 조우를 날짜표(<see cref="FixedEncounters"/>)대로만 건다 —
+        /// 축 구간·점수 뽑기·예약·재등장 막기를 보지 않는다. 그 밤 편성에는 순서(<see cref="NightProgram.Sequence"/>)가 붙어 디렉터가 하나씩 연다.
+        /// 거짓이면 옛 뽑기(103차까지 — 옛 시험이 쓴다).
+        /// <list type="bullet">
+        /// <item>2일차: 시체 낙하 · 과학실 소등</item>
+        /// <item>3일차: 창밖 노란 얼굴 · 달려오는 발소리 · CCTV 사람 · 화장실 소등(사용자: 「화장실 소등은 3일차로」)</item>
+        /// <item>4일차: 소년 머리 박기(첫 역설 C2) · 화장실 여자아이 · 사람 나무 · 복도 끝에 선 자</item>
+        /// <item>5일차: 사람 나무 · 부르는 목소리 · 도서관 노란 얼굴 · 모형 급습</item>
+        /// </list>
+        /// </summary>
+        public static bool FixedSchedule = true;
+
+        /// <summary>104차: 고정 편성에서 첫 역설(C2 — 소년)이 나오는 날(소년 머리 박기 날). 옛 편성은 2일차.</summary>
+        public const int FixedFirstParadoxDay = 4;
+
+        /// <summary>104차: 고정 편성에서 남은 소등이 나올 수 있는 날(4·5일차 중 하루).</summary>
+        public const int LateBlackoutFrom = 4;
+
+        /// <inheritdoc cref="LateBlackoutFrom"/>
+        public const int LateBlackoutTo = 5;
+
+        private string _earlyBlackout = ProgramCatalog.ScienceBlackout;
+        private int _lateBlackoutDay = LateBlackoutFrom;
+
+        /// <summary>104차: 2일차에 나오는 소등(과학실/화장실). 나머지 하나는 <see cref="LateBlackoutDay"/>에.</summary>
+        public string EarlyBlackout
+        {
+            get { return _earlyBlackout; }
+        }
+
+        /// <summary>104차: 4·5일차에 나오는 남은 소등.</summary>
+        public string LateBlackout
+        {
+            get { return _earlyBlackout == ProgramCatalog.ScienceBlackout ? ProgramCatalog.ToiletBlackout : ProgramCatalog.ScienceBlackout; }
+        }
+
+        /// <summary>104차: 남은 소등이 나오는 날(4 또는 5).</summary>
+        public int LateBlackoutDay
+        {
+            get { return _lateBlackoutDay; }
+        }
+
+        /// <summary>시험 · 개발용: 소등 배치를 정한다.</summary>
+        public void SetBlackouts(string early, int lateDay)
+        {
+            _earlyBlackout = early == ProgramCatalog.ToiletBlackout ? ProgramCatalog.ToiletBlackout : ProgramCatalog.ScienceBlackout;
+            _lateBlackoutDay = Math.Max(LateBlackoutFrom, Math.Min(LateBlackoutTo, lateDay));
+        }
+
+        private void RollBlackouts()
+        {
+            // 104차(사용자: 「2일/3일차엔 과학실 정전, 4일/5일차엔 화장실 정전으로」): 2일차는 늘 과학실 소등, 화장실 소등은 4·5일차 중 하루.
+            _earlyBlackout = ProgramCatalog.ScienceBlackout;
+            _lateBlackoutDay = LateBlackoutFrom + _rng.Next(LateBlackoutTo - LateBlackoutFrom + 1);
+        }
+
+        /// <summary>104차: 그날 고정 편성의 조우(여는 순서). 1일차는 없다.</summary>
+        public List<string> FixedEncounters(int day)
+        {
+            List<string> list = new List<string>();
+            switch (day)
+            {
+                case 2:
+                    list.Add(ProgramCatalog.CeilingLegs);
+                    list.Add(_earlyBlackout);
+                    break;
+                case 3:
+                    list.Add(ProgramCatalog.SuitMan);
+                    list.Add(ProgramCatalog.Footsteps);
+                    list.Add(ProgramCatalog.CctvPerson);
+                    list.Add(ProgramCatalog.ToiletBlackout);   // 104차(사용자: 「화장실 소등은 3일차로」)
+                    break;
+                case 4:
+                    list.Add(ProgramCatalog.BoyBang);
+                    list.Add(ProgramCatalog.ToiletGirl);
+                    list.Add(ProgramCatalog.PeopleTree);
+                    list.Add(ProgramCatalog.HallEndFigure);
+                    break;
+                case 5:
+                    list.Add(ProgramCatalog.PeopleTree);
+                    list.Add(ProgramCatalog.CallingVoice);
+                    list.Add(ProgramCatalog.YellowFace);
+                    list.Add(ProgramCatalog.ModelRush);
+                    break;
+            }
+
+            return list;
+        }
+
+        /// <summary>104차: 그 조우가 그날 고정 편성에 있는지.</summary>
+        public bool FixedOn(string encounterId, int day)
+        {
+            return FixedEncounters(day).Contains(MergedInto(encounterId));
         }
 
         // ── 70차: 복도 끝에 선 자 → 다음 날 모형 급습 ─────────────
@@ -406,6 +582,7 @@ namespace NightDuty
             RuleDef r = ProgramCatalog.Rule(ruleId);
             if (r == null) return false;
             SpaceId space = SpaceIds.Canonical(r.Space);
+            if (FixedSchedule) return CanForceFixed(r, day);
 
             // 날짜 사슬 조우(복도 끝·급습 S5 · 도서관 노란 얼굴 L3 …)가 그날 그 공간을 먼저 차지한다 — 그 수칙이면 이미 들어온다.
             List<RuleDef> chained = ChainRulesOn(day);
@@ -494,6 +671,7 @@ namespace NightDuty
             _corpseDay = RollCorpseDay();
             ResetRushChain();
             _cctvDay = RollCctvDay();
+            RollBlackouts();
         }
 
         /// <summary>
@@ -540,7 +718,7 @@ namespace NightDuty
 
             _planForFill = request.Inspections;
             _buildDay = day;
-            NightProgram program = day == 1 ? BuildDay1(request) : BuildRegular(day, request, reserved);
+            NightProgram program = day == 1 ? BuildDay1(request) : FixedSchedule ? BuildFixed(day, request, reserved) : BuildRegular(day, request, reserved);
 
             for (int i = 0; i < program.Slots.Count; i++) _seen.Add(program.Slots[i].Encounter.Id);
             for (int i = 0; i < program.Extras.Count; i++) _seen.Add(program.Extras[i].Id);
@@ -552,6 +730,192 @@ namespace NightDuty
                 _runRules.Add(program.Deck[i].Id);
             }
             return program;
+        }
+
+        // ── 104차: 고정 편성 ─────────────────────────────────────
+
+        /// <summary>
+        /// 104차 고정 편성에서 강제(회피 불가 쌍)할 수 있는지 — 조우에 묶인 수칙은 그 조우가 그날 날짜표에 있을 때만(다른 날 조우를 끌어오지 않는다).
+        /// 경비실: CCTV 사람(K1)은 CCTV 날(3일차)에만, 다른 경비실 수칙은 그날이 아닐 때만(경비실은 한 장).
+        /// </summary>
+        private bool CanForceFixed(RuleDef r, int day)
+        {
+            if (SpaceIds.Canonical(r.Space) == SpaceId.SecurityRoom)
+            {
+                bool cctvDay = FixedOn(ProgramCatalog.CctvPerson, day);
+                if (r.BoundEncounter == ProgramCatalog.CctvPerson) return cctvDay;
+                return !cctvDay;
+            }
+
+            if (!r.IsStandalone && !string.IsNullOrEmpty(r.BoundEncounter)) return FixedOn(r.BoundEncounter, day);
+            return true;
+        }
+
+        /// <summary>
+        /// 104차 고정 편성 — 날짜표의 조우를 순서대로 걸고(축·예산·공간 충돌 무시, 묶인 수칙은 같은 공간에 둘이어도 둔다) 남은 공간을 채운다.
+        /// 하루 장수(<see cref="RulesFor"/>)는 그대로 — 넘치면 조우 수칙 말고 나머지(채움 → 경비실 → G4 → G1)부터 뺀다(사용자: 「수칙 장수는 조우 말고 나머지를 빼는 방안」).
+        /// 조우·강제 수칙만으로 넘치면 그만큼은 둔다.
+        /// </summary>
+        private NightProgram BuildFixed(int day, ProgramRequest request, List<string> reserved)
+        {
+            Draft d = new Draft();
+            IFearAxisReader shown = request.Shown;
+            if (day >= 5) Place(d, ProgramCatalog.Rule(ProgramCatalog.FinaleRule), true);   // 5일차 경비실은 K4
+
+            List<string> order = ShuffledOrder(day);
+            List<string> followUps = FollowUpsFor(day, reserved, order);
+            for (int i = 0; i < followUps.Count; i++)
+            {
+                // 후속은 그날 클라이맥스(마지막) 앞 아무 자리에.
+                int at = order.Count <= 1 ? 0 : _rng.Next(order.Count);
+                order.Insert(Math.Min(at, Math.Max(0, order.Count - 1)), followUps[i]);
+            }
+            List<EncounterDef> extras = new List<EncounterDef>();
+            for (int i = 0; i < order.Count; i++)
+            {
+                EncounterDef e = ProgramCatalog.Encounter(order[i]);
+                if (e == null) continue;
+                if (e.Id == ProgramCatalog.CeilingLegs)
+                {
+                    extras.Add(e);   // 수칙 없음 — 사다리 점검(C-3) 중
+                    continue;
+                }
+
+                if (e.Id == ProgramCatalog.CctvPerson)
+                {
+                    RuleDef k1 = ProgramCatalog.Rule("K1");
+                    if (k1 != null && !d.Has(k1.Id)) Place(d, k1, true);
+                    extras.Add(e);
+                    continue;
+                }
+
+                List<RuleDef> rules = RulesOf(e);
+                for (int k = 0; k < rules.Count; k++)
+                {
+                    if (rules[k] == null) continue;
+                    if (!d.Has(rules[k].Id)) Place(d, rules[k], true);
+                    else d.Locked.Add(rules[k].Id);
+                }
+
+                EncounterSlot slot = (EncounterSlot)Math.Min((int)EncounterSlot.F, d.Slots.Count);
+                d.Slots.Add(new SlotEncounter(slot, e, false));
+            }
+
+            // 강제 수칙(회피 불가 쌍) — 묶인 수칙은 그날 조우가 이미 들여놓았을 때만(CanForceFixed가 미리 거른다).
+            if (request.ForcedRules != null)
+            {
+                foreach (string id in request.ForcedRules)
+                {
+                    RuleDef r = ProgramCatalog.Rule(id);
+                    if (r == null) continue;
+                    if (ProgramCatalog.IsRetired(r.Id)) { d.Note.Append(r.Id).Append(" 강제 편성 실패(폐기한 수칙). "); continue; }
+                    if (d.Has(r.Id)) { d.Locked.Add(r.Id); continue; }
+                    if (!r.IsStandalone) { d.Note.Append(r.Id).Append(" 강제 편성 실패(묶인 조우가 그날 없음). "); continue; }
+                    if (SpaceIds.Canonical(r.Space) == SpaceId.SecurityRoom && d.In(SpaceId.SecurityRoom).Count > 0) { d.Note.Append(r.Id).Append(" 강제 편성 실패(경비실 충돌). "); continue; }
+                    Place(d, r, true);
+                }
+            }
+
+            // 남은 공간 채움(옛과 같다).
+            FearAxis highest = HighestShown(shown);
+            for (int s = 0; s < ProgramCatalog.RuleSpaces.Length; s++)
+            {
+                SpaceId space = ProgramCatalog.RuleSpaces[s];
+                if (d.In(space).Count > 0) continue;
+                RuleDef r = PickFiller(d, space, highest, null);
+                if (r != null) Place(d, r, false);
+            }
+
+            if (d.In(SpaceId.SecurityRoom).Count == 0) Place(d, PickSecurity(d), false);
+            EnsureLowestAxis(d, shown);
+            EnsureEverySensoryAxis(d, shown);
+
+            List<RuleDef> deck = new List<RuleDef>();
+            for (int s = 0; s < ProgramCatalog.RuleSpaces.Length; s++) deck.AddRange(d.In(ProgramCatalog.RuleSpaces[s]));
+            deck.AddRange(d.In(SpaceId.SecurityRoom));
+            deck.Add(ProgramCatalog.Rule("G1"));
+            if (HasTabletRule(day) && !_runRules.Contains(TabletRule)) deck.Add(ProgramCatalog.Rule(TabletRule));
+            int target = RulesFor(day);
+            TrimDeck(d, deck, LowestShown(shown), target);
+            while (deck.Count > target)
+            {
+                // TrimDeck은 공통 수칙(G1)·축의 마지막 한 장을 남긴다 — 고정 편성은 조우 수칙이 우선이라 남은 채움·G1도 뺀다.
+                int at = deck.FindLastIndex(r => !d.Locked.Contains(r.Id) && r.Id != "G1");
+                if (at < 0) at = deck.FindIndex(r => !d.Locked.Contains(r.Id));
+                if (at < 0) break;
+                d.Note.Append(deck[at].Id).Append(" 뺌(조우 수칙 우선). ");
+                deck.RemoveAt(at);
+            }
+
+            List<string> sequence = new List<string>();
+            List<string> shown2 = new List<string>();
+            for (int i = 0; i < order.Count; i++)
+            {
+                if (ProgramCatalog.Encounter(order[i]) == null) continue;
+                sequence.Add(order[i]);
+                shown2.Add(order[i] + (followUps.Contains(order[i]) ? "(후속)" : string.Empty));
+            }
+
+            List<EncounterSlot> windows = NightProgram.SplitWindows(sequence.Count);
+            for (int i = 0; i < shown2.Count && i < windows.Count; i++) shown2[i] = windows[i] + ":" + shown2[i];
+            NightProgram program = new NightProgram(day, d.Slots, deck, null, extras, sequence, followUps, windows);
+            string report = "고정 편성 [" + string.Join(" → ", shown2.ToArray()) + "] " + (d.Note.Length > 0 ? d.Note.ToString() : string.Empty) + program;
+            return new NightProgram(day, d.Slots, deck, report, extras, sequence, followUps, windows);
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「같은 날 안에서 순서를 섞기 — 각 날의 마지막(클라이맥스)만 고정」): 그날 날짜표를 섞되 클라이맥스(<see cref="ClimaxOf"/>)는 맨 뒤.
+        /// </summary>
+        private List<string> ShuffledOrder(int day)
+        {
+            List<string> list = FixedEncounters(day);
+            string climax = ClimaxOf(day);
+            bool hasClimax = climax != null && list.Remove(climax);
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = _rng.Next(i + 1);
+                string t = list[i];
+                list[i] = list[j];
+                list[j] = t;
+            }
+
+            if (hasClimax) list.Add(climax);
+            return list;
+        }
+
+        /// <summary>104차: 그날의 클라이맥스(맨 뒤에 고정) — 2일차 시체 낙하 · 3일차 발소리 · 4일차 소년 머리 박기 · 5일차 도서관 노란 얼굴.</summary>
+        public static string ClimaxOf(int day)
+        {
+            switch (day)
+            {
+                case 2: return ProgramCatalog.CeilingLegs;
+                case 3: return ProgramCatalog.Footsteps;
+                case 4: return ProgramCatalog.BoyBang;
+                case 5: return ProgramCatalog.YellowFace;   // 104차(사용자: 「5일차 클라이맥스는 도서관 노란 얼굴 조우로」)
+                default: return null;
+            }
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「수칙을 어긴 조우는 다음 날 변형되어 후속으로 — 잘 지킨 플레이어는 조용」): 어제 위반으로 예약된 조우(<see cref="Reserve"/>) 중
+        /// 오늘 날짜표에 없는 것 — 오늘의 후속(보장하지 않음). 옛 S3 위반 예약(모형 급습)은 복도 끝에 선 자로(모형이 앞당겨 나옴, 급습은 5일차 그대로).
+        /// </summary>
+        private List<string> FollowUpsFor(int day, List<string> reserved, List<string> today)
+        {
+            List<string> list = new List<string>();
+            if (reserved == null) return list;
+            for (int i = 0; i < reserved.Count; i++)
+            {
+                string id = MergedInto(reserved[i]);
+                if (id == ProgramCatalog.ModelRush) id = ProgramCatalog.HallEndFigure;
+                if (ProgramCatalog.Encounter(id) == null || ProgramCatalog.IsEncounterRetired(id)) continue;
+                if (today.Contains(id) || list.Contains(id)) continue;
+                // 104차(사용자: 「위반하면 다음 날 후속은 인체 모형, 발소리를 제외하고 없애줘」): 발소리(H3)·인체 모형(S3 → 복도 끝에 선 자)만.
+                if (id != ProgramCatalog.Footsteps && id != ProgramCatalog.HallEndFigure) continue;
+                list.Add(id);
+            }
+
+            return list;
         }
 
         // ── 1일차 ──────────────────────────────────────────────

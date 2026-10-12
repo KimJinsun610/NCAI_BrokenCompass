@@ -221,7 +221,7 @@ namespace NightDuty
                     if (e == null || !e.HasVariant || Excluded(id)) continue;
                     if (!_seen.Contains(id) && band < UnseenTamperMinBand) continue;   // 103차 후속(사용자: 「신뢰가 높다면 처음 등장하는 수칙도 변조돼서 나올 수 있는 게 원래 의도」)
                     if (unavoidable != null && unavoidable.Has(id)) continue;
-                    if (id == ProgramCatalog.FirstParadoxRule && day == 2) continue;
+                    if (id == ProgramCatalog.FirstParadoxRule && day == ProgramCatalog.FirstParadoxDay) continue;   // 104차: 첫 역설 날(고정 편성 4일차)
                     pool.Add(id);
                     // 103차: 회차에 이미 변조한 수칙은 거의 다시 고르지 않고, 위협 수칙(S5 등)보다 평소 수칙을 앞세운다(옛: 5일차 변조의 60%가 S5).
                     RuleDef def0 = ProgramCatalog.Rule(id);
@@ -254,7 +254,7 @@ namespace NightDuty
             // 2) 모호 역설.
             string ambiguous = null;
             bool first = !SentInRun;
-            bool dayTwoFirst = day == 2 && first && Has(deck, ProgramCatalog.FirstParadoxRule);
+            bool dayTwoFirst = day == ProgramCatalog.FirstParadoxDay && (first || ProgramDirector.FixedSchedule) && Has(deck, ProgramCatalog.FirstParadoxRule);   // 104차: 고정 편성은 4일차(소년 날) — 2·3일차에 다른 역설이 먼저 나왔어도 소년 날엔 C2
             if (dayTwoFirst)
             {
                 ambiguous = ProgramCatalog.FirstParadoxRule;

@@ -44,6 +44,34 @@ namespace NightDuty
             _tension.Missed += VoidEncounterRules;          // 57차: 끝내 오지 않은 조우의 수칙은 태블릿에서 거둔다
             _tension.FakeBlocked = FakeBlockedAt;            // 57차: 점검 대상 가까이에서는 가짜 놀람을 미룬다
             _voidRules.Clear();
+            PlanWildcard();   // 104차: 그날의 빈 칸
+        }
+
+        private static readonly System.Random s_wildcardRoll = new System.Random();
+
+        /// <summary>104차: 그날 빈 칸 후보 — 가장 높은 감각 축마다(청각: 먼 사물함 덜컹 · 사물함 줄 / 조도: 손전등 깜빡임 · 멀리 스치는 몹 / 배치: 멀리 스치는 몹 · 사물함 줄).</summary>
+        public static string[] WildcardPool(FearAxis axis)
+        {
+            switch (axis)
+            {
+                case FearAxis.Auditory: return new[] { "fake.locker.rattle", "fake.locker.row" };
+                case FearAxis.Illuminance: return new[] { "fake.flashlight.flicker", TensionDirector.FakeGlimpse };
+                default: return new[] { TensionDirector.FakeGlimpse, "fake.locker.row" };
+            }
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「날마다 빈 칸 하나 — 그날 가장 높은 축에 맞춰」): 고정 편성 밤(2일차부터)에 가장 높은 감각 축의 후보 중 하나를 01:00~03:00 사이 한 번.
+        /// </summary>
+        private static void PlanWildcard()
+        {
+            if (_tension == null || !_tension.Sequential || Day < 2) return;
+            FearAxis axis = HighestSensory();
+            string[] pool = WildcardPool(axis);
+            string pick = pool[s_wildcardRoll.Next(pool.Length)];
+            float at = NightClock.Call1 + (float)s_wildcardRoll.NextDouble() * 120f;
+            _tension.SetWildcard(pick, at);
+            Debug.Log("[NightRun] 그날의 빈 칸 — " + pick + " (가장 높은 축 " + axis + ", " + NightClock.Clock(at) + " 뒤)");
         }
 
         /// <summary>

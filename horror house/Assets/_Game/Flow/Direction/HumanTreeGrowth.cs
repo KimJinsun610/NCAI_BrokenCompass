@@ -56,6 +56,8 @@ public sealed class HumanTreeGrowth : MonoBehaviour
     /// <summary>103차: 그 밤·그 축 값에서 서야 하는지(일차·배치 축 조건).</summary>
     public static bool ShouldStand(int day, int layout)
     {
+        // 104차(사용자: 「모든 연출에서 축 조건 제거 · 3일차부터 작은 인체나무 등장」): 배치 축 문턱 없이 3일차부터 늘 선다(키는 그대로 배치 축만큼 — 문턱 아래면 가장 작게).
+        if (ProgramDirector.FixedSchedule) return day >= AppearDay;
         return day >= AppearDay && layout >= AppearLayout;
     }
 

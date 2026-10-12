@@ -59,6 +59,14 @@ namespace NightDuty
 
             if (PatchLeadOrders(rows, program)) changed = true;   // 85차: 창밖 노란 얼굴 날 블라인드(L-2)
 
+            // 104차(사용자: 「CCTV 사람 … 연출이 안 나왔어」): CCTV 사람(겹침 조우) 날은 K-1(CCTV 전 채널)이 있어야 플레이어가 CCTV를 본다 —
+            // 3일차에는 K-1이 거의 편성되지 않았다(1일차 뒤 덜 나온 K-2·K-3이 먼저). 없으면 정상 항목으로 더한다.
+            if (program.HasEncounter(ProgramCatalog.CctvPerson) && !rows.Exists(r => r.Id == InspectionCatalog.FirstInspection))
+            {
+                rows.Add(new InspectionAssignment(InspectionCatalog.Find(InspectionCatalog.FirstInspection), false, Band.Band0, false));
+                changed = true;
+            }
+
             if (reverse)
             {
                 string t1 = InspectionCatalog.ReverseReportItem;
@@ -80,6 +88,13 @@ namespace NightDuty
                 // 화장실로 부르는 것은 변기 지시(T-1) 자신이다 — 여자아이 슬롯이 열릴 때 단독 지시로 나간다(<see cref="ReleaseToiletOrder"/>).
                 // 옛 53차의 「묶이지 않는 화장실 항목(T-3)」은 소녀보다 먼저 화장실로 불러 순서를 흐트러뜨려 뺐다.
                 // 그날 다른 이유로 이미 있는 화장실 항목은 그대로 둔다.
+            }
+
+            // 104차: 순서대로 여는 밤 — 조우마다 그 공간 점검을 하나씩(차례에 낸다). 옛 슬롯 규칙(이른/늦은 항목)은 보지 않는다.
+            if (program.Sequential)
+            {
+                if (PatchSequentialLeads(rows, program, reverse)) changed = true;
+                return changed ? new InspectionPlan(plan.Day, rows, plan.LateSpace, plan.Call1ItemId) : plan;
             }
 
             // 53차 플레이 점검: 방에서 터지는 조우(소년·노란 얼굴·모형 …)는 그 방에 점검 지시가 하나도 없으면 플레이어가 갈 까닭이 없어
@@ -129,6 +144,7 @@ namespace NightDuty
         {
             if (plan == null || program == null) return;
             HoldLeadOrders(plan, program);   // 85차
+            HoldSequentialLeads(plan, program);   // 104차: 조우마다 그 공간 점검
             if (!program.Has(ProgramCatalog.ReverseReportRule)) return;
             Board.Hold(InspectionCatalog.ReverseReportItem);
         }
@@ -145,7 +161,8 @@ namespace NightDuty
             if (!DripFor(plan)) return;
 
             List<KeyValuePair<EncounterSlot, SpaceId>> encounters = new List<KeyValuePair<EncounterSlot, SpaceId>>();
-            if (_program != null)
+            // 104차: 고정 편성 밤은 조우가 시간창 없이 차례대로 열리고 유도 지시(NightRun.Guide)가 부른다 — 슬롯 시각으로 방을 아끼지 않는다.
+            if (_program != null && !_program.Sequential)
             {
                 foreach (SlotEncounter s in _program.Slots)
                 {
@@ -153,6 +170,11 @@ namespace NightDuty
                     SpaceId space = script != null ? script.Space : SpaceId.None;
                     encounters.Add(new KeyValuePair<EncounterSlot, SpaceId>(s.Slot, space));
                 }
+
+                // 104차(사용자: 「CCTV 사람 … 연출이 안 나왔어」): 103차부터 CCTV 사람은 겹침 조우(Extras)라 여기 넘어가지 않아 53차의 「경비실 아끼기」가 꺼졌다 —
+                // K-1이 00:16 첫 지시로 나가 조우가 열리기(01:00) 전에 보고가 끝났다. 슬롯 B 조우 방처럼 넘겨 경비실의 이른 항목을 02:16까지 아낀다
+                // (조우는 슬롯 A 창에서 못 걸리면 03:32까지 넘겨 기다린다 — 그사이 K-1로 CCTV를 보러 온다). 슬롯 A로 넘기면 그날 슬롯 A 조우 방의 호출 1 몫을 빼앗는다.
+                if (_program.HasEncounter(ProgramCatalog.CctvPerson)) encounters.Add(new KeyValuePair<EncounterSlot, SpaceId>(EncounterSlot.B, SpaceId.SecurityRoom));
             }
 
             _orders = new InspectionDispatcher(Board, Day, encounters);
@@ -377,6 +399,12 @@ namespace NightDuty
                 foreach (EncounterRun r in _tension.Runs)
                 {
                     if (r.Def.Id != ProgramCatalog.ToiletGirl) continue;
+                    if (_tension.Sequential)
+                    {
+                        due = r.State != EncounterRunState.Waiting || _tension.HeadOpen(r, minute);   // 104차: 차례가 오면
+                        break;
+                    }
+
                     float from, to;
                     TensionDirector.SlotWindow(r.Slot, out from, out to);
                     due = r.State != EncounterRunState.Waiting || r.CarriedOver || minute >= from - ToiletOrderLeadMinutes;

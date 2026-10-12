@@ -81,6 +81,9 @@ namespace NightDuty
                 EncounterScript script = EncounterScripts.Find(slot.Encounter.Id);
                 if (script != null && script.AfterOrder.Length > 0) Board.Hold(script.AfterOrder);
             }
+
+            // 104차: 고정 편성 밤의 시체 낙하 — 사다리 점검(C-3)을 묶어 두었다가 그 차례에 낸다(옛: 아무 때나 나간 C-3을 이미 보고해 시체가 오지 않던 것).
+            if (program.Sequential && program.HasEncounter(ProgramCatalog.CeilingLegs) && plan.Find("C-3") != null) Board.Hold("C-3");
         }
 
         /// <summary>묶어 둔 조우 앞 점검 항목을 슬롯 <see cref="LeadMinutes"/>분 앞에 단독 지시로 낸다(한 번).</summary>
@@ -102,7 +105,7 @@ namespace NightDuty
 
             foreach (EncounterRun r in _tension.Runs)
             {
-                string item = r.Script != null ? r.Script.AfterOrder : string.Empty;
+                string item = LeadItemOf(r);   // 104차: 고정 편성 밤의 사다리(C-3)도
                 if (item.Length == 0 || !Board.IsHeld(item)) continue;
                 if (LeadDue(r, minute)) _orders.QueueWitness(item, 0f);
             }
@@ -110,6 +113,7 @@ namespace NightDuty
 
         private static bool LeadDue(EncounterRun r, float minute)
         {
+            if (_tension != null && _tension.Sequential) return r.State != EncounterRunState.Waiting || _tension.HeadOpen(r, minute);   // 104차: 차례가 오면
             float from, to;
             TensionDirector.SlotWindow(r.Slot, out from, out to);
             return r.State != EncounterRunState.Waiting || r.CarriedOver || minute >= from - LeadMinutes;
@@ -193,6 +197,7 @@ namespace NightDuty
         {
             EncounterScript s = r != null ? r.Script : null;
             if (s == null || r.CarriedOver) return true;
+            if (r.GuidedAt >= 0f) return true;   // 104차: 유도 문자를 보낸 뒤에는 앞선 지시를 기다리지 않는다(다른 지시에 막혀 영영 못 나가던 것)
             if (s.AfterOrder.Length > 0 && _orders != null && Board.Plan != null && Board.Plan.Find(s.AfterOrder) != null && !Board.IsIssued(s.AfterOrder)) return false;
             if (s.AfterDuty.Length > 0 && _duties != null && _leadDuty != null && !_duties.WasIssued(_leadDuty)) return false;
             return true;

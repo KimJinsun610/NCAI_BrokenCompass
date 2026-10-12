@@ -72,11 +72,38 @@ namespace NightDuty
             if (result.Outcome == FinalOutcome.Violated)
             {
                 ViolationMinutesToday.Add(CurrentMinute());   // 결과창 위반 시각
+                ReserveFollowUp(result.RuleId);   // 104차: 위반의 후속
             }
 
             EventBus.RaiseFinalRuleSettled(result);
             ParadoxSettled(result);
             DutiesRuleSettled(result);   // 54차: 지시는 수칙 위반을 면책하지 않는다
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「수칙을 어긴 조우는 다음 날 변형되어 후속으로 다시 와요 · 잘 지킨 플레이어는 조용」): 고정 편성 밤에 오늘 조우에 묶인 수칙을 어기면
+        /// 그 조우를 다음 날 후속으로 예약한다(보장하지 않음 — <see cref="NightProgram.IsOptional"/>). S3(모형 비추기)는 옛처럼 급습 예약(편성이 복도 끝에 선 자로 바꾼다).
+        /// 재시작·결근은 예약 스냅샷이 되돌린다.
+        /// </summary>
+        private static void ReserveFollowUp(string ruleId)
+        {
+            if (!ProgramDirector.FixedSchedule || _program == null || !_program.Sequential || Day >= 5 || string.IsNullOrEmpty(ruleId)) return;
+            if (ruleId == "S3")
+            {
+                ReserveEncounter(ProgramCatalog.ModelRush);
+                return;
+            }
+
+            foreach (string id in _program.Sequence)
+            {
+                if (id != ProgramCatalog.Footsteps) continue;   // 104차(사용자: 「후속은 인체 모형, 발소리를 제외하고 없애줘」)
+                EncounterDef e = ProgramCatalog.Encounter(id);
+                if (e == null || (e.ResponseRule != ruleId && e.SecondRule != ruleId)) continue;
+                if (System.Linq.Enumerable.Contains(_programDirector.Reserved, id)) return;
+                ReserveEncounter(id);
+                Debug.Log("[NightRun] " + ruleId + " 위반 — 내일 후속: " + id);
+                return;
+            }
         }
 
         private static void OnReverseReportArmed(string itemId)

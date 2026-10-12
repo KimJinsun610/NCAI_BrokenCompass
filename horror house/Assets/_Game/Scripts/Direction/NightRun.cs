@@ -129,7 +129,18 @@ namespace NightDuty
         /// </summary>
         public static bool CanEndShiftEarly
         {
-            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCountExcept(_unavoidable.Banned) == 0 && !DutiesPending; }   // 103차 QA 3회: 재입실 불가 공간의 항목은 빼고
+            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCountExcept(_unavoidable.Banned) == 0 && !DutiesPending && !EncountersPending; }   // 103차 QA 3회: 재입실 불가 공간의 항목은 빼고 · 104차: 남은 조우
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「변기는 정상입니다 → 빨간 여자, 노란 얼굴 도서관, CCTV 사람, 발자국 등 — 수칙과 지시로 트리거는 된 것 같은데 연출이 안 나왔어」):
+        /// 그날 조우가 아직 끝나지 않았는지(<see cref="TensionDirector.EncountersPending"/>). 지시를 다 마치면 조기 퇴근이 열려 슬롯 B(02:16~)·C(03:08~) 조우가
+        /// 걸릴 틈 없이 밤이 끝났다(퇴근은 03:32까지 흘려보내지 않고 바로 정산 — 놓침 기록도 없이 수칙만 태블릿에 남음). 이제 조우가 끝나거나 놓침(03:32)이 될 때까지 퇴근을 막는다.
+        /// 숨은 조우를 알려 주지 않게 전화기는 「아직 근무 시간」 안내만 한다.
+        /// </summary>
+        public static bool EncountersPending
+        {
+            get { return IsNightActive && _tension != null && _tension.EncountersPending; }
         }
 
         /// <summary>68차: 조기 퇴근을 막는 지시가 남았는지 — 보고하지 않은 점검 또는 남은 [근무 지시]. 전화기 안내 「지시가 아직 끝나지 않았습니다.」가 읽는다.</summary>
@@ -311,6 +322,7 @@ namespace NightDuty
             ResetTabletState();
             _stare.Reset();
             ResetWindowGaze();   // 85차: 재시작하면 창밖 노란 얼굴도 다시
+            ResetGuides();       // 104차: 조우 유도 문자도 다시
 
             // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
@@ -430,6 +442,7 @@ namespace NightDuty
             {
                 OrdersTick(judgeSeconds);
                 DutiesTick(judgeSeconds);
+                GuideTick();   // 104차: 고정 편성 밤 — 차례가 온 조우 유도
                 ShiftReadyTick();
             }
 

@@ -43,6 +43,7 @@ public sealed class NightRunDriver : MonoBehaviour
     [SerializeField] private GameTime gameTime;
 
     private bool _begun;
+    private bool _encounterHold;   // 104차: 조우가 남아 밤 시계를 붙든 중
     private readonly NightClockTracker _tracker = new NightClockTracker();
     private float _rewindOffset;
 
@@ -211,7 +212,8 @@ public sealed class NightRunDriver : MonoBehaviour
     private void Update()
     {
         if (!_begun || s_owner != this) return;
-        bool flowing = gameTime.IsRunning && !gameTime.IsEnded;
+        UpdateEncounterHold();
+        bool flowing = (gameTime.IsRunning || _encounterHold) && !gameTime.IsEnded;   // 104차: 시계만 멈추고 판정·연출은 흐른다
         if (flowing) _tracker.Advance(NightMinute);
 
         if (!NightRun.IsNightActive) return;
@@ -219,8 +221,24 @@ public sealed class NightRunDriver : MonoBehaviour
         if (flowing || (NightRun.Sandbox && !gameTime.IsEnded)) NightRun.Tick(Time.deltaTime);
     }
 
+    /// <summary>
+    /// 104차(사용자: 「이월은 없어. 의도한 날짜에 무조건 목격해야 해」 → 「유도 지시 + 시계 멈춤」): 고정 편성 밤에 조우가 남은 채 03:30에 닿으면
+    /// 게임 시계를 붙든다(<see cref="NightRun.ClockHeld"/>) — 다 보면 놓는다. 판정·연출·지시는 그동안에도 흐른다.
+    /// </summary>
+    private void UpdateEncounterHold()
+    {
+        bool want = NightRun.ClockHeld;
+        if (want == _encounterHold) return;
+        _encounterHold = want;
+        if (want) gameTime.Hold(this);
+        else gameTime.Release(this);
+        Debug.Log("[NightRunDriver] " + (want ? "남은 조우가 있어 밤 시계를 " + NightClock.Clock(NightRun.HoldMinute) + "에서 붙듦" : "남은 조우를 다 봐서 밤 시계를 놓음"));
+    }
+
     private void OnDestroy()
     {
+        if (gameTime != null && _encounterHold) gameTime.Release(this);
+        _encounterHold = false;
         if (gameTime != null) gameTime.ShiftEnded -= OnShiftEnded;
         EventBus.NightRestarted -= OnNightRestarted;
 

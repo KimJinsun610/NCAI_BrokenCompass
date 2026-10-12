@@ -93,6 +93,21 @@ namespace NightDuty
         /// <summary>61차: 「나가는 길」 시체 — 사다리 곁(<see cref="TensionDirector.ExitInner"/>)에 들어갔었다.</summary>
         public bool ExitArmed;
 
+        /// <summary>104차 순서대로 여는 밤: 유도 지시를 낸 때(<see cref="TensionDirector.Now"/>, 아직이면 음수). NightRun이 넣는다 — 그 뒤 <see cref="TensionDirector.SeqLenientSeconds"/>초가 지나면 방아쇠를 「그 공간에 있기만 하면」으로 푼다.</summary>
+        public float GuidedAt = -1f;
+
+        /// <summary>104차: 어제 위반의 후속(보장하지 않음) — <see cref="TensionDirector.OptionalWaitSeconds"/>초 안에 오지 않으면 그냥 지나간다.</summary>
+        public bool Optional;
+
+        /// <summary>104차: 순서대로 여는 밤에 차례가 열린 때(아직이면 음수).</summary>
+        public float OpenedAt = -1f;
+
+        /// <summary>104차: 순서대로 여는 밤에 이 조우가 열릴 수 있는 시간 창(A 01:00~ · B 02:16~ · C 03:08~).</summary>
+        public EncounterSlot SeqWindow = EncounterSlot.A;
+
+        /// <summary>104차(사용자: 「발동 직전에 머무는 시간을 무작위로」): 방아쇠 조건이 갖춰진 뒤 실제로 시작할 때(아직이면 음수).</summary>
+        public float ArmedAt = -1f;
+
         /// <inheritdoc/>
         public override string ToString()
         {
@@ -166,6 +181,33 @@ namespace NightDuty
 
         /// <summary>디버그 강제 실행에서 존재형 조우의 길이(초).</summary>
         public const float ForcedPresenceSeconds = 60f;
+
+        /// <summary>104차 순서대로 여는 밤: 첫 조우를 열 수 있는 밤 시각(게임 분, 00:30).</summary>
+        public const float SeqFirstMinute = 30f;
+
+        /// <summary>104차 순서대로 여는 밤: 앞 조우가 끝난 뒤 다음 조우를 열기까지 쉬는 실제 초(옛 휴지 40~60초 · 강도 간격 60~80초 대신). 사용자: 「10~40초 무작위」.</summary>
+        public const float SeqRestMin = 10f;
+
+        /// <inheritdoc cref="SeqRestMin"/>
+        public const float SeqRestMax = 40f;
+
+        /// <summary>옛 이름(시험) — 쉬는 시간의 최솟값.</summary>
+        public const float SeqRestSeconds = SeqRestMin;
+
+        /// <summary>104차: 방아쇠 조건이 갖춰진 뒤 시작까지 기다리는 실제 초(무작위) — 들어서자마자 터지지 않게(응시 순간 조우·디버그 강제는 그대로).</summary>
+        public const float SeqArmMin = 1.5f;
+
+        /// <inheritdoc cref="SeqArmMin"/>
+        public const float SeqArmMax = 6f;
+
+        /// <summary>104차: 후속 조우가 차례에 이만큼(실제 초) 기다려도 오지 않으면 지나간다.</summary>
+        public const float OptionalWaitSeconds = 45f;
+
+        /// <summary>104차 순서대로 여는 밤: 유도 지시 뒤 이만큼(초) 지나면 방아쇠를 푼다(머묾·걸음·채널 조건 → 그 공간에 있기만 하면).</summary>
+        public const float SeqLenientSeconds = 25f;
+
+        /// <summary>104차 순서대로 여는 밤: 존재형 조우(사람 나무)가 머무는 실제 초 — 옛: 슬롯 끝까지(순서를 막지 않게 따로 센다).</summary>
+        public const float SeqPresenceSeconds = 90f;
 
         /// <summary>가짜 놀람 목록.</summary>
         public static readonly string[] FakeScares = { "fake.locker.rattle", "fake.locker.row", "fake.flashlight.flicker", FakeBugs, FakeGlimpse };
@@ -366,6 +408,19 @@ namespace NightDuty
                 _runs.Add(new EncounterRun { Slot = EncounterSlot.A, Def = extra, Script = script, Overlay = true });
             }
 
+            // 104차: 고정 편성은 날짜표 순서대로 하나씩 연다(슬롯·겹침 조우 구분 없이).
+            Sequential = _program.Sequential;
+            if (Sequential)
+            {
+                IReadOnlyList<string> order = _program.Sequence;
+                _runs.Sort((a, b) => IndexIn(order, a.Def.Id).CompareTo(IndexIn(order, b.Def.Id)));
+                for (int i = 0; i < _runs.Count; i++)
+                {
+                    _runs[i].Optional = _program.IsOptional(_runs[i].Def.Id);
+                    _runs[i].SeqWindow = _program.WindowOf(_runs[i].Def.Id);
+                }
+            }
+
             foreach (RuleDef r in _program.Deck)
             {
                 RuleTriggerScript script = RuleTriggers.Find(r.Id);
@@ -375,6 +430,55 @@ namespace NightDuty
 
             // 44차: 출근(00:00~00:16, 실시간 1분)은 조용히 둔다. 50차: 판정이 열린 뒤 25~50초(2일차부터) — 1일차는 첫 조우 결과 뒤(TryFakeScare).
             _nextFake = NightClock.RealSecondsAt(NightClock.JudgingStart) + Range(FirstFakeMin, FirstFakeMax);
+        }
+
+        private static int IndexIn(IReadOnlyList<string> order, string id)
+        {
+            for (int i = 0; i < order.Count; i++) if (order[i] == id) return i;
+            return order.Count;
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「이월은 없어. 의도한 날짜에 무조건 목격해야 해」): 고정 편성(<see cref="NightProgram.Sequential"/>)의 밤 — 시간창·예산·긴장 절정·놓침 없이
+        /// 조우를 순서대로 하나씩 연다(<see cref="Head"/>). 앞 조우가 끝나고 <see cref="SeqRestSeconds"/>초 뒤 다음이 열리고, NightRun이 유도 지시를 낸다.
+        /// </summary>
+        public bool Sequential { get; private set; }
+
+        private float _lastFinishAt = float.NegativeInfinity;
+        private float _nextOpenAt = float.NegativeInfinity;
+
+        /// <summary>
+        /// 104차: 순서대로 여는 밤에 지금 열 차례인 조우 — 끝남·놓침이 아니고, 머무는 존재형(사람 나무가 서 있는 동안)도 아닌 첫 실행. 없으면 null.
+        /// 강제 실행·회피 불가로 붙들어 둔 조우는 건너뛴다.
+        /// </summary>
+        public EncounterRun Head
+        {
+            get
+            {
+                if (!Sequential) return null;
+                for (int i = 0; i < _runs.Count; i++)
+                {
+                    EncounterRun r = _runs[i];
+                    if (r.Forced || _held.Contains(r.Def.Id)) continue;
+                    if (r.State == EncounterRunState.Done || r.State == EncounterRunState.Missed) continue;
+                    if (r.Script.IsPresence && (r.State == EncounterRunState.Active || r.State == EncounterRunState.Releasing)) continue;
+                    return r;
+                }
+
+                return null;
+            }
+        }
+
+        /// <summary>104차: 순서대로 여는 밤에 그 실행이 지금 열려 있는지(차례이고 쉬는 시간이 지남). 유도 지시는 이때 낸다.</summary>
+        public bool HeadOpen(EncounterRun r, float minute)
+        {
+            if (!Sequential || r == null || r != Head || minute < SeqFirstMinute || Now < _nextOpenAt) return false;
+            if (r.OpenedAt >= 0f) return true;   // 한 번 열렸으면 이어서(이완 구간·창이 지나도 볼 때까지)
+            // 104차(사용자: 「원래 짜여져 있던 흐름」): 원래 시간 뼈대 — 제 창이 열리기 전·이완(01:52~02:16)에는 새로 열지 않는다.
+            float from, to;
+            SlotWindow(r.SeqWindow, out from, out to);
+            if (minute < from) return false;
+            return !(minute >= NightClock.RelaxStart && minute < NightClock.Call2);
         }
 
         /// <summary>연출 알림(대역·소등·소리·로그).</summary>
@@ -480,6 +584,27 @@ namespace NightDuty
         public IReadOnlyList<EncounterRun> Runs
         {
             get { return _runs; }
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「수칙과 지시로 트리거는 된 것 같은데 연출이 안 나왔어」): 아직 끝나지 않은 조우가 있는지 — 기다림·전조·대역 세움·대면·마무리 중.
+        /// 끝남(<see cref="EncounterRunState.Done"/>)·놓침(<see cref="EncounterRunState.Missed"/>, 03:32에 수칙을 거둠)은 아니다. 디버그 강제 실행은 세지 않는다.
+        /// <c>NightRun.CanEndShiftEarly</c>가 본다 — 지시를 다 마쳐 조기 퇴근하면 슬롯 B·C 조우가 걸릴 틈 없이 밤이 끝났다.
+        /// </summary>
+        public bool EncountersPending
+        {
+            get
+            {
+                for (int i = 0; i < _runs.Count; i++)
+                {
+                    EncounterRun r = _runs[i];
+                    if (r.Forced) continue;
+                    if (r.Optional && r.State == EncounterRunState.Waiting) continue;   // 104차: 후속은 기다리지 않는다
+                    if (r.State != EncounterRunState.Done && r.State != EncounterRunState.Missed) return true;
+                }
+
+                return false;
+            }
         }
 
         /// <summary>수칙 단서 진행.</summary>
@@ -641,6 +766,7 @@ namespace NightDuty
             // 59차: 슬롯 조우와 겹침 조우(시체 낙하)는 서로를 막지 않는다 — 각자 자기 쪽이 비었을 때만 새로 시작한다.
             TryStartEncounter(minute, auditoryShown, BusyOf(false), BusyOf(true));
             if (!Busy) TryRuleTriggers(minute);
+            if (!Busy) TryWildcard(minute);   // 104차: 그날의 빈 칸
             if (!Busy) TryFakeScare(minute);
         }
 
@@ -649,6 +775,13 @@ namespace NightDuty
         private bool SlotOpen(EncounterRun r, float minute)
         {
             if (r.Forced) return true;
+            if (Sequential)
+            {
+                // 104차: 차례가 오면 시각과 상관없이(유도 지시를 따라오면)
+                bool open = HeadOpen(r, minute);
+                if (open && r.OpenedAt < 0f) r.OpenedAt = Now;
+                return open;
+            }
 
             // 51차: 응시 방아쇠(사다리 점검 중 시체 낙하)는 그 점검이 지시받은 때를 따른다 — 슬롯 시간창을 보지 않는다(판정 구간, 이완 구간 제외).
             if (r.Script.Trigger == EncounterTrigger.GazeTarget)
@@ -679,7 +812,10 @@ namespace NightDuty
             EncounterScript s = r.Script;
             float from, to;
             RunWindow(r, out from, out to);
-            bool lastCall = minute >= to - LastCallMinutes;
+            bool lastCall = Sequential ? r.GuidedAt >= 0f && Now - r.GuidedAt >= SeqLenientSeconds : minute >= to - LastCallMinutes;   // 104차: 유도 지시 뒤 조금 지나면 풀어 준다
+
+            // 104차: 순서대로 여는 밤 — 사다리 점검(C-3)을 이미 보고했어도, 풀린 뒤에는 그 방에 있으면 떨어진다(응시 대상이 사라져 영영 오지 않던 것).
+            if (Sequential && lastCall && s.Trigger == EncounterTrigger.GazeTarget && InScriptSpace(s)) return true;
 
             // 61차: 고정 자리에서 가까워야 하는 조우(창밖 남자)·안쪽 깊이 머물러야 하는 조우(소년·노란 얼굴).
             if (!NearStage(s)) return false;
@@ -721,7 +857,7 @@ namespace NightDuty
             for (int i = 0; i < _runs.Count; i++)
             {
                 EncounterRun r = _runs[i];
-                if (r.Overlay ? overlayBusy : slotBusy) continue;
+                if (Sequential ? (slotBusy || overlayBusy) : (r.Overlay ? overlayBusy : slotBusy)) continue;
                 if (r.State != EncounterRunState.Waiting || Now < r.RetryAt || !SlotOpen(r, minute)) continue;
                 if (_held.Contains(r.Def.Id))
                 {
@@ -742,6 +878,18 @@ namespace NightDuty
                     continue;
                 }
 
+                // 104차(사용자: 「발동 직전에 머무는 시간을 무작위로」 → 「머물러야 시작하면 놓칠 가능성이 높아지지 않아?」): 처음 조건이 갖춰진 때부터 1.5~6초 뒤
+                // 「다시 조건이 맞는 첫 순간」에 시작한다 — 그사이 나가도 처음부터 세지 않는다(나갔다 들어오면 곧바로). 응시 순간 조우(사다리)·후속은 바로.
+                if (Sequential && !r.Forced && !r.Optional && r.Script.Trigger != EncounterTrigger.GazeTarget)
+                {
+                    if (r.ArmedAt < 0f) r.ArmedAt = Now + Range(SeqArmMin, SeqArmMax);
+                    if (Now < r.ArmedAt)
+                    {
+                        r.Waiting = "발동 직전";
+                        continue;
+                    }
+                }
+
                 // 51차: 응시 방아쇠는 플레이어가 그것을 보는 그 순간뿐이다 — 긴장·예산으로 미루면 영영 오지 않는다.
                 if (r.Script.Trigger == EncounterTrigger.GazeTarget)
                 {
@@ -752,14 +900,14 @@ namespace NightDuty
                 // 50차: 긴장 절정 중에는 조우를 미룬다 — 단 슬롯 끝 10분 전부터는 그대로 건다(조우는 수칙과 묶여 있다).
                 float slotFrom, slotTo;
                 RunWindow(r, out slotFrom, out slotTo);
-                if (!r.Forced && _pacer.State == PacerState.Peak && minute < slotTo - LastCallMinutes)
+                if (!r.Forced && !Sequential && _pacer.State == PacerState.Peak && minute < slotTo - LastCallMinutes)
                 {
                     r.Waiting = "긴장 절정 — 잠시 미룸";
                     continue;
                 }
 
                 string why;
-                if (!_budget.CanStart(r.Def.Intensity, r.Def.IsCross, Now, out why))
+                if (!Sequential && !_budget.CanStart(r.Def.Intensity, r.Def.IsCross, Now, out why))   // 104차: 순서대로 여는 밤은 SeqRestSeconds만 쉰다
                 {
                     if (r.Waiting != why) Note(r.Def.Id, "예산: " + why);
                     r.Waiting = why;
@@ -796,7 +944,7 @@ namespace NightDuty
             float winFrom, winTo;
             RunWindow(r, out winFrom, out winTo);
             // 57차: 슬롯이 얼마 안 남았거나 이월된 실행은 헛예고로 속이지 않는다(진짜를 놓치게 된다).
-            if (!r.Forced && r.FalseCount == 0 && !r.CarriedOver && _minute < winTo - LastCallMinutes * 2f)
+            if (!r.Forced && !Sequential && r.FalseCount == 0 && !r.CarriedOver && _minute < winTo - LastCallMinutes * 2f)   // 104차: 순서대로 여는 밤은 헛예고 없이(목격 보장)
             {
                 float pFalse = (auditoryShown >= Band.Band3 ? 0.4f : 0.3f) * DirectorMoods.FalseScale(Mood);
                 if (_rng.NextDouble() < pFalse)
@@ -858,6 +1006,7 @@ namespace NightDuty
             if (s.IsPresence)
             {
                 if (r.Forced) window = ForcedPresenceSeconds;
+                else if (Sequential) window = SeqPresenceSeconds;   // 104차
                 else
                 {
                     float from, to;
@@ -874,6 +1023,11 @@ namespace NightDuty
             r.State = EncounterRunState.Active;
             r.PhaseEnds = Now + window;
             r.ConfrontMinute = _minute;
+            if (Sequential && s.IsPresence)
+            {
+                _lastFinishAt = Now;   // 104차: 머무는 존재형(사람 나무)이 서는 순간에도 다음 차례는 쉬는 시간 뒤(겹쳐 나오지 않게)
+                _nextOpenAt = Now + Range(SeqRestMin, SeqRestMax);
+            }
             _pacer.Impulse(PacerImpulse.Confront, r.Def.Intensity);
             if (s.Placement != CuePlacement.None && r.Point == Vector3.zero) r.Point = PointFor(s);
 
@@ -903,6 +1057,11 @@ namespace NightDuty
         private void Finish(EncounterRun r)
         {
             r.State = EncounterRunState.Done;
+            if (!r.Forced && !r.Script.IsPresence)
+            {
+                _lastFinishAt = Now;   // 104차: 다음 차례는 쉬는 시간 뒤
+                _nextOpenAt = Now + Range(SeqRestMin, SeqRestMax);
+            }
             _encountersDone++;
             if (!r.Forced && !r.Overlay) _budget.EndEncounter(Now, Range(SurpriseBudget.QuietMin, SurpriseBudget.QuietMax));
             Emit(DirectionEventKind.Encounter, DirectionPhase.Result, r.Def.Id, r.Script.Cue, r.Script.Space, r.Def.Intensity, r.Point, 0f, string.Empty);
@@ -920,7 +1079,7 @@ namespace NightDuty
                         break;
                     case EncounterRunState.Presenting:
                         if (r.Seen) Confront(r);
-                        else if (Now - r.PresentSince >= PresentMaxSeconds || (!r.Forced && PastSlot(r, minute))) Withdraw(r);
+                        else if (Now - r.PresentSince >= PresentMaxSeconds || (!r.Forced && !Sequential && PastSlot(r, minute))) Withdraw(r);
                         break;
                     case EncounterRunState.Active:
                         if (Now >= r.PhaseEnds) Release(r);
@@ -929,7 +1088,18 @@ namespace NightDuty
                         if (Now >= r.PhaseEnds) Finish(r);
                         break;
                     case EncounterRunState.Waiting:
-                        if (!r.Forced && PastSlot(r, minute))
+                        if (Sequential && r.Optional && r.OpenedAt >= 0f && Now - r.OpenedAt >= OptionalWaitSeconds)
+                        {
+                            // 104차: 후속은 차례에 오래 기다리지 않는다 — 그 방에 없으면 조용히 지나간다(수칙도 거둔다).
+                            r.State = EncounterRunState.Missed;
+                            Note(r.Def.Id, "후속 — " + OptionalWaitSeconds + "초 기다려도 오지 않아 지나감(" + r.Waiting + ")");
+                            _nextOpenAt = Now + SeqRestMin;
+                            Action<string> gone = Missed;
+                            if (gone != null) gone(r.Def.Id);
+                            break;
+                        }
+
+                        if (!r.Forced && !Sequential && PastSlot(r, minute))   // 104차: 순서대로 여는 밤은 놓침이 없다(볼 때까지 시계를 붙든다)
                         {
                             // 57차: 슬롯 A·B에서 못 걸린 조우는 판정 끝(03:30)까지 넘긴다 — 그 수칙이 이미 태블릿에 있다.
                             if (!r.CarriedOver && r.Slot != EncounterSlot.C && r.Script.Trigger != EncounterTrigger.GazeTarget && minute < NightClock.JudgingEnd)
@@ -1128,6 +1298,43 @@ namespace NightDuty
             Emit(DirectionEventKind.FakeScare, DirectionPhase.None, pick, string.Empty, _space, 0, _feet, 0f, string.Empty);
         }
 
+        // ── 104차: 그날의 빈 칸 ─────────────────────────────────
+
+        /// <summary>
+        /// 104차(사용자: 「날마다 빈 칸 하나 — 고정 조우와 별개로, 하루에 한 칸은 그날 가장 높은 축에 맞춰」): 그 밤 한 번 거는 가벼운 놀람(가짜 놀람 ID) — 보장하지 않는다.
+        /// NightRun이 밤 시작에 정한다(<see cref="SetWildcard"/>). 가짜 놀람 상한·조절기와 따로 센다. 점검 대상 가까이(<see cref="FakeBlocked"/>)·조우 중에는 미룬다.
+        /// </summary>
+        public string Wildcard { get; private set; } = string.Empty;
+
+        private float _wildcardAt = float.PositiveInfinity;
+        private bool _wildcardDone;
+
+        /// <summary>그날 빈 칸을 정한다 — <paramref name="atMinute"/>(게임 분) 뒤 처음 걸 수 있을 때.</summary>
+        public void SetWildcard(string fakeId, float atMinute)
+        {
+            Wildcard = fakeId ?? string.Empty;
+            _wildcardAt = NightClock.RealSecondsAt(atMinute);
+            _wildcardDone = Wildcard.Length == 0;
+            if (Wildcard.Length > 0) Note(Wildcard, "그날의 빈 칸 — " + NightClock.Clock(atMinute) + " 뒤");
+        }
+
+        /// <summary>빈 칸을 걸었는지(검수용).</summary>
+        public bool WildcardDone
+        {
+            get { return _wildcardDone; }
+        }
+
+        private void TryWildcard(float minute)
+        {
+            if (_wildcardDone || Wildcard.Length == 0 || Now < _wildcardAt || !NightClock.IsJudging(minute)) return;
+            if (!FakeAllowedHere(Wildcard)) return;
+            if (FakeBlocked != null && FakeBlocked(_feet)) return;
+            _wildcardDone = true;
+            _pacer.Impulse(PacerImpulse.Fake);
+            Note(Wildcard, "그날의 빈 칸");
+            Emit(DirectionEventKind.FakeScare, DirectionPhase.None, Wildcard, string.Empty, _space, 0, _feet, 0f, "빈 칸");
+        }
+
         private bool HasSlotA()
         {
             for (int i = 0; i < _runs.Count; i++)
@@ -1217,7 +1424,14 @@ namespace NightDuty
                 r.Seen = false;
                 r.ExitArmed = false;
                 r.DeepSince = -1f;
+                r.GuidedAt = -1f;   // 104차: 유도 지시는 다시
+                r.OpenedAt = -1f;
+                r.ArmedAt = -1f;
             }
+
+            _lastFinishAt = float.NegativeInfinity;   // 104차
+            _nextOpenAt = float.NegativeInfinity;
+            _wildcardDone = false;
 
             for (int i = 0; i < _rules.Count; i++)
             {

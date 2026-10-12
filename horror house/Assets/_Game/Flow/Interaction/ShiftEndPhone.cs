@@ -23,6 +23,9 @@ public sealed class ShiftEndPhone : MonoBehaviour
     /// <summary>점검이 남아 끝낼 수 없을 때의 안내(59차 민: 「조기 퇴근도 『지시가 아직 끝나지 않았습니다.』 정도로」 — 남은 수는 알려 주지 않는다).</summary>
     public const string LockedLine = "지시가 아직 끝나지 않았습니다.";
 
+    /// <summary>104차: 지시는 다 마쳤지만 그날 조우가 남아 아직 끝낼 수 없을 때(<see cref="NightRun.EncountersPending"/>) — 무엇이 남았는지는 말하지 않는다.</summary>
+    public const string PatrolLine = "아직 근무 시간입니다. 순찰을 계속하십시오.";
+
     /// <summary>점검이 남아 끝낼 수 없을 때의 외곽선 진하기(끝낼 수 있으면 1).</summary>
     private const float LockedOutline = 0.35f;
 
@@ -98,7 +101,7 @@ public sealed class ShiftEndPhone : MonoBehaviour
         {
             _armedUntil = -1f;
             InteractionOutline.Request(transform, LockedOutline);   // 겨누면 늘 보이게 — 아직 못 쓰니 흐리게.
-            ClaimPrompt(NightRun.InstructionsPending ? LockedLine : string.Empty, false);   // 68차: 점검만이 아니라 [근무 지시]도
+            ClaimPrompt(NightRun.InstructionsPending ? LockedLine : NightRun.EncountersPending ? PatrolLine : string.Empty, false);   // 68차: 점검만이 아니라 [근무 지시]도 · 104차: 남은 조우
             return;
         }
 

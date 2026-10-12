@@ -160,6 +160,12 @@ namespace NightDuty
         /// <summary>2일차 첫 역설이 겨누는 수칙(C2 — 소년이 앉은 뒤 「교실에 남은 학생이 있습니다. 지금 확인하십시오.」, 눈으로만).</summary>
         public const string FirstParadoxRule = "C2";
 
+        /// <summary>104차: 첫 역설(C2)이 나오는 날 — 고정 편성(<see cref="ProgramDirector.FixedSchedule"/>)은 소년 머리 박기 날(4일차), 옛 편성은 2일차.</summary>
+        public static int FirstParadoxDay
+        {
+            get { return ProgramDirector.FixedSchedule ? ProgramDirector.FixedFirstParadoxDay : 2; }
+        }
+
         /// <summary>
         /// 편성하지 않는 수칙(정의는 남겨 둔다 — 판정기·역설 표·시험이 참조). 60차 민: 「교실의 판서 근무 수칙은 폐기해줘. 별로인 것 같아」 → C1.
         /// </summary>

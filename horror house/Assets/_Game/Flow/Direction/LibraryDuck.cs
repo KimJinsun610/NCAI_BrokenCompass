@@ -257,13 +257,7 @@ public sealed class LibraryDuck : MonoBehaviour
             if (RuntimeNav.Snap(feet, 2.5f, out to)) _agent.SetDestination(to);
         }
 
-        if (lighting && _head != null)
-        {
-            // 멈칫 — 빛 쪽을 본다.
-            Vector3 look = eye - transform.position;
-            look.y = 0f;
-            if (look.sqrMagnitude > 0.01f) transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(look), 90f * dt);
-        }
+        // 멈칫한 동안에도 몸은 돌리지 않는다 — 103차 후속(민: 「목만 플레이어에게 고정」): 고개만 따라 돈다(DoorDuck).
     }
 
     private void Scare(string why)

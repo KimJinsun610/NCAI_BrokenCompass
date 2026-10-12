@@ -129,13 +129,13 @@ namespace NightDuty
         /// </summary>
         public static bool CanEndShiftEarly
         {
-            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCount == 0 && !DutiesPending; }
+            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCountExcept(_unavoidable.Banned) == 0 && !DutiesPending; }   // 103차 QA 3회: 재입실 불가 공간의 항목은 빼고
         }
 
         /// <summary>68차: 조기 퇴근을 막는 지시가 남았는지 — 보고하지 않은 점검 또는 남은 [근무 지시]. 전화기 안내 「지시가 아직 끝나지 않았습니다.」가 읽는다.</summary>
         public static bool InstructionsPending
         {
-            get { return IsNightActive && (Board.RemainingCount > 0 || DutiesPending); }
+            get { return IsNightActive && (Board.RemainingCountExcept(_unavoidable.Banned) > 0 || DutiesPending); }
         }
 
         /// <summary>
@@ -254,12 +254,16 @@ namespace NightDuty
             }
 
             FakeRuleCatalog.RunOffset = new System.Random().Next(FakeRuleCatalog.Lines.Length);   // 80차: 가짜 수칙 다섯 줄을 회차마다 돌려 나흘에
+            FakeRuleCatalog.SlotOffset = new System.Random().Next(997);   // 103차 QA 4회: 가짜 줄 자리도 회차마다
             _axes = new FearAxisSystem();
             ApplySandboxCap();   // 71차: 개발자 모드 흐름 정지 중이면 새 축도 붙잡히지 않게
             _bands = new BandResolver(_axes);
             _axes.ValueChanged += _bands.OnValueChanged;
             _axes.Raised += OnAxisRaised;
             _ledger = new WarningLedger();
+            Array.Clear(_warnByAxis, 0, _warnByAxis.Length);   // 103차
+            _trustLinesShown = 0;   // 103차 후속
+            ForgetLastNightDuties();   // 103차
             _ledger.Changed += EventBus.RaiseWarningsChanged;
             _assigner = new AnomalyAssigner();
             Board.Begin(InspectionPlan.Empty(0));
@@ -302,7 +306,7 @@ namespace NightDuty
             Day = Mathf.Max(1, day);
             _clockMinutes = clockMinutes;
             _axes.SoftCap = null;
-            ViolationMinutesToday.Clear();
+            if (!isRestart) ViolationMinutesToday.Clear();   // 103차 최종 QA: 재시작은 스냅샷(NightTallies)이 되돌린다 — 옛: 체크포인트 전 위반이 결과창에서 빠져 근무일지와 어긋났다
             ClearRaised();
             ResetTabletState();
             _stare.Reset();
@@ -312,6 +316,7 @@ namespace NightDuty
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
             // 생존 수치는 올리지 않는다(2026-09-30 새 기획서).
             _bands.SetDayFloor(DayFloor.Of(Day));
+            _bands.BeginNight();   // 103차 후속: 「밤 안 상승」 기준(재시작도 그 시도부터)
 
             InspectionPlan plannedToday = null;
             if (!isRestart)
@@ -396,6 +401,8 @@ namespace NightDuty
             if (_battery != null) parts.Add(_battery);
             if (_batteryPlan != null) parts.Add(_batteryPlan);
             if (_deskKit != null) parts.Add(_deskKit);   // 66차
+            if (_programDirector != null) parts.Add(_programDirector);   // 103차 QA: 밤 동안 쌓인 조우 예약
+            parts.Add(s_tallies);   // 103차 최종 QA: 지시 보상 상한·처벌 축 집계·위반 시각
             return parts.ToArray();
         }
 
@@ -627,8 +634,40 @@ namespace NightDuty
         /// <returns>이번에 새로 대기에 들어간 처벌 수.</returns>
         public static int AddWarning(int count, string sourceId)
         {
+            return AddWarning(count, sourceId, null);
+        }
+
+        /// <summary>
+        /// 103차(축 균형): 경고에 원인 축을 붙여 더한다 — 처벌은 가장 높은 축이 아니라 경고가 가장 많이 쌓인 원인 축으로 간다(옛: 가장 높은 축이라 배치가 더 높아지는 되먹임).
+        /// 원인 축을 모르면(null) 옛 규칙(가장 높은 축).
+        /// </summary>
+        public static int AddWarning(int count, string sourceId, FearAxis? axis)
+        {
             EnsureRun();
+            if (axis.HasValue && count > 0)
+            {
+                int i = (int)axis.Value;
+                if (i >= 0 && i < _warnByAxis.Length) _warnByAxis[i] += count;
+            }
+
             return _ledger.Add(count);
+        }
+
+        /// <summary>103차: 처벌 원인 축 집계(청각·조도·배치) — 처벌이 나가면 그 축에서 한 번 몫(3)을 뺀다.</summary>
+        private static readonly int[] _warnByAxis = new int[3];
+
+        /// <summary>103차: 다음 처벌이 갈 축 — 경고가 가장 많이 쌓인 원인 축(동점이면 생존 수치가 낮은 쪽), 원인을 모르면 가장 높은 축.</summary>
+        public static FearAxis PunishmentAxis()
+        {
+            EnsureRun();
+            int best = -1;
+            for (int i = 0; i < _warnByAxis.Length; i++)
+            {
+                if (_warnByAxis[i] <= 0) continue;
+                if (best < 0 || _warnByAxis[i] > _warnByAxis[best] || (_warnByAxis[i] == _warnByAxis[best] && _axes.GetValue((FearAxis)i) < _axes.GetValue((FearAxis)best))) best = i;
+            }
+
+            return best >= 0 ? (FearAxis)best : HighestSensory();
         }
 
         /// <summary>
@@ -646,7 +685,9 @@ namespace NightDuty
                 return;
             }
 
-            FearAxis axis = HighestSensory();
+            FearAxis axis = PunishmentAxis();   // 103차: 원인 축(모르면 가장 높은 축)
+            int ai = (int)axis;
+            if (ai >= 0 && ai < _warnByAxis.Length) _warnByAxis[ai] = Math.Max(0, _warnByAxis[ai] - Deltas.WarningsForPunishment);
             int? before = _axes.SoftCap;
             _axes.SoftCap = Deltas.SoftCap;
             _axes.Apply(axis, Deltas.Punishment, "처벌", space);
@@ -775,7 +816,7 @@ namespace NightDuty
         /// </summary>
         public static RestartResult LeaveVoluntarily()
         {
-            if (_axes == null || Day <= 0 || _nightStart == null || !RestartPolicy.CanLeaveVoluntarily(RestartsTonight))
+            if (!_nightOpen || _axes == null || Day <= 0 || _nightStart == null || !RestartPolicy.CanLeaveVoluntarily(RestartsTonight))   // 103차 최종 QA: 닫힌 밤에 다시 결근 처리·DayEnded가 나가지 않게
             {
                 return new RestartResult(RestartKind.None, RestartsTonight, -1, default);
             }
@@ -789,6 +830,8 @@ namespace NightDuty
         /// </summary>
         private static RestartResult EndAsAbsent(FearAxis captured)
         {
+            // 103차 후속: _axes.Restore가 붙잡힌 원인을 지워 결근 결과의 원인 축이 늘 기본값(청각)으로 나갔다 — 먼저 떠 둔다.
+            TerminationCause absentCause = _axes.IsLocked ? _axes.Cause : new TerminationCause(captured, string.Empty, _currentSpace);
             _axes.Restore(
                 RestartPolicy.AbsenceValue(_axes.GetValue(FearAxis.Auditory)),
                 RestartPolicy.AbsenceValue(_axes.GetValue(FearAxis.Illuminance)),
@@ -796,9 +839,11 @@ namespace NightDuty
                 _nightStart.Value(FearAxis.Trust));
             _bands.RestoreReached(_nightStart.ReachedCopy());
             _ledger.RestoreFromSnapshot(_nightStart);
+            if (_programDirector != null) _nightStart.RestoreParts(new ISnapshotable[] { _programDirector });   // 103차 QA: 결근한 밤의 S3 위반 예약은 버린다
+            _nightStart.RestoreParts(new ISnapshotable[] { s_tallies });   // 103차 최종 QA: 결근한 밤의 처벌 축 집계도 밤 시작으로(경고 장부와 같이)
             Board.Settle(_axes, false);
 
-            _lastSummary = BuildSummary(NightOutcome.Absent);
+            _lastSummary = BuildSummary(NightOutcome.Absent, absentCause);
             CloseNight();
 
             RestartResult result = new RestartResult(RestartKind.Absent, RestartsTonight, -1, captured);
@@ -860,6 +905,8 @@ namespace NightDuty
                 InspectionSettlement settle = Board.Settle(_axes, true);
                 if (settle.Unfinished > 0)
                 {
+                    // 103차(축 균형): 미완료 항목의 축을 처벌 원인으로 센다.
+                    for (int i = 0; i < _warnByAxis.Length && i < settle.UnfinishedByAxis.Length; i++) _warnByAxis[i] += settle.UnfinishedByAxis[i];
                     _ledger.Add(settle.Unfinished);
                 }
 
@@ -893,7 +940,7 @@ namespace NightDuty
             return BuildSummary(_axes.IsLocked ? NightOutcome.Captured : NightOutcome.Completed);
         }
 
-        private static DaySummary BuildSummary(NightOutcome outcome)
+        private static DaySummary BuildSummary(NightOutcome outcome, TerminationCause? cause = null)
         {
             List<FinalRuleResult> results = new List<FinalRuleResult>(FinalResults);
             List<DutyLogEntry> dutyLog = BuildDutyLog();
@@ -907,7 +954,7 @@ namespace NightDuty
                 _axes.GetValue(FearAxis.Layout),
                 _axes.GetValue(FearAxis.Trust),
                 outcome,
-                _axes.Cause,
+                cause ?? _axes.Cause,
                 new List<int>(ViolationMinutesToday),
                 results,
                 dutyLog);

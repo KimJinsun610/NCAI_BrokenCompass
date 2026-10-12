@@ -93,6 +93,49 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void 시간_제한은_전화_서명_비상구만()
+        {
+            Assert.IsFalse(DutyCatalog.TimeLimitsEnabled);
+            foreach (DutyDef d in DutyCatalog.All)
+            {
+                bool timed = d.Id == "W19" || d.Id == "W21" || d.Id == "W5";
+                Assert.AreEqual(timed, DutyCatalog.IsTimed(d), d.Id);
+                Assert.AreEqual(timed ? 2 : 1, DutyCatalog.TrustFor(d), d.Id);
+            }
+
+            Assert.AreEqual(DutyCatalog.LimitSeconds, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("W19")));
+            Assert.AreEqual(90f, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("W21")));
+            Assert.AreEqual(0f, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("W5")), "서명은 초가 아니라 서명 시간대");
+            Assert.AreEqual(0f, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("W3")));
+            StringAssert.EndsWith("까지", DutyCatalog.MessageText(DutyCatalog.Find("W21"), 1, 30f));
+            StringAssert.EndsWith(NightClock.Clock(NightClock.Call2) + "까지", DutyCatalog.MessageText(DutyCatalog.Find("W5"), 1, 110f));
+            StringAssert.DoesNotContain("까지", DutyCatalog.MessageText(DutyCatalog.Find("W19"), 1, 30f), "전화는 벨이 기한");
+            Assert.AreEqual(4, DutyCatalog.TrustCapPerNight);
+        }
+
+        [Test]
+        public void 다시_건_제한은_조우_중_멈추고_넘기면_경고_없이_닫힌다()
+        {
+            DutyDispatcher d = new DutyDispatcher(1, s => 0f, 5);
+            DutyEvent ev;
+            Assert.IsTrue(d.Force("W21", out ev));
+            Assert.IsFalse(d.Tick(new DutyInput { Minute = 40f, Dt = 200f, DirectorBusy = true }, out ev), "조우 중에는 기한이 멈춘다");
+            Assert.IsNotNull(d.Active);
+            Assert.IsTrue(d.Tick(new DutyInput { Minute = 41f, Dt = 91f }, out ev));
+            Assert.AreEqual(DutyOutcome.Missed, ev.Outcome);
+        }
+
+        [Test]
+        public void 변조는_신뢰_구간_2부터_붕괴형은_3부터()
+        {
+            Assert.AreEqual(2, ParadoxPlanner.TamperMinBand);
+            Assert.AreEqual(3, ParadoxPlanner.CollapseMinBand);
+            Assert.AreEqual(90, ParadoxPlanner.SendPercentAnomaly);
+            Assert.AreEqual(50, ParadoxPlanner.SendPercentClear);
+            foreach (string id in new[] { "T1", "K2", "K3" }) Assert.IsTrue(ParadoxCatalog.Find(id).HasVariant, id + " 변조 후보(103차 초안)");
+        }
+
+        [Test]
         public void 모형_급습은_과학실_쪽_복도에_들어서면()
         {
             EncounterScript rush = EncounterScripts.Find(ProgramCatalog.ModelRush);

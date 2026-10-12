@@ -36,7 +36,7 @@ namespace NightDuty
         private static IEnumerable<string> PlanUnavoidable(InspectionPlan inspections)
         {
             _emptyRoomChannel = _paradoxPlanner.PickEmptyRoomChannel();
-            _plannedUnavoidable = _paradoxPlanner.PlanUnavoidable(Day, _bands.Shown.GetBand(FearAxis.Trust), inspections);
+            _plannedUnavoidable = _paradoxPlanner.PlanUnavoidable(Day, _bands.Shown.GetBand(FearAxis.Trust), inspections, id => _programDirector.CanForce(id, Day));
             return _plannedUnavoidable != null ? _plannedUnavoidable.Rules : null;
         }
 
@@ -53,6 +53,7 @@ namespace NightDuty
         private static void BeginUnavoidable(ParadoxPlan plan)
         {
             _unavoidable = new UnavoidableRun(plan.Unavoidable);
+            _unavoidableArmedAt = -1;
             _unavoidableBroken.Clear();
             if (_tension == null) return;
             _tension.InspectionPendingIn = SpacePending;
@@ -63,8 +64,12 @@ namespace NightDuty
         private static void DisposeUnavoidable()
         {
             _unavoidable = new UnavoidableRun(null);
+            _unavoidableArmedAt = -1;
             _unavoidableBroken.Clear();
         }
+
+        /// <summary>103차 QA 4회: 「나가라」 단서가 이번 시도에 울린 분(재시작이 체크포인트 전이면 그대로 둔다). 없으면 −1.</summary>
+        private static int _unavoidableArmedAt = -1;
 
         private static void ResetUnavoidable()
         {
@@ -79,6 +84,7 @@ namespace NightDuty
             if (!judging || IsCaptured || _unavoidable.Def == null) return;
             if (_sandbox && !_unavoidable.Staged) return;   // 71차: 흐름 정지 중에는 스스로 걸지 않는다
             UnavoidableApply(_unavoidable.Observe(signal, _currentSpace, IssuedSpacePending, IssuedItemPending));   // 50차: 지시받은 점검만
+            if (_unavoidable.ExitArmed && _unavoidableArmedAt < 0) _unavoidableArmedAt = CurrentMinute();
         }
 
         /// <summary>새 수칙 정산 — 진짜 회피 불가가 걸린 뒤 쌍의 수칙을 어기면 근무일지 「불가피」.</summary>
@@ -95,7 +101,7 @@ namespace NightDuty
             switch (step)
             {
                 case UnavoidableStep.Staged:
-                    _paradoxPlanner.MarkUnavoidable();
+                    _paradoxPlanner.MarkUnavoidable(def);
                     Debug.Log("[NightRun] 회피 불가 역설 " + def + ": " + def.Message);
                     EventBus.RaiseMessageSent(new ParadoxMessage("unavoidable." + def.Id, def.Rules[0], def.Space, def.Message, CurrentMinute()));
                     OrdersNoteMessage();

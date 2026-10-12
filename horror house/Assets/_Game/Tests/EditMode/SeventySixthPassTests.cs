@@ -14,6 +14,7 @@ namespace NightDuty.Tests
             Assert.IsFalse(DutyCatalog.TimeLimitsEnabled, "76차: 게임 기본은 제한 없음");
             foreach (DutyDef d in DutyCatalog.All)
             {
+                if (DutyCatalog.IsTimed(d)) continue;   // 103차(민): W19 · W21 · W5만 다시 시간 제한
                 Assert.AreEqual(0f, DutyCatalog.EffectiveSeconds(d), d.Id);
                 StringAssert.DoesNotContain("까지", DutyCatalog.MessageText(d, 1, 30f), d.Id);
             }

@@ -1449,10 +1449,12 @@ public sealed class DirectionStage : MonoBehaviour
     private void OnRuleCue(DirectionEvent e)
     {
         Staged st = Stage(e.SourceId);
+        Vector3 doorAt = Vector3.zero;
         switch (e.SourceId)
         {
             case "H2":
-                OpenDoorAhead();
+                OpenDoorAhead(out doorAt);
+                if (doorAt == Vector3.zero) return;   // 103차 QA 3회: 열 문이 없으면 문 삐걱도 없다(옛: 플레이어 앞 3.5m 벽 너머에서 거짓 단서)
                 break;
             case "C4":
             {
@@ -1499,7 +1501,79 @@ public sealed class DirectionStage : MonoBehaviour
             }
         }
 
-        PlaySound(e.SourceId + ".cue", PointOr(e.Point, 3f));
+        // 103차(사용자: 「방향이 구분 안 되는 효과음 — 문 자동으로 열리는 소리 등」): 수칙 단서의 점은 플레이어 발밑(TensionDirector가 _feet를 싣는다)이라
+        // 유리 깨짐·책장 넘김·칸 안 부스럭·문 삐걱이 모두 머리 위에서 났다 — 소리 나는 물건 쪽(연 문 · 칸 · 그 방의 떨어진 자리)에서 낸다.
+        PlaySound(e.SourceId + ".cue", CueSoundPoint(e, doorAt));
+    }
+
+    /// <summary>
+    /// 103차: 수칙 단서 소리를 낼 자리 — H2는 연 문, 판정 대상 구역(T2 칸 등)이 있으면 그 가운데, C1은 1-3 교실 안, 그 밖에는 그 공간 안에서 플레이어와
+    /// <see cref="CueNear"/>~<see cref="CueFar"/>m 떨어진 자리. 못 찾으면 플레이어 앞 <see cref="CueNear"/>m.
+    /// </summary>
+    private Vector3 CueSoundPoint(DirectionEvent e, Vector3 doorAt)
+    {
+        float ear = PlayerGroundY() + 1.4f;   // 귀 높이(루트는 캡슐 가운데라 바닥 + 0.85m)
+        if (doorAt != Vector3.zero) return doorAt + Vector3.up * 1.2f;
+        if (e.SourceId == "K2" && CctvSystem.Active != null && CctvSystem.Active.ScreenCenter != Vector3.zero) return CctvSystem.Active.ScreenCenter;   // 103차 QA: CCTV 잡음은 모니터에서
+        RuleTriggerScript script = RuleTriggers.Find(e.SourceId);
+        Bounds b;
+        if (script != null && !string.IsNullOrEmpty(script.Target) && Zones() != null && Zones().TryGetSignalZone(script.Target, out b))
+        {
+            return new Vector3(b.center.x, ear, b.center.z);
+        }
+
+        SpaceId space = e.SourceId == "C1" ? SpaceId.Classroom_1_3 : e.Space;
+        if (space == SpaceId.Classroom)
+        {
+            SpaceId here = ClassroomHere();
+            space = here != SpaceId.None ? here : SpaceId.Classroom_1_3;
+        }
+
+        if (space != SpaceId.None && space != SpaceId.Corridor && Zones() != null && Zones().TryGetSpaceBox(space, out b))
+        {
+            Vector3 p;
+            if (PointAwayIn(b, ear, out p)) return p;
+            return new Vector3(b.center.x, ear, b.center.z);   // 103차 QA 3회: 좁은 방 — 방 밖(플레이어 앞 3.5m) 대신 방 가운데 귀 높이
+        }
+
+        return PointOr(Vector3.zero, CueNear);
+    }
+
+    /// <summary>103차: 수칙 단서 소리 — 플레이어에게서 이만큼은 떨어진 곳(m).</summary>
+    private const float CueNear = 3.5f;
+
+    /// <summary>103차: 수칙 단서 소리 — 플레이어에게서 이보다 멀지 않은 곳(m).</summary>
+    private const float CueFar = 8f;
+
+    /// <summary>103차: 상자 안(가장자리 0.6m 안쪽) 귀 높이의 점 중 플레이어에게서 <see cref="CueNear"/>~<see cref="CueFar"/>m인 곳. 없으면 가장 먼 점.</summary>
+    private static bool PointAwayIn(Bounds box, float ear, out Vector3 point)
+    {
+        point = Vector3.zero;
+        Vector3 feet = PlayerFeet();
+        float bestGap = float.MaxValue;
+        for (int i = 0; i < 16; i++)
+        {
+            Vector3 p = new Vector3(
+                UnityEngine.Random.Range(box.min.x + 0.6f, Mathf.Max(box.min.x + 0.6f, box.max.x - 0.6f)),
+                ear,
+                UnityEngine.Random.Range(box.min.z + 0.6f, Mathf.Max(box.min.z + 0.6f, box.max.z - 0.6f)));
+            float d = SensingRules.HorizontalDistance(p, feet);
+            if (d >= CueNear && d <= CueFar)
+            {
+                point = p;
+                return true;
+            }
+
+            // 103차 QA: 범위 안이 없으면 범위에 가장 가까운 점(옛: 가장 먼 점 — 방 밖에서 반대쪽 구석·벽 너머로 갔다).
+            float gap = Mathf.Abs(d - Mathf.Clamp(d, CueNear, CueFar));
+            if (gap < bestGap)
+            {
+                bestGap = gap;
+                point = p;
+            }
+        }
+
+        return bestGap < float.MaxValue && SensingRules.HorizontalDistance(point, feet) > 1.5f;
     }
 
     /// <summary>
@@ -1510,8 +1584,9 @@ public sealed class DirectionStage : MonoBehaviour
     /// <summary>H2 연출이 먼저 고르는 문 — 레벨에서 자동 개방용으로 지정한 복도 문.</summary>
     private const string AutoOpenDoorId = "corridor.door.auto";
 
-    private void OpenDoorAhead()
+    private void OpenDoorAhead(out Vector3 doorAt)
     {
+        doorAt = Vector3.zero;
         Transform root = PlayerRoot();
         if (root == null) return;
         Vector3 fwd = root.forward;
@@ -1551,6 +1626,7 @@ public sealed class DirectionStage : MonoBehaviour
         DoorHandle chosen = DoorHandle.Of(best);
         best.BeginDirectionMove(2f);
         chosen.Open();
+        doorAt = chosen.Owner != null ? chosen.Owner.transform.position : best.transform.position;   // 103차: 삐걱 소리는 그 문에서
         if (Verbose) Debug.Log("[Direction] H2: 문 자동 개방 — " + best.DoorId);
     }
 

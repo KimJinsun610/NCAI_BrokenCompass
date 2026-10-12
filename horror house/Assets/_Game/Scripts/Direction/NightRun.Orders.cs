@@ -209,6 +209,7 @@ namespace NightDuty
         private static bool DutyTurnNow(float minute)
         {
             if (_duties == null || _lastInstruction != LastInstruction.Inspection) return false;
+            if (_orders != null && _orders.SpaceUnfinished) return false;   // 103차: 지시한 공간의 남은 점검을 먼저
             if (_instructionClock - _lastInstructionAt > TurnWaitMax + DutyDispatcher.GapSeconds) return false;
             return _duties.CanIssueSoon(minute);
         }
@@ -311,11 +312,19 @@ namespace NightDuty
                 if (l.Left > 0f) continue;
                 l.Expired = true;
                 changed = true;
-                AddWarning(1, "order.late." + l.Index);
+                AddWarning(1, "order.late." + l.Index, OrderAxis(FindOrder(l.Index)));   // 103차: 처벌 원인 축
                 UnityEngine.Debug.Log("[NightRun] 점검 지시 #" + l.Index + " 기한 지남(" + DutyCatalog.DeadlineText(l.IssuedMinute, l.Seconds) + ") — 경고 1");
             }
 
             if (changed) EventBus.RaiseTabletTextChanged();
+        }
+
+        /// <summary>103차: 점검 지시의 원인 축(첫 항목의 축). 모르면 null.</summary>
+        private static FearAxis? OrderAxis(InspectionOrder order)
+        {
+            if (order == null || order.ItemIds == null || order.ItemIds.Count == 0) return null;
+            InspectionItem item = InspectionCatalog.Find(order.ItemIds[0]);
+            return item != null ? item.Axis : (FearAxis?)null;
         }
 
         private static InspectionOrder FindOrder(int index)

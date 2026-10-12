@@ -332,7 +332,7 @@ namespace NightDuty.Tests
             Assert.AreEqual("도서관을 순찰해주십시오.", texts[0]);   // 88차: 머리글 없음
             for (int i = 1; i <= 4; i++) NightRun.Send(JudgeSignal.Target(SignalKind.ZoneEntered, DutyCatalog.LibraryZonePrefix + i));
             NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
-            Assert.AreEqual("도서관 순찰이 기록되었습니다. 00:30", texts[1]);
+            Assert.AreEqual("도서관 순찰이 기록되었습니다. 00:30\n" + DutyCatalog.TrustLine, texts[1]);   // 103차: 지시 완료 신뢰 — 근무 평가 줄
             Assert.AreEqual(20 - DutyCatalog.Relief, NightRun.Axes.GetValue(FearAxis.Auditory));
 
             int before = NightRun.Warnings.Count + NightRun.Warnings.PendingPunishments * Deltas.WarningsForPunishment;
@@ -341,6 +341,78 @@ namespace NightDuty.Tests
             Assert.AreEqual("1-3 교실 확인 기록이 없습니다.", texts[texts.Count - 1]);
             int after = NightRun.Warnings.Count + NightRun.Warnings.PendingPunishments * Deltas.WarningsForPunishment;
             Assert.AreEqual(before + 1, after, "미완료는 경고 1");
+        }
+
+        [Test]
+        public void 근무_평가_줄은_회차에_두_번만_첫_보상과_3일차_뒤()
+        {
+            // 103차 후속(사용자: 「매번 뜨면 정신없다 — 중간에 한번씩, 한 2회 정도」)
+            List<string> texts = new List<string>();
+            EventBus.DutySent += m => texts.Add(m.Text);
+            NightRun.BeginNight(1, () => _clock);
+            Assert.IsTrue(NightRun.DebugIssueDuty("W2"));
+            for (int i = 1; i <= 4; i++) NightRun.Send(JudgeSignal.Target(SignalKind.ZoneEntered, DutyCatalog.LibraryZonePrefix + i));
+            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
+            StringAssert.EndsWith(DutyCatalog.TrustLine, texts[texts.Count - 1], "회차의 첫 신뢰 보상");
+            Assert.IsTrue(NightRun.DebugIssueDuty("W15"));
+            Assert.IsTrue(NightRun.PickUpDutyItem(DutyCatalog.LibraryBookTarget));
+            Assert.Greater(NightRun.DutyTrustTonight, 1, "신뢰는 그대로 오른다");
+            StringAssert.DoesNotContain(DutyCatalog.TrustLine, texts[texts.Count - 1], "둘째 줄은 3일차부터");
+
+            NightRun.RequestEndNight();
+            NightRun.BeginNight(NightRun.TrustLineSecondDay, () => _clock);
+            Assert.IsTrue(NightRun.DebugIssueDuty("W15"));
+            Assert.IsTrue(NightRun.PickUpDutyItem(DutyCatalog.LibraryBookTarget));
+            StringAssert.EndsWith(DutyCatalog.TrustLine, texts[texts.Count - 1], "둘째(마지막) 줄");
+            Assert.IsTrue(NightRun.DebugIssueDuty("W2"));
+            for (int i = 1; i <= 4; i++) NightRun.Send(JudgeSignal.Target(SignalKind.ZoneEntered, DutyCatalog.LibraryZonePrefix + i));
+            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
+            StringAssert.DoesNotContain(DutyCatalog.TrustLine, texts[texts.Count - 1], "회차에 두 번까지");
+        }
+
+        [Test]
+        public void 지시받은_점검을_너무_미루면_독촉_문자와_함께_근무_지시가_나간다()
+        {
+            // 103차 후속(사용자 7번): 옛 — 지시받은 점검이 남아 있으면 근무 지시가 밤새 나오지 않았다.
+            NightRun.InspectionsEnabled = true;
+            NightRun.InspectionDripEnabled = true;
+            List<string> texts = new List<string>();
+            EventBus.DutySent += m => texts.Add(m.Text);
+            try
+            {
+                NightRun.BeginNight(2, () => _clock);
+                for (int i = 0; i < 40 && NightRun.Inspections.IssuedPendingCount == 0; i++) NightRun.Tick(0.5f);
+                Assert.Greater(NightRun.Inspections.IssuedPendingCount, 0, "첫 점검 지시");
+                for (int i = 0; i < 100 && !NightRun.InspectionsStalled; i++) NightRun.Tick(1f);
+                Assert.IsTrue(NightRun.InspectionsStalled, NightRun.InspectionStallSeconds + "초 넘게 보고하지 않음");
+                for (int i = 0; i < 120 && (NightRun.Duties.IssuedToday == 0 || !texts.Exists(t => t.Contains("보고가 늦어지고"))); i++) NightRun.Tick(0.5f);
+                Assert.IsTrue(texts.Exists(t => t.Contains("보고가 늦어지고")), "독촉 문자");
+                Assert.Greater(NightRun.Duties.IssuedToday, 0, "밀린 점검을 더 기다리지 않고 근무 지시");
+                int nags = texts.FindAll(t => t.Contains("보고가 늦어지고")).Count;
+                NightRun.Tick(10f);
+                Assert.AreEqual(nags, texts.FindAll(t => t.Contains("보고가 늦어지고")).Count, "독촉은 " + NightRun.StallNagRepeatSeconds + "초에 한 번");
+            }
+            finally
+            {
+                NightRun.InspectionsEnabled = false;
+                NightRun.InspectionDripEnabled = false;
+            }
+        }
+
+        [Test]
+        public void 재시작하면_지시_보상_상한도_되돌린다()
+        {
+            // 103차 최종 QA: 옛 — 신뢰·축은 밤 시작으로 돌아가는데 「이미 받은 보상」은 남아, 다시 끝내도 신뢰·감소가 0이었다.
+            NightRun.BeginNight(3, () => _clock);
+            Assert.IsTrue(NightRun.DebugIssueDuty("W2"));
+            for (int i = 1; i <= 4; i++) NightRun.Send(JudgeSignal.Target(SignalKind.ZoneEntered, DutyCatalog.LibraryZonePrefix + i));
+            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
+            Assert.IsTrue(NightRun.DutyRecordStands("W2"));
+            Assume.That(NightRun.DutyTrustTonight, Is.GreaterThan(0), "W2 완료 신뢰");
+
+            NightRun.DebugForceCapture(FearAxis.Auditory);
+            Assert.AreEqual(RestartKind.FromNightStart, NightRun.RestartAfterCapture().Kind);
+            Assert.AreEqual(0, NightRun.DutyTrustTonight, "밤 시작으로 돌아가면 받은 보상도 되돌린다");
         }
 
         [Test]
@@ -383,7 +455,7 @@ namespace NightDuty.Tests
                 Assert.IsTrue(NightRun.CanSignCheckpointNow, "01:53");
                 Assert.IsTrue(NightRun.SignCheckpoint());
                 Assert.IsNotNull(NightRun.Checkpoint);
-                Assert.AreEqual("근무일지 서명이 기록되었습니다. " + NightClock.Clock(NightClock.RelaxStart + 1), texts[texts.Count - 1]);
+                Assert.AreEqual("근무일지 서명이 기록되었습니다. " + NightClock.Clock(NightClock.RelaxStart + 1) + "\n" + DutyCatalog.TrustLine, texts[texts.Count - 1]);   // 103차
                 Assert.IsFalse(NightRun.CanSignCheckpointNow, "한 번만");
                 Assert.IsFalse(NightRun.SignCheckpoint());
 

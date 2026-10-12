@@ -176,12 +176,15 @@ namespace NightDuty
         /// <summary>완료하면 그 축에서 빼는 양(점검 정확 보고 −5보다 작게 — 판단 행위의 값을 지킨다).</summary>
         public const int Relief = 3;
 
+        /// <summary>103차(축 균형): 지시 완료로 한 축에서 하룻밤 빠지는 양의 상한 — 청각 지시가 많아 청각만 계속 내려가던 것을 막는다.</summary>
+        public const int ReliefCapPerAxis = 6;
+
         private static readonly List<DutyDef> s_all = new List<DutyDef>
         {
             // 77차(민): W1 CCTV 순회 폐기(K-1 「CCTV 모든 채널」 점검과 겹침). ID W1은 다시 쓰지 않는다.
             new DutyDef("W2", DutyKind.Patrol, SpaceId.Library, FearAxis.Auditory,
                 "도서관을 순찰해주십시오.", "도서관 순찰이 기록되었습니다.", "도서관 순찰 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 57차: 120 → 150초 · 67차(민): 제한 없음
-            new DutyDef("W3", DutyKind.LightsOutCheck, SpaceId.Classroom_1_3, FearAxis.Auditory,
+            new DutyDef("W3", DutyKind.LightsOutCheck, SpaceId.Classroom_1_3, FearAxis.Illuminance,   // 103차 축 균형: 청각 → 조도(소등 확인)
                 "교실의 상태를 확인해주십시오.", "1-3 교실 이상 없음.", "1-3 교실 확인 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
             new DutyDef("W4", DutyKind.DoorTidy, SpaceId.Corridor, FearAxis.Layout,
                 "열어 둔 문들을 정리해주십시오.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 0f, 2, 3, 4, 5),   // 67차(민): 제한 없음 · 103차 띄어쓰기: 정리 해주십시오 → 정리해주십시오
@@ -206,7 +209,7 @@ namespace NightDuty
 
             // 80차(민: D1 채택 「유도등이 아니라 비상구라고 명시」). W18·W20은 폐기한 제안 번호라 쓰지 않는다.
             new DutyDef("W21", DutyKind.ExitFlash, SpaceId.Corridor, FearAxis.Illuminance,
-                "복도 끝 비상구 앞에서 손전등을 세 번 깜빡여주십시오.", "비상구 신호가 기록되었습니다.", "비상구 신호 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
+                "복도 끝 비상구 앞에서 손전등을 세 번 깜빡여주십시오.", "비상구 신호가 기록되었습니다.", "비상구 신호 기록이 없습니다.", ExitFlashSeconds, 1, 2, 3, 4, 5),   // 103차: 기한 90초(시간 제한 지시)
 
             DutyDef.Pickup("W15", LibraryBookTarget, SpaceId.Library, FearAxis.Auditory, "도서관 안쪽 책상에 있는 biology 책을 습득하세요.", "biology 책 습득이 기록되었습니다.", "biology 책 습득 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 67차(민): 제한 없음
         };
@@ -251,11 +254,48 @@ namespace NightDuty
         /// </summary>
         public static bool TimeLimitsEnabled { get; set; }
 
-        /// <summary>76차: 지금 적용할 그 지시의 기한(실제 초). 제한을 껐으면(기본) 늘 0 = 제한 없음.</summary>
+        /// <summary>
+        /// 103차(민: 「전화 받기와 근무일지 서명, 비상구 손전등 3번만 시간제한」): 76차에 끈 제한을 이 지시들에만 다시 건다 — 기한이 상황에서 나오는 것들.
+        /// W19 = 전화가 울리는 동안(재시도 포함 <see cref="LimitSeconds"/>초) · W21 = <see cref="ExitFlashSeconds"/>초 · W5 = 서명 시간(이완 구간, 호출 2까지 — 기한 초 대신 시간대).
+        /// 기한을 넘겨도 경고는 없다 — 신뢰 보상(<see cref="TrustFor"/>)만 받지 못한다. 조우 중에는 기한이 멈춘다.
+        /// </summary>
+        public static readonly string[] TimedDuties = { "W19", "W21" };
+
+        /// <summary>103차: W21 비상구 손전등 기한(실제 초).</summary>
+        public const float ExitFlashSeconds = 90f;
+
+        /// <summary>103차: 시간 제한 지시인지(W19 · W21 · W5 서명 시간).</summary>
+        public static bool IsTimed(DutyDef def)
+        {
+            return def != null && (def.Kind == DutyKind.LogSign || Array.IndexOf(TimedDuties, def.Id) >= 0);
+        }
+
+        /// <summary>76차: 지금 적용할 그 지시의 기한(실제 초). 제한을 껐으면(기본) 0 = 제한 없음. 103차: <see cref="TimedDuties"/>는 늘 제 기한.</summary>
         public static float EffectiveSeconds(DutyDef def)
         {
-            return def == null || !TimeLimitsEnabled ? 0f : def.Seconds;
+            if (def == null) return 0f;
+            if (TimeLimitsEnabled) return def.Seconds;
+            return Array.IndexOf(TimedDuties, def.Id) >= 0 ? def.Seconds : 0f;
         }
+
+        /// <summary>103차(민: 「지시 사항을 잘 수행해도 신뢰가 오르게」): 지시를 어기지 않고 마치면 오르는 신뢰 — 시간 제한 지시 2 · 그 밖 1.</summary>
+        public static int TrustFor(DutyDef def)
+        {
+            if (def == null) return 0;
+            return IsTimed(def) ? TrustTimed : TrustPlain;
+        }
+
+        /// <summary>103차: 일반 지시 완료 신뢰.</summary>
+        public const int TrustPlain = 1;
+
+        /// <summary>103차: 시간 제한 지시를 기한 안에 마친 신뢰.</summary>
+        public const int TrustTimed = 2;
+
+        /// <summary>103차: 하룻밤 지시로 오르는 신뢰 상한 — 심부름만으로 변조 구간에 닿지 않게.</summary>
+        public const int TrustCapPerNight = 4;
+
+        /// <summary>103차: 완료 답장 끝에 붙는 근무 평가 줄(신뢰가 올랐을 때).</summary>
+        public const string TrustLine = "근무 평가에 반영되었습니다.";
 
         /// <summary><see cref="LimitSeconds"/>를 게임 분으로(48분).</summary>
         public static float LimitGameMinutes
@@ -299,10 +339,16 @@ namespace NightDuty
             return def.Order;
         }
 
-        /// <summary>태블릿에 실리는 지시 문자 = 지시 문장만(88차 — 67차 마감 줄 「02:08까지」도 붙이지 않는다).</summary>
+        /// <summary>
+        /// 태블릿에 실리는 지시 문자 = 지시 문장만(88차). 103차: 시간 제한 지시 중 W21·W5만 둘째 줄에 마감 「HH:MM까지」(W19는 벨이 기한이라 붙이지 않는다).
+        /// </summary>
         public static string MessageText(DutyDef def, int day, float issuedMinute)
         {
-            return OrderText(def, day);
+            string text = OrderText(def, day);
+            if (def == null || issuedMinute < 0f || TimeLimitsEnabled) return text;
+            if (def.Kind == DutyKind.LogSign) return text + "\n" + Clock(NightClock.Call2) + "까지";
+            if (def.Id == "W21") return text + "\n" + DeadlineText(issuedMinute, EffectiveSeconds(def));
+            return text;
         }
 
         /// <summary>완료 답장(「~이 기록되었습니다. 00:42」). 「확인되었습니다.」는 역설 답장 전용이라 쓰지 않는다.</summary>

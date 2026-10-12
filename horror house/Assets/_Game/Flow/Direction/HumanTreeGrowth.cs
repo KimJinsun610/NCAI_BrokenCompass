@@ -9,7 +9,8 @@ using UnityEngine.SceneManagement;
 /// 103차(민: 「제대로 응시하면 1초마다 축이 랜덤하게 조금씩 올라가게 · 화면 울렁임과 함께」): 시선 <see cref="GazeDegrees"/>° 안·<see cref="GazeRange"/>m 안·가림 없이
 /// 바라보는 동안 화면이 울렁이고(<see cref="DirectionScreenFx.Kind.Wobble"/>), 1초 이어질 때마다 감각 축 하나(무작위)가 조금 오른다(<see cref="NightRun.AddLobbyTreeStare"/>).
 /// 103차(민: 「3일차부터 어렴풋이 등장할 수 있도록 배치 축 조건 · 시작 크기 1.5m 정도」): <see cref="AppearDay"/>일차부터, 배치 축이 <see cref="AppearLayout"/>(구간 1) 이상일 때만 선다 —
-/// 그 문턱에서 <see cref="MinLength"/>m로 나타나 100에서 <see cref="MaxLength"/>m. 막 나타났을 때는 조명이 희미하고(<see cref="LampFaint"/>) 축이 오를수록 밝아진다. 밤 도중에 문턱을 넘으면 그 자리가 화면에 보이지 않을 때 선다.
+/// 그 문턱에서 <see cref="MinLength"/>m로 나타나 100에서 <see cref="MaxLength"/>m. 밤 도중에 문턱을 넘으면 그 자리가 화면에 보이지 않을 때 선다.
+/// 103차(사용자: 「어색한 조명 없애기 — 어둠에선 어둡게, 손전등을 비추면 라이팅 적용」): 나무 조명·스스로 빛남을 떼고 모델 재질의 발광도 끈다(<see cref="StandInFactory.KillGlow"/>).
 /// 103차(민: 「인체 나무 근처에 가면 천천히 인체 나무 방향으로 끌려가도록」): <see cref="PullRadius"/>m 안이면 플레이어가 나무 쪽으로 천천히 끌린다(가까울수록 세게, 최대 <see cref="PullSpeed"/>m/s) —
 /// 걸어서 벗어날 수 있다(걷기 1m/s). 줄기 앞 <see cref="PullStop"/>m에서 멈춘다.
 /// 옛 설명(94차, 천장):
@@ -19,7 +20,7 @@ using UnityEngine.SceneManagement;
 /// 그 밤 <b>배치 축</b> 값만큼 아래로 자란다 — 0이면 <see cref="MinLength"/>m 봉오리, 100이면 <see cref="MaxLength"/>m(바닥 가까이).
 /// 축이 오르면 천천히(<see cref="GrowSpeed"/> m/초) 자라고, 재시작으로 축이 내려가면 그만큼 움츠러든다.</item>
 /// <item>밤마다 선다(근무 밤이면). 그 밤 편성에 사람 나무 조우(<see cref="ProgramCatalog.PeopleTree"/>)가 있으면 그쪽이 나오므로 세우지 않는다.</item>
-/// <item>콜라이더는 끈다(길을 막지 않게). 김진선님 「바라보면 화면 물듦」은 그대로. 손전등 없이도 윤곽만 보일 만큼 아주 약하게 스스로 빛난다.</item>
+/// <item>콜라이더는 끈다(길을 막지 않게). 김진선님 「바라보면 화면 물듦」은 그대로. (옛: 손전등 없이도 윤곽만 보일 만큼 스스로 빛났다 — 103차에 뗌.)</item>
 /// </list>
 /// 판정·축과 무관한 무대 장치(축을 읽기만 한다). 씬·김진선님 프리팹은 고치지 않는다. 근무 씬에 자동으로 선다.
 /// </summary>
@@ -46,26 +47,11 @@ public sealed class HumanTreeGrowth : MonoBehaviour
 
     private const string FxKey = "tree.lobby.gaze";
 
-    /// <summary>103차: 나무 조명 색(창백한 누런빛).</summary>
-    public static readonly Color LampColor = new Color(1f, 0.93f, 0.72f);
-
-    /// <summary>103차: 나무 조명 세기(배치 축 100일 때).</summary>
-    public const float LampIntensity = 3.2f;
-
-    /// <summary>103차: 막 나타났을 때(배치 축 문턱) 조명 세기 — 어렴풋이.</summary>
-    public const float LampFaint = 0.7f;
-
     /// <summary>103차: 그 밤·그 축 값에서 서야 하는지(일차·배치 축 조건).</summary>
     public static bool ShouldStand(int day, int layout)
     {
         return day >= AppearDay && layout >= AppearLayout;
     }
-
-    /// <summary>103차: 나무 조명 거리(m).</summary>
-    public const float LampRange = 7f;
-
-    /// <summary>103차: 나무 조명 원뿔 각(°).</summary>
-    public const float LampAngle = 55f;
 
     /// <summary>103차: 이 거리(m, 수평) 안이면 나무 쪽으로 끌린다.</summary>
     public const float PullRadius = 5.5f;
@@ -97,9 +83,6 @@ public sealed class HumanTreeGrowth : MonoBehaviour
     /// <summary>움츠러드는 빠르기(m/초) — 재시작으로 축이 내려갔을 때.</summary>
     public const float ShrinkSpeed = 0.5f;
 
-    /// <summary>스스로 빛나는 세기 — 어둠 속 윤곽만.</summary>
-    public const float Glow = 0.09f;
-
     /// <summary>배치 축 값(0~100)에 맞는 길이(m).</summary>
     public static float LengthFor(int layout)
     {
@@ -127,7 +110,6 @@ public sealed class HumanTreeGrowth : MonoBehaviour
     private bool _gazing;
     private DirectionScreenFx _fx;
     private Transform _player;
-    private Transform _lamp;
     private float _unitHeight = 1f;
     private float _length;
     private InspectionPlan _plan;
@@ -182,7 +164,7 @@ public sealed class HumanTreeGrowth : MonoBehaviour
             Rebuild();
         }
 
-        int layout = NightRun.Axes.GetValue(FearAxis.Layout);
+        int layout = LayoutNow();
         bool stand = ShouldStand(NightRun.Day, layout) && !_peopleTree;
         if (!stand)
         {
@@ -332,12 +314,24 @@ public sealed class HumanTreeGrowth : MonoBehaviour
         Clear();
         _peopleTree = PeopleTreeTonight();
         if (_peopleTree || NightRun.Axes == null) return;
-        int layout = NightRun.Axes.GetValue(FearAxis.Layout);
+        int layout = LayoutNow();
         if (!ShouldStand(NightRun.Day, layout)) return;   // 103차: 3일차 · 배치 축 25 이상부터
         Plant(layout);
     }
 
     private bool _peopleTree;
+
+    /// <summary>
+    /// 103차: 나무가 읽는 배치 값 — 생존 수치와 「보이는 구간」(일차 하한 포함)의 문턱 중 큰 쪽. 생존 수치만 보면 능숙한 플레이어는 25에 닿지 않아 나무를 영영 못 본다
+    /// (3일차 하한 B1 = 25 → 3일차부터 누구나 1.5m로 보고, 그 위로는 실제 축만큼 자란다).
+    /// </summary>
+    private static int LayoutNow()
+    {
+        int value = NightRun.Axes != null ? NightRun.Axes.GetValue(FearAxis.Layout) : 0;
+        IFearAxisReader shown = NightRun.Shown;
+        int floor = shown != null ? Bands.LowerBound(shown.GetBand(FearAxis.Layout)) : 0;
+        return Mathf.Max(value, floor);
+    }
 
     private void Plant(int layout)
     {
@@ -366,15 +360,6 @@ public sealed class HumanTreeGrowth : MonoBehaviour
         if (_pivot == null) return;
         float k = Mathf.Max(0.01f, _length / Mathf.Max(0.01f, _unitHeight));
         _pivot.transform.localScale = new Vector3(k, k, k);
-        if (_lamp != null)
-        {
-            // 조명은 나무 키와 상관없이 천장 바로 밑(바닥 위 3.6m)에서 내리비춘다.
-            _lamp.position = _pivot.transform.position + Vector3.up * 3.6f;
-            _lamp.rotation = Quaternion.LookRotation(Vector3.down, Vector3.forward);
-            _lamp.localScale = Vector3.one;
-            Light l = _lamp.GetComponent<Light>();
-            if (l != null) l.intensity = Mathf.Lerp(LampFaint, LampIntensity, Mathf.InverseLerp(MinLength, MaxLength, _length));   // 103차: 막 나타나면 어렴풋이
-        }
         if (_trunk != null)
         {
             // 줄기는 키와 상관없이 같은 굵기로 — 축척을 되돌려 세계 기준 반지름·높이를 맞춘다.
@@ -400,7 +385,6 @@ public sealed class HumanTreeGrowth : MonoBehaviour
         if (_pivot != null) Destroy(_pivot);
         _pivot = null;
         _trunk = null;
-        _lamp = null;
         _gaze = 0f;
         SetWobble(false);
     }
@@ -440,23 +424,13 @@ public sealed class HumanTreeGrowth : MonoBehaviour
         face.y = 0f;
         pivot.transform.rotation = face.sqrMagnitude > 0.01f ? Quaternion.LookRotation(face.normalized, Vector3.up) : Quaternion.identity;
 
-        // 103차(민: 「라이팅을 적용해줘」): 천장에서 나무를 내리비추는 희미한 조명 하나 — 현관 어둠 속에서 나무가 보이게(그림자 없음, 나무와 함께 지워진다).
-        GameObject lamp = new GameObject("인체 나무 조명");
-        lamp.transform.SetParent(pivot.transform, false);
-        Light spot = lamp.AddComponent<Light>();
-        spot.type = LightType.Spot;
-        spot.color = LampColor;
-        spot.intensity = LampIntensity;
-        spot.range = LampRange;
-        spot.spotAngle = LampAngle;
-        spot.innerSpotAngle = LampAngle * 0.45f;
-        spot.shadows = LightShadows.None;
-        _lamp = lamp.transform;
+        // 103차(사용자: 「인체 나무에 어색한 조명 — 어둠에선 어둡게, 손전등을 비추면 라이팅이 적용되게」): 천장 조명·스스로 빛남을 뗐다.
+        // 모델 재질의 발광(김진선님 Human_Tree 재질 1·1·1)도 인스턴스에서 끈다 — 현관 어둠 그대로, 손전등·주변 등에만 비친다.
+        StandInFactory.KillGlow(tree);
 
         // 줄기 충돌체(103차) — 한가운데라 지나가지 못하게. 판정 기준점은 없다(H1 「미분류 물체」는 사람 나무 조우만).
         _trunk = pivot.AddComponent<CapsuleCollider>();
         _trunk.direction = 1;
-        DoorDuck.SelfLight(tree, Glow);
         return pivot;
     }
 

@@ -95,9 +95,9 @@ namespace NightDuty
         private static readonly InspectionItem[] Items =
         {
             new InspectionItem("H-1", "소화기", SpaceId.Corridor, FearAxis.Illuminance, AnomalyTemplate.Light, "화장실 쪽 복도 소화기의 상태를 보고해주십시오."),
-            new InspectionItem("H-2", "식수대", SpaceId.Corridor, FearAxis.Layout, AnomalyTemplate.Switch, "과학실 쪽 복도 식수대의 상태를 보고해주십시오."),
+            new InspectionItem("H-2", "식수대", SpaceId.Corridor, FearAxis.Illuminance, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 조도(붉은 물 — 보이는 색) */ "과학실 쪽 복도 식수대의 상태를 보고해주십시오."),
             new InspectionItem("H-3", "알림종", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Sound, "경비실 쪽 복도 위 알림종이 꺼져 있는지 확인해주십시오."),
-            new InspectionItem("H-4", "쓰레기통", SpaceId.Corridor, FearAxis.Layout, AnomalyTemplate.Switch, "복도 쓰레기통의 상태를 보고해주십시오."),   // 65차 민: 이상이면 다가갈 때 누가 걷어찬 듯 날아간다(L-3 반납 상자 대체 — 반납 상자는 [근무 지시] W15 「biology 책 습득」으로)
+            new InspectionItem("H-4", "쓰레기통", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 청각(걷어차이는 소리) */ "복도 쓰레기통의 상태를 보고해주십시오."),   // 65차 민: 이상이면 다가갈 때 누가 걷어찬 듯 날아간다(L-3 반납 상자 대체 — 반납 상자는 [근무 지시] W15 「biology 책 습득」으로)
             new InspectionItem("H-5", "스피커", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Sound, "도서관 옆 복도의 스피커가 꺼져 있는지 확인해주십시오."),   // 66차(민: 「점검은 안 겹칠수록 좋아」) — 화장실 앞 복도 벽 높이의 스피커, 이상이면 지직거림
             new InspectionItem("H-6", "벤치", SpaceId.Corridor, FearAxis.Layout, AnomalyTemplate.Move, "화장실 쪽 복도 벤치가 벽에 붙어 있는지 확인해주십시오."),   // 66차 — 이상이면 한쪽 끝이 벽에서 떨어져 복도로 돌아 나와 있다
 
@@ -105,16 +105,16 @@ namespace NightDuty
             new InspectionItem("C-2", "책상 램프", SpaceId.Classroom, FearAxis.Illuminance, AnomalyTemplate.Light, "교실 책상 램프가 꺼져 있는지 확인해주십시오."),
             new InspectionItem("C-3", "사다리", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교실 안쪽에 작은 사다리가 있는지 확인해주십시오."),   // 52차 민 문구(이상 = 사다리 없음)
             new InspectionItem("C-4", "시계", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교실 시계가 제자리에 있는지 확인해주십시오."),   // 66차 — 이상이면 벽 아래 바닥에 떨어져 있다
-            new InspectionItem("C-5", "교사 의자", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교사 의자가 교탁 안에 들어가 있는지 확인해주십시오."),   // 66차 — 이상이면 교실 쪽으로 돌아앉음
+            new InspectionItem("C-5", "교사 의자", SpaceId.Classroom, FearAxis.Auditory, AnomalyTemplate.Move, "교사 의자가 교탁 안에 들어가 있는지 확인해주십시오."),   // 66차 — 이상이면 교실 쪽으로 돌아앉음 · 103차(축 균형): 의자 끄는 소리 → 청각
 
             new InspectionItem("S-1", "인체 모형", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Move, "과학실 인체 모형이 정면을 향하는지 확인해주십시오."),   // 64차 민: 실제 이상은 90° 돌아감(회전)이라 그에 맞춘 문구
             new InspectionItem("S-2", "현미경", SpaceId.ScienceRoom, FearAxis.Illuminance, AnomalyTemplate.Light, "과학실 현미경이 꺼져 있는지 확인해주십시오."),
             new InspectionItem("S-3", "개수대", SpaceId.ScienceRoom, FearAxis.Auditory, AnomalyTemplate.Sound, "과학실 개수대가 잠겨 있는지 확인해주십시오."),
-            new InspectionItem("S-4", "지구본", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Switch, "과학실 지구본의 상태를 보고해주십시오."),   // 66차 — 이상이면 혼자 천천히 돈다
+            new InspectionItem("S-4", "지구본", SpaceId.ScienceRoom, FearAxis.Auditory, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 청각(혼자 도는 삐걱임) */ "과학실 지구본의 상태를 보고해주십시오."),   // 66차 — 이상이면 혼자 천천히 돈다
             new InspectionItem("S-5", "플라스크", SpaceId.ScienceRoom, FearAxis.Illuminance, AnomalyTemplate.Light, "과학실 선반의 플라스크의 상태를 보고해주십시오."),   // 66차 — 이상이면 유리가 붉게 빛난다(깜빡임)
             new InspectionItem("S-6", "지도", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Move, "과학실 세계 지도가 반듯한지 확인해주십시오."),   // 66차 — 이상이면 기울거나 세로로·거꾸로
 
-            new InspectionItem("T-1", "변기", SpaceId.Toilet, FearAxis.Layout, AnomalyTemplate.Switch, "화장실 변기의 상태를 보고해주십시오."),
+            new InspectionItem("T-1", "변기", SpaceId.Toilet, FearAxis.Auditory, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 청각(물소리) */ "화장실 변기의 상태를 보고해주십시오."),
             new InspectionItem("T-2", "칸 문", SpaceId.Toilet, FearAxis.Auditory, AnomalyTemplate.Sound, "화장실 빈 칸의 상태를 보고해주십시오."),
             new InspectionItem("T-3", "거울", SpaceId.Toilet, FearAxis.Illuminance, AnomalyTemplate.Light, "화장실 거울 쪽 조명의 상태를 보고해주십시오."),
             // 81차(민: 「세면대 물 퀄리티 부족 — T-4는 항목 폐기」): T-4 화장실 세면대 폐기. ID T-4는 다시 쓰지 않는다.
@@ -125,7 +125,7 @@ namespace NightDuty
             // 80차(민: 「이 보고하지마 칠판과 관련된 건 폐기해줘」): L-4 도서관 칠판(분필 글씨) 폐기 — ID L-3·L-4는 다시 쓰지 않는다.
             new InspectionItem("L-5", "쓰레기통", SpaceId.Library, FearAxis.Layout, AnomalyTemplate.Move, "도서관 쓰레기통이 세워져 있는지 확인해주십시오."),   // 66차 — 씬에서 원래 누워 있다. 이상이면 누가 세워 놓았다
 
-            new InspectionItem("K-1", "CCTV 전 채널", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Switch, "CCTV 모든 채널이 정상인지 확인해주십시오."),
+            new InspectionItem("K-1", "CCTV 전 채널", SpaceId.SecurityRoom, FearAxis.Illuminance, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 조도(화면) */ "CCTV 모든 채널이 정상인지 확인해주십시오."),
             new InspectionItem("K-2", "접이식 의자", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Move, "경비실 접이식 의자 둘이 같은 쪽을 보는지 확인해주십시오."),   // 66차 — 이상이면 하나가 돌아앉음 · 103차(민): 경비실 명시
             new InspectionItem("K-3", "화분", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Move, "경비실 화분이 제자리인지 확인해주십시오.")   // 66차 — 이상이면 쓰러져 있다
         };

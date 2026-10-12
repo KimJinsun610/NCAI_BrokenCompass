@@ -133,6 +133,7 @@ public static class RuntimeNav
         for (int i = sources.Count - 1; i >= 0; i--)
         {
             if (Skip(sources[i].component, ignore)) sources.RemoveAt(i);
+            else sources[i] = Readable(sources[i]);
         }
 
         s_data = new NavMeshData(settings.agentTypeID);
@@ -141,6 +142,24 @@ public static class RuntimeNav
         s_bounds = area;
         s_has = true;
         if (DirectionStage.Verbose) Debug.Log("[RuntimeNav] 네비메쉬 굽기 시작(요원 종류 " + s_agentType + ") — 재료 " + sources.Count + "개 · 구역 " + area.center.ToString("F1") + " ± " + area.extents.ToString("F1"));
+    }
+
+    /// <summary>
+    /// 103차 후속: 읽기 허용이 없는 메시 콜라이더(예: <c>Library_A_Frame_Standing_Sign</c>)는 에디터에서만 구워지고 빌드(플레이어)에서는 굽지 못한다
+    /// (「does not allow read access … not in player」 오류) — 그 콜라이더의 월드 상자로 바꿔 넣는다(장애물은 그대로 피한다).
+    /// </summary>
+    private static NavMeshBuildSource Readable(NavMeshBuildSource s)
+    {
+        if (s.shape != NavMeshBuildSourceShape.Mesh) return s;
+        Mesh mesh = s.sourceObject as Mesh;
+        MeshCollider col = s.component as MeshCollider;
+        if (mesh == null || mesh.isReadable || col == null) return s;
+        Bounds b = col.bounds;
+        s.shape = NavMeshBuildSourceShape.Box;
+        s.sourceObject = null;
+        s.size = b.size;
+        s.transform = Matrix4x4.TRS(b.center, Quaternion.identity, Vector3.one);
+        return s;
     }
 
     private static bool Skip(Component c, Transform ignore)

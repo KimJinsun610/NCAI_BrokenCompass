@@ -591,9 +591,9 @@ namespace NightDuty.Tests
             FinalFixture f = new FinalFixture("K2");
             f.Cue(FinalCues.EmptyRoom + "@cctv.ch3");
             f.Samples(() => JudgeSignal.CctvView("cctv.ch1", 0.1f), 5f);
-            Assert.AreEqual(0, f.Value(FearAxis.Auditory));
+            Assert.AreEqual(0, f.Value(FearAxis.Illuminance));
             f.Samples(() => JudgeSignal.CctvView("cctv.ch3", 0.1f), 3.1f);
-            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Auditory));
+            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance), "103차 편성 균형: K2는 조도(화면)");
         }
 
         [Test]
@@ -628,10 +628,14 @@ namespace NightDuty.Tests
 
             Assert.IsNotNull(NightRun.FinalRules);
             Assert.Greater(NightRun.TodayDeck.Count, 0, "태블릿에는 새 수칙 + 점검표가 나간다");
+            int fakes = 0;
             foreach (RuleSO card in NightRun.TodayDeck)
             {
-                Assert.IsTrue(NightRun.Program.Has(card.CardId) || card.CardId.StartsWith(InspectionCatalog.TargetPrefix), "태블릿 표시 카드: " + card.CardId);
+                bool fake = card.CardId.StartsWith(FakeRuleCatalog.IdPrefix) && ProgramCatalog.Rule(card.CardId) == null;   // 103차: 1일차 가짜 수칙 두 줄(판정 없음)
+                if (fake) fakes++;
+                Assert.IsTrue(NightRun.Program.Has(card.CardId) || card.CardId.StartsWith(InspectionCatalog.TargetPrefix) || fake, "태블릿 표시 카드: " + card.CardId);
             }
+            Assert.AreEqual(FakeRuleCatalog.CountFor(1), fakes, "1일차 가짜 수칙 두 줄");
             Assert.IsNotNull(NightRun.FinalRules.Judge("G1"), "1일차 공통 G1");
 
             List<FinalRuleResult> raised = new List<FinalRuleResult>();

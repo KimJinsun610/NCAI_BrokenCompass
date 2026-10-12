@@ -398,7 +398,6 @@ public sealed class DeskStarterKit : MonoBehaviour
 
     private static bool Clear(Vector3 from, Vector3 to)
     {
-        RaycastHit hit;
         foreach (RaycastHit h in Physics.RaycastAll(from, (to - from).normalized, Vector3.Distance(from, to), Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
         {
             if (h.collider.name.StartsWith("Inspect ")) continue;   // 점검 대상 상자(모니터 K-1)는 보이는 벽이 아니다

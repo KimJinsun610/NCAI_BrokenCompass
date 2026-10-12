@@ -164,15 +164,31 @@ public sealed class EncounterImpact : MonoBehaviour
         return encounterId == ProgramCatalog.ModelRush;
     }
 
-    /// <summary>덮치기 점프스케어 — 엠비언트를 순간 끊고 스팅어 + 심박 급등. 시체 낙하는 민이 준 전용 소리(<c>stinger.corpse</c>, 60차).</summary>
+    /// <summary>덮치기 점프스케어 — 엠비언트를 순간 끊고 스팅어 + 심박 급등. 전용 소리가 있는 조우는 그것(<see cref="OwnStinger"/>).</summary>
     public void Hit(string encounterId)
     {
         AmbiencePlayer amb = AmbiencePlayer.Active;
         if (amb != null) amb.Duck(0.1f, 0.06f);
-        if (encounterId != ProgramCatalog.CeilingLegs || !PlayKey("stinger.corpse")) PlayTier(TierOf(encounterId));
+        string own = OwnStinger(encounterId);
+        if (own == null || !PlayKey(own)) PlayTier(TierOf(encounterId));
         NightDutyMixer.Spotlight(2.5f);   // 67차(민: 「연출 사운드가 다른 효과음보다 더 강조되게」)
         BodyMeter.Startle();
         _restoreAt = Time.time + MaxDuckSeconds;
+    }
+
+    /// <summary>
+    /// 그 조우 전용 점프스케어 소리(연출 소리 표 키). 없으면 null — 공용 세기별 스팅어(<see cref="PlayTier"/>).
+    /// 시체 낙하(60차) · 103차(민 제공 효과음): 노란 얼굴 「발자국_앞으로지나감,노란얼굴_놀람연출」 · 화장실 여자아이 「화장실_소녀_놀람연출」.
+    /// </summary>
+    public static string OwnStinger(string encounterId)
+    {
+        switch (encounterId)
+        {
+            case ProgramCatalog.CeilingLegs: return "stinger.corpse";
+            case ProgramCatalog.YellowFace: return "stinger.yellowface";
+            case ProgramCatalog.ToiletGirl: return "stinger.toiletgirl";
+            default: return null;
+        }
     }
 
     /// <summary>연출 소리 표의 그 키를 2D로 낸다. 없으면 false.</summary>

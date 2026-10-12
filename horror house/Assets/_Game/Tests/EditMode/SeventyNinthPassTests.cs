@@ -68,7 +68,7 @@ namespace NightDuty.Tests
         [Test]
         public void G4_태블릿을_올린_채_1_5초_걸으면_위반()
         {
-            FinalFixture f = new FinalFixture("G4");
+            FinalFixture f = new FinalFixture("G4");   // 103차: 배치(조도로 옮겼다가 되돌림)
             float x = 0f;
             f.Send(JudgeSignal.Tab(true)).Samples(() => JudgeSignal.Pose(new Vector3(0f, 0f, 0f), 0f), 3f);
             Assert.AreEqual(0, f.Value(FearAxis.Layout), "서서 보는 건 괜찮다");
@@ -107,31 +107,40 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 가짜_수칙은_2일차부터_하나씩_판정_없이()
+        public void 가짜_수칙은_1일차에만_두_줄_판정_없이()
         {
             int keep = FakeRuleCatalog.RunOffset;
             FakeRuleCatalog.RunOffset = 0;
             try
             {
-            Assert.IsNull(FakeRuleCatalog.ForDay(1));
-            Assert.AreEqual("근무는 개인입니다. 변수는 없습니다.", FakeRuleCatalog.ForDay(2));
-            Assert.AreEqual("퇴근 후 이 수칙서를 기억할 필요는 없습니다.", FakeRuleCatalog.ForDay(3));
-            Assert.AreEqual("어제의 근무자와 오늘의 근무자는 같은 사람입니다.", FakeRuleCatalog.ForDay(4));   // 80차
-            Assert.AreEqual("오늘 밤은 평소와 같습니다.", FakeRuleCatalog.ForDay(5));
-            Assert.IsNull(FakeRuleCatalog.ForDay(6), "채택한 줄을 다 쓰면 없다");
-            Assert.AreEqual("F1", FakeRuleCatalog.IdForDay(2));
-            Assert.IsNull(ProgramCatalog.Rule(FakeRuleCatalog.IdForDay(2)), "판정 수칙이 아니다");
-            for (int n = 1; n < 8; n++) for (int day = 2; day <= 5; day++) Assert.That(FakeRuleCatalog.SlotFor(day, n), Is.InRange(0, n - 1));
+            // 103차(사용자: 「첫날에 원래 수칙 4개 + 가짜 2개로 첫날에만」): 옛 79·80차는 2~5일차 하루 한 줄.
+            Assert.AreEqual(2, FakeRuleCatalog.CountFor(1));
+            Assert.AreEqual("근무는 개인입니다. 변수는 없습니다.", FakeRuleCatalog.ForDay(1, 0));
+            Assert.AreEqual("퇴근 후 이 수칙서를 기억할 필요는 없습니다.", FakeRuleCatalog.ForDay(1, 1));
+            for (int day = 2; day <= 6; day++)
+            {
+                Assert.AreEqual(0, FakeRuleCatalog.CountFor(day), day + "일차엔 없다");
+                Assert.IsNull(FakeRuleCatalog.ForDay(day));
+            }
 
-            // 80차: 다섯 줄을 회차마다 돌린다 — 시작 줄 1이면 2일차가 둘째 줄, 5일차가 다섯째 줄(F5 「당신의 이름은 …」).
-            FakeRuleCatalog.RunOffset = 1;
-            Assert.AreEqual(FakeRuleCatalog.Lines[1], FakeRuleCatalog.ForDay(2));
-            Assert.AreEqual("당신의 이름은 출근부에 이미 적혀 있습니다.", FakeRuleCatalog.ForDay(5));
-            Assert.AreEqual("F5", FakeRuleCatalog.IdForDay(5));
+            Assert.IsNull(FakeRuleCatalog.ForDay(1, 2), "하루 두 줄");
+            Assert.AreEqual("F1", FakeRuleCatalog.IdForDay(1, 0));
+            Assert.AreEqual("F2", FakeRuleCatalog.IdForDay(1, 1));
+            Assert.IsNull(ProgramCatalog.Rule(FakeRuleCatalog.IdForDay(1)), "판정 수칙이 아니다");
+            for (int n = 1; n < 8; n++) for (int k = 0; k < 2; k++) Assert.That(FakeRuleCatalog.SlotFor(1, n, k), Is.InRange(0, n - 1));
+            Assert.AreNotEqual(FakeRuleCatalog.SlotFor(1, 4, 0), FakeRuleCatalog.SlotFor(1, 5, 1), "두 줄이 붙지 않게 다른 자리");
+
+            // 80차: 다섯 줄을 회차마다 돌린다 — 시작 줄 4면 다섯째 줄(F5 「당신의 이름은 …」)과 첫째 줄.
             FakeRuleCatalog.RunOffset = 4;
-            Assert.AreEqual(FakeRuleCatalog.Lines[4], FakeRuleCatalog.ForDay(2));
-            Assert.AreEqual(FakeRuleCatalog.Lines[0], FakeRuleCatalog.ForDay(3));
-            Assert.IsNull(FakeRuleCatalog.ForDay(6));
+            Assert.AreEqual("당신의 이름은 출근부에 이미 적혀 있습니다.", FakeRuleCatalog.ForDay(1, 0));
+            Assert.AreEqual(FakeRuleCatalog.Lines[0], FakeRuleCatalog.ForDay(1, 1));
+            Assert.AreEqual("F5", FakeRuleCatalog.IdForDay(1, 0));
+
+            // 2~5일차의 그 자리는 진짜 수칙 한 장.
+            Assert.AreEqual(4, ProgramDirector.RulesFor(1));
+            Assert.AreEqual(6, ProgramDirector.RulesFor(2));
+            Assert.AreEqual(6, ProgramDirector.RulesFor(4));
+            Assert.AreEqual(7, ProgramDirector.RulesFor(5));
             }
             finally
             {

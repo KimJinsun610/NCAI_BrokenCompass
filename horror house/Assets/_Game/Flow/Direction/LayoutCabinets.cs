@@ -104,6 +104,9 @@ public sealed class LayoutCabinets : MonoBehaviour
     /// <summary>서랍장 자리(검수용).</summary>
     public Transform DrawerSpot { get { return _drawer.Original; } }
 
+    /// <summary>104차: 서랍장 대역(바꿔 세웠으면 — 원래 것은 꺼져 있다). <see cref="DutyCards"/>가 열쇠함 조준·테두리에 쓴다.</summary>
+    public Transform DrawerInstance { get { return _drawer.Instance != null ? _drawer.Instance.transform : null; } }
+
     /// <summary>이번 밤(시도) 흔들렸는지(검수용).</summary>
     public bool RampagePlayed { get { return _rampage.Played; } }
 

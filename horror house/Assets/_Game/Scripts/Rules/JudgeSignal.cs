@@ -77,6 +77,9 @@ namespace NightDuty
         /// <summary>79차: 경비실 전화를 받았다(울리는 동안 [E]) — K5 「세 번 울린 뒤에 받으십시오」.</summary>
         PhoneAnswered = 49,
 
+        /// <summary>104차 QA: 조우 몹에게 붙잡혔다(죽지 않고 넘어지는 붙잡힘 포함). TargetId = 그 몹의 비춤 대상 ID — 위협 수칙(L3)은 창이 닫히기 전에 실패로 정산한다.</summary>
+        EncounterCaught = 50,
+
         /// <summary>태블릿(Tab) 상태가 바뀌었다. Flag = 열림.</summary>
         TabChanged = 60
     }

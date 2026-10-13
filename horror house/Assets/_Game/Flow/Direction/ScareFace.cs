@@ -189,8 +189,13 @@ public sealed class ScareFace
         private Transform _head;
         private Camera _cam;
         private Vector3 _axisLocal;
+        private Vector3 _originLocal;
+        private bool _manual;
 
         private float _weight = Weight;
+        private Quaternion _base;
+        private Quaternion _applied;
+        private bool _has;
 
         public static void Attach(GameObject go, Transform head, Camera cam)
         {
@@ -203,21 +208,62 @@ public sealed class ScareFace
         /// </summary>
         public static void Attach(GameObject go, Transform head, Camera cam, float weight, Vector3 faceAxisLocal)
         {
+            Attach(go, head, cam, weight, faceAxisLocal, Vector3.zero, false);
+        }
+
+        /// <summary>
+        /// 104차(사용자: 조도 얼굴 대역들이 「고개가 플레이어를 향해 있으면 좋겠네. 다른 곳을 쳐다봐서 이질감이 들어」): 시선의 출발점을 머리뼈 기준 <paramref name="originLocal"/>(얼굴 가운데)로.
+        /// 컷신 카메라는 얼굴 앞 20~30cm라 뼈 자리(목 밑동·머리 아래)에서 재면 방향이 크게 어긋났다. <paramref name="manual"/>이면 스스로 돌리지 않고 <see cref="Apply"/>를 부르는 쪽(<c>CutsceneFace</c>)이 순서를 정한다.
+        /// </summary>
+        public static Stare Attach(GameObject go, Transform head, Camera cam, float weight, Vector3 faceAxisLocal, Vector3 originLocal, bool manual)
+        {
             Stare s = go.AddComponent<Stare>();
             s._head = head;
             s._cam = cam;
             s._weight = Mathf.Clamp01(weight);
             s._axisLocal = faceAxisLocal.normalized;
+            s._originLocal = originLocal;
+            s._manual = manual;
+            return s;
         }
 
         private void LateUpdate()
         {
+            if (!_manual) Apply();
+        }
+
+        /// <summary>지금 얼굴 앞과 카메라 방향 사이 각(°, 검수용).</summary>
+        public float Error
+        {
+            get
+            {
+                if (_head == null || _cam == null) return 0f;
+                return Vector3.Angle(_head.TransformDirection(_axisLocal), _cam.transform.position - _head.TransformPoint(_originLocal));
+            }
+        }
+
+        /// <summary>이번 프레임 머리를 카메라 쪽으로(동작 자세 위에).</summary>
+        public void Apply()
+        {
             if (_head == null || _cam == null) return;
-            Vector3 cur = _head.TransformDirection(_axisLocal);
-            Vector3 want = _cam.transform.position - _head.position;
-            if (want.sqrMagnitude < 1e-6f || cur.sqrMagnitude < 1e-6f) return;
-            Quaternion q = Quaternion.FromToRotation(cur, want.normalized);
-            _head.rotation = Quaternion.Slerp(Quaternion.identity, q, _weight) * _head.rotation;
+            // 104차: 애니메이터가 이번 프레임에 머리를 쓰지 않았으면(애니메이터 없는 대역 — 검은 남자·꺼진 모형) 지난 바탕 자세로 되돌린 뒤 돌린다.
+            // 안 그러면 매 프레임 돌림이 쌓여 고개가 시선 축 둘레로 갸웃 돌아갔다(조도 얼굴 미리 보기 실측: 검은 남자 옆얼굴).
+            Quaternion now = _head.localRotation;
+            if (!_has || now != _applied) _base = now;
+            _head.localRotation = _base;
+            _has = true;
+            // 출발점이 뼈 밖(얼굴 가운데)이면 돌린 뒤 출발점이 옮겨 가니, 정확히 볼 때(무게 1)는 한 번 더 맞춘다.
+            int passes = _weight >= 0.999f && _originLocal != Vector3.zero ? 2 : 1;
+            for (int i = 0; i < passes; i++)
+            {
+                Vector3 cur = _head.TransformDirection(_axisLocal);
+                Vector3 want = _cam.transform.position - _head.TransformPoint(_originLocal);
+                if (want.sqrMagnitude < 1e-6f || cur.sqrMagnitude < 1e-6f) break;
+                Quaternion q = Quaternion.FromToRotation(cur, want.normalized);
+                _head.rotation = Quaternion.Slerp(Quaternion.identity, q, _weight) * _head.rotation;
+            }
+
+            _applied = _head.localRotation;
         }
     }
 

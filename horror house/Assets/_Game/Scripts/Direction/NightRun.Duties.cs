@@ -202,6 +202,7 @@ namespace NightDuty
                     if (_tension != null) _tension.Pacer.Impulse(PacerImpulse.Order);
                     break;
                 case DutyOutcome.Done:
+                    CampNoteDone();   // 104차: 지시를 하나 끝내면 경비실 체류 0으로
                     if (!ev.Tainted && _axes != null) LowerByDuty(d);   // 103차: 축마다 밤당 −6까지
                     text = DutyCatalog.DoneText(d, Day, minute);
                     if (!ev.Tainted && GrantDutyTrust(d) > 0 && TakeTrustLine()) text += "\n" + DutyCatalog.TrustLine;   // 103차 · 103차 후속(사용자: 「매번 뜨면 정신없다 — 중간에 한 2회 정도」)

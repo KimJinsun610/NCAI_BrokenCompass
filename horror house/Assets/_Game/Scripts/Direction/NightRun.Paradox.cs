@@ -131,6 +131,8 @@ namespace NightDuty
             ParadoxPlan plan = _paradoxPlanner.Plan(Day, trust, _program.Deck, s => SpaceHasAnomaly(inspections, s), _plannedUnavoidable, _emptyRoomChannel);
             _paradox = new ParadoxRun(plan);
             _paradoxAcked = false;
+            _paradoxEnded = false;
+            _paradoxLive = 0f;
             BeginUnavoidable(plan);
             if (plan.Tampered != null)
             {
@@ -144,10 +146,45 @@ namespace NightDuty
         public const string ParadoxAck = "확인되었습니다.";
 
         private static bool _paradoxAcked;
+        private static bool _paradoxEnded;
+        private static float _paradoxLive;
+
+        /// <summary>
+        /// 104차(사용자: 「역설이었던 건 명확하게 끝나고 나타나기 — 역설 지시는 해당 역설이 종료되면 태블릿이 지지직거리면서 사라지게」): 문자를 받은 뒤
+        /// 안전한 읽기도 어김도 없이 이만큼(판정 초) 지나면 그 역설도 끝난 것으로 본다(문자가 영영 남지 않게).
+        /// </summary>
+        public const float ParadoxLingerSeconds = 120f;
+
+        /// <summary>오늘 역설이 끝났는지(받은 문자가 사라졌는지).</summary>
+        public static bool ParadoxEndedTonight
+        {
+            get { return _paradoxEnded; }
+        }
+
+        /// <summary>
+        /// 104차: 역설 하나를 끝낸다 — 문자를 받았고 아직 끝나지 않았으면 한 번만 <see cref="EventBus.ParadoxEnded"/>.
+        /// 끝나는 때: 안전한 읽기 · 그 수칙을 어김 · 위협 대응 성공 · <see cref="ParadoxLingerSeconds"/> 경과.
+        /// </summary>
+        private static void EndParadox(string why)
+        {
+            if (!_paradox.Sent || _paradoxEnded || _paradox.RuleId == null) return;
+            _paradoxEnded = true;
+            Debug.Log("[NightRun] 역설 끝 " + _paradox.RuleId + " — " + why);
+            EventBus.RaiseParadoxEnded(_paradox.RuleId);
+        }
+
+        private static void ParadoxTick(float dt)
+        {
+            if (!_paradox.Sent || _paradoxEnded || IsCaptured) return;
+            _paradoxLive += dt;
+            if (_paradoxLive >= ParadoxLingerSeconds) EndParadox("시간");
+        }
 
         private static void DisposeParadox()
         {
             _paradoxAcked = false;
+            _paradoxEnded = false;
+            _paradoxLive = 0f;
             _paradox = new ParadoxRun(ParadoxPlan.None);
             _reveals.Clear();
             DisposeUnavoidable();
@@ -183,6 +220,8 @@ namespace NightDuty
                     EventBus.RaiseMessageSent(new ParadoxMessage("paradox.ack." + result.RuleId, result.RuleId, _paradox.Space, ParadoxAck, CurrentMinute()));
                 }
 
+                if (result.RuleId == _paradox.RuleId) EndParadox("어김");
+
                 RefreshRuleCards();   // 위반 얼룩
                 EventBus.RaiseTabletTextChanged();
                 return;
@@ -190,6 +229,7 @@ namespace NightDuty
 
             if (result.Outcome != FinalOutcome.ThreatKept) return;
             ParadoxApply(_paradox.NoteThreatKept(result.RuleId));
+            if (result.RuleId == _paradox.RuleId) EndParadox("위협 대응");
         }
 
         /// <summary>재시작 — 판정 책 스냅샷이 방아쇠를 되돌려도 받은 문자는 남으므로 다시 표시한다.</summary>
@@ -219,6 +259,8 @@ namespace NightDuty
                     }
 
                     Debug.Log("[NightRun] 역설 문자 " + id + " (" + _paradox.Pattern + "): " + _paradox.Message);
+                    _paradoxEnded = false;
+                    _paradoxLive = 0f;
                     EventBus.RaiseMessageSent(new ParadoxMessage("paradox." + id, id, _paradox.Space, _paradox.Message, CurrentMinute()));
             OrdersNoteMessage();
                     break;
@@ -229,6 +271,7 @@ namespace NightDuty
                     DecodeBlank(_paradox.Space);   // 80차: 보상 = 빈칸 해독(태블릿 글이 먼저 고쳐지고 진동이 온다)
                     Debug.Log("[NightRun] 안전한 읽기 " + id + " → " + reveal.Space + " " + reveal.Label);
                     EventBus.RaiseSafeReadConfirmed(reveal);
+                    EndParadox("안전한 읽기");
                     break;
             }
         }

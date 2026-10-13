@@ -88,6 +88,12 @@ namespace NightDuty
         /// <summary>판정 시간(ms) — 판정 구간의 Tick 누적. 수칙의 제한 시간은 이 시계로 잰다.</summary>
         public int NowMs { get; internal set; }
 
+        /// <summary>
+        /// 104차 QA: 머문 시간 판정(<see cref="DwellSpaceJudge"/>)을 잠시 쉬게 할 공간인지(null이면 쉬지 않음). 쉬는 동안은 쌓지도 0으로 돌리지도 않는다 —
+        /// K3(경비실)는 서명 시간 · 경비실 지시·점검 · 경비실 조우 · CCTV로 확인하라는 역설을 처리하는 동안 세지 않는다(밤 진행이 넣는다).
+        /// </summary>
+        public System.Func<SpaceId, bool> DwellPaused { get; set; }
+
         /// <summary>초를 밀리초 정수로 바꾼다. 판정 시간은 ms 정수로 잰다(부동소수 누적 오차를 피한다).</summary>
         public static int ToMs(float seconds)
         {

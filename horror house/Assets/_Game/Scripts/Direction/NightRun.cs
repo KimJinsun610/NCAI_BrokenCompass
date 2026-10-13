@@ -325,6 +325,7 @@ namespace NightDuty
             ResetGuides();       // 104차: 조우 유도 문자도 다시
             ResetStartHold();    // 104차 후속: 경비실을 나설 때까지 시계를 붙든다(모든 밤)
             ResetStanding();     // 104차: 밤새 서 있던 것(모형 급습)도 다시
+            ResetCamp();         // 104차: 경비실 버티기 — 정전·잡음·CCTV 얼굴·체류 시간 모두 처음으로
 
             // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
@@ -432,6 +433,8 @@ namespace NightDuty
             }
 
             StartHoldTick(judgeSeconds);   // 104차 후속: 경비실 붙듦 상한
+            CampTick(judgeSeconds);        // 104차: 경비실 버티기
+            ParadoxTick(judgeSeconds);     // 104차: 역설 문자가 끝나면 태블릿에서 사라진다
 
             // 긴장 디렉터는 판정 정지 구간에도 흐른다(슬롯·단서는 디렉터가 밤 시각으로 거른다).
             DirectionTick(judgeSeconds);
@@ -501,6 +504,7 @@ namespace NightDuty
                 ObserveShiftStart(signal);   // 104차 후속: 경비실을 나서면 밤 시계 시작
                 OrdersObserve(signal);
                 DutiesObserve(signal);
+                CampObserve(signal);   // 104차: 다른 공간에 가면 경비실 체류 0으로
                 FinaleObserve(signal);
 
                 // 새 수칙은 모든 신호로 상태(공간·자세·손전등)를 갱신하고, 판정 구간에만 판정한다.
@@ -581,6 +585,7 @@ namespace NightDuty
                 OnFinalInspectionReported(report);
                 EventBus.RaiseInspectionReported(report);
                 if (_tension != null) _tension.NoteReported(id);   // 104차: 교실 화분(C-1)을 보고하면 소년이 곧바로
+                CampNoteDone();   // 104차: 점검을 하나 끝내면 경비실 체류 0으로
             }
 
             CloseIfCaptured();
@@ -1162,6 +1167,8 @@ namespace NightDuty
             JudgingWindowEnabled = false;
             InspectionsEnabled = false;
             InspectionPlanOverride = null;
+            CampEnabled = true;   // 104차 QA: 도메인 다시 읽기 없이 플레이를 다시 시작해도 버티기 장치는 켜진 채로
+            ResetCamp();
         }
     }
 }

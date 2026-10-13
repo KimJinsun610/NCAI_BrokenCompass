@@ -1124,6 +1124,13 @@ namespace NightDuty
                 return;
             }
 
+            // 104차 QA: 붙잡혔으면 한 번 비췄어도 실패 — 넘어짐(밤이 이어짐)으로 창이 닫혀도 「끝까지 비춤」 통과·신뢰 보상이 나오지 않게.
+            if (s.Kind == SignalKind.EncounterCaught && s.TargetId == _target)
+            {
+                FailAndReserve("붙잡힘");
+                return;
+            }
+
             if (s.Kind != SignalKind.Tick) return;
             if (_lastLitMs < 0)
             {
@@ -1317,6 +1324,7 @@ namespace NightDuty
             }
 
             if (s.Kind != SignalKind.Tick) return;
+            if (w.DwellPaused != null && w.DwellPaused(_space)) return;   // 104차 QA: 그 공간에서 할 일을 하는 중 — 멈춤(0으로 돌리지 않음)
             Trigger();
             _dwell += s.Value;
             if (_dwell >= _limit)

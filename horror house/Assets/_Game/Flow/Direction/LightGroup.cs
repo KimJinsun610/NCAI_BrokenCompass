@@ -32,6 +32,8 @@ public sealed class LightGroup
     private readonly List<float> _intensity = new List<float>();
     private readonly List<Renderer> _lamps = new List<Renderer>();
     private MaterialPropertyBlock _block;
+    private readonly List<bool> _flickerWas = new List<bool>();
+    private bool _flickerOff;
 
     /// <summary>공간.</summary>
     public SpaceId Space { get; private set; }
@@ -81,6 +83,7 @@ public sealed class LightGroup
     public void TurnOff()
     {
         if (IsOff) return;
+        Flicker(false);   // 104차 QA: 깜빡임으로 꺼진 등을 「원래 꺼져 있던 것」으로 적지 않게
         IsOff = true;
         _wasEnabled.Clear();
         for (int i = 0; i < _lights.Count; i++)
@@ -158,6 +161,51 @@ public sealed class LightGroup
     public void Restore()
     {
         Untint();
+        Flicker(false);
         TurnOn();
+    }
+
+    /// <summary>
+    /// 104차 QA: 짧은 깜빡임 — 실시간 등 · 형광등 발광 · 라이트맵만 껐다 켠다(프로브는 그대로 — 초당 여러 번 전체 프로브 배열을 다시 쓰지 않게).
+    /// 꺼진 묶음(<see cref="IsOff"/>)이면 아무 일 없음. 경비실 버티기 깜빡임(<c>GuardRoomCamp</c>)이 쓴다.
+    /// </summary>
+    public void Flicker(bool off)
+    {
+        if (off == _flickerOff || (off && IsOff)) return;
+        _flickerOff = off;
+        if (off)
+        {
+            _flickerWas.Clear();
+            for (int i = 0; i < _lights.Count; i++)
+            {
+                Light l = _lights[i];
+                _flickerWas.Add(l != null && l.enabled);
+                if (l != null) l.enabled = false;
+            }
+
+            if (_block == null) _block = new MaterialPropertyBlock();
+            for (int i = 0; i < _lamps.Count; i++)
+            {
+                Renderer r = _lamps[i];
+                if (r == null) continue;
+                r.GetPropertyBlock(_block);
+                _block.SetColor(EmissionId, Color.black);
+                r.SetPropertyBlock(_block);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < _lights.Count && i < _flickerWas.Count; i++)
+            {
+                if (_lights[i] != null) _lights[i].enabled = _flickerWas[i];
+            }
+
+            for (int i = 0; i < _lamps.Count; i++)
+            {
+                if (_lamps[i] != null) _lamps[i].SetPropertyBlock(null);
+            }
+        }
+
+        RoomDarkness.SetFlicker(Space, off);
     }
 }

@@ -544,6 +544,20 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void L3_한번_비췄어도_붙잡히면_위반()
+        {
+            // 104차 QA: 붙잡힘이 넘어짐(밤이 이어짐)이 되며 창을 닫아도 「끝까지 비춤」으로 통과·신뢰를 주던 것.
+            FinalFixture f = new FinalFixture("L3");
+            f.Cue(FinalCues.YellowFace).Wait(1f);
+            f.Samples(() => JudgeSignal.Beam(FinalCues.FaceTarget, 0.1f), 1f);
+            f.Send(new JudgeSignal(SignalKind.EncounterCaught, SpaceId.Library, FinalCues.FaceTarget, ActionSource.Direction, true, 0f));
+            f.End(FinalCues.YellowFace);
+            Assert.AreEqual(FinalOutcome.Violated, f.Last("L3"));
+            Assert.AreEqual(Deltas.ThreatFailure, f.Value(FearAxis.Illuminance));
+            Assert.AreEqual(0, f.Value(FearAxis.Trust), "신뢰 보상 없음");
+        }
+
+        [Test]
         public void L3_끝까지_비추면_신뢰_3()
         {
             FinalFixture f = new FinalFixture("L3");
@@ -605,6 +619,24 @@ namespace NightDuty.Tests
             Assert.AreEqual(0, f.Value(FearAxis.Auditory));
             f.Wait(1.1f);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Auditory));
+        }
+
+        [Test]
+        public void K3_경비실에서_할_일을_하는_동안은_쉬고_0으로_돌리지_않는다()
+        {
+            // 104차 QA: 밤 진행이 DwellPaused로 서명·경비실 지시·점검·CCTV 조우·CCTV 역설 동안 K3를 쉬게 한다.
+            FinalFixture f = new FinalFixture("K3");
+            bool busy = false;
+            f.Book.World.DwellPaused = s => busy && s == SpaceId.SecurityRoom;
+            f.Enter(SpaceId.SecurityRoom).Wait(40f);
+            busy = true;
+            f.Wait(60f);
+            Assert.AreEqual(0, f.Value(FearAxis.Auditory), "할 일 하는 동안은 세지 않는다");
+            busy = false;
+            f.Wait(4f);
+            Assert.AreEqual(0, f.Value(FearAxis.Auditory), "40 + 4초");
+            f.Wait(1.1f);
+            Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Auditory), "멈췄던 40초에 이어 45초");
         }
     }
 

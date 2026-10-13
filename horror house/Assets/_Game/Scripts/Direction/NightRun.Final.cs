@@ -37,6 +37,7 @@ namespace NightDuty
             _finalBook.Settled += OnFinalSettled;
             _finalBook.ReverseReportArmed += OnReverseReportArmed;
             _finalBook.EncounterRequested += ReserveEncounter;
+            _finalBook.World.DwellPaused = GuardRoomDwellPaused;   // 104차 QA: K3가 경비실 할 일(전화·점검·CCTV 조우·역설)을 벌하지 않게
             BeginDirection();
             PlanCctvSpots();   // 71차: CCTV 사람 자리 — 디렉터가 그 채널을 볼 때 조우를 건다
             PlanParadox();

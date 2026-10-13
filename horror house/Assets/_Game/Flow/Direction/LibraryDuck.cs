@@ -335,7 +335,19 @@ public sealed class LibraryDuck : MonoBehaviour
         }
     }
 
-    /// <summary>붙잡는다 — 조도 축 사망(붙잡힘 연출이 조도 사망 컷신의 얼굴 장면부터 튼다).</summary>
+    /// <summary>
+    /// 104차(사용자: 「붙잡히고 연출이 나온 뒤 죽는 게 아니라 그냥 넘어졌다가 일어나게」): true면 붙잡혀도 죽지 않는다 — 조도 컷신 얼굴 장면 뒤 그 자리에서 넘어졌다 일어나고
+    /// 밤은 이어진다(<see cref="CaptureDirector.Knockdown"/>). false면 예전처럼 조도 축 사망(재시작).
+    /// </summary>
+    public static bool KnockdownOnCatch = true;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        KnockdownOnCatch = true;   // 104차 QA: 도메인 다시 읽기 없이 플레이를 다시 시작해도 기본값
+    }
+
+    /// <summary>붙잡는다 — 조도 컷신 얼굴 장면 뒤 넘어졌다 일어남(<see cref="KnockdownOnCatch"/>), 아니면 조도 축 사망.</summary>
     private void Catch(string why)
     {
         if (_state != State.Approach) return;
@@ -343,7 +355,26 @@ public sealed class LibraryDuck : MonoBehaviour
         StopChase(0f);
         _state = State.Caught;
         Debug.Log("[LibraryDuck] 붙잡음 — " + why);
+        CaptureDirector cd = CaptureDirector.Active;
+        if (KnockdownOnCatch && cd != null)
+        {
+            // 장면 동안 대역이 컷신 화면에 끼지 않게 먼저 감추고, 화면이 검을 때 치운다. 창은 지금 닫는다(밤이 이어지므로).
+            foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) r.enabled = false;
+            // 104차 QA: 창을 닫기 전에 붙잡힘을 알린다 — 안 그러면 한 번 비춘 기록만으로 L3가 통과된다.
+            NightRun.Send(new JudgeSignal(SignalKind.EncounterCaught, SpaceId.Library, FinalCues.FaceTarget, ActionSource.Direction, true, 0f));
+            NightRun.EndEncounterWindow(_id);
+            if (cd.Knockdown(FearAxis.Illuminance, CaptureSource, Vanish)) return;
+            foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) r.enabled = true;
+        }
+
         NightRun.CaptureByEncounter(FearAxis.Illuminance, CaptureSource);
+    }
+
+    /// <summary>넘어진 뒤 — 노란 얼굴은 사라져 있다.</summary>
+    private void Vanish()
+    {
+        _state = State.Gone;
+        if (this != null && gameObject != null) Destroy(gameObject);   // 104차 QA: 꺼 두기만 하면 연출 정리 목록에 밤 끝까지 남았다
     }
 
     /// <summary>얼굴(머리)이 화면 안에 보이는지(가림은 보지 않는다 — 등졌는지만).</summary>

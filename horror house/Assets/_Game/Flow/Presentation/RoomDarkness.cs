@@ -29,7 +29,7 @@ public sealed class RoomDarkness : MonoBehaviour
     /// 86차(민: 「소등 조우 때 소등은 되는데 라이팅은 계속 유지돼」): 소등 조우(<see cref="LightGroup.TurnOff"/> — 과학실·화장실)가 끄는 방.
     /// 실시간 등·발광만 꺼지고 구운 빛(라이트맵·프로브)은 그대로라 방이 밝은 채였다 — 소등 동안 그 방 구운 빛을 <see cref="BlackoutScale"/>배로.
     /// </summary>
-    public static readonly SpaceId[] BlackoutRooms = { SpaceId.ScienceRoom, SpaceId.Toilet };
+    public static readonly SpaceId[] BlackoutRooms = { SpaceId.ScienceRoom, SpaceId.Toilet, SpaceId.SecurityRoom };   // 104차: 경비실 버티기 정전(GuardRoomCamp)
 
     /// <summary>소등 동안 구운 빛 배수 — 손전등 없이는 윤곽만.</summary>
     public const float BlackoutScale = 0.05f;   // 0.12는 등 바로 아래 벽의 밝은 얼룩이 남았다(밝기 설정을 올리면 더)
@@ -155,6 +155,12 @@ public sealed class RoomDarkness : MonoBehaviour
         if (s_active != null) s_active.ApplyBlackout(SpaceIds.Canonical(space), dark);
     }
 
+    /// <summary>104차 QA: 짧은 깜빡임용 소등 — 라이트맵만 바꾸고 프로브(전체 배열 복사)는 건드리지 않는다(<see cref="LightGroup.Flicker"/>).</summary>
+    public static void SetFlicker(SpaceId space, bool dark)
+    {
+        if (s_active != null) s_active.ApplyBlackout(SpaceIds.Canonical(space), dark, false);
+    }
+
     /// <summary>그 방이 지금 소등으로 어두운지(시험·검수).</summary>
     public static bool IsBlackedOut(SpaceId space)
     {
@@ -230,23 +236,29 @@ public sealed class RoomDarkness : MonoBehaviour
         }
     }
 
-    private void ApplyBlackout(SpaceId space, bool dark)
+    private void ApplyBlackout(SpaceId space, bool dark, bool probes = true)
     {
         for (int b = 0; b < _blackouts.Count; b++)
         {
             Blackout room = _blackouts[b];
-            if (room.Space != space || room.On == dark) continue;
-            room.On = dark;
-            for (int i = 0; i < room.Renderers.Count; i++)
+            if (room.Space != space) continue;
+            bool wantProbes = dark && probes;
+            if (room.On == dark && (room.ProbeBase != null) == wantProbes) continue;
+            if (room.On != dark)
             {
-                if (room.Renderers[i] != null) room.Renderers[i].lightmapIndex = dark ? room.Dark[i] : room.Lit[i];
+                room.On = dark;
+                for (int i = 0; i < room.Renderers.Count; i++)
+                {
+                    if (room.Renderers[i] != null) room.Renderers[i].lightmapIndex = dark ? room.Dark[i] : room.Lit[i];
+                }
             }
 
-            LightProbes probes = LightmapSettings.lightProbes;
-            if (probes != null && room.Probes.Count > 0)
+            // 104차 QA: 프로브는 전체 배열을 복사해 다시 쓰므로 짧은 깜빡임(probes=false)에서는 건드리지 않는다 — 렌더러 라이트맵만 바꾼다.
+            LightProbes lp = LightmapSettings.lightProbes;
+            if (lp != null && room.Probes.Count > 0 && (room.ProbeBase != null) != wantProbes)
             {
-                UnityEngine.Rendering.SphericalHarmonicsL2[] sh = probes.bakedProbes;
-                if (dark)
+                UnityEngine.Rendering.SphericalHarmonicsL2[] sh = lp.bakedProbes;
+                if (wantProbes)
                 {
                     room.ProbeBase = new UnityEngine.Rendering.SphericalHarmonicsL2[room.Probes.Count];
                     for (int i = 0; i < room.Probes.Count; i++)
@@ -257,7 +269,7 @@ public sealed class RoomDarkness : MonoBehaviour
                         sh[k] *= BlackoutScale;
                     }
                 }
-                else if (room.ProbeBase != null)
+                else
                 {
                     for (int i = 0; i < room.Probes.Count && i < room.ProbeBase.Length; i++)
                     {
@@ -267,10 +279,10 @@ public sealed class RoomDarkness : MonoBehaviour
                     room.ProbeBase = null;
                 }
 
-                probes.bakedProbes = sh;
+                lp.bakedProbes = sh;
             }
 
-            if (DirectionStage.Verbose) Debug.Log("[RoomDarkness] 소등 " + (dark ? "— 구운 빛 " + BlackoutScale + "배 " : "풀림 ") + space + " (렌더러 " + room.Renderers.Count + " · 프로브 " + room.Probes.Count + ")");
+            if (DirectionStage.Verbose && probes) Debug.Log("[RoomDarkness] 소등 " + (dark ? "— 구운 빛 " + BlackoutScale + "배 " : "풀림 ") + space + " (렌더러 " + room.Renderers.Count + " · 프로브 " + room.Probes.Count + ")");
         }
     }
 

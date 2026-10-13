@@ -163,7 +163,9 @@ namespace NightDuty.Tests
                 decks.Add(p.ToString());
             }
 
-            Assert.GreaterOrEqual(decks.Count, 2, "1일차 덱이 매번 같지 않다(60차: C1 판서 폐기 — 후보가 H2·C4·S2·K2·K3뿐이라 경비실 K2/K3만 갈린다)");
+            // 104차(사용자: 「K3 수칙을 고정으로 모든 밤에」): 1일차 네 장 중 S1·G1·K3가 고정이고 감각 세 축 보장으로 조도 C4가 들어가 1일차 덱은 하나로 정해진다(옛: K2/K3만 갈렸다).
+            Assert.AreEqual(1, decks.Count, "1일차 덱은 S1·C4·K3·G1 — " + string.Join(" / ", decks));
+            Assert.IsTrue(decks.Count == 1 && new List<string>(decks)[0].Contains("K3"));
         }
 
         [Test]
@@ -191,7 +193,9 @@ namespace NightDuty.Tests
                         Assert.LessOrEqual(CountIn(p, s), expected, s + " — " + why);
                     }
 
-                    Assert.LessOrEqual(CountIn(p, SpaceId.SecurityRoom), 1, why);
+                    // 104차: 경비실 버티기 수칙 K3는 매일 — 경비실이 조우·피날레 수칙(K1·K4)으로 차 있으면 한 장 더.
+                    Assert.IsTrue(p.Has(ProgramDirector.CampRule), "K3 매일 — " + why);
+                    Assert.LessOrEqual(CountIn(p, SpaceId.SecurityRoom), 2, why);
                     Assert.IsFalse(day != 5 && p.Has("K4"), "K4는 5일차만 — " + why);
                     Assert.AreEqual(p.HasEncounter(ProgramCatalog.CctvPerson), p.Has("K1"), why);
                     Assert.IsTrue(p.Has("G1"), why);

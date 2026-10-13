@@ -351,6 +351,14 @@ public sealed partial class CaptureDirector : MonoBehaviour
         // 64차(민: 「사망했을 때 설명은 나오지 않게」): 붙잡힌 까닭(수칙·점검·응시) 줄은 화면에 쓰지 않는다 — 디버그용 LastCard에만 남긴다.
         _sources.text = string.Empty;
         _sources.gameObject.SetActive(false);
+        // 104차(사용자: 「사망 화면에 경비실에 오래 머물지 마십시오. 문구」): 경비실 버티기로 붙잡혔을 때만 한 줄.
+        for (int i = 0; i < sources.Count; i++)
+        {
+            if (sources[i] != NightRun.CampCaptureSource) continue;
+            _sources.text = NightRun.CampCaptureLine;
+            _sources.gameObject.SetActive(true);
+            break;
+        }
 
         _sign.text = fromCheckpoint ? "마지막 서명: " + NightClock.Clock(NightClock.Call2) : "마지막 서명: 없음 → 00:00";
         _hint.text = "아무 키나 눌러 계속";
@@ -447,6 +455,8 @@ public sealed partial class CaptureDirector : MonoBehaviour
 
     private void SetBlack(float alpha)
     {
+        // 104차: 컷신이 도는 중 플레이를 멈추면 화면(캔버스)이 먼저 부서진 뒤 컷신 「끝남」 알림이 와 MissingReferenceException이 났다.
+        if (_black == null) return;
         Color c = _black.color;
         c.a = alpha;
         _black.color = c;

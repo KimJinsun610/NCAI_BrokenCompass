@@ -85,6 +85,12 @@ namespace NightDuty
             Report = report ?? string.Empty;
         }
 
+        /// <summary>104차: 덱만 바꾼 사본(조우·순서·창·서 있는 존재는 그대로).</summary>
+        public NightProgram WithDeck(IEnumerable<RuleDef> deck, string note)
+        {
+            return new NightProgram(Day, _slots, deck, string.IsNullOrEmpty(note) ? Report : Report + note, _extras, _sequence, _windows, _standing);
+        }
+
         /// <summary>
         /// 104차(사용자: 「이월은 없어. 의도한 날짜에 무조건 목격해야 해」): 고정 편성의 조우 순서(슬롯·겹침 조우 모두). 비어 있지 않으면
         /// 긴장 디렉터가 시간창 대신 이 순서대로 하나씩 연다(<see cref="Sequential"/>) — 놓침 없이 끝날 때까지 기다리고, 그동안 유도 지시를 낸다.
@@ -738,6 +744,7 @@ namespace NightDuty
             _planForFill = request.Inspections;
             _buildDay = day;
             NightProgram program = day == 1 ? BuildDay1(request) : FixedSchedule ? BuildFixed(day, request, reserved) : BuildRegular(day, request, reserved);
+            program = WithCampRule(program);
 
             for (int i = 0; i < program.Slots.Count; i++) _seen.Add(program.Slots[i].Encounter.Id);
             for (int i = 0; i < program.Extras.Count; i++) _seen.Add(program.Extras[i].Id);
@@ -749,6 +756,75 @@ namespace NightDuty
                 _runRules.Add(program.Deck[i].Id);
             }
             return program;
+        }
+
+        // ── 104차: 경비실 버티기 수칙(K3) 고정 ─────────────────────
+
+        /// <summary>
+        /// 104차(사용자: 「K3 수칙을 고정으로 모든 밤에 등장시키자. 기존 수칙 칸을 대체하게 해」): 경비실 버티기 방지 장치(<c>GuardRoomLoiter</c>)의 단서 —
+        /// 「서명 시간 외에는 경비실에 오래 머물지 마십시오.」가 매일 덱에 있다. 수칙 수는 그대로(한 칸을 갈아 끼운다).
+        /// </summary>
+        public const string CampRule = "K3";
+
+        /// <summary>
+        /// 덱에 <see cref="CampRule"/>이 없으면 한 장을 갈아 끼운다. 바꿀 수 없는 것: 그날 조우에 묶인 수칙 · 역보고(T4) · 피날레(K4) · 공통(G*).
+        /// 고르는 순서: ① 경비실 수칙(K2·K5 — 경비실 한 장 유지, 그 축의 마지막 한 장이 아니면) ② K3와 같은 청각 축 ③ 그 축이 덱에 두 장 이상인 것 ④ 남은 것 중 마지막.
+        /// </summary>
+        public static NightProgram WithCampRule(NightProgram program)
+        {
+            if (program == null || program.Has(CampRule)) return program;
+            RuleDef camp = ProgramCatalog.Rule(CampRule);
+            if (camp == null) return program;
+            List<RuleDef> deck = new List<RuleDef>(program.Deck);
+            int victim = CampVictim(program, deck);
+            if (victim < 0) return program;
+            string old = deck[victim].Id;
+            deck.RemoveAt(victim);
+            int at = deck.FindIndex(r => r.Id.StartsWith("G", StringComparison.Ordinal));
+            if (at < 0) at = deck.Count;
+            deck.Insert(at, camp);
+            return program.WithDeck(deck, "\n경비실 버티기 수칙 고정: " + old + " → " + CampRule);
+        }
+
+        private static int CampVictim(NightProgram program, List<RuleDef> deck)
+        {
+            Predicate<int> free = i =>
+            {
+                RuleDef r = deck[i];
+                if (r.Id.StartsWith("G", StringComparison.Ordinal)) return false;
+                if (r.Id == ProgramCatalog.ReverseReportRule || r.Id == ProgramCatalog.FinaleRule) return false;
+                if (!string.IsNullOrEmpty(r.BoundEncounter) && program.HasEncounter(r.BoundEncounter)) return false;
+                return true;
+            };
+            Func<int, bool> spare = i =>
+            {
+                RuleDef r = deck[i];
+                if (!r.HasAxis || r.Axis == FearAxis.Auditory) return true;
+                int same = 0;
+                for (int j = 0; j < deck.Count; j++) if (deck[j].HasAxis && deck[j].Axis == r.Axis) same++;
+                return same >= 2;
+            };
+            for (int i = 0; i < deck.Count; i++)
+            {
+                if (free(i) && SpaceIds.Canonical(deck[i].Space) == SpaceId.SecurityRoom && spare(i)) return i;
+            }
+
+            for (int i = 0; i < deck.Count; i++)
+            {
+                if (free(i) && deck[i].HasAxis && deck[i].Axis == FearAxis.Auditory) return i;
+            }
+
+            for (int i = deck.Count - 1; i >= 0; i--)
+            {
+                if (free(i) && spare(i)) return i;
+            }
+
+            for (int i = deck.Count - 1; i >= 0; i--)
+            {
+                if (free(i)) return i;
+            }
+
+            return -1;
         }
 
         // ── 104차: 고정 편성 ─────────────────────────────────────
@@ -852,6 +928,7 @@ namespace NightDuty
             }
 
             if (d.In(SpaceId.SecurityRoom).Count == 0) Place(d, PickSecurity(d), false);
+            EnsureCampRule(d);
             EnsureLowestAxis(d, shown);
             EnsureEverySensoryAxis(d, shown);
 
@@ -931,6 +1008,14 @@ namespace NightDuty
             // 57차: 고정 4장(H2·C4·S1·G1) → S1·G1 고정 + 후보(Day1Pool)에서 넷, 모두 여섯 장. 한 공간 두 장까지, 경비실 한 장, 손전등 한도.
             List<RuleDef> picked = new List<RuleDef> { ProgramCatalog.Rule("S1") };   // 51차: S3(모형을 비추지 마)는 2일차부터 — 1일차는 모형 위치를 익히는 날
             List<string> pool = new List<string>(Day1Pool);
+            // 104차: 경비실 버티기 수칙(K3)은 1일차부터 — 후보에서 먼저 넣는다(경비실 한 장이라 K2는 빠진다).
+            RuleDef camp1 = ProgramCatalog.Rule(CampRule);
+            if (camp1 != null)
+            {
+                picked.Add(camp1);
+                pool.RemoveAll(id => { RuleDef x = ProgramCatalog.Rule(id); return x != null && SpaceIds.Canonical(x.Space) == SpaceId.SecurityRoom; });   // 경비실은 한 장 — K2(조도)를 뽑아 버려 조도가 비던 것
+            }
+
             // 103차(편성 균형): 1일차도 감각 세 축을 한 장씩 — S1(배치)·G1(청각)에 없는 축(조도)부터 후보에서 고른다.
             FearAxis[] need = { FearAxis.Illuminance, FearAxis.Auditory, FearAxis.Layout };
             for (int a = 0; a < need.Length && picked.Count < RulesFor(1) - 1; a++)
@@ -1125,6 +1210,7 @@ namespace NightDuty
 
             // 경비실 — 79차: K5(전화) 추가. 103차(편성 균형): 채움 뒤에, 덱에 가장 적은 축의 경비실 수칙을 먼저(K2 조도 · K3 배치 · K5 청각).
             if (d.In(SpaceId.SecurityRoom).Count == 0) Place(d, PickSecurity(d), false);
+            EnsureCampRule(d);
 
             EnsureLowestAxis(d, shown);
             EnsureEverySensoryAxis(d, shown);   // 103차(축 균형): 조도 단독 수칙이 덱에서 사라지던 것 — 감각 축마다 한 장씩
@@ -1598,6 +1684,26 @@ namespace NightDuty
 
             EncounterSlot slot = (EncounterSlot)Math.Min((int)EncounterSlot.C, d.Slots.Count);
             d.Slots.Add(new SlotEncounter(slot, e, reserved));
+        }
+
+        /// <summary>
+        /// 104차: 경비실 버티기 수칙(<see cref="CampRule"/>)을 매일 — 경비실의 묶이지 않은 수칙(K2·K5)이 있으면 그 자리를 갈아 끼우고(경비실 한 장 유지),
+        /// 경비실이 조우·피날레 수칙(K1·K4 · 강제)으로 차 있으면 한 장 더 둔다(줄이기에서 다른 채움이 빠진다). 줄이기·축 맞춤이 빼지 않게 잠근다.
+        /// </summary>
+        private static void EnsureCampRule(Draft d)
+        {
+            RuleDef camp = ProgramCatalog.Rule(CampRule);
+            if (camp == null) return;
+            if (!d.Has(CampRule))
+            {
+                List<RuleDef> guard = d.In(SpaceId.SecurityRoom);
+                int free = guard.FindIndex(r => !d.Locked.Contains(r.Id));
+                if (free >= 0) guard.RemoveAt(free);
+                Place(d, camp, true);
+                return;
+            }
+
+            d.Locked.Add(CampRule);
         }
 
         private static void Place(Draft d, RuleDef r, bool locked)

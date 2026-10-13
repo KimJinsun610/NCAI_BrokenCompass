@@ -36,7 +36,7 @@ namespace NightDuty
         private static IEnumerable<string> PlanUnavoidable(InspectionPlan inspections)
         {
             _emptyRoomChannel = _paradoxPlanner.PickEmptyRoomChannel();
-            _plannedUnavoidable = _paradoxPlanner.PlanUnavoidable(Day, _bands.Shown.GetBand(FearAxis.Trust), inspections, id => _programDirector.CanForce(id, Day));
+            _plannedUnavoidable = _paradoxPlanner.PlanUnavoidable(Day, _bands.Shown.GetBand(FearAxis.Trust), inspections, id => _programDirector.CanForce(id, Day), BanSparesEncounters);
             return _plannedUnavoidable != null ? _plannedUnavoidable.Rules : null;
         }
 
@@ -115,7 +115,31 @@ namespace NightDuty
             }
         }
 
-        /// <summary>그 공간에 아직 보고하지 않은 점검이 있는지.</summary>
+        /// <summary>
+        /// 104차 검토: 고정 편성 밤에는 그날 조우가 나올 공간에 「재입실 불가」(진짜 「나가라」 쌍)를 걸지 않는다 —
+        /// 금지된 방의 앞선 지시가 풀리지 않아 조우가 영영 시작하지 않고 시계가 03:30에서 멈춰 있었다.
+        /// </summary>
+        private static bool BanSparesEncounters(UnavoidableDef def)
+        {
+            if (!ProgramDirector.FixedSchedule || def == null || !def.Real || def.Kind != UnavoidableKind.ExitBeforeInspection) return true;
+            return !FixedEncounterIn(Day, def.Space);
+        }
+
+        /// <summary>그날 고정 편성의 조우가 그 공간에 있는지.</summary>
+        internal static bool FixedEncounterIn(int day, SpaceId space)
+        {
+            if (_programDirector == null) return false;
+            SpaceId s = SpaceIds.Canonical(space);
+            foreach (string id in _programDirector.FixedEncounters(day))
+            {
+                EncounterDef e = ProgramCatalog.Encounter(id);
+                if (e != null && SpaceIds.Canonical(e.Space) == s) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>그 공간에 아직 보고하지 않은 점검이 있는지. 붙들어 둔(아직 내지 않은) 항목은 세지 않는다(104차 검토 — 플레이어가 모르는 항목).</summary>
         private static bool SpacePending(SpaceId space)
         {
             InspectionPlan plan = Board.Plan;
@@ -124,7 +148,7 @@ namespace NightDuty
             for (int i = 0; i < plan.Assignments.Count; i++)
             {
                 InspectionAssignment a = plan.Assignments[i];
-                if (SpaceIds.Canonical(a.Item.Space) == s && Board.StateOf(a.Id) == InspectionState.Pending) return true;
+                if (SpaceIds.Canonical(a.Item.Space) == s && Board.StateOf(a.Id) == InspectionState.Pending && !Board.IsHeld(a.Id)) return true;
             }
 
             return false;

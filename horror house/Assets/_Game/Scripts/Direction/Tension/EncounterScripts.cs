@@ -101,6 +101,19 @@ namespace NightDuty
         /// <summary><see cref="EncounterTrigger.GazeTarget"/>의 대상(<c>inspect.C-3</c>). 그 점검이 지시받고 아직 보고 전일 때만 센다.</summary>
         public string GazeTargetId = string.Empty;
 
+        /// <summary>
+        /// 104차(사용자: 「교실 소년 조우 때 화분 보고하면 바로 소년 나타나도록」): 이 점검 항목(<c>C-1</c>)을 보고하는 순간 시작한다(전조·발동 직전 없이 — 대역이 바로 선다).
+        /// 근무 지시의 집는 물건(<c>duty.library.book</c> — 노란 얼굴)도 된다(집는 순간).
+        /// 디렉터의 <see cref="TensionDirector.GazeTargetReportMode"/>가 켜져 있을 때만(연출 쪽). 순서대로 여는 밤에는 이 항목이 그 조우 차례에 단독 지시로 나간다.
+        /// </summary>
+        public string ReportTriggerItem = string.Empty;
+
+        /// <summary>
+        /// 104차(사용자: 「화장실 3번 칸 확인 지시 뜨면 바로 대역 대기」): 이 점검 항목(<c>T-1</c>)의 지시가 나가는 순간 시작한다 — 대역이 바로 서서 보기를 기다린다(시한 없음).
+        /// 디렉터의 <see cref="TensionDirector.GazeTargetReportMode"/>가 켜져 있을 때만(연출 쪽).
+        /// </summary>
+        public string OrderTriggerItem = string.Empty;
+
         /// <summary>0보다 크면 전조 길이를 이 값(초)으로 고정하고 헛예고를 쓰지 않는다(시체 낙하 — 먼지·삐걱 1.2초).</summary>
         public float FixedForeshadow;
 
@@ -219,6 +232,7 @@ namespace NightDuty
                     // 3초 체류(안쪽 2m) → 교실에 들어서면. 앉히는 때는 연출(DirectionStage)이 자리가 화면에 없을 때로 고른다.
                     Id = ProgramCatalog.BoyBang, Trigger = EncounterTrigger.EnterSpace, Space = SpaceId.Classroom,
                     Cue = FinalCues.BoySeated, Window = 18f,   // 103차: 끝의 종 없음(C3 수업 종으로)
+                    ReportTriggerItem = "C-1",   // 104차: 교실 화분을 보고하면 곧바로
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy", AnchorId = FinalCues.BoyTarget,
                     StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3,
                     Note = "52차 민: C2 「교실의 _? 는 무시하십시오.」 + C3 「수업 종이 울리면 정지하십시오.」(103차) + 앉은 소년 — 셋이 하나. " +
@@ -228,6 +242,7 @@ namespace NightDuty
                 {
                     Id = ProgramCatalog.ToiletGirl, Trigger = EncounterTrigger.EnterSpace, Space = SpaceId.Toilet,
                     Cue = FinalCues.GirlStall, Window = 6f,   // 51차: 걸음 끝까지 보이게(T-1 칸까지 약 1.8m)
+                    OrderTriggerItem = InspectionCatalog.ReverseReportItem,   // 104차: 3번 칸 변기 지시가 나가면 곧바로 선다
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.girl", AnchorId = FinalCues.GirlTarget,
                     StageAnchor = StageAnchors.GirlWalk,
                     Note = "변기 점검 칸(3번)으로 들어가는 것을 보여 준다. 0.5초 봤으면 역보고(T-1)를 걸고 3초 뒤 그 칸 변기 점검 지시(51차)."
@@ -251,9 +266,11 @@ namespace NightDuty
                     Id = ProgramCatalog.YellowFace, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 4f, DeepMargin = 2.5f,   // 61차: 도서관 안쪽 2.5m 넘게 들어와 4초(옛 도서관 8초 체류)
                     Cue = FinalCues.YellowFace, Window = 30f,   // 44차: 8초는 알아보고 비추면 끝나 공포가 쌓이지 않았다 · 103차: 11 → 30 — 천천히 걸어오는 동안 창이 닫히지 않게(비춰 쫓아내거나 놀람이 나면 LibraryDuck이 창을 일찍 닫는다)
                     Placement = CuePlacement.AheadOfPlayer, Distance = 4f, StandIn = "mob.duck", AnchorId = FinalCues.FaceTarget,
-                    StageAnchor = StageAnchors.YellowDoor, AfterDuty = new[] { "W15", "W2" },   // 85차: biology 책 습득 또는 도서관 순찰 지시 뒤
+                    StageAnchor = StageAnchors.YellowDoor, AfterDuty = new[] { "W15" },   // 85차: biology 책 습득 또는 도서관 순찰 지시 뒤 · 104차(사용자: 「노란 얼굴 조우는 biology 책 지시와 이어져」): biology 책만
+                    ReportTriggerItem = DutyCatalog.LibraryBookTarget,   // 104차: biology 책을 집는 순간 문간에 서서 응시를 기다린다(응시하면 걸어온다)
                     Note = "103차: 4~5일차(창밖 노란 얼굴은 2~3일차). [근무 지시] W15(biology 책) 또는 W2(도서관 순찰)가 나간 뒤, 도서관 안쪽 2.5m · 4초면 문이 열리며(문 소리) 문간에 선다 — 문 쪽을 보면 네비메쉬로 천천히 걸어온다. " +
-                           "L3 「도서관 ?_? 을 계속 비추십시오」 — 비춰도 3초는 계속 다가오다 멈칫(비추는 동안은 덮치지 않음), 3.8초 이어서 비추면 문 밖으로 달아나고, 안 비추면 1.5m까지 와서 놀람 · 문으로 빠져나가려 해도 놀람(LibraryDuck)."
+                           "L3 「도서관 ?_? 을 계속 비추십시오」 — 104차: 문간을 보면 추격 소리와 함께 빠르게 걸어온다(등지면 더 빨리). 3초 이어서 비추면 코앞까지 와서 멈췄다 문 밖으로 뛰어 나가고, " +
+                           "안 비춘 채 코앞까지 오거나 도서관을 나가려 하면 붙잡힌다(조도 사망 컷신의 얼굴 장면부터 — LibraryDuck)."
                 },
                 new EncounterScript
                 {

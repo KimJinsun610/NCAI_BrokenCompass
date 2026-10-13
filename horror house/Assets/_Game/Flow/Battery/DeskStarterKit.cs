@@ -106,6 +106,12 @@ public sealed class DeskStarterKit : MonoBehaviour
         Notice("배터리가 아직 충분합니다" + (b != null ? " (" + Mathf.RoundToInt(b.Charge * 100f) + "%)" : string.Empty));
     }
 
+    /// <summary>104차: 짧은 알림 한 줄(소등 중 배터리 갈기 막힘 등).</summary>
+    public static void ShowNotice(string text)
+    {
+        Notice(text);
+    }
+
     private static void Notice(string text)
     {
         s_notice = text;

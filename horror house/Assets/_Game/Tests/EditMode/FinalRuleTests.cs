@@ -531,15 +531,16 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void L3_노란얼굴에서_빛이_떨어지면_위반_예약은_없음()
+        public void L3_노란얼굴을_끝까지_한번도_비추지_못하면_위반_예약은_없음()
         {
+            // 104차: 빛을 떼는 벌(사망)은 노란 얼굴(LibraryDuck)이 직접 — 판정은 창이 닫힐 때 한 번이라도 비췄는지만.
             FinalFixture f = new FinalFixture("L3");
             f.Cue(FinalCues.YellowFace).Wait(1f);
-            f.Samples(() => JudgeSignal.Beam(FinalCues.FaceTarget, 0.1f), 3f);
-            Assert.IsNull(f.Last("L3"));
-            f.Samples(() => JudgeSignal.Beam(string.Empty, 0.1f), 0.7f);
+            f.Samples(() => JudgeSignal.Beam(string.Empty, 0.1f), 5f);
+            Assert.IsNull(f.Last("L3"), "아직 창이 열려 있다");
+            f.End(FinalCues.YellowFace);
             Assert.AreEqual(FinalOutcome.Violated, f.Last("L3"));
-            CollectionAssert.IsEmpty(f.Requested, "84차: 창밖 노란 얼굴은 노란 얼굴 전날(날짜 사슬) — 빛을 떼도 예약하지 않는다");
+            CollectionAssert.IsEmpty(f.Requested, "84차: 빛을 떼도 예약하지 않는다");
         }
 
         [Test]

@@ -200,7 +200,8 @@ public sealed class ScienceModel : MonoBehaviour
         // 70차 ④(민: 「복도 끝 모형과 과학실 모형은 겹치면 안 돼. 과학실 모형이 복도에 나오고, 다음 날 급습해야 해」):
         // 복도 끝에 선 자의 밤과 급습 밤에는 이 모형이 복도 끝(HallFigure)에 나가 있다 — 과학실은 비어 있다.
         NightProgram program = NightRun.Program;
-        bool outside = program != null && (program.HasEncounter(ProgramCatalog.HallEndFigure) || program.HasEncounter(ProgramCatalog.ModelRush));
+        bool outside = program != null && (program.HasEncounter(ProgramCatalog.HallEndFigure) || program.HasEncounter(ProgramCatalog.ModelRush)
+                                           || program.IsStanding(ProgramCatalog.HallEndFigure) || program.IsStanding(ProgramCatalog.ModelRush));   // 104차: 밤새 서 있는 복도 끝 모형
 
         // 64차: 인체 모형 사망 컷신(DeathCutscene_Illuminance)이 도는 동안은 컷신의 모형만 — 과학실에서 붙잡히면 둘이 겹쳐 보인다.
         bool show = !outside && !_rushed && !staged && DeathCutscene.Playing == null;
@@ -212,7 +213,7 @@ public sealed class ScienceModel : MonoBehaviour
     private void NewNight()
     {
         Band l = NightRun.Shown != null ? NightRun.Shown.GetBand(FearAxis.Layout) : Band.Band0;   // 56차: 배치만(자리가 바뀌는 것은 배치의 언어)
-        bool rush = NightRun.Program != null && NightRun.Program.HasEncounter(ProgramCatalog.ModelRush);
+        bool rush = NightRun.Program != null && (NightRun.Program.HasEncounter(ProgramCatalog.ModelRush) || NightRun.Program.IsStanding(ProgramCatalog.ModelRush));
         ModelProgress.Spots(_day, l, rush, out _base, out _max);
         // 70차 ④: 복도로 나오는 것은 날짜 사슬(복도 끝에 선 자 → 다음 날 급습)로만 — 과학실 모형이 따로 복도 자리(3)에 서면 둘이 된다.
         _max = Mathf.Min(_max, ModelProgress.HallSpot - 1);

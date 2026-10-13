@@ -57,11 +57,51 @@ public sealed class FlashlightPower : MonoBehaviour
         get
         {
             if (!NightRun.HasFlashlight) return false;   // 66차: 1일차는 경비실 책상의 손전등을 주워야 켤 수 있다
+            if (Time.time < s_blackoutDarkUntil) return false;   // 104차: 소등 순간 잠깐
             FlashlightBattery b = NightRun.Battery;
             if (b == null || !NightRun.IsNightActive) return true;
             if (b.IsEmpty) return false;
             return Active == null || !Active.Swapping;
         }
+    }
+
+    private static float s_blackoutDarkUntil = -1f;
+    private static int s_blackouts;
+
+    /// <summary>104차: 소등 중이라 배터리 갈기(R)를 받지 않는지.</summary>
+    public static bool SwapLocked
+    {
+        get { return s_blackouts > 0; }
+    }
+
+    /// <summary>104차: 소등 중 R을 눌렀을 때 알림.</summary>
+    public const string SwapLockedText = "정전 중에는 배터리를 갈 수 없습니다";
+
+    /// <summary>
+    /// 104차(사용자: 「소등되면 손전등도 잠깐 동안 꺼지도록 · 배터리 충전 키를 눌러도 충전 안 되도록 실수 예방」): 소등 연출이 부른다 —
+    /// 손전등을 끄고 <paramref name="darkSeconds"/>초 켜지지 않게 하며(딸깍만), 소등이 끝날 때(<see cref="BlackoutEnd"/>)까지 R을 받지 않는다. 갈던 중이면 그만둔다(예비는 쓰지 않음).
+    /// </summary>
+    public static void BlackoutStart(float darkSeconds)
+    {
+        s_blackouts++;
+        s_blackoutDarkUntil = Time.time + Mathf.Max(0f, darkSeconds);
+        if (Active != null) Active._swapUntil = -1f;
+        FlashlightRelay relay = FlashlightRelay.Active;
+        if (relay != null && relay.IsOn) relay.SetOn(false);
+    }
+
+    /// <summary>104차: 소등이 끝났다(연출 정리) — R을 다시 받는다.</summary>
+    public static void BlackoutEnd()
+    {
+        if (s_blackouts > 0) s_blackouts--;
+        if (s_blackouts == 0) s_blackoutDarkUntil = -1f;
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetBlackout()
+    {
+        s_blackouts = 0;
+        s_blackoutDarkUntil = -1f;
     }
 
     /// <summary>갈아 끼우는 중인지.</summary>
@@ -167,7 +207,8 @@ public sealed class FlashlightPower : MonoBehaviour
             if (Swapping && Time.time >= _swapUntil) FinishSwap(relay, b);
             else if (!Swapping && ReadSwapInput())
             {
-                if (b.Charge >= SwapBlockCharge) DeskStarterKit.ShowStillCharged();   // 102차: 막 갈았거나 거의 가득 — 예비를 쓰지 않는다
+                if (SwapLocked) DeskStarterKit.ShowNotice(SwapLockedText);   // 104차: 소등 중 실수 예방
+                else if (b.Charge >= SwapBlockCharge) DeskStarterKit.ShowStillCharged();   // 102차: 막 갈았거나 거의 가득 — 예비를 쓰지 않는다
                 else BeginSwap();
             }
 

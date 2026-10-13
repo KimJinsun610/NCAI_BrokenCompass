@@ -211,7 +211,7 @@ public sealed class PlayerInteractor : MonoBehaviour
         bool storage = _kind == DoorPolicySO.Kind.Storage;
         // 정책은 절대적이다. 잠금 무시(F4)는 열쇠만 건너뛰지 기획을 건너뛰지 않는다 —
         // 정책까지 무시하려면 DoorPolicySO.OpenEverythingOverride(F5)를 켜야 한다.
-        bool sealedOff = _kind == DoorPolicySO.Kind.Sealed || (storage && IsLockedLocker(door));
+        bool sealedOff = _kind == DoorPolicySO.Kind.Sealed || (storage && IsLockedLocker(door)) || IsHeldShut(door);   // 104차: 연출이 잠깐 잠근 문
         bool needsKey = door.IsLocked && !IgnoreLocks;
 
         if (sealedOff || (needsKey && !door.IsOpen))
@@ -393,6 +393,26 @@ public sealed class PlayerInteractor : MonoBehaviour
     private static void ResetLockers()
     {
         s_unlockedLockers.Clear();
+        s_heldShut.Clear();
+    }
+
+    private static readonly System.Collections.Generic.HashSet<Component> s_heldShut = new System.Collections.Generic.HashSet<Component>();
+
+    /// <summary>
+    /// 104차(사용자: 「여자아이 조우 시 화장실 못 나가도록 목격하기 전까지 화장실 문 잠금」): 연출이 그 문(벤더 문 컴포넌트가 붙은 오브젝트)을 잠깐 잠그거나 푼다.
+    /// 잠근 동안 [E]는 「잠겨 있습니다」 + 덜컹(열리지 않는다).
+    /// </summary>
+    public static void HoldShut(Component owner, bool shut)
+    {
+        if (owner == null) return;
+        if (shut) s_heldShut.Add(owner);
+        else s_heldShut.Remove(owner);
+    }
+
+    /// <summary>104차: 연출이 잠근 문인지.</summary>
+    public static bool IsHeldShut(DoorHandle door)
+    {
+        return door.IsValid && door.Owner != null && s_heldShut.Contains(door.Owner);
     }
 
     /// <summary>쓰지 않는 문(정책 Sealed — 나무판자로 막힌 문 등)인가. 연출로도 열지 않는다(2026-10-04 42차).</summary>

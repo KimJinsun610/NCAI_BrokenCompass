@@ -115,10 +115,12 @@ public sealed class HallFigure : MonoBehaviour
         NightProgram program = NightRun.IsNightActive ? NightRun.Program : null;
         // 70차 ④(민: 「복도 끝 모형과 과학실 모형은 겹치면 안 돼. 과학실 모형이 복도에 나오고, 다음 날 급습해야 해」):
         // 복도 끝에 선 자의 밤에 나온 과학실 모형이 다음 날(급습 밤)에도 복도 끝에 그대로 서 있다가, 급습 대역이 서면 물러난다.
-        bool rushNight = program != null && program.HasEncounter(ProgramCatalog.ModelRush);
+        // 104차(사용자: 「day 4 복도 끝에 선 자는 그냥 서 있는 거로 고정 · day 5 인체 모형 급습은 상시 대기, 빛을 받는 순간 바로 급습」): 고정 편성은 밤새 서 있는 것(Standing)으로.
+        bool standingRush = program != null && program.IsStanding(ProgramCatalog.ModelRush);
+        bool rushNight = program != null && (program.HasEncounter(ProgramCatalog.ModelRush) || standingRush);
         bool rushing = rushNight && RushOnStage();
         if (rushing) _rushedTonight = true;
-        bool want = program != null && (program.HasEncounter(ProgramCatalog.HallEndFigure) || (rushNight && !_rushedTonight));
+        bool want = program != null && (program.HasEncounter(ProgramCatalog.HallEndFigure) || program.IsStanding(ProgramCatalog.HallEndFigure) || (rushNight && !_rushedTonight));
         if (!ReferenceEquals(program, _program))
         {
             _program = program;
@@ -139,6 +141,32 @@ public sealed class HallFigure : MonoBehaviour
         if (_figure == null) return;
         bool show = DeathCutscene.Playing == null;   // 사망 컷신의 모형과 겹치지 않게
         if (_figure.activeSelf != show) _figure.SetActive(show);
+        if (standingRush && !_rushedTonight && show && Lit()) NightRun.TriggerStanding(ProgramCatalog.ModelRush);   // 104차: 빛을 받는 순간 곧바로
+    }
+
+    /// <summary>104차: 복도에서 손전등 원뿔이 가림 없이 모형(가슴·머리)에 닿는지.</summary>
+    private bool Lit()
+    {
+        if (SpaceIds.Canonical(NightRun.CurrentSpace) != SpaceId.Corridor) return false;
+        FlashlightRelay light = FlashlightRelay.Active;
+        Camera cam = Camera.main;
+        if (light == null || !light.IsOn || cam == null) return false;
+        Vector3 o = cam.transform.position;
+        Vector3 f = cam.transform.forward;
+        Vector3 at = _figure.transform.position;
+        for (int i = 0; i < 2; i++)
+        {
+            Vector3 p = at + Vector3.up * (i == 0 ? 1.2f : 1.65f);
+            if (!SensingRules.InBeam(o, f, p, NightRun.BeamRange)) continue;
+            RaycastHit hit;
+            if (!Physics.Linecast(o, p, out hit, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return true;
+            Transform h = hit.collider.transform;
+            if (h.IsChildOf(_figure.transform)) return true;
+            PlayerSensors hub = PlayerSensors.Active;
+            if (hub != null && hub.PlayerRoot != null && h.IsChildOf(hub.PlayerRoot)) return true;
+        }
+
+        return false;
     }
 
     private bool _rushedTonight;

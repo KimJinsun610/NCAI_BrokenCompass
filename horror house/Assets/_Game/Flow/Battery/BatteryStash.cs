@@ -14,6 +14,9 @@ using UnityEngine.SceneManagement;
 /// 그 프레임에는 <see cref="PlayerInteractor"/>가 [E]를 받지 않는다(서랍이 같이 닫히지 않게). 주머니가 차 있으면 「예비 배터리가 가득 찼습니다」.</item>
 /// </list>
 /// 배터리가 꺼져 있으면(<see cref="NightRun.BatteryEnabled"/> 거짓) 아무것도 하지 않는다. 근무 씬에 자동으로 선다.
+/// <para>104차(사용자: 「배터리가 맵에 있어도 찾기 너무 어렵다 — 특히 도서관」 → 「손전등이 안 닿아도 어느 정도 반짝이게 · 가까우면 외곽선」):
+/// 보이는 배터리 꼭지에 작은 반짝임(<see cref="GlintFor"/>)을 띄운다 — 손전등이 없어도 <see cref="TwinklePeriod"/>초마다 짧게 반짝이고(<see cref="GlintSeeRange"/>m 안),
+/// 손전등 원뿔이 <see cref="GlintLitRange"/>m 안에서 닿으면 늘 빛나며 더 크게 반짝인다. <see cref="NearOutlineRange"/>m 안에서 보이면 흐린 외곽선(<see cref="NearOutlineStrength"/>).</para>
 /// </summary>
 [DisallowMultipleComponent]
 [DefaultExecutionOrder(40)]   // PlayerInteractor(50)보다 먼저 — 배터리를 겨눈 프레임에 문 조작을 막는다
@@ -32,10 +35,35 @@ public sealed class BatteryStash : MonoBehaviour
     public const string FullText = "예비 배터리가 가득 찼습니다";
 
     private const float AimSlack = 0.1f;
+
+    /// <summary>104차: 손전등 없이도 반짝임이 보이는 거리(m).</summary>
+    public const float GlintSeeRange = 11f;
+
+    /// <summary>104차: 손전등 원뿔이 이 거리(m) 안에서 닿으면 늘 빛나고 더 크게 반짝인다.</summary>
+    public const float GlintLitRange = 6f;
+
+    /// <summary>104차: 손전등 없을 때 반짝이는 주기(초) — 배터리마다 어긋난다.</summary>
+    public const float TwinklePeriod = 2.4f;
+
+    /// <summary>104차: 한 번 반짝이는 길이(초).</summary>
+    public const float TwinkleSeconds = 0.28f;
+
+    /// <summary>104차: 이 거리(m) 안에서 보이면 흐린 외곽선.</summary>
+    public const float NearOutlineRange = 2.5f;
+
+    /// <summary>104차: 가까울 때 외곽선 진하기(겨누면 1).</summary>
+    public const float NearOutlineStrength = 0.35f;
+
+    private Material _sparkMat;
+    private MaterialPropertyBlock _sparkBlock;
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorId = Shader.PropertyToID("_Color");
     private static readonly Vector3 GuardRoom = new Vector3(34f, 0f, 46.1f);
 
     private sealed class Cache
     {
+        public GameObject Spark;     // 104차: 반짝임(모형 밖 — 외곽선에 안 잡히게)
+        public float Phase;
         public string Id;
         public DoorHandle Door;
         public bool Open;            // 67차: 열린 선반 자리(문 없음 — 늘 보인다)
@@ -208,6 +236,7 @@ public sealed class BatteryStash : MonoBehaviour
         Clear();
         if (_bodyMat != null) Destroy(_bodyMat);
         if (_capMat != null) Destroy(_capMat);
+        if (_sparkMat != null) Destroy(_sparkMat);
         if (Active == this) Active = null;
     }
 
@@ -250,6 +279,7 @@ public sealed class BatteryStash : MonoBehaviour
         }
 
         VisibleCount = visible;
+        UpdateGlints(live);
         if (DutyCards.AimingCardThisFrame)
         {
             // 102차: 출입 카드를 겨눈 프레임은 카드 차례(교실 교탁 서랍에 배터리가 같이 있으면 [E]가 배터리로 가 카드가 안 집혔다).
@@ -282,6 +312,7 @@ public sealed class BatteryStash : MonoBehaviour
         for (int i = 0; i < _placed.Count; i++)
         {
             if (_placed[i].Id == id && _placed[i].Model != null) _placed[i].Model.SetActive(false);
+            if (_placed[i].Id == id && _placed[i].Spark != null) _placed[i].Spark.SetActive(false);
         }
 
         ReleasePrompt();
@@ -739,12 +770,101 @@ public sealed class BatteryStash : MonoBehaviour
         for (int i = 0; i < _placed.Count; i++)
         {
             if (_placed[i].Model != null) Destroy(_placed[i].Model);
+            if (_placed[i].Spark != null) Destroy(_placed[i].Spark);
         }
 
         _placed.Clear();
         for (int i = 0; i < _unlocked.Count; i++) PlayerInteractor.SetLockerUnlocked(_unlocked[i], false);
         _unlocked.Clear();
         _plan = null;
+    }
+
+    // ── 반짝임 · 가까운 외곽선(104차) ─────────────────────────────
+
+    /// <summary>
+    /// 반짝임의 크기(m)와 밝기 — <paramref name="lit"/> = 손전등 원뿔이 닿음, <paramref name="t"/> = 그 배터리의 반짝 주기 안 시각(초), <paramref name="time"/> = 흐르는 시각.
+    /// 손전등 없이는 주기마다 <see cref="TwinkleSeconds"/>초만 반짝이고(나머지는 0), 닿으면 늘 작게 빛나며 반짝일 때 더 커진다. 시험용으로 열어 둔다.
+    /// </summary>
+    public static Vector2 GlintFor(bool lit, float t, float time)
+    {
+        float twinkle = t >= 0f && t < TwinkleSeconds ? Mathf.Sin(t / TwinkleSeconds * Mathf.PI) : 0f;
+        if (lit)
+        {
+            float shimmer = 0.5f + 0.5f * Mathf.Sin(time * 11f);
+            return new Vector2(0.014f + 0.022f * twinkle + 0.004f * shimmer, 2.4f + 2.6f * twinkle);
+        }
+
+        return new Vector2(0.02f * twinkle, 1.6f * twinkle);
+    }
+
+    private void UpdateGlints(bool live)
+    {
+        Camera cam = Camera.main;
+        FlashlightRelay light = FlashlightRelay.Active;
+        bool on = light != null && light.IsOn;
+        for (int i = 0; i < _placed.Count; i++)
+        {
+            Cache c = _placed[i];
+            bool shown = live && cam != null && c.Model != null && c.Model.activeSelf;
+            if (!shown)
+            {
+                if (c.Spark != null && c.Spark.activeSelf) c.Spark.SetActive(false);
+                continue;
+            }
+
+            Vector3 o = cam.transform.position;
+            Vector3 p = c.Model.transform.TransformPoint(new Vector3(0f, 0.046f, 0f));   // 꼭지 바로 위
+            float dist = Vector3.Distance(o, p);
+            Vector3 vp = cam.WorldToViewportPoint(p);
+            bool onScreen = vp.z > 0f && vp.x > -0.05f && vp.x < 1.05f && vp.y > -0.05f && vp.y < 1.05f;
+            bool seen = onScreen && dist <= GlintSeeRange && Visible(o, p, c.Owner);
+            if (seen && dist <= NearOutlineRange) InteractionOutline.Request(c.Model.transform, NearOutlineStrength);
+
+            bool lit = seen && on && dist <= GlintLitRange && SensingRules.InBeam(o, cam.transform.forward, p, NightRun.BeamRange);
+            if (c.Spark == null)
+            {
+                c.Spark = MakeSpark();
+                c.Phase = Random.value * TwinklePeriod;
+            }
+
+            Vector2 g = seen ? GlintFor(lit, Mathf.Repeat(Time.time + c.Phase, TwinklePeriod), Time.time + c.Phase) : Vector2.zero;
+            if (g.x < 0.002f)
+            {
+                if (c.Spark.activeSelf) c.Spark.SetActive(false);
+                continue;
+            }
+
+            if (!c.Spark.activeSelf) c.Spark.SetActive(true);
+            Vector3 toCam = (o - p).normalized;
+            c.Spark.transform.SetPositionAndRotation(p + toCam * 0.015f, Quaternion.LookRotation(-toCam) * Quaternion.Euler(0f, 0f, 45f));
+            c.Spark.transform.localScale = new Vector3(g.x, g.x, g.x);
+            Color col = new Color(1f, 0.93f, 0.72f) * g.y;
+            col.a = 1f;
+            _sparkBlock.SetColor(BaseColorId, col);
+            _sparkBlock.SetColor(ColorId, col);
+            c.Spark.GetComponent<Renderer>().SetPropertyBlock(_sparkBlock);
+        }
+    }
+
+    private GameObject MakeSpark()
+    {
+        if (_sparkMat == null)
+        {
+            Shader unlit = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Unlit/Color");
+            _sparkMat = new Material(unlit) { name = "battery glint (runtime)" };
+            _sparkBlock = new MaterialPropertyBlock();
+        }
+
+        GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        Destroy(go.GetComponent<Collider>());
+        go.name = "배터리 반짝임";
+        go.transform.SetParent(transform, false);
+        Renderer r = go.GetComponent<Renderer>();
+        r.sharedMaterial = _sparkMat;
+        r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        r.receiveShadows = false;
+        go.SetActive(false);
+        return go;
     }
 
     // ── 겨눔 ─────────────────────────────────────────────────

@@ -140,7 +140,7 @@ public sealed class MapBoardYouAreHere : MonoBehaviour
         for (int i = 0; i < RoomRects.Length; i++)
         {
             Bounds box;
-            if (!zones.TryGetSpaceBox(RoomRects[i].Key, out box)) continue;
+            if (!TryRoomBox(zones, RoomRects[i].Key, out box)) continue;
             if (world.x < box.min.x || world.x > box.max.x || world.z < box.min.z || world.z > box.max.z) continue;
             Rect r = RoomRects[i].Value;
             float u = Mathf.InverseLerp(box.max.x, box.min.x, world.x);   // 오른쪽 = −x
@@ -155,6 +155,25 @@ public sealed class MapBoardYouAreHere : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 104차(사용자: 「맵에 표시되는 도서관 배터리 위치를 다시 점검」): 판정 공간 상자가 실제 방 벽과 어긋나는 방은 벽 안쪽(실측)으로 지도에 맞춘다.
+    /// 도서관 판정 상자는 x 2.0~14.4인데 동쪽 벽(문)이 x 12.8 — 상자가 복도 쪽으로 1.6m 더 나가 있어 지도 점이 서쪽(지도 오른쪽)으로 최대 13%(약 30px) 밀렸다.
+    /// 북쪽 벽도 z 40.3(상자 40.0). 판정 상자는 그대로 두고(도서관 문턱 판정) 지도에만 쓴다.
+    /// </summary>
+    public static readonly Bounds LibraryInterior = new Bounds(new Vector3(7.4f, 3.4f, 48.15f), new Vector3(10.8f, 4f, 15.7f));   // x 2.0~12.8 · z 40.3~56.0
+
+    /// <summary>지도 맞춤에 쓰는 방 상자 — 도서관은 벽 안쪽(<see cref="LibraryInterior"/>), 나머지는 판정 공간 상자.</summary>
+    public static bool TryRoomBox(SpaceZones zones, SpaceId space, out Bounds box)
+    {
+        if (space == SpaceId.Library)
+        {
+            box = LibraryInterior;
+            return true;
+        }
+
+        return zones.TryGetSpaceBox(space, out box);
+    }
+
     /// <summary>방 사각형 네 모서리 ↔ 공간 상자 네 모서리로 최소제곱 아핀 맞춤.</summary>
     private void Fit(SpaceZones zones)
     {
@@ -163,7 +182,7 @@ public sealed class MapBoardYouAreHere : MonoBehaviour
         for (int i = 0; i < RoomRects.Length; i++)
         {
             Bounds box;
-            if (!zones.TryGetSpaceBox(RoomRects[i].Key, out box)) continue;
+            if (!TryRoomBox(zones, RoomRects[i].Key, out box)) continue;
             Rect r = RoomRects[i].Value;
             w.Add(new Vector2(box.max.x, box.min.z)); p.Add(new Vector2(r.xMin, r.yMin));
             w.Add(new Vector2(box.min.x, box.min.z)); p.Add(new Vector2(r.xMax, r.yMin));

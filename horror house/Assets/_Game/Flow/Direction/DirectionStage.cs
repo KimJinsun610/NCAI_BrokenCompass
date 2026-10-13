@@ -130,6 +130,8 @@ public sealed class DirectionStage : MonoBehaviour
         // 61차: 몹은 먼저 세우고 플레이어가 알아본 뒤 대면 · 「안쪽 깊이」 머무름은 방 상자로 잰다.
         NightRun.EncounterSightGating = true;
         NightRun.DeepInSpaceProbe = DeepIn;
+        NightRun.CorpseOnReport = true;   // 104차: 시체 낙하 = 사다리 보고 도중
+        EnsureLadderLight();
         StagePoints.Set(StageAnchors.RushHall, RushHallSpot);   // 103차: 모형 급습 「과학실 쪽 복도에 들어서면」(대본 NearAnchor)이 이 자리에서 잰다
     }
 
@@ -153,6 +155,7 @@ public sealed class DirectionStage : MonoBehaviour
         BoyHeadBang.WatchedToEnd -= OnBoyWatchedToEnd;
         NightRun.EncounterSightGating = false;
         NightRun.DeepInSpaceProbe = null;
+        NightRun.CorpseOnReport = false;
         ClearAll(DirectionPhase.Aborted);
         if (s_active == this) s_active = null;
     }
@@ -478,7 +481,72 @@ public sealed class DirectionStage : MonoBehaviour
             SightProbe.Attach(pre.Go, id, () => NightRun.EncounterSeen(id), gate);
         }
 
+        if (id == ProgramCatalog.ToiletGirl) HoldToiletDoor(pre.Holder);   // 104차: 목격 전까지 화장실 문 잠금
+
         if (Verbose) Debug.Log("[Direction] 대역을 세움(보기를 기다림) — " + id + " @" + pre.At.ToString("F1"));
+    }
+
+    private Component _heldToiletDoor;
+    private Coroutine _toiletLock;
+
+    /// <summary>104차: 화장실 출입문에서 이만큼(m, 수평) 안쪽으로 들어오면 문을 닫고 잠근다(문턱에서 닫혀 끼이지 않게).</summary>
+    public const float ToiletLockDepth = 1.4f;
+
+    /// <summary>
+    /// 104차(사용자: 「여자아이 조우 시 화장실 못 나가도록 목격하기 전까지 화장실 문 잠금」): 소녀가 서 있는 동안 플레이어가 화장실 안으로 들어오면
+    /// 출입문(칸 문이 아닌, 화장실 상자 가장자리의 여닫는 문)을 닫고 잠근다 — 밖에 있을 때는 잠그지 않는다(104차 후속: 3번 칸 지시가 나가면 소녀가 먼저 서서 기다린다).
+    /// 소녀를 알아보면(대면) 푼다(<see cref="ReleaseToiletDoor"/>) — 중단되면 세워 둔 것의 정리가 푼다.
+    /// </summary>
+    private void HoldToiletDoor(Staged holder)
+    {
+        ReleaseToiletDoor();
+        DoorHandle door = ToiletEntrance();
+        if (!door.IsValid) return;
+        holder.Undo.Add(ReleaseToiletDoor);
+        _toiletLock = StartCoroutine(LockToiletWhenInside(door));
+    }
+
+    private System.Collections.IEnumerator LockToiletWhenInside(DoorHandle door)
+    {
+        while (door.IsValid && door.Owner != null)
+        {
+            if (_heldToiletDoor == null && SpaceIds.Canonical(NightRun.CurrentSpace) == SpaceId.Toilet && FlatDistance(PlayerFeet(), door.Owner.transform.position) >= ToiletLockDepth)
+            {
+                if (door.IsOpen) door.Close();
+                PlayerInteractor.HoldShut(door.Owner, true);
+                _heldToiletDoor = door.Owner;
+                if (Verbose) Debug.Log("[Direction] 화장실 문 잠금 — " + door.Owner.name + "(소녀를 볼 때까지)");
+            }
+
+            yield return null;
+        }
+    }
+
+    private void ReleaseToiletDoor()
+    {
+        if (_toiletLock != null) StopCoroutine(_toiletLock);
+        _toiletLock = null;
+        if (_heldToiletDoor == null) return;
+        PlayerInteractor.HoldShut(_heldToiletDoor, false);
+        if (Verbose) Debug.Log("[Direction] 화장실 문 풀림");
+        _heldToiletDoor = null;
+    }
+
+    /// <summary>화장실 출입문 — 화장실 공간 상자(1m 넓힌) 안의 여닫는 문 중 칸 문(<c>Cabin</c>)이 아닌 것. 없으면 빈 손잡이.</summary>
+    private DoorHandle ToiletEntrance()
+    {
+        SpaceZones z = Zones();
+        Bounds box;
+        if (z == null || !z.TryGetSpaceBox(SpaceId.Toilet, out box)) return new DoorHandle();
+        box.Expand(new Vector3(2f, 4f, 2f));
+        foreach (DoorHandle d in DoorHandle.All())
+        {
+            if (!d.IsValid || d.Owner == null || d.Owner.name.Contains("Cabin")) continue;
+            if (PlayerInteractor.Classify(d) != DoorPolicySO.Kind.Openable) continue;
+            if (box.Contains(d.Owner.transform.position)) return d;
+        }
+
+        return new DoorHandle();
     }
 
     private Presented TakePresented(string id)
@@ -550,6 +618,7 @@ public sealed class DirectionStage : MonoBehaviour
         }
 
         Presented pre = TakePresented(e.SourceId);   // 61차: 세워 둔 대역을 이어 쓴다
+        if (e.SourceId == ProgramCatalog.ToiletGirl) ReleaseToiletDoor();   // 104차: 소녀를 봤다 — 화장실 문을 푼다
         Cleanup(e.SourceId, DirectionPhase.Aborted);
         Staged st = Stage(e.SourceId);
         if (pre != null) st.Undo.AddRange(pre.Holder.Undo);
@@ -562,6 +631,10 @@ public sealed class DirectionStage : MonoBehaviour
             LightGroup g = Group(script.LightsOff);
             g.TurnOff();
             st.Undo.Add(g.TurnOn);
+            // 104차(사용자: 「소등되면 손전등도 잠깐 동안 꺼지도록 · 배터리 충전 키를 눌러도 충전 안 되도록 실수 예방」):
+            // 불이 나가는 순간 손전등도 꺼지고 잠깐 켜지지 않는다 · 소등 동안 R(배터리 갈기)을 받지 않는다(갈고 나면 다시 켜져 위반이 됐다).
+            FlashlightPower.BlackoutStart(BlackoutFlashlightOffSeconds);
+            st.Undo.Add(FlashlightPower.BlackoutEnd);
         }
 
         if (script.Zone == FinalCues.ScienceDarkZone)
@@ -613,6 +686,7 @@ public sealed class DirectionStage : MonoBehaviour
                 go = SpawnAt(st, script.StandIn, script.StageAnchor, script.Placement == CuePlacement.CeilingAhead, point, player, script.AnchorId, out at);
             }
             if (script.StandIn == "mob.boy") UnseenDespawn.Mark(go);   // 62차: 소년은 시야에서 벗어나야 사라진다
+            if (e.SourceId == ProgramCatalog.BoyBang) BoyExitScare.Attach(go);   // 104차: 교실을 나가려 하면 덮친다
             if (e.SourceId == ProgramCatalog.BoyBang) BoyHeadBang.Play(go, true);   // 103차(민): 응시하지 않았어도 나타나면 곧장 머리를 박는다(바라보면 빨라지고 C2 위반) · 교실을 나가도 사라질 때까지 계속
             if (e.SourceId == ProgramCatalog.ModelRush)
             {
@@ -780,6 +854,35 @@ public sealed class DirectionStage : MonoBehaviour
 
     /// <summary>61차: 사다리 방 시체 자리 — 문간에서 사다리를 볼 때 화면 가운데에 오는 바닥(민 스크린샷).</summary>
     public static readonly Vector3 LadderRoomCorpseSpot = new Vector3(51.8f, 1.5f, 33.9f);
+
+    /// <summary>104차: 소등되는 순간 손전등이 켜지지 않는 시간(초).</summary>
+    public const float BlackoutFlashlightOffSeconds = 2.5f;
+
+    /// <summary>
+    /// 104차(사용자: 「사다리 방 안에 기본 라이팅을 조금 적용」 → 「교실 안쪽 방이 너무 비정상적으로 밝아. 교실의 밝기와 동일하게」): 사다리 방 천장에서 아래로 비추는 약한 빛의 세기.
+    /// 0.55 → 0.25 — 밤의 교실(천장 등 꺼짐, 창빛만)과 같은 화면 밝기(플레이 실측: 교실 평균 6.0·중앙값 3.0 ↔ 사다리 방 0.25에서 6.1·2.7, 옛 0.55는 15.4·9.2).
+    /// </summary>
+    public const float LadderLightIntensity = 0.25f;
+
+    /// <summary>104차: 사다리 방 빛 오브젝트 이름.</summary>
+    public const string LadderLightName = "사다리 방 기본 빛";
+
+    /// <summary>104차: 사다리 방(창고) 천장에 약한 빛 하나 — 씬은 고치지 않고 런타임에 세운다. 이미 있으면 그대로.</summary>
+    private void EnsureLadderLight()
+    {
+        if (transform.Find(LadderLightName) != null) return;
+        GameObject go = new GameObject(LadderLightName);
+        go.transform.SetParent(transform, false);
+        go.transform.SetPositionAndRotation(new Vector3(LadderRoom.center.x, LadderRoom.max.y + 1.0f, LadderRoom.center.z), Quaternion.Euler(90f, 0f, 0f));
+        Light l = go.AddComponent<Light>();
+        l.type = LightType.Spot;
+        l.spotAngle = 120f;
+        l.innerSpotAngle = 60f;
+        l.range = 7f;
+        l.intensity = LadderLightIntensity;
+        l.color = new Color(0.899f, 0.870f, 0.941f);   // 교실 천장 등과 같은 빛깔(옛: 노르스름해 따로 떠 보였다)
+        l.shadows = LightShadows.None;
+    }
 
     /// <summary>바퀴벌레 이펙트 대역(김진선님 벌레 떼를 감싼 것, 빌더가 만든다).</summary>
     public const string CorpseRoachesId = "fx.corpse.roaches";

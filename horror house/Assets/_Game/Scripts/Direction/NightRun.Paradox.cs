@@ -18,6 +18,12 @@ namespace NightDuty
             get { return _decodedBlanks; }
         }
 
+        /// <summary>
+        /// 104차(사용자: 「수칙에서 _? 같은 기호들이 공개되는 것도 없애주라」): 안전한 읽기 보상으로 수칙 빈칸(<c>_?</c> · <c>?_?</c> · <c>!_</c>)을 해독하는지 — 기본 끔(가림표는 끝까지 그대로).
+        /// 안전한 읽기의 다른 보상(그 공간 이상 여부 알림)은 그대로다.
+        /// </summary>
+        public static bool BlankDecodingEnabled { get; set; }
+
         /// <summary>80차: 빈칸을 해독했다(수칙 ID). 태블릿 글은 이미 고쳐져 있다.</summary>
         public static event Action<string> BlankDecoded;
 
@@ -39,7 +45,7 @@ namespace NightDuty
         /// </summary>
         private static string DecodeBlank(SpaceId space)
         {
-            if (_program == null) return null;
+            if (_program == null || !BlankDecodingEnabled) return null;
             SpaceId at = SpaceIds.Canonical(space);
             string pick = null;
             foreach (RuleDef def in _program.Deck)

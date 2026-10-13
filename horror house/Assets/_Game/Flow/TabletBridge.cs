@@ -483,6 +483,16 @@ public sealed class TabletBridge : MonoBehaviour
             return;
         }
 
+        // 104차 검토: 조우 유도 문자를 같은 카드로 다시 내면 옛 문자를 지우고 새로 넣는다(옛: 옛 문자에 취소선을 그어 끝난 지시처럼 보였다).
+        string previous;
+        if (pid.EndsWith("." + DutyOutcome.Issued) && message.CardId != null && message.CardId.StartsWith(NightRun.GuideCardPrefix)
+            && _dutyIssued.TryGetValue(message.CardId, out previous) && Contains(previous))
+        {
+            messages.Remove(previous);
+            _dutyMessages.Remove(previous);
+            _dutyIssuedText.Remove(previous);
+        }
+
         _messageSerial++;
         string id = message.ParadoxId + "." + _messageSerial;
         messages.Add(id, message.Text, Now());

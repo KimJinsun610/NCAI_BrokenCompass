@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 /// <summary>붙잡힘 연출기의 축별 장면 부분 — 연출표(<see cref="CaptureCastSO"/>)의 프리팹 장면 또는 기본 얼굴 장면.</summary>
 public sealed partial class CaptureDirector
@@ -282,6 +284,7 @@ public sealed partial class CaptureDirector
         }
 
         LastScene = CaptureCastSO.Label(axis) + " · 컷신 " + prefab.name + (scream ? " · 비명" : string.Empty);
+        if (FaceOnly(axis) && SkipToFace(cs)) LastScene += " · 얼굴부터";
         bool skippable = count >= 3;
         float t = 0f;
         while (!finished && t < 30f)
@@ -309,6 +312,50 @@ public sealed partial class CaptureDirector
         LastScene += " → " + t.ToString("0.00") + "초";
         Destroy(cs.gameObject);
         done(true);
+    }
+
+    /// <summary>얼굴 장면(조도 컷신에서 다시 켜지는 순간) 이만큼(초) 앞에서 시작한다 — 암흑 속에서 카메라가 섞여 들어갈 시간.</summary>
+    public const float FaceLeadSeconds = 0.4f;
+
+    /// <summary>조도 컷신 Timeline에서 얼굴 활성 트랙을 못 찾을 때의 얼굴 시각(김진선님 빌더의 RevealAt).</summary>
+    public const double FallbackRevealSeconds = 6.5;
+
+    /// <summary>
+    /// 104차(사용자: 도서관 노란 얼굴에게 붙잡히면 「조도 처형 장면 중 얼굴만 바로 나오는 걸로」): 이번 붙잡힘(또는 미리 보기)의 출처가
+    /// <see cref="LibraryDuck.CaptureSource"/>인 조도 붙잡힘이면 깜빡임·암흑 빌드업을 건너뛴다.
+    /// </summary>
+    private bool FaceOnly(FearAxis axis)
+    {
+        if (axis != FearAxis.Illuminance) return false;
+        string source = _previewSource ?? (NightRun.IsCaptured ? NightRun.Cause.SourceId : null);
+        return source == LibraryDuck.CaptureSource;
+    }
+
+    /// <summary>컷신 Timeline을 얼굴이 켜지기 직전으로 옮긴다(김진선님 프리팹·Timeline은 그대로 — 이번 인스턴스의 재생 시각만). 못 옮기면 false.</summary>
+    public static bool SkipToFace(DeathCutscene cs)
+    {
+        PlayableDirector d = cs != null ? cs.GetComponentInChildren<PlayableDirector>(true) : null;
+        if (d == null) return false;
+        double reveal = RevealSeconds(d);
+        d.time = Math.Max(0.0, reveal - FaceLeadSeconds);
+        d.Evaluate();
+        return true;
+    }
+
+    /// <summary>조도 컷신에서 얼굴(Dummy)이 켜지는 시각 — 「Dummy Active」 활성 클립 시작 + 0.05초(빌더가 0.05초 일찍 세운다).</summary>
+    public static double RevealSeconds(PlayableDirector d)
+    {
+        TimelineAsset timeline = d != null ? d.playableAsset as TimelineAsset : null;
+        if (timeline != null)
+        {
+            foreach (TrackAsset track in timeline.GetOutputTracks())
+            {
+                if (!(track is ActivationTrack) || track.name != "Dummy Active") continue;
+                foreach (TimelineClip clip in track.GetClips()) return clip.start + 0.05;
+            }
+        }
+
+        return FallbackRevealSeconds;
     }
 
     /// <summary>

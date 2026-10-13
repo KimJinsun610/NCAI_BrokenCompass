@@ -213,7 +213,7 @@ public sealed class NightRunDriver : MonoBehaviour
     {
         if (!_begun || s_owner != this) return;
         UpdateEncounterHold();
-        bool flowing = (gameTime.IsRunning || _encounterHold) && !gameTime.IsEnded;   // 104차: 시계만 멈추고 판정·연출은 흐른다
+        bool flowing = !OthersHoldClock() && !gameTime.IsEnded;   // 104차: 우리 붙듦은 시계만 멈추고 판정·연출은 흐른다(다른 붙듦은 전처럼 다 멈춘다)
         if (flowing) _tracker.Advance(NightMinute);
 
         if (!NightRun.IsNightActive) return;
@@ -225,6 +225,7 @@ public sealed class NightRunDriver : MonoBehaviour
     /// 104차(사용자: 「이월은 없어. 의도한 날짜에 무조건 목격해야 해」 → 「유도 지시 + 시계 멈춤」): 고정 편성 밤에 조우가 남은 채 03:30에 닿으면
     /// 게임 시계를 붙든다(<see cref="NightRun.ClockHeld"/>) — 다 보면 놓는다. 판정·연출·지시는 그동안에도 흐른다.
     /// </summary>
+    /// 104차 후속: 밤 시작에 경비실을 나설 때까지(<see cref="NightRun.StartHeld"/>)도 같은 길로 붙든다.
     private void UpdateEncounterHold()
     {
         bool want = NightRun.ClockHeld;
@@ -232,7 +233,23 @@ public sealed class NightRunDriver : MonoBehaviour
         _encounterHold = want;
         if (want) gameTime.Hold(this);
         else gameTime.Release(this);
-        Debug.Log("[NightRunDriver] " + (want ? "남은 조우가 있어 밤 시계를 " + NightClock.Clock(NightRun.HoldMinute) + "에서 붙듦" : "남은 조우를 다 봐서 밤 시계를 놓음"));
+        string why = want
+            ? (NightRun.StartHeld ? "경비실을 나설 때까지 밤 시계를 붙듦" : "남은 조우가 있어 밤 시계를 " + NightClock.Clock(NightRun.HoldMinute) + "에서 붙듦")
+            : "밤 시계를 놓음";
+        Debug.Log("[NightRunDriver] " + why);
+    }
+
+    /// <summary>
+    /// 104차 검토: 우리 말고 다른 쪽(개발자 모드 시계 정지·포획 미리보기 등)이 시계를 붙들었는지.
+    /// 옛: 우리 붙듦 중이면 다른 붙듦이 있어도 판정·연출이 흘렀다.
+    /// </summary>
+    private bool OthersHoldClock()
+    {
+        if (!_encounterHold) return !gameTime.IsRunning;
+        gameTime.Release(this);
+        bool others = !gameTime.IsRunning;
+        gameTime.Hold(this);
+        return others;
     }
 
     private void OnDestroy()

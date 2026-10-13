@@ -7,8 +7,10 @@ namespace NightDuty
     // <item>차례가 온 조우(TensionDirector.Head, 쉬는 시간 뒤)가 제 앞선 지시(변기 T-1 · 블라인드 L-2 · 사다리 C-3 · biology 책/도서관 순찰)를 갖고 있으면 그것을 먼저 낸다.
     // 그래도 <see cref="GuideGraceSeconds"/>초 안에 시작하지 않거나 앞선 지시가 없으면 [근무] 유도 문자(<see cref="GuideText"/>)를 보낸다 — 그때부터 앞선 지시 문은 열린 것으로 보고,
     // 디렉터는 <see cref="TensionDirector.SeqLenientSeconds"/>초 뒤 방아쇠를 「그 공간에 있기만 하면」으로 푼다.</item>
-    // <item>조우가 시작되면 유도 문자에 취소선(완료). 오래(<see cref="GuideRepeatSeconds"/>초) 시작하지 않으면 다시 보낸다.</item>
+    // <item>조우가 시작되면 유도 문자에 취소선(완료). 유도 문자는 한 번만 보낸다(104차 후속 — 재촉 없음).</item>
     // <item>조우가 남은 채 03:30(<see cref="HoldMinute"/>)에 닿으면 밤 시계를 붙든다(<see cref="ClockHeld"/> — 구동기가 GameTime을 멈춘다). 조기 퇴근도 막혀 있다(<see cref="EncountersPending"/>).</item>
+    // <item>104차 후속(사용자: 「처음 경비실에서 시작할 때 초기 수칙들을 읽을 시간이 필요하다」 → 「경비실 밖으로 나갈 때, 모든 밤에」): 밤마다 00:00에서
+    // 경비실을 나설 때까지(최대 <see cref="StartHoldMaxSeconds"/>초) 밤 시계를 붙든다(<see cref="StartHeld"/>). 판정 시작(00:16)도 그만큼 늦어진다.</item>
     // </list>
     public static partial class NightRun
     {
@@ -18,8 +20,8 @@ namespace NightDuty
         /// <summary>앞선 지시(그 공간 점검 등)가 있는 조우가 그 지시 뒤 이만큼(실제 초) 시작하지 않으면 유도 문자를 보낸다(마지막 수단).</summary>
         public const float GuideGraceSeconds = 45f;
 
-        /// <summary>유도 문자 뒤 이만큼(실제 초) 시작하지 않으면 다시 보낸다.</summary>
-        public const float GuideRepeatSeconds = 75f;
+        /// <summary>유도 문자의 카드 ID 머리(「guide.3」). 태블릿은 같은 카드를 다시 받으면 옛 문자를 지운다.</summary>
+        public const string GuideCardPrefix = "guide.";
 
         private sealed class GuideState
         {
@@ -72,6 +74,17 @@ namespace NightDuty
                 need[space] = n + 1;
             }
 
+            // 104차: 보고로 시작하는 조우(소년 = 교실 화분 C-1)는 그 항목이 꼭 있어야 한다.
+            foreach (string id in program.Sequence)
+            {
+                EncounterScript es = EncounterScripts.Find(id);
+                if (es == null || es.ReportTriggerItem.Length == 0 || rows.Exists(r => r.Id == es.ReportTriggerItem)) continue;
+                InspectionItem item = InspectionCatalog.Find(es.ReportTriggerItem);
+                if (item == null) continue;
+                rows.Add(new InspectionAssignment(item, false, Band.Band0, false));
+                changed = true;
+            }
+
             foreach (KeyValuePair<SpaceId, int> kv in need)
             {
                 int have = rows.FindAll(r => SpaceIds.Canonical(r.Item.Space) == kv.Key && !IsBuiltInLeadItem(r.Id, reverse)).Count;
@@ -106,6 +119,8 @@ namespace NightDuty
                 SpaceId space = LeadSpaceOf(id);
                 string pick = null;
                 if (id == ProgramCatalog.CctvPerson && plan.Find(InspectionCatalog.FirstInspection) != null && !Board.IsHeld(InspectionCatalog.FirstInspection)) pick = InspectionCatalog.FirstInspection;
+                EncounterScript es = EncounterScripts.Find(id);
+                if (pick == null && es != null && es.ReportTriggerItem.Length > 0 && plan.Find(es.ReportTriggerItem) != null && !Board.IsHeld(es.ReportTriggerItem) && !used.Contains(es.ReportTriggerItem)) pick = es.ReportTriggerItem;   // 104차: 소년 ← 교실 화분
                 for (int i = 0; pick == null && i < plan.Assignments.Count; i++)
                 {
                     InspectionAssignment a = plan.Assignments[i];
@@ -134,10 +149,58 @@ namespace NightDuty
         {
             get
             {
-                if (!IsNightActive || IsCaptured || _tension == null || !_tension.Sequential) return false;
+                if (!IsNightActive || IsCaptured) return false;
+                if (StartHeld) return true;
+                if (_tension == null || !_tension.Sequential) return false;
+                // 104차 검토: 자동 연출을 끈 개발자 모드·샌드박스·피날레에서는 조우가 새로 시작하지 않는다 — 붙들면 영영 안 풀린다.
+                if (!DirectorAutoRun || _sandbox || _finale.Active) return false;
                 int minute = CurrentMinute();
                 return minute >= HoldMinute && EncountersPending;
             }
+        }
+
+        /// <summary>밤 시작 시계 붙듦의 상한(실제 초) — 경비실을 나서지 않아도 이만큼 지나면 근무가 시작된다.</summary>
+        public const float StartHoldMaxSeconds = 90f;
+
+        private static bool s_shiftStarted;
+        private static float s_startHoldSeconds;
+
+        /// <summary>
+        /// 104차 후속: 밤 시작(00:00) 뒤 경비실을 아직 나서지 않았다 — 구동기가 밤 시계를 붙든다(수칙을 읽을 시간). 모든 밤에 건다.
+        /// 체크포인트(00:00이 아닌 시각)로 재시작한 밤과 샌드박스에는 걸지 않는다.
+        /// </summary>
+        public static bool StartHeld
+        {
+            get { return IsNightActive && !IsCaptured && !s_shiftStarted && !_sandbox && CurrentMinute() < 1; }
+        }
+
+        /// <summary>근무가 시작됐는지(경비실을 나섰거나 상한이 지났다). 테스트·개발자 모드용.</summary>
+        public static bool ShiftStarted { get { return s_shiftStarted; } }
+
+        private static void ResetStartHold()
+        {
+            s_shiftStarted = false;
+            s_startHoldSeconds = 0f;
+        }
+
+        /// <summary>경비실을 나서면(경비실 공간을 나가거나 다른 공간에 들어서면) 근무가 시작된다.</summary>
+        private static void ObserveShiftStart(in JudgeSignal signal)
+        {
+            if (s_shiftStarted) return;
+            bool left = (signal.Kind == SignalKind.SpaceExited && SpaceIds.Canonical(signal.Space) == SpaceId.SecurityRoom)
+                     || (signal.Kind == SignalKind.SpaceEntered && signal.Space != SpaceId.None && SpaceIds.Canonical(signal.Space) != SpaceId.SecurityRoom);
+            if (!left) return;
+            s_shiftStarted = true;
+            UnityEngine.Debug.Log("[NightRun] 경비실을 나섬 — 밤 시계 시작(" + s_startHoldSeconds.ToString("0.0") + "초 붙듦)");
+        }
+
+        private static void StartHoldTick(float realSeconds)
+        {
+            if (s_shiftStarted) return;
+            s_startHoldSeconds += realSeconds;
+            if (s_startHoldSeconds < StartHoldMaxSeconds) return;
+            s_shiftStarted = true;
+            UnityEngine.Debug.Log("[NightRun] 경비실에서 " + StartHoldMaxSeconds + "초가 지나 밤 시계 시작");
         }
 
         /// <summary>그 조우의 유도 문자(공간 이름만 — 무엇이 나오는지는 말하지 않는다).</summary>
@@ -197,6 +260,7 @@ namespace NightDuty
         private static void GuideTick()
         {
             if (_tension == null || !_tension.Sequential) return;
+            if (!DirectorAutoRun || _sandbox) return;   // 104차 검토: 자동 연출이 꺼지면 유도도 하지 않는다(GuidedAt이 먼저 서 방아쇠가 풀리지 않게)
             float now = _tension.Now;
             int minute = CurrentMinute();
 
@@ -212,7 +276,6 @@ namespace NightDuty
 
             EncounterRun head = _tension.Head;
             if (head == null || head.State != EncounterRunState.Waiting || !_tension.HeadOpen(head, minute)) return;
-            if (head.Optional) return;   // 104차: 위반의 후속은 부르지 않는다 — 그 방에 있으면 오고, 아니면 지나간다
 
             GuideState state;
             if (!s_guides.TryGetValue(head.Def.Id, out state))
@@ -235,19 +298,18 @@ namespace NightDuty
                 return;
             }
 
-            if (now - state.SentAt >= GuideRepeatSeconds) SendGuide(head, state, minute);
+            // 104차(사용자: 「재촉 제거 — 재촉하는 걸 다 없애줘」): 유도 문자는 한 번만(옛: 75초마다 다시 보냈다).
         }
 
         private static void SendGuide(EncounterRun r, GuideState state, int minute)
         {
-            if (state.CardId != null && !state.Struck)
+            // 다시 보낼 때는 같은 카드로 다시 낸다 — 태블릿이 옛 문자를 지우고 새로 넣는다(알람이 다시 울린다).
+            // 104차 검토: 옛은 옛 문자에 취소선을 그어 끝난 지시처럼 보였다.
+            if (state.CardId == null || state.Struck)
             {
-                // 다시 보낼 때는 옛 문자를 지우고 새로(알람이 다시 울린다).
-                EventBus.RaiseDutySent(new ParadoxMessage(state.CardId + "." + DutyOutcome.Done, state.CardId, r.Script.Space, "-", minute));
+                s_guideSerial++;
+                state.CardId = GuideCardPrefix + s_guideSerial;
             }
-
-            s_guideSerial++;
-            state.CardId = "guide." + s_guideSerial;
             state.Struck = false;
             state.SentAt = _tension.Now;
             if (r.GuidedAt < 0f) r.GuidedAt = _tension.Now;

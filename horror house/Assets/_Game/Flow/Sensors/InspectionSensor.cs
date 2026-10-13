@@ -279,6 +279,14 @@ public sealed class InspectionSensor : MonoBehaviour
             return;
         }
 
+        // 104차: 보고 키를 누르기 시작한 순간을 알린다(사다리 보고 도중 시체 낙하). 떨어지는 동안은 보고를 멈춘다.
+        if (_hold <= 0f) NightRun.NoteReportHold(_focus);
+        if (NightRun.ReportInterrupted)
+        {
+            _hold = 0f;
+            return;
+        }
+
         _holdAnomaly = anomaly;
         _hold += Time.unscaledDeltaTime;
         if (_hold >= SensingRules.ReportHoldSeconds)

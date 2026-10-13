@@ -117,6 +117,7 @@ namespace NightDuty
             DutyEvent ev;
             if (!_duties.NotePicked(target, out ev)) return false;
             AnnounceDuty(ev);
+            if (_tension != null) _tension.NoteReported(target);   // 104차: biology 책을 집는 순간 노란 얼굴이 문간에 선다
             return true;
         }
 
@@ -267,10 +268,16 @@ namespace NightDuty
             get { return _orders != null && _orders.OldestPendingSeconds(_unavoidable.Banned) >= InspectionStallSeconds; }
         }
 
+        /// <summary>
+        /// 104차(사용자: 「재촉 제거 필요 — 원래 유도 문자와 겹침. 재촉하는 걸 다 없애줘」): 점검 독촉 문자를 보내는지 — 기본 끔.
+        /// 미룬 점검을 더 기다리지 않고 근무 지시를 내는 것(<see cref="InspectionsStalled"/>)은 그대로다.
+        /// </summary>
+        public static bool StallNagEnabled { get; set; }
+
         private static void NagStalledInspections(float realSeconds, bool stalled, int backlog)
         {
             if (_sinceStallNag < float.PositiveInfinity) _sinceStallNag += realSeconds;
-            if (!stalled || backlog <= 0) return;
+            if (!StallNagEnabled || !stalled || backlog <= 0) return;
             if (_sinceStallNag < StallNagRepeatSeconds) return;
             _sinceStallNag = 0f;
             _stallNagSerial++;

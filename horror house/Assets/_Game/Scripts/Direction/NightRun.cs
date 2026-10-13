@@ -323,6 +323,8 @@ namespace NightDuty
             _stare.Reset();
             ResetWindowGaze();   // 85차: 재시작하면 창밖 노란 얼굴도 다시
             ResetGuides();       // 104차: 조우 유도 문자도 다시
+            ResetStartHold();    // 104차 후속: 경비실을 나설 때까지 시계를 붙든다(모든 밤)
+            ResetStanding();     // 104차: 밤새 서 있던 것(모형 급습)도 다시
 
             // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
@@ -429,6 +431,8 @@ namespace NightDuty
                 return;
             }
 
+            StartHoldTick(judgeSeconds);   // 104차 후속: 경비실 붙듦 상한
+
             // 긴장 디렉터는 판정 정지 구간에도 흐른다(슬롯·단서는 디렉터가 밤 시각으로 거른다).
             DirectionTick(judgeSeconds);
             if (!_nightOpen)
@@ -494,6 +498,7 @@ namespace NightDuty
             try
             {
                 TrackSpace(signal);
+                ObserveShiftStart(signal);   // 104차 후속: 경비실을 나서면 밤 시계 시작
                 OrdersObserve(signal);
                 DutiesObserve(signal);
                 FinaleObserve(signal);
@@ -575,6 +580,7 @@ namespace NightDuty
                 OrdersNoteReport();
                 OnFinalInspectionReported(report);
                 EventBus.RaiseInspectionReported(report);
+                if (_tension != null) _tension.NoteReported(id);   // 104차: 교실 화분(C-1)을 보고하면 소년이 곧바로
             }
 
             CloseIfCaptured();
@@ -1033,6 +1039,18 @@ namespace NightDuty
             _axes.Apply(axis, remain, string.IsNullOrEmpty(sourceId) ? "debug" : sourceId, space);
             _axes.SoftCap = cap;
             CloseIfCaptured();
+        }
+
+        /// <summary>
+        /// 104차(사용자: 도서관 노란 얼굴 — 「잡히거나 · 3초 이상 비추지 못했거나 · 도서관을 나가려 한다면 처형 후 사망」): 조우가 플레이어를 바로 붙잡는다 —
+        /// 그 축을 100으로 올려 포획한다(<paramref name="sourceId"/> = 붙잡힘 연출이 장면을 고르는 출처). 밤이 아니거나 이미 붙잡혔으면 아무것도 하지 않는다.
+        /// 샌드박스 「붙잡히지 않음」이면 축만 오르고 밤은 이어진다(디버그 포획과 같다).
+        /// </summary>
+        public static void CaptureByEncounter(FearAxis axis, string sourceId)
+        {
+            if (!_nightOpen || IsCaptured) return;
+            Debug.Log("[NightRun] 조우가 붙잡음 — " + axis + " · " + sourceId);
+            DebugForceCapture(axis, sourceId);
         }
 
         /// <summary>

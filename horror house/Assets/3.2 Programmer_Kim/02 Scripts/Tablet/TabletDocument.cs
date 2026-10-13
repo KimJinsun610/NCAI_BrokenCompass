@@ -197,6 +197,7 @@ public class TabletDocument : MonoBehaviour
 
         // 태블릿을 열 때마다 화면이 켜지므로, 그때 일차가 바뀌었으면 다시 읽는다.
         if (messageList != null) messageList.Changed += Render;
+        if (bodyText != null) bodyText.OnPreRenderText += ClipStrayQuads;
         Reload();
     }
 
@@ -204,6 +205,43 @@ public class TabletDocument : MonoBehaviour
     {
         if (messageList != null) messageList.Changed -= Render;
         if (alarm != null) alarm.StateChanged -= Render;
+        if (bodyText != null) bodyText.OnPreRenderText -= ClipStrayQuads;
+    }
+
+    /// <summary>
+    /// 스크롤로 숨긴 줄(<see cref="TMP_Text.firstVisibleCharacter"/> 앞)에서 시작한 취소선·밑줄은
+    /// TMP가 자리를 잡지 않은 글자의 좌표로 그려 글상자 밖으로 튄다 — 다른 줄 높이(수만 단위)로 날아가거나,
+    /// 보이는 줄에서 왼쪽 끝만 상자 밖으로 길게 삐져나온다.
+    /// 메시를 올리기 직전, 상자 위아래로 반 줄 넘게 벗어난 사각형은 한 점으로 접어 지우고,
+    /// 높이가 맞는 사각형은 좌우만 상자 안으로 잘라 넣는다(그 줄의 취소선은 남는다).
+    /// </summary>
+    private void ClipStrayQuads(TMP_TextInfo info)
+    {
+        if (info == null || bodyText == null) return;
+
+        Rect box = bodyText.rectTransform.rect;
+        // 글자가 상자 끝에 살짝 걸치는 정도(아래 글자 꼬리 등)는 그대로 둔다 — 반 줄
+        float margin = box.height / Mathf.Max(1, visibleLines) * 0.5f;
+        float yMin = box.yMin - margin, yMax = box.yMax + margin;
+
+        for (int m = 0; m < info.meshInfo.Length; m++)
+        {
+            Vector3[] v = info.meshInfo[m].vertices;
+            if (v == null) continue;
+            int count = Mathf.Min(info.meshInfo[m].vertexCount, v.Length) / 4 * 4;
+            for (int i = 0; i < count; i += 4)
+            {
+                float cy = (v[i].y + v[i + 2].y) * 0.5f;
+                if (float.IsNaN(cy) || float.IsNaN(v[i].x) || cy < yMin || cy > yMax)
+                {
+                    v[i] = v[i + 1] = v[i + 2] = v[i + 3] = Vector3.zero;
+                    continue;
+                }
+
+                // 좌우는 상자 끝에 딱 맞춘다(글자는 원래 상자 안에서 줄이 바뀌므로 걸리지 않는다)
+                for (int k = 0; k < 4; k++) v[i + k].x = Mathf.Clamp(v[i + k].x, box.xMin, box.xMax);
+            }
+        }
     }
 
     private void Update()

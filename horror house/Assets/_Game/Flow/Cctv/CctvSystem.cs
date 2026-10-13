@@ -140,6 +140,12 @@ public sealed class CctvSystem : MonoBehaviour
         get { return config != null ? config.ScreenSize : Vector2.zero; }
     }
 
+    /// <summary>104차: 지금 덮어쓴 텍스처(없으면 null) — 덮어쓴 쪽만 걷도록(경비실 버티기 얼굴 · 놓친 이상 재생이 서로 지우지 않게).</summary>
+    public Texture ScreenOverride
+    {
+        get { return _override; }
+    }
+
     /// <summary>화면을 덮어쓰고 있는지.</summary>
     public bool HasScreenOverride
     {

@@ -297,8 +297,17 @@ namespace NightDuty.Tests
                     NightProgram p = Night(d, a, day);
                     if (day == 1) continue;
                     int security = 0;
-                    foreach (RuleDef r in p.Deck) if (SpaceIds.Canonical(r.Space) == SpaceId.SecurityRoom) security++;
-                    Assert.AreEqual(1, security, day + "일차 — G4보다 경비실을 먼저 빼던 것(2일차 27%) — " + p.Report);
+                    bool other = false;
+                    foreach (RuleDef r in p.Deck)
+                    {
+                        if (SpaceIds.Canonical(r.Space) != SpaceId.SecurityRoom) continue;
+                        security++;
+                        if (r.Id != ProgramDirector.CampRule) other = true;
+                    }
+
+                    // 104차(사용자: 「K3 수칙을 고정으로 모든 밤에」): 경비실은 K3 한 장 — 그날 조우·피날레 수칙(K1·K4)이나 강제 수칙이 경비실을 쓰면 그것과 두 장.
+                    Assert.IsTrue(p.Has(ProgramDirector.CampRule), day + "일차 K3 — " + p.Report);
+                    Assert.AreEqual(other ? 2 : 1, security, day + "일차 — G4보다 경비실을 먼저 빼던 것(2일차 27%) — " + p.Report);
                 }
             }
         }

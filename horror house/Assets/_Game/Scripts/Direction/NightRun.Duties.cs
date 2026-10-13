@@ -117,6 +117,7 @@ namespace NightDuty
             DutyEvent ev;
             if (!_duties.NotePicked(target, out ev)) return false;
             AnnounceDuty(ev);
+            if (_tension != null) _tension.NoteReported(target);   // 104차: biology 책을 집는 순간 노란 얼굴이 문간에 선다
             return true;
         }
 
@@ -201,6 +202,7 @@ namespace NightDuty
                     if (_tension != null) _tension.Pacer.Impulse(PacerImpulse.Order);
                     break;
                 case DutyOutcome.Done:
+                    CampNoteDone();   // 104차: 지시를 하나 끝내면 경비실 체류 0으로
                     if (!ev.Tainted && _axes != null) LowerByDuty(d);   // 103차: 축마다 밤당 −6까지
                     text = DutyCatalog.DoneText(d, Day, minute);
                     if (!ev.Tainted && GrantDutyTrust(d) > 0 && TakeTrustLine()) text += "\n" + DutyCatalog.TrustLine;   // 103차 · 103차 후속(사용자: 「매번 뜨면 정신없다 — 중간에 한 2회 정도」)
@@ -267,10 +269,16 @@ namespace NightDuty
             get { return _orders != null && _orders.OldestPendingSeconds(_unavoidable.Banned) >= InspectionStallSeconds; }
         }
 
+        /// <summary>
+        /// 104차(사용자: 「재촉 제거 필요 — 원래 유도 문자와 겹침. 재촉하는 걸 다 없애줘」): 점검 독촉 문자를 보내는지 — 기본 끔.
+        /// 미룬 점검을 더 기다리지 않고 근무 지시를 내는 것(<see cref="InspectionsStalled"/>)은 그대로다.
+        /// </summary>
+        public static bool StallNagEnabled { get; set; }
+
         private static void NagStalledInspections(float realSeconds, bool stalled, int backlog)
         {
             if (_sinceStallNag < float.PositiveInfinity) _sinceStallNag += realSeconds;
-            if (!stalled || backlog <= 0) return;
+            if (!StallNagEnabled || !stalled || backlog <= 0) return;
             if (_sinceStallNag < StallNagRepeatSeconds) return;
             _sinceStallNag = 0f;
             _stallNagSerial++;

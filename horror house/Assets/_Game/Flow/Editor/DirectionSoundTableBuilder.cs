@@ -33,7 +33,7 @@ public static class DirectionSoundTableBuilder
         { "E.BoyBang.confront", Au + "class/SFX_CLASS_SeatCreak_*", "0.9" },
         { "E.BoyBang.release", Au + "class/SFX_CLASS_SchoolBell.wav", "0.6" },
         { "C3.cue", Au + "class/SFX_CLASS_SchoolBell.wav", "0.8" },   // 103차: C3 「수업 종이 울리면 정지하십시오」 — 교실에 들어가면 곧 울리는 수업 종
-        { "duty.sign", Au + "class/SFX_CLASS_ChalkStroke.wav", "0.45" },   // 103차(민: 「근무일지 서명할 때 서기 소리 짧게」): 분필 긋는 소리를 높여 짧게(DutyLogBook이 0.8초에서 끊는다) — 펜 긁는 소리 대용
+        { "duty.sign", Au + "class/SFX_CLASS_DutySign.wav", "0.35" },   // 104차(사용자: 「약간 판서 소리 느낌나는 사운드로」): 칠판 판서(BoardScratch 3.29~4.11초 — 짧은 획 넷)를 0.82초로 떼어 낸 전용 클립. 103차의 ChalkStroke는 「탁」 두드림 셋이라 판서로 들리지 않았다
         { "E.BoyBang.headbang", Au + "class/SFX_CLASS_BoyHeadBang.mp3", "1" },   // 75차(민 제공 「책상_둔탁음」): 소년이 책상에 머리를 박을 때마다 — 옛 HeadThud
 
         // 천장 다리: 쿵쿵(전조) → 먼지
@@ -46,7 +46,8 @@ public static class DirectionSoundTableBuilder
         { "E.PeopleTree.confront", Au + "creature/SFX_TREE_BranchCreak.wav", "0.8" },
         // 104차(사용자: 「인체나무 괴성은 그냥 제거해줘 — 너무 시끄럽네」): E.PeopleTree.confront+ (SFX_TREE_HumanMurmur 웅얼거림) 뺐다 — 현관에서 알아볼 때·복도 대면 모두 가지 삐걱만.
         { "tree.leave", Au + "creature/SFX_TREE_BranchCreak.wav", "0.55" },   // 104차: 현관 나무가 복도로 떠날 때(멀리서 — 가지 삐걱만)
-        { "E.YellowFace.confront", Au + "library/SFX_LIBRARY_YellowFaceEncounter.mp3", "1" },   // 103차(민 제공 「노란_얼굴_조우시」): 옛 Stingers/stinger_breath
+        { "E.YellowFace.confront", Au + "library/SFX_LIBRARY_YellowFaceEncounter.mp3", "1" },
+        { "duck.chase", Au + "library/SFX_LIBRARY_YellowFaceChase.mp3", "0.9" },   // 104차(사용자 제공 「도서관 추격」): 도서관 노란 얼굴이 걸어오는 동안 되풀이(LibraryDuck)   // 103차(민 제공 「노란_얼굴_조우시」): 옛 Stingers/stinger_breath
         { "E.SuitMan.confront", Au + "library/SFX_LIBRARY_WindowTap.wav", "1" },
         { "E.SuitMan.confront+", Au + "library/SFX_LIBRARY_BlindRattle_*", "0.6" },
         { "E.HallEndFigure.confront", Kim + "SFX_MosterBreath.wav", "0.8" },

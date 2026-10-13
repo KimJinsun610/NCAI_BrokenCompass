@@ -6,13 +6,16 @@ using UnityEngine.AI;
 /// 103차 도서관 노란 얼굴(<c>E.YellowFace</c>, 대역 <c>mob.duck</c>)의 움직임 — 민: 「몹이 등장하고 문이 열릴 때 문이 열리는 사운드 ·
 /// 플레이어 쪽으로 천천히 걸어오게, 네비메쉬로 장애물 잘 피하도록 · 손전등으로 계속 비추면 문 밖으로 동선을 찾아서 도망가고 ·
 /// 안 비추면 계속 다가와서 놀람 연출 발생시키고 도망가는 걸로 · 플레이어가 요리조리 피하고 도서관 문밖으로 나가려 해도 바로 놀람 연출」.
+/// <para>104차(사용자: 「걸어오는 속도 더 빠르게, 플레이어가 목격했을 때 걷기 시작. 걸으면서 도서관추격 mp3 재생, 손전등으로 3초 이상 비추면 플레이어 코앞까지 온 뒤에 멈추고
+/// 빠르게 문밖으로 나감. 플레이어가 등지고 도망가다가 잡히거나, 손전등으로 3초 이상 비추지 못했거나, 도서관을 나가려 한다면 조도 처형 장면 중 얼굴만 바로 나오는 걸로 처형 후 사망」)</para>
 /// <list type="bullet">
-/// <item><b>다가옴</b>: 대면부터 런타임 네비메쉬(<see cref="RuntimeNav"/>) 위를 <see cref="ApproachSpeed"/>m/s로 플레이어 발밑을 따라 걷는다(책장·책상을 돌아서).
-/// 비추는 동안에는 멈칫 서 있는다(그래도 다 비추기 전에 빛을 떼면 다시 걷는다).</item>
-/// <item><b>비추면 달아남</b>: 손전등 원뿔(<see cref="SensingRules.InBeam(Vector3, Vector3, Vector3, float)"/>) 안에 가림 없이 얼굴이 <see cref="FleeLitSeconds"/>초 이어서 들면(끊김 <see cref="LitGapSeconds"/>초까지 봐줌)
-/// 대면 창을 바로 닫고(L3 「계속 비추십시오」 통과) 문 밖 자리(<c>stage.yellow.door</c>)까지 네비메쉬로 뛰어간 뒤, 복도 쪽으로 끝까지 달려가 사라진다(<see cref="StandInExit.RunFar"/>).</item>
-/// <item><b>안 비추면 놀람</b>: <see cref="ScareRadius"/>m까지 다가오면 놀람 연출(<see cref="ViolationScare"/>) → 같은 길로 달아남.</item>
-/// <item><b>문으로 빠져나가려 하면 놀람</b>: 다가오는 동안 플레이어가 도서관을 벗어나거나 문 밖 자리 <see cref="ExitRadius"/>m 안으로 가면 거리와 상관없이 바로 놀람 → 달아남.</item>
+/// <item><b>다가옴</b>: 문간을 보는 순간(대면 — <see cref="DirectionStage"/>의 시선 탐지) 런타임 네비메쉬(<see cref="RuntimeNav"/>) 위를 걷기 시작한다 —
+/// 보고 있으면 <see cref="ApproachSpeed"/>m/s, 등지면(화면 밖) <see cref="BehindSpeed"/>m/s. 걷는 동안 도서관 추격 소리(<see cref="ChaseSoundKey"/>)를 되풀이한다.</item>
+/// <item><b>3초 비추면 물러남</b>: 손전등 원뿔(<see cref="SensingRules.InBeam(Vector3, Vector3, Vector3, float)"/>) 안에 가림 없이 얼굴이 <see cref="SatisfySeconds"/>초 이어서 들면(끊김 <see cref="LitGapSeconds"/>초까지 봐줌)
+/// 그대로 코앞(<see cref="FaceStopRadius"/>m)까지 와서 <see cref="FacePauseSeconds"/>초 멈춰 서고, 문 밖 자리(<c>stage.yellow.door</c>)까지 <see cref="FleeSpeed"/>m/s로 뛰어간 뒤 복도로 사라진다(L3 통과).
+/// 비추는 동안(아직 3초 전)에는 가까이 와도 잡지 않고 그 자리에 선다.</item>
+/// <item><b>사망</b>: 3초를 채우기 전 — 안 비춘 채 <see cref="CatchRadius"/>m까지 오면(등지고 도망가다 잡힘 포함) · 도서관을 벗어나거나 문 밖 자리 <see cref="ExitRadius"/>m 안으로 가면
+/// 조도 축으로 붙잡힌다(<see cref="NightRun.CaptureByEncounter"/>, 출처 <see cref="CaptureSource"/>) — 붙잡힘 연출은 조도 사망 컷신의 얼굴 장면부터 튼다(<see cref="CaptureDirector"/>).</item>
 /// </list>
 /// 네비메쉬가 준비되지 않았거나(굽는 중) 길이 없으면 그 자리에 서서 기다리고, <see cref="NavWaitSeconds"/>초가 지나도 안 되면 곧장 걸어온다(벽을 뚫지 않게 앞을 살핀다).
 /// 판정은 수칙(L3 KeepBeam)이 따로 한다 — 이것은 창을 일찍 닫는 일만 한다(<see cref="NightRun.EndEncounterWindow"/>).
@@ -20,32 +23,44 @@ using UnityEngine.AI;
 [DisallowMultipleComponent]
 public sealed class LibraryDuck : MonoBehaviour
 {
-    /// <summary>다가오는 빠르기(m/s) — 민: 「천천히」.</summary>
-    public const float ApproachSpeed = 0.55f;
+    /// <summary>보고 있을 때 다가오는 빠르기(m/s). 104차(사용자: 「더 빠르게」): 0.55 → 1.25(플레이어 걷기 1보다 빠르다).</summary>
+    public const float ApproachSpeed = 1.25f;
 
-    /// <summary>달아나는 빠르기(m/s).</summary>
-    public const float FleeSpeed = 3.6f;
+    /// <summary>104차: 등지면(얼굴이 화면 밖) 더 빨리 따라온다 — 등지고 도망가면 잡힌다.</summary>
+    public const float BehindSpeed = 2.1f;
 
-    /// <summary>
-    /// 이만큼(초) 이어서 비추면 달아난다. 103차(민: 「손전등을 비춘다고 바로 정지하는 게 아니라 3초 정도는 계속 접근」): 1.5 →
-    /// <see cref="LitApproachSeconds"/>(계속 다가옴) + 멈칫 0.8초.
-    /// </summary>
-    public const float FleeLitSeconds = LitApproachSeconds + 0.8f;
+    /// <summary>달아나는 빠르기(m/s). 104차(사용자: 「빠르게 문밖으로」): 3.6 → 4.6.</summary>
+    public const float FleeSpeed = 4.6f;
 
-    /// <summary>103차: 비춰도 이만큼(초)은 멈추지 않고 계속 다가온다 — 그 뒤 멈칫 서서 빛 쪽을 본다.</summary>
-    public const float LitApproachSeconds = 3f;
+    /// <summary>104차(사용자: 「손전등으로 3초 이상 비추면」): 이만큼(초) 이어서 비추면 물러난다(코앞까지 온 뒤).</summary>
+    public const float SatisfySeconds = 3f;
 
     /// <summary>비춤이 이만큼(초) 끊겨도 이어진 것으로 본다(손 떨림).</summary>
     public const float LitGapSeconds = 0.35f;
 
-    /// <summary>이 거리(m, 수평)까지 다가오면 놀람.</summary>
-    public const float ScareRadius = 1.5f;
+    /// <summary>이 거리(m, 수평)까지 안 비춘 채 다가오면 붙잡힌다.</summary>
+    public const float CatchRadius = 1.1f;
 
-    /// <summary>다가오는 동안 플레이어가 문 밖 자리에서 이 거리(m, 수평) 안이면 빠져나가려는 것으로 보고 바로 놀람.</summary>
+    /// <summary>3초를 채운 뒤 이 거리(m, 수평)까지 와서 멈춘다(코앞).</summary>
+    public const float FaceStopRadius = 0.85f;
+
+    /// <summary>3초를 채운 뒤 코앞까지 오는 데 쓰는 최대 시간(초) — 넘으면 그 자리에서 멈췄다 물러난다.</summary>
+    public const float ArriveMaxSeconds = 6f;
+
+    /// <summary>코앞에 멈춰 서 있는 시간(초).</summary>
+    public const float FacePauseSeconds = 0.7f;
+
+    /// <summary>다가오는 동안 플레이어가 문 밖 자리에서 이 거리(m, 수평) 안이면 빠져나가려는 것으로 본다.</summary>
     public const float ExitRadius = 2.4f;
 
-    /// <summary>대면 직후 이만큼(초)은 「문으로 빠져나가려 함」을 보지 않는다 — 문 쪽을 돌아본 순간 바로 놀라지 않게.</summary>
+    /// <summary>대면 직후 이만큼(초)은 「문으로 빠져나가려 함」을 보지 않는다 — 문 쪽을 돌아본 순간 바로 붙잡히지 않게.</summary>
     public const float ExitGraceSeconds = 0.8f;
+
+    /// <summary>걷는 동안 되풀이하는 소리(연출 소리 표) — 사용자 제공 「도서관 추격」.</summary>
+    public const string ChaseSoundKey = "duck.chase";
+
+    /// <summary>붙잡힘 출처 — 붙잡힘 연출이 보고 조도 사망 컷신을 얼굴 장면부터 튼다.</summary>
+    public const string CaptureSource = "E.YellowFace.caught";
 
     /// <summary>네비메쉬를 기다리는 최대 시간(초).</summary>
     public const float NavWaitSeconds = 2f;
@@ -56,9 +71,11 @@ public sealed class LibraryDuck : MonoBehaviour
     private enum State
     {
         Approach,
-        Scaring,
+        Arrive,   // 3초 비춤을 채웠다 — 코앞까지 와서 멈춘다
+        Pause,
         Flee,
-        Gone
+        Gone,
+        Caught
     }
 
     private string _id;
@@ -75,6 +92,22 @@ public sealed class LibraryDuck : MonoBehaviour
     private float _gap;
     private bool _walkAnim;
     private float _grace;
+    private float _pause;
+    private AudioSource _chase;
+    private float _chaseVolume;
+    private float _chaseFade;
+
+    /// <summary>3초 비춤을 채웠는지(검수용).</summary>
+    public bool Satisfied
+    {
+        get { return _state == State.Arrive || _state == State.Pause || _state == State.Flee || _state == State.Gone; }
+    }
+
+    /// <summary>붙잡았는지(검수용).</summary>
+    public bool Caught
+    {
+        get { return _state == State.Caught; }
+    }
 
     /// <summary>지금 비춘 시간(초). 시험·검수용.</summary>
     public float LitSeconds
@@ -113,7 +146,9 @@ public sealed class LibraryDuck : MonoBehaviour
         d._head = FindBone(go.transform, "Head");
         d._navWait = NavWaitSeconds;
         d._grace = ExitGraceSeconds;
+        d._lit = 0f;
         PrepareNav(go.transform, d._doorPoint);
+        d.StartChase();
         return d;
     }
 
@@ -135,8 +170,9 @@ public sealed class LibraryDuck : MonoBehaviour
     /// <summary>놀람 뒤 · 창이 끝났을 때(<see cref="DirectionStage"/> 정리) 부른다 — 문 밖으로 달아난다. 이미 달아나는 중이면 그대로.</summary>
     public void Flee()
     {
-        if (_state == State.Flee || _state == State.Gone) return;
+        if (_state == State.Flee || _state == State.Gone || _state == State.Caught) return;
         _state = State.Flee;
+        StopChase(0.8f);
         NightRun.EndEncounterWindow(_id);   // 창을 닫는다 — 비추다 달아나면 L3 통과, 놀람 뒤면 이미 판정 끝
         if (!EnsureAgent())
         {
@@ -167,14 +203,17 @@ public sealed class LibraryDuck : MonoBehaviour
     public void DebugLight(float seconds)
     {
         _lit += Mathf.Max(0f, seconds);
+        _gap = -LitGapSeconds;   // 다음 프레임에 「빛이 끊겼다」로 지워지지 않게
     }
 
     private void Update()
     {
-        if (_state == State.Gone) return;
+        StepChaseFade();
+        if (_state == State.Gone || _state == State.Caught) return;
         if (!NightRun.IsNightActive || NightRun.IsCaptured)
         {
             Stop();
+            StopChase(0f);
             return;
         }
 
@@ -189,8 +228,13 @@ public sealed class LibraryDuck : MonoBehaviour
             case State.Approach:
                 Approach();
                 break;
-            case State.Scaring:
-                if (!ViolationScare.Busy) Flee();   // 놀람이 끝났는데 도망 콜백이 오지 않았다(다른 놀람에 밀림 등)
+            case State.Arrive:
+                Arrive();
+                break;
+            case State.Pause:
+                Stop();
+                _pause -= Time.deltaTime;
+                if (_pause <= 0f) Flee();
                 break;
             case State.Flee:
                 FleeStep();
@@ -206,7 +250,7 @@ public sealed class LibraryDuck : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null) return;
 
-        // ① 비추면 달아난다.
+        // ① 3초 이어서 비추면 — 코앞까지 와서 멈췄다가 달아난다.
         if (Lit(cam))
         {
             _lit += dt;
@@ -218,61 +262,170 @@ public sealed class LibraryDuck : MonoBehaviour
             if (_gap > LitGapSeconds) _lit = 0f;
         }
 
-        if (_lit >= FleeLitSeconds)
+        if (_lit >= SatisfySeconds)
         {
-            Flee();
+            _state = State.Arrive;
+            _repath = 0f;
+            _pause = 0f;
+            if (DirectionStage.Verbose) Debug.Log("[LibraryDuck] 3초 비춤 — 코앞까지 와서 물러남");
             return;
         }
 
-        // ② 문으로 빠져나가려 하면 · 가까이 오면 놀람.
+        // ② 도서관을 나가려 하면 · 안 비춘 채 코앞까지 오면 붙잡힘(사망).
         Vector3 eye = cam.transform.position;
         _grace -= dt;
         bool lit = _lit > 0f;
-        bool near = Flat(eye, transform.position) <= ScareRadius;
-        bool close = near && !lit;   // 103차: 비추는 동안(L3을 지키는 동안)은 가까이 와도 덮치지 않는다 — 그 자리에 선다
+        float dist = Flat(eye, transform.position);
+        bool near = dist <= CatchRadius;
+        bool caught = near && !lit;   // 비추는 동안(3초를 채우는 중)은 가까이 와도 잡지 않는다 — 그 자리에 선다
         bool leaving = _grace <= 0f && (SpaceIds.Canonical(NightRun.CurrentSpace) != SpaceId.Library || Flat(eye, _doorPoint) <= ExitRadius);
-        if (close || leaving)
+        if (caught || leaving)
         {
-            Scare(close ? "가까이 옴" : "문으로 빠져나가려 함");
+            Catch(caught ? "안 비춘 채 코앞" : "도서관을 나가려 함");
             return;
         }
 
-        // ③ 다가온다 — 103차: 비춰도 처음 3초는 계속 걸어오고, 그 뒤(또는 비추는 채 코앞이면) 멈칫.
-        bool lighting = _lit >= LitApproachSeconds || (lit && near);
+        // ③ 다가온다 — 비추는 채 코앞이면 선다. 등지면(얼굴이 화면 밖) 빨라진다.
+        bool hold = lit && dist <= FaceStopRadius + 0.3f;
+        float speed = FaceOnScreen(cam) ? ApproachSpeed : BehindSpeed;
+        WalkToward(eye, speed, hold, dt);
+
+        // 멈칫한 동안에도 몸은 돌리지 않는다 — 103차 후속(민: 「목만 플레이어에게 고정」): 고개만 따라 돈다(DoorDuck).
+    }
+
+    /// <summary>3초를 채운 뒤 — 코앞까지 온다. 도착하면 잠깐 서서 바라보다 달아난다.</summary>
+    private void Arrive()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+        Vector3 eye = cam.transform.position;
+        _pause -= Time.deltaTime;   // 코앞까지 오는 상한(플레이어가 계속 달아나면 그만 물러난다)
+        if (Flat(eye, transform.position) <= FaceStopRadius || _pause <= -ArriveMaxSeconds)
+        {
+            Stop();
+            _state = State.Pause;
+            _pause = FacePauseSeconds;
+            StopChase(0.4f);
+            return;
+        }
+
+        WalkToward(eye, BehindSpeed, false, Time.deltaTime);
+    }
+
+    private void WalkToward(Vector3 eye, float speed, bool hold, float dt)
+    {
         if (!EnsureAgent())
         {
             _navWait -= dt;
-            if (_navWait <= 0f && !lighting) StepDirect(eye, dt);
+            if (_navWait <= 0f && !hold) StepDirect(eye, speed, dt);
             return;
         }
 
-        _agent.speed = ApproachSpeed;
-        _agent.isStopped = lighting;
+        _agent.speed = speed;
+        _agent.acceleration = 8f;
+        _agent.stoppingDistance = 0.35f;
+        _agent.isStopped = hold;
         _repath -= dt;
-        if (_repath <= 0f && !lighting)
+        if (_repath <= 0f && !hold)
         {
             _repath = RepathSeconds;
             Vector3 feet = new Vector3(eye.x, transform.position.y, eye.z);
             Vector3 to;
             if (RuntimeNav.Snap(feet, 2.5f, out to)) _agent.SetDestination(to);
         }
-
-        // 멈칫한 동안에도 몸은 돌리지 않는다 — 103차 후속(민: 「목만 플레이어에게 고정」): 고개만 따라 돈다(DoorDuck).
     }
 
-    private void Scare(string why)
+    /// <summary>
+    /// 104차(사용자: 「붙잡히고 연출이 나온 뒤 죽는 게 아니라 그냥 넘어졌다가 일어나게」): true면 붙잡혀도 죽지 않는다 — 조도 컷신 얼굴 장면 뒤 그 자리에서 넘어졌다 일어나고
+    /// 밤은 이어진다(<see cref="CaptureDirector.Knockdown"/>). false면 예전처럼 조도 축 사망(재시작).
+    /// </summary>
+    public static bool KnockdownOnCatch = true;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStatics()
+    {
+        KnockdownOnCatch = true;   // 104차 QA: 도메인 다시 읽기 없이 플레이를 다시 시작해도 기본값
+    }
+
+    /// <summary>붙잡는다 — 조도 컷신 얼굴 장면 뒤 넘어졌다 일어남(<see cref="KnockdownOnCatch"/>), 아니면 조도 축 사망.</summary>
+    private void Catch(string why)
     {
         if (_state != State.Approach) return;
         Stop();
-        GameObject self = gameObject;
-        if (ViolationScare.Play(self, "mob.duck", _id, () =>
-            {
-                LibraryDuck d = self != null ? self.GetComponent<LibraryDuck>() : null;
-                if (d != null) d.Flee();
-            }))
+        StopChase(0f);
+        _state = State.Caught;
+        Debug.Log("[LibraryDuck] 붙잡음 — " + why);
+        CaptureDirector cd = CaptureDirector.Active;
+        if (KnockdownOnCatch && cd != null)
         {
-            _state = State.Scaring;
-            if (DirectionStage.Verbose) Debug.Log("[LibraryDuck] 놀람 — " + why);
+            // 장면 동안 대역이 컷신 화면에 끼지 않게 먼저 감추고, 화면이 검을 때 치운다. 창은 지금 닫는다(밤이 이어지므로).
+            foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) r.enabled = false;
+            // 104차 QA: 창을 닫기 전에 붙잡힘을 알린다 — 안 그러면 한 번 비춘 기록만으로 L3가 통과된다.
+            NightRun.Send(new JudgeSignal(SignalKind.EncounterCaught, SpaceId.Library, FinalCues.FaceTarget, ActionSource.Direction, true, 0f));
+            NightRun.EndEncounterWindow(_id);
+            if (cd.Knockdown(FearAxis.Illuminance, CaptureSource, Vanish)) return;
+            foreach (Renderer r in GetComponentsInChildren<Renderer>(true)) r.enabled = true;
+        }
+
+        NightRun.CaptureByEncounter(FearAxis.Illuminance, CaptureSource);
+    }
+
+    /// <summary>넘어진 뒤 — 노란 얼굴은 사라져 있다.</summary>
+    private void Vanish()
+    {
+        _state = State.Gone;
+        if (this != null && gameObject != null) Destroy(gameObject);   // 104차 QA: 꺼 두기만 하면 연출 정리 목록에 밤 끝까지 남았다
+    }
+
+    /// <summary>얼굴(머리)이 화면 안에 보이는지(가림은 보지 않는다 — 등졌는지만).</summary>
+    private bool FaceOnScreen(Camera cam)
+    {
+        Vector3 face = _head != null ? _head.position : transform.position + Vector3.up * 1.6f;
+        Vector3 v = cam.WorldToViewportPoint(face);
+        return v.z > 0f && v.x > 0f && v.x < 1f && v.y > 0f && v.y < 1f;
+    }
+
+    // ── 추격 소리 ─────────────────────────────────────────────
+
+    private void StartChase()
+    {
+        float volume;
+        AudioClip clip = DirectionSoundTableSO.FindExact(ChaseSoundKey, out volume);
+        if (clip == null) return;
+        if (_chase == null) _chase = gameObject.AddComponent<AudioSource>();
+        _chase.playOnAwake = false;
+        _chase.clip = clip;
+        _chase.loop = true;
+        _chase.volume = volume;
+        _chase.spatialBlend = 0.6f;   // 몹 쪽에서 들리되 멀어져도 꺼지지 않게
+        _chase.dopplerLevel = 0f;
+        _chase.minDistance = 2f;
+        _chase.maxDistance = 25f;
+        _chase.Play();
+        _chaseVolume = volume;
+        _chaseFade = 0f;
+    }
+
+    private void StopChase(float fadeSeconds)
+    {
+        if (_chase == null || !_chase.isPlaying) return;
+        if (fadeSeconds <= 0f)
+        {
+            _chase.Stop();
+            return;
+        }
+
+        _chaseFade = fadeSeconds;
+    }
+
+    private void StepChaseFade()
+    {
+        if (_chase == null || _chaseFade <= 0f || !_chase.isPlaying) return;
+        _chase.volume = Mathf.MoveTowards(_chase.volume, 0f, _chaseVolume / _chaseFade * Time.deltaTime);
+        if (_chase.volume <= 0.001f)
+        {
+            _chase.Stop();
+            _chaseFade = 0f;
         }
     }
 
@@ -337,7 +490,7 @@ public sealed class LibraryDuck : MonoBehaviour
     }
 
     /// <summary>네비메쉬 없이 곧장 다가온다 — 앞 0.6m가 막혀 있으면 서 있는다.</summary>
-    private void StepDirect(Vector3 eye, float dt)
+    private void StepDirect(Vector3 eye, float speed, float dt)
     {
         Vector3 to = eye - transform.position;
         to.y = 0f;
@@ -350,8 +503,8 @@ public sealed class LibraryDuck : MonoBehaviour
             return;
         }
 
-        transform.position += dir * ApproachSpeed * dt;
-        Walk(ApproachSpeed);
+        transform.position += dir * speed * dt;
+        Walk(speed);
     }
 
     private void Stop()
@@ -378,7 +531,7 @@ public sealed class LibraryDuck : MonoBehaviour
     {
         if (_state == State.Gone || _agent == null) return;   // 네비메쉬 없이 걸을 때는 StepDirect가 직접
         float speed = _agent != null && _agent.enabled ? _agent.velocity.magnitude : 0f;
-        if (_state == State.Approach && speed < 0.05f && _walkAnim)
+        if ((_state == State.Approach || _state == State.Arrive || _state == State.Pause) && speed < 0.05f && _walkAnim)
         {
             Anim("Loop", 1f);
             _walkAnim = false;

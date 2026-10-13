@@ -371,7 +371,7 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void 지시받은_점검을_너무_미루면_독촉_문자와_함께_근무_지시가_나간다()
+        public void 지시받은_점검을_너무_미루면_근무_지시가_나가고_독촉_문자는_없다()
         {
             // 103차 후속(사용자 7번): 옛 — 지시받은 점검이 남아 있으면 근무 지시가 밤새 나오지 않았다.
             NightRun.InspectionsEnabled = true;
@@ -385,12 +385,10 @@ namespace NightDuty.Tests
                 Assert.Greater(NightRun.Inspections.IssuedPendingCount, 0, "첫 점검 지시");
                 for (int i = 0; i < 100 && !NightRun.InspectionsStalled; i++) NightRun.Tick(1f);
                 Assert.IsTrue(NightRun.InspectionsStalled, NightRun.InspectionStallSeconds + "초 넘게 보고하지 않음");
-                for (int i = 0; i < 120 && (NightRun.Duties.IssuedToday == 0 || !texts.Exists(t => t.Contains("보고가 늦어지고"))); i++) NightRun.Tick(0.5f);
-                Assert.IsTrue(texts.Exists(t => t.Contains("보고가 늦어지고")), "독촉 문자");
+                for (int i = 0; i < 120 && NightRun.Duties.IssuedToday == 0; i++) NightRun.Tick(0.5f);
                 Assert.Greater(NightRun.Duties.IssuedToday, 0, "밀린 점검을 더 기다리지 않고 근무 지시");
-                int nags = texts.FindAll(t => t.Contains("보고가 늦어지고")).Count;
-                NightRun.Tick(10f);
-                Assert.AreEqual(nags, texts.FindAll(t => t.Contains("보고가 늦어지고")).Count, "독촉은 " + NightRun.StallNagRepeatSeconds + "초에 한 번");
+                for (int i = 0; i < 300; i++) NightRun.Tick(1f);
+                Assert.IsFalse(texts.Exists(t => t.Contains("보고가 늦어지고")), "104차: 독촉 문자 없음(재촉 제거)");
             }
             finally
             {

@@ -119,6 +119,15 @@ namespace NightDuty
         /// <summary>점검 수칙 「가까이」를 어겼다. 인자: (항목 ID, 그 항목의 축). 1초짜리 놀람 연출이 구독한다.</summary>
         public static event Action<string, FearAxis> InspectionStartled;
 
+        /// <summary>104차: 역설 문자 하나가 끝났다(안전한 읽기 · 어김 · 위협 대응 · 시간). 인자: 겨눈 수칙 ID. 태블릿이 그 문자를 지지직거리며 지운다.</summary>
+        public static event Action<string> ParadoxEnded;
+
+        /// <summary><see cref="ParadoxEnded"/>를 발생시킨다.</summary>
+        public static void RaiseParadoxEnded(string ruleId)
+        {
+            Invoke(ParadoxEnded, ruleId);
+        }
+
         /// <summary><see cref="BandChanged"/>를 발생시킨다.</summary>
         public static void RaiseBandChanged(SpaceId space, FearAxis axis, Band from, Band to)
         {
@@ -297,6 +306,7 @@ namespace NightDuty
             FinalRuleSettled = null;
             DirectionEmitted = null;
             InspectionStartled = null;
+            ParadoxEnded = null;
         }
 
         /// <summary>

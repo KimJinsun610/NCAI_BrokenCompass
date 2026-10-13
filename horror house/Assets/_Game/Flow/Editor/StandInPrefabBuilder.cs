@@ -1001,6 +1001,7 @@ public static class StandInPrefabBuilder
         string clipPath = AnimDir + "/" + s.Id + ".bang.anim";
         if (AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath) != null) AssetDatabase.DeleteAsset(clipPath);
         AnimationClip bang = CopyClip(src, s.Id + ".bang", SkeletonRoot(model.transform), 0f, s.BangTo, new[] { "Spine", "Chest", "Neck", "Head" });
+        bang.legacy = true;   // 104차: 애니메이터 없는 대역에 SampleAnimation으로 굴린다 — 비레거시면 빌드에서 움직이지 않는다(StandInClips 참고)
         AssetDatabase.CreateAsset(bang, clipPath);
 
         // 머리가 닿는 순간 = 머리가 몸 앞(+Z)으로 가장 멀리 나간 순간(뼈 축 부호는 리그마다 달라 위치로 잰다 — 58차 첫 시도에서 척추 x 음수가 뒤로 젖힘이었다).

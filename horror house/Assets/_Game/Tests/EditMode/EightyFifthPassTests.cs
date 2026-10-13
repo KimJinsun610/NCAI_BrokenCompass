@@ -54,7 +54,8 @@ namespace NightDuty.Tests
             Assert.AreEqual("블라인드", InspectionCatalog.Find("L-2").Name);
 
             EncounterScript door = EncounterScripts.Find(ProgramCatalog.YellowFace);
-            CollectionAssert.AreEquivalent(new[] { "W15", "W2" }, door.AfterDuty);
+            CollectionAssert.AreEquivalent(new[] { "W15" }, door.AfterDuty);   // 104차: biology 책만
+            Assert.AreEqual(DutyCatalog.LibraryBookTarget, door.ReportTriggerItem, "104차: 책을 집는 순간");
             Assert.AreEqual("L3", ProgramCatalog.Encounter(ProgramCatalog.YellowFace).ResponseRule);
             Assert.AreEqual(string.Empty, ProgramCatalog.Encounter(ProgramCatalog.SuitMan).ResponseRule);
         }
@@ -122,11 +123,11 @@ namespace NightDuty.Tests
 
             string lead = NightRun.LeadDuty;
             CollectionAssert.Contains(new[] { "W15", "W2" }, lead);
-            Assert.IsTrue(NightRun.Duties.IsReserved("W15") && NightRun.Duties.IsReserved("W2"), "평소 지시에서 뺀다");
+            Assert.IsTrue(NightRun.Duties.IsReserved("W15"), "평소 지시에서 뺀다");
             for (int i = 0; i < 20; i++)
             {
                 DutyDef p = NightRun.Duties.Pick();
-                Assert.IsTrue(p == null || (p.Id != "W15" && p.Id != "W2"), p != null ? p.Id : "-");
+                Assert.IsTrue(p == null || p.Id != "W15", p != null ? p.Id : "-");
             }
 
             EncounterRun run = RunOf(ProgramCatalog.YellowFace);

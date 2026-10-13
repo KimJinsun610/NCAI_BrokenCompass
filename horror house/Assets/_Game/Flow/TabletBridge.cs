@@ -52,6 +52,16 @@ public sealed class TabletBridge : MonoBehaviour
     /// <summary>위반 진동 — 글리치 세기(안전한 읽기보다 조금 세게).</summary>
     private const float ViolationGlitch = 0.32f;
 
+    /// <summary>104차: 역설 문자가 끝나 사라질 때의 글리치 세기·길이(초) — 문자 도착보다 세고 길게(지지직).</summary>
+    private const float EndGlitch = 0.85f;
+
+    private const float EndGlitchSeconds = 1.1f;
+
+    /// <summary>104차: 글리치가 오른 뒤 이만큼(초) 지나 문자를 지운다 — 깨지는 화면 속에서 사라지게.</summary>
+    private const float EndRemoveDelay = 0.45f;
+
+    private readonly Dictionary<string, List<string>> _paradoxMessages = new Dictionary<string, List<string>>();   // 104차: 수칙 ID → 그 역설 문자 ID들
+
     /// <summary>안전한 읽기 진동 — 길이(초).</summary>
     private const float ConfirmHoldSeconds = 0.35f;
 
@@ -167,6 +177,7 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.TabletTextChanged += OnTabletTextChanged;
         EventBus.FinalRuleSettled += OnFinalRuleSettled;
         EventBus.HourStruck += OnHourStruck;
+        EventBus.ParadoxEnded += OnParadoxEnded;
     }
 
     private void OnDisable()
@@ -180,6 +191,7 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.TabletTextChanged -= OnTabletTextChanged;
         EventBus.FinalRuleSettled -= OnFinalRuleSettled;
         EventBus.HourStruck -= OnHourStruck;
+        EventBus.ParadoxEnded -= OnParadoxEnded;
         if (_hooked != null) _hooked.MessageReceived -= OnAnyMessage;
         _hooked = null;
 
@@ -483,6 +495,16 @@ public sealed class TabletBridge : MonoBehaviour
             return;
         }
 
+        // 104차 검토: 조우 유도 문자를 같은 카드로 다시 내면 옛 문자를 지우고 새로 넣는다(옛: 옛 문자에 취소선을 그어 끝난 지시처럼 보였다).
+        string previous;
+        if (pid.EndsWith("." + DutyOutcome.Issued) && message.CardId != null && message.CardId.StartsWith(NightRun.GuideCardPrefix)
+            && _dutyIssued.TryGetValue(message.CardId, out previous) && Contains(previous))
+        {
+            messages.Remove(previous);
+            _dutyMessages.Remove(previous);
+            _dutyIssuedText.Remove(previous);
+        }
+
         _messageSerial++;
         string id = message.ParadoxId + "." + _messageSerial;
         messages.Add(id, message.Text, Now());
@@ -519,6 +541,12 @@ public sealed class TabletBridge : MonoBehaviour
         string id = "paradox." + message.ParadoxId + "." + _messageSerial;
         // 92차(민: 「근무 메시지에서 타임스탬프는 찍혀있도록」): 받은 시각을 앞에 찍는다(74차 「시각 없음」을 되돌림).
         messages.Add(id, message.Text, Now());
+        if (message.ParadoxId == "paradox." + message.CardId)
+        {
+            List<string> ids;
+            if (!_paradoxMessages.TryGetValue(message.CardId, out ids)) _paradoxMessages[message.CardId] = ids = new List<string>();
+            ids.Add(id);
+        }
 
         if (glitch != null)
         {
@@ -527,6 +555,38 @@ public sealed class TabletBridge : MonoBehaviour
             _glitchOn = true;
         }
     }
+
+    /// <summary>
+    /// 104차(사용자: 「역설 지시는 해당 역설이 종료되면 태블릿이 지지직거리면서 사라지게」): 그 역설 문자를 글리치·지직 소리와 함께 지운다.
+    /// 「확인되었습니다.」 답장은 남는다(어긴 뒤에 깨닫게 — 51차).
+    /// </summary>
+    private void OnParadoxEnded(string ruleId)
+    {
+        if (!Bind() || messages == null || string.IsNullOrEmpty(ruleId)) return;
+        List<string> ids;
+        if (!_paradoxMessages.TryGetValue(ruleId, out ids) || ids.Count == 0) return;
+        _paradoxMessages.Remove(ruleId);
+        if (glitch != null)
+        {
+            glitch.SetIntensity(EndGlitch);
+            _glitchUntil = Time.unscaledTime + EndGlitchSeconds;
+            _glitchOn = true;
+        }
+
+        if (!PlayTabletSound("tablet.corrupt")) PlayTick();
+        StartCoroutine(RemoveLater(ids, EndRemoveDelay));
+    }
+
+    private System.Collections.IEnumerator RemoveLater(List<string> ids, float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        if (messages == null) yield break;
+        for (int i = 0; i < ids.Count; i++) messages.Remove(ids[i]);
+        LastParadoxRemoved = ids.Count;
+    }
+
+    /// <summary>104차: 마지막으로 지운 역설 문자 수(검수).</summary>
+    public static int LastParadoxRemoved { get; private set; }
 
     /// <summary>
     /// 안전한 읽기 — 태블릿이 짧게 떨고 「틱」 한 번. 무엇이 드러났는지는 점검표에만 쓴다(소리·진동은 같다 — 이상 여부를 소리로 알려 주지 않는다).

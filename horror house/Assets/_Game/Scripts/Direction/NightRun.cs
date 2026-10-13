@@ -129,7 +129,18 @@ namespace NightDuty
         /// </summary>
         public static bool CanEndShiftEarly
         {
-            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCountExcept(_unavoidable.Banned) == 0 && !DutiesPending; }   // 103차 QA 3회: 재입실 불가 공간의 항목은 빼고
+            get { return IsNightActive && !IsCaptured && Board.Total > 0 && Board.RemainingCountExcept(_unavoidable.Banned) == 0 && !DutiesPending && !EncountersPending; }   // 103차 QA 3회: 재입실 불가 공간의 항목은 빼고 · 104차: 남은 조우
+        }
+
+        /// <summary>
+        /// 104차(사용자: 「변기는 정상입니다 → 빨간 여자, 노란 얼굴 도서관, CCTV 사람, 발자국 등 — 수칙과 지시로 트리거는 된 것 같은데 연출이 안 나왔어」):
+        /// 그날 조우가 아직 끝나지 않았는지(<see cref="TensionDirector.EncountersPending"/>). 지시를 다 마치면 조기 퇴근이 열려 슬롯 B(02:16~)·C(03:08~) 조우가
+        /// 걸릴 틈 없이 밤이 끝났다(퇴근은 03:32까지 흘려보내지 않고 바로 정산 — 놓침 기록도 없이 수칙만 태블릿에 남음). 이제 조우가 끝나거나 놓침(03:32)이 될 때까지 퇴근을 막는다.
+        /// 숨은 조우를 알려 주지 않게 전화기는 「아직 근무 시간」 안내만 한다.
+        /// </summary>
+        public static bool EncountersPending
+        {
+            get { return IsNightActive && _tension != null && _tension.EncountersPending; }
         }
 
         /// <summary>68차: 조기 퇴근을 막는 지시가 남았는지 — 보고하지 않은 점검 또는 남은 [근무 지시]. 전화기 안내 「지시가 아직 끝나지 않았습니다.」가 읽는다.</summary>
@@ -311,6 +322,10 @@ namespace NightDuty
             ResetTabletState();
             _stare.Reset();
             ResetWindowGaze();   // 85차: 재시작하면 창밖 노란 얼굴도 다시
+            ResetGuides();       // 104차: 조우 유도 문자도 다시
+            ResetStartHold();    // 104차 후속: 경비실을 나설 때까지 시계를 붙든다(모든 밤)
+            ResetStanding();     // 104차: 밤새 서 있던 것(모형 급습)도 다시
+            ResetCamp();         // 104차: 경비실 버티기 — 정전·잡음·CCTV 얼굴·체류 시간 모두 처음으로
 
             // 일차 하한을 **덱보다 먼저** 건다. 카드의 발동 자격이 연출 구간을 보고 정해지므로
             // 순서가 뒤집히면 그날 하한이 카드 풀에 반영되지 않는다. 하한은 연출 구간에만 걸리고
@@ -417,6 +432,10 @@ namespace NightDuty
                 return;
             }
 
+            StartHoldTick(judgeSeconds);   // 104차 후속: 경비실 붙듦 상한
+            CampTick(judgeSeconds);        // 104차: 경비실 버티기
+            ParadoxTick(judgeSeconds);     // 104차: 역설 문자가 끝나면 태블릿에서 사라진다
+
             // 긴장 디렉터는 판정 정지 구간에도 흐른다(슬롯·단서는 디렉터가 밤 시각으로 거른다).
             DirectionTick(judgeSeconds);
             if (!_nightOpen)
@@ -430,6 +449,7 @@ namespace NightDuty
             {
                 OrdersTick(judgeSeconds);
                 DutiesTick(judgeSeconds);
+                GuideTick();   // 104차: 고정 편성 밤 — 차례가 온 조우 유도
                 ShiftReadyTick();
             }
 
@@ -481,8 +501,10 @@ namespace NightDuty
             try
             {
                 TrackSpace(signal);
+                ObserveShiftStart(signal);   // 104차 후속: 경비실을 나서면 밤 시계 시작
                 OrdersObserve(signal);
                 DutiesObserve(signal);
+                CampObserve(signal);   // 104차: 다른 공간에 가면 경비실 체류 0으로
                 FinaleObserve(signal);
 
                 // 새 수칙은 모든 신호로 상태(공간·자세·손전등)를 갱신하고, 판정 구간에만 판정한다.
@@ -562,6 +584,8 @@ namespace NightDuty
                 OrdersNoteReport();
                 OnFinalInspectionReported(report);
                 EventBus.RaiseInspectionReported(report);
+                if (_tension != null) _tension.NoteReported(id);   // 104차: 교실 화분(C-1)을 보고하면 소년이 곧바로
+                CampNoteDone();   // 104차: 점검을 하나 끝내면 경비실 체류 0으로
             }
 
             CloseIfCaptured();
@@ -1023,6 +1047,18 @@ namespace NightDuty
         }
 
         /// <summary>
+        /// 104차(사용자: 도서관 노란 얼굴 — 「잡히거나 · 3초 이상 비추지 못했거나 · 도서관을 나가려 한다면 처형 후 사망」): 조우가 플레이어를 바로 붙잡는다 —
+        /// 그 축을 100으로 올려 포획한다(<paramref name="sourceId"/> = 붙잡힘 연출이 장면을 고르는 출처). 밤이 아니거나 이미 붙잡혔으면 아무것도 하지 않는다.
+        /// 샌드박스 「붙잡히지 않음」이면 축만 오르고 밤은 이어진다(디버그 포획과 같다).
+        /// </summary>
+        public static void CaptureByEncounter(FearAxis axis, string sourceId)
+        {
+            if (!_nightOpen || IsCaptured) return;
+            Debug.Log("[NightRun] 조우가 붙잡음 — " + axis + " · " + sourceId);
+            DebugForceCapture(axis, sourceId);
+        }
+
+        /// <summary>
         /// 디버그: 축에 양수 델타를 더한다(감쇠 없음 규칙 그대로 음수는 무시). 구간 자격을 시험할 때 쓴다.
         /// 에디터·디버그 빌드에서만 쓴다.
         /// </summary>
@@ -1131,6 +1167,8 @@ namespace NightDuty
             JudgingWindowEnabled = false;
             InspectionsEnabled = false;
             InspectionPlanOverride = null;
+            CampEnabled = true;   // 104차 QA: 도메인 다시 읽기 없이 플레이를 다시 시작해도 버티기 장치는 켜진 채로
+            ResetCamp();
         }
     }
 }

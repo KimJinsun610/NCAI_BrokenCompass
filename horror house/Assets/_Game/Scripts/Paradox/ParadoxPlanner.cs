@@ -139,7 +139,8 @@ namespace NightDuty
         /// 그날 점검 편성으로 걸 수 없는 쌍은 뺀다. 없으면 null.
         /// </summary>
         /// <param name="canForce">그날 그 수칙을 강제 편성할 수 있는지(103차 — 경비실·CCTV 날짜). null이면 묻지 않는다.</param>
-        public UnavoidableDef PlanUnavoidable(int day, Band trustBand, InspectionPlan inspections, Func<string, bool> canForce = null)
+        /// <param name="allow">쌍 자체를 더 거르는 조건(104차 검토 — 고정 편성 조우 방의 재입실 불가). null이면 묻지 않는다.</param>
+        public UnavoidableDef PlanUnavoidable(int day, Band trustBand, InspectionPlan inspections, Func<string, bool> canForce = null, Func<UnavoidableDef, bool> allow = null)
         {
             if ((int)trustBand < 3) return null;
             bool real = (int)trustBand >= 4 && UnavoidableInRun;
@@ -149,6 +150,7 @@ namespace NightDuty
             {
                 if (_unavoidableInRun.Contains(all[i].Id)) continue;   // 103차: 같은 쌍은 회차에 한 번
                 if (canForce != null && !Array.TrueForAll(all[i].Rules, canForce.Invoke)) continue;   // 103차: 경비실 자리·CCTV 사람 한 번
+                if (allow != null && !allow(all[i])) continue;   // 104차 검토
                 if (all[i].Real == real && UnavoidableCatalog.Feasible(all[i], day, inspections)) pool.Add(all[i]);
             }
 
@@ -221,7 +223,7 @@ namespace NightDuty
                     if (e == null || !e.HasVariant || Excluded(id)) continue;
                     if (!_seen.Contains(id) && band < UnseenTamperMinBand) continue;   // 103차 후속(사용자: 「신뢰가 높다면 처음 등장하는 수칙도 변조돼서 나올 수 있는 게 원래 의도」)
                     if (unavoidable != null && unavoidable.Has(id)) continue;
-                    if (id == ProgramCatalog.FirstParadoxRule && day == 2) continue;
+                    if (id == ProgramCatalog.FirstParadoxRule && day == ProgramCatalog.FirstParadoxDay) continue;   // 104차: 첫 역설 날(고정 편성 4일차)
                     pool.Add(id);
                     // 103차: 회차에 이미 변조한 수칙은 거의 다시 고르지 않고, 위협 수칙(S5 등)보다 평소 수칙을 앞세운다(옛: 5일차 변조의 60%가 S5).
                     RuleDef def0 = ProgramCatalog.Rule(id);
@@ -254,7 +256,7 @@ namespace NightDuty
             // 2) 모호 역설.
             string ambiguous = null;
             bool first = !SentInRun;
-            bool dayTwoFirst = day == 2 && first && Has(deck, ProgramCatalog.FirstParadoxRule);
+            bool dayTwoFirst = day == ProgramCatalog.FirstParadoxDay && (first || ProgramDirector.FixedSchedule) && Has(deck, ProgramCatalog.FirstParadoxRule);   // 104차: 고정 편성은 4일차(소년 날) — 2·3일차에 다른 역설이 먼저 나왔어도 소년 날엔 C2
             if (dayTwoFirst)
             {
                 ambiguous = ProgramCatalog.FirstParadoxRule;

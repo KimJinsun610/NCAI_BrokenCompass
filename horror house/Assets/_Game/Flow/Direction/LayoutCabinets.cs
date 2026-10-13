@@ -80,7 +80,24 @@ public sealed class LayoutCabinets : MonoBehaviour
         public GameObject Instance;
         public HorrorEvent Event;
         public bool Played;
+        public bool Looping;         // 104차: 응시할 때까지 되풀이
+        public float GazedAt = -1f;  // 104차: 응시를 시작한 때(Time.time)
     }
+
+    /// <summary>
+    /// 104차(사용자: 「관물대/열쇠함 요동치는 것도 응시하기 전까지 계속 흔들리다가 응시 2초 후 멈추게」): 흔들림이 시작되면 응시할 때까지 되풀이하고,
+    /// 응시(화면 가운데 <see cref="GazeDegrees"/>° 안 · 가림 없음)를 시작한 뒤 이만큼(초) 지나면 멈춘다(첫 자세로).
+    /// </summary>
+    public const float StopAfterGazeSeconds = 2f;
+
+    /// <summary>104차: 응시로 치는 시선 각(°).</summary>
+    public const float GazeDegrees = 25f;
+
+    /// <summary>104차: 응시할 때까지 흔들리는 중인지(검수용).</summary>
+    public bool RampageLooping { get { return _rampage.Looping; } }
+
+    /// <summary>104차: 응시할 때까지 덜컹거리는 중인지(검수용).</summary>
+    public bool DrawerLooping { get { return _drawer.Looping; } }
 
     private static readonly List<Transform> s_candidates = new List<Transform>();
     private readonly Spot _shut = new Spot { Preset = CreakPreset };
@@ -103,6 +120,9 @@ public sealed class LayoutCabinets : MonoBehaviour
 
     /// <summary>서랍장 자리(검수용).</summary>
     public Transform DrawerSpot { get { return _drawer.Original; } }
+
+    /// <summary>104차: 서랍장 대역(바꿔 세웠으면 — 원래 것은 꺼져 있다). <see cref="DutyCards"/>가 열쇠함 조준·테두리에 쓴다.</summary>
+    public Transform DrawerInstance { get { return _drawer.Instance != null ? _drawer.Instance.transform : null; } }
 
     /// <summary>이번 밤(시도) 흔들렸는지(검수용).</summary>
     public bool RampagePlayed { get { return _rampage.Played; } }
@@ -176,6 +196,8 @@ public sealed class LayoutCabinets : MonoBehaviour
         _since += Time.deltaTime;
         Camera cam = Camera.main;
         if (cam == null) return;
+        KeepShaking(_rampage, cam);   // 104차: 응시할 때까지
+        KeepShaking(_drawer, cam);
 
         int corridor = (int)NightRun.ShownBand(SpaceId.Corridor, FearAxis.Layout);
         // 닫힌 사물함 — 구간에 닿으면 안 보일 때 바꿔 둔다(바뀌는 순간을 보지 않게).
@@ -379,6 +401,8 @@ public sealed class LayoutCabinets : MonoBehaviour
     private static void Fire(Spot s, string what)
     {
         s.Played = true;
+        s.Looping = true;   // 104차: 응시할 때까지 되풀이
+        s.GazedAt = -1f;
         if (s.Event != null) s.Event.Play();
         if (DirectionStage.Verbose) Debug.Log("[LayoutCabinets] " + what + " — " + Name(s.Original));
     }
@@ -390,12 +414,71 @@ public sealed class LayoutCabinets : MonoBehaviour
         Restore(_drawer);
     }
 
+    /// <summary>
+    /// 104차: 흔들림이 끝나면 다시 처음부터(응시할 때까지) — 응시를 시작하고 <see cref="StopAfterGazeSeconds"/>초 뒤 첫 자세로 멈춘다.
+    /// 붙잡힘·사망 컷신 중에는 되풀이하지 않는다(멈추지도 않음 — 끝나면 이어서).
+    /// </summary>
+    private static void KeepShaking(Spot s, Camera cam)
+    {
+        if (!s.Looping || s.Instance == null) return;
+        PlayableDirector d = s.Instance.GetComponentInChildren<PlayableDirector>();
+        if (d == null || d.playableAsset == null)
+        {
+            s.Looping = false;
+            return;
+        }
+
+        if (s.GazedAt < 0f && Gazed(s.Instance.transform, cam)) s.GazedAt = Time.time;
+        if (s.GazedAt >= 0f && Time.time - s.GazedAt >= StopAfterGazeSeconds)
+        {
+            s.Looping = false;
+            d.Stop();
+            d.time = 0;
+            d.Evaluate();   // 첫 자세(닫힘)
+            if (DirectionStage.Verbose) Debug.Log("[LayoutCabinets] 응시 " + StopAfterGazeSeconds + "초 — 흔들림 멈춤 · " + s.Instance.name);
+            return;
+        }
+
+        if (NightRun.IsCaptured || DeathCutscene.Playing != null) return;
+        bool playing = d.state == PlayState.Playing && d.time < d.duration - 0.02;
+        if (playing || (s.Event != null && s.Event.IsPlaying)) return;
+        d.time = 0;
+        d.Play();
+        d.Evaluate();
+    }
+
+    /// <summary>
+    /// 104차: 화면 가운데 <see cref="GazeDegrees"/>° 안에 가림 없이 보이는지. 경비실 서랍장은 따로 둔 충돌체(GuardRoomColliders)가 몸을 덮고 있어
+    /// 화면 판정(<see cref="UnseenDespawn.VisibleTo"/>)이 늘 가려진 것으로 봤다 — 시선이 닿은 점이 물건 곁(<see cref="GazeHitSlack"/>m)이면 보인 것으로 친다.
+    /// </summary>
+    private static bool Gazed(Transform t, Camera cam)
+    {
+        if (t == null || cam == null) return false;
+        Vector3 target = t.position + Vector3.up * 1f;
+        Vector3 from = cam.transform.position;
+        Vector3 to = target - from;
+        if (Vector3.Angle(cam.transform.forward, to) > GazeDegrees) return false;
+        RaycastHit hit;
+        if (!Physics.Linecast(from, target, out hit, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return true;
+        if (hit.collider.transform.IsChildOf(t)) return true;
+        PlayerSensors hub = PlayerSensors.Active;
+        if (hub != null && hub.PlayerRoot != null && hit.collider.transform.IsChildOf(hub.PlayerRoot)) return true;
+        Vector3 d = hit.point - t.position;
+        d.y = 0f;
+        return d.magnitude <= GazeHitSlack;
+    }
+
+    /// <summary>104차: 시선이 닿은 점이 물건(바닥 기준)에서 이만큼(m, 수평) 안이면 그 물건을 본 것.</summary>
+    public const float GazeHitSlack = 1.0f;
+
     private static void Restore(Spot s)
     {
         if (s.Instance != null) Destroy(s.Instance);
         s.Instance = null;
         s.Event = null;
         s.Played = false;
+        s.Looping = false;
+        s.GazedAt = -1f;
         if (s.Original != null && !s.Original.gameObject.activeSelf) s.Original.gameObject.SetActive(true);
     }
 

@@ -242,7 +242,7 @@ public sealed class CctvReplay : MonoBehaviour
 
     private void EndShow()
     {
-        if (_playing && CctvSystem.Active != null && !CctvSystemOverriddenByOthers()) CctvSystem.Active.SetScreenOverride(null);
+        if (_playing && CctvSystem.Active != null && !CctvSystemOverriddenByOthers() && CctvSystem.Active.ScreenOverride == _still) CctvSystem.Active.SetScreenOverride(null);   // 104차: 남(경비실 버티기 얼굴)이 덮은 화면은 걷지 않는다
         _playing = false;
         if (_label != null) Destroy(_label);
         _label = null;

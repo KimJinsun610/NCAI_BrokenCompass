@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using NightDuty;
 using UnityEngine;
+using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 /// <summary>붙잡힘 연출기의 축별 장면 부분 — 연출표(<see cref="CaptureCastSO"/>)의 프리팹 장면 또는 기본 얼굴 장면.</summary>
 public sealed partial class CaptureDirector
@@ -33,6 +35,20 @@ public sealed partial class CaptureDirector
     }
 
     private string _previewSource;
+    private string _previewFace;
+
+    /// <summary>
+    /// 104차(사용자: 「조도 처형 씬의 얼굴만 나오는 부분부터 해서 인체 모형·사람 나무·black boy 버전」): 조도 사망 컷신을 얼굴 장면부터, 얼굴을 <paramref name="standIn"/>
+    /// (<see cref="CutsceneFace.IlluminanceFaces"/>)으로 미리 본다(재시작·카드 없이). 이미 진행 중이면 false. 게임에는 아직 연결하지 않았다.
+    /// </summary>
+    public bool PreviewFaceOnly(string standIn)
+    {
+        if (_running) return false;
+        _previewFace = standIn;
+        bool ok = Preview(FearAxis.Illuminance, 1, LibraryDuck.CaptureSource);
+        if (!ok) _previewFace = null;
+        return ok;
+    }
 
     /// <summary>이번 장면의 김진선님 컷신 — 미리 보기 출처가 있으면 그것, 아니면 지금 붙잡힌 출처로 고른다.</summary>
     private DeathCutscene CutsceneFor(FearAxis axis)
@@ -63,6 +79,7 @@ public sealed partial class CaptureDirector
         if (player != null) player.enabled = true;
         if (clock != null) clock.Release(this);
         _previewSource = null;
+        _previewFace = null;
         _running = false;
     }
 
@@ -93,6 +110,145 @@ public sealed partial class CaptureDirector
         if (player != null) player.enabled = true;
         if (clock != null) clock.Release(this);
         _running = false;
+    }
+
+    /// <summary>104차: 넘어진 뒤 바닥에 누운 눈높이(바닥에서 m).</summary>
+    public const float LyingEyeHeight = 0.28f;
+
+    /// <summary>104차: 넘어진 자세의 고개 기울기(°, 옆으로 누움).</summary>
+    public const float LyingRoll = 72f;
+
+    /// <summary>104차: 누운 채 화면이 밝아지는 시간(실제 초).</summary>
+    public const float WakeFadeSeconds = 1.4f;
+
+    /// <summary>104차: 밝아진 뒤 누운 채 머무는 시간(실제 초).</summary>
+    public const float LieStillSeconds = 0.7f;
+
+    /// <summary>104차: 일어나는 시간(실제 초).</summary>
+    public const float GetUpSeconds = 1.8f;
+
+    /// <summary>
+    /// 104차(사용자: 「도서관 노란 사람 조우에서 붙잡히고 연출이 나온 뒤 죽는 게 아니라 그냥 넘어졌다가 일어나게」): 그 축의 붙잡힘 장면(<paramref name="sourceId"/> 출처 —
+    /// 노란 얼굴이면 얼굴 장면부터)을 틀고, 죽지 않고 그 자리에서 넘어졌다가 일어난다 — 재시작·카드·축 변화 없음, 밤은 이어진다.
+    /// <paramref name="onDark"/>는 장면이 끝나 화면이 검을 때 한 번(몹 치우기). 이미 진행 중이거나 붙잡힌 뒤면 false.
+    /// </summary>
+    public bool Knockdown(FearAxis axis, string sourceId, Action onDark)
+    {
+        if (_running || NightRun.IsCaptured) return false;
+        StartCoroutine(KnockdownRun(axis, sourceId, onDark));
+        return true;
+    }
+
+    /// <summary>104차: 넘어졌다 일어나는 중인지(장면 포함).</summary>
+    public bool KnockedDown { get; private set; }
+
+    private IEnumerator KnockdownRun(FearAxis axis, string sourceId, Action onDark)
+    {
+        _running = true;
+        KnockedDown = true;
+        _previewSource = sourceId;
+        FPController player = FindAnyObjectByType<FPController>();
+        GameTime clock = FindAnyObjectByType<GameTime>();
+        if (clock != null) clock.Hold(this);
+        if (player != null) player.enabled = false;
+        Quaternion facing = player != null ? player.transform.rotation : Quaternion.identity;
+
+        EnsureUi();
+        HideOtherHud();
+        yield return PreCapture(axis, 1);
+        AudioListener.pause = true;
+        yield return PlayScene(axis, 1, player);
+        AudioListener.pause = false;
+        EndCaptureSounds();
+        _previewSource = null;
+        if (onDark != null)
+        {
+            try { onDark(); }
+            catch (Exception e) { Debug.LogException(e); }
+        }
+
+        if (player != null) player.transform.rotation = facing;
+        yield return GetUp(player);
+        LastScene += " · 넘어졌다 일어남";
+        RestoreOtherHud();
+        if (player != null) player.enabled = true;
+        if (clock != null) clock.Release(this);
+        KnockedDown = false;
+        _running = false;
+        // 104차 검토: 넘어진 동안 다른 까닭으로 붙잡혔으면(OnCaptured가 미뤄 둠) 이어서 붙잡힘 연출 — 옛: 밤이 닫힌 채 멈출 수 있었다.
+        if (_pendingCapture && NightRun.IsCaptured)
+        {
+            _pendingCapture = false;
+            StartCoroutine(Run(_pendingAxis));
+        }
+    }
+
+    /// <summary>검은 화면에서 바닥에 옆으로 누운 눈으로 밝아졌다가, 천천히 일어나 원래 눈높이·시선으로 돌아온다.</summary>
+    private IEnumerator GetUp(FPController player)
+    {
+        Camera cam = player != null ? player.GetComponentInChildren<Camera>() : Camera.main;
+        if (cam == null)
+        {
+            yield return FadeFromBlack();
+            yield break;
+        }
+
+        Transform t = cam.transform;
+        Vector3 pos0 = t.localPosition;
+        Quaternion rot0 = t.localRotation;
+        // 손·태블릿을 그리는 뷰모델 카메라는 따로 돌아 누워도 똑바로 들고 있었다(PlayScene 실측) — 누워 있다 일어나는 동안은 끈다.
+        List<Camera> hands = new List<Camera>();
+        foreach (Camera c in Camera.allCameras)
+        {
+            if (c != cam && c.enabled && c.name.IndexOf("Viewmodel", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                c.enabled = false;
+                hands.Add(c);
+            }
+        }
+
+        float drop = 1.3f;
+        RaycastHit hit;
+        if (Physics.Raycast(t.position, Vector3.down, out hit, 3f, ~0, QueryTriggerInteraction.Ignore)) drop = Mathf.Max(0f, t.position.y - (hit.point.y + LyingEyeHeight));
+        Vector3 lyingPos = pos0 + (t.parent != null ? t.parent.InverseTransformVector(Vector3.down * drop) : Vector3.down * drop);
+        Quaternion lyingRot = Quaternion.Euler(-8f, 0f, LyingRoll);
+        t.localPosition = lyingPos;
+        t.localRotation = lyingRot;
+
+        // 누운 채 밝아진다(숨 고르듯 살짝 흔들림).
+        float f = 0f;
+        float seed = UnityEngine.Random.value * 50f;
+        float still = WakeFadeSeconds + LieStillSeconds;
+        while (f < still)
+        {
+            f += Time.unscaledDeltaTime;
+            SetBlack(1f - Mathf.Clamp01(f / WakeFadeSeconds));
+            float sway = (Mathf.PerlinNoise(seed, f * 0.8f) - 0.5f) * 3f;
+            t.localPosition = lyingPos;
+            t.localRotation = lyingRot * Quaternion.Euler(sway, sway * 0.5f, 0f);
+            yield return null;
+        }
+
+        SetBlack(0f);
+        // 일어난다 — 처음엔 무겁게, 끝은 부드럽게(비틀거림은 중간에만).
+        f = 0f;
+        while (f < GetUpSeconds)
+        {
+            f += Time.unscaledDeltaTime;
+            float k = Mathf.Clamp01(f / GetUpSeconds);
+            float e = k * k * (3f - 2f * k);
+            float wobble = Mathf.Sin(k * Mathf.PI) * (Mathf.PerlinNoise(seed + 3f, f * 2.2f) - 0.5f) * 6f;
+            t.localPosition = Vector3.Lerp(lyingPos, pos0, e);
+            t.localRotation = Quaternion.Slerp(lyingRot, rot0, e) * Quaternion.Euler(wobble, 0f, wobble * 0.6f);
+            yield return null;
+        }
+
+        t.localPosition = pos0;
+        t.localRotation = rot0;
+        foreach (Camera c in hands)
+        {
+            if (c != null) c.enabled = true;
+        }
     }
 
     /// <summary>플레이어를 출근 자리(첫 프레임 위치·방향 — 경비실)로 옮긴다. 피날레 강제 복귀가 쓴다.</summary>
@@ -266,7 +422,7 @@ public sealed partial class CaptureDirector
         bool scream = axis == FearAxis.Auditory && CutsceneScream.Attach(cs.gameObject);
         // 96차(민: 「같은 방식으로 — 구도는 그대로, 소년 → 화장실 소녀, 인체모형 → 노란 얼굴」): 이 인스턴스의 몹만 바꾸고(머리 크기·자리 맞춤),
         // 81차 원본 색(빛 무시) 대신 95차 놀람 얼굴처럼 빛을 받게 — 손전등 줄임 · 아래 옆 빛 · 피사계 심도(CutsceneFace).
-        CutsceneFace.Attach(cs);
+        CutsceneFace.Attach(cs, _previewFace ?? FaceFor(axis));   // 104차: 미리 보기는 얼굴 대역을 고를 수 있다 · 경비실 버티기는 검은 남자
         bool finished = false;
         cs.Finished += () =>
         {
@@ -282,6 +438,7 @@ public sealed partial class CaptureDirector
         }
 
         LastScene = CaptureCastSO.Label(axis) + " · 컷신 " + prefab.name + (scream ? " · 비명" : string.Empty);
+        if (FaceOnly(axis) && SkipToFace(cs)) LastScene += " · 얼굴부터";
         bool skippable = count >= 3;
         float t = 0f;
         while (!finished && t < 30f)
@@ -309,6 +466,58 @@ public sealed partial class CaptureDirector
         LastScene += " → " + t.ToString("0.00") + "초";
         Destroy(cs.gameObject);
         done(true);
+    }
+
+    /// <summary>얼굴 장면(조도 컷신에서 다시 켜지는 순간) 이만큼(초) 앞에서 시작한다 — 암흑 속에서 카메라가 섞여 들어갈 시간.</summary>
+    public const float FaceLeadSeconds = 0.4f;
+
+    /// <summary>조도 컷신 Timeline에서 얼굴 활성 트랙을 못 찾을 때의 얼굴 시각(김진선님 빌더의 RevealAt).</summary>
+    public const double FallbackRevealSeconds = 6.5;
+
+    /// <summary>
+    /// 104차(사용자: 도서관 노란 얼굴에게 붙잡히면 「조도 처형 장면 중 얼굴만 바로 나오는 걸로」): 이번 붙잡힘(또는 미리 보기)의 출처가
+    /// <see cref="LibraryDuck.CaptureSource"/>인 조도 붙잡힘이면 깜빡임·암흑 빌드업을 건너뛴다.
+    /// </summary>
+    private bool FaceOnly(FearAxis axis)
+    {
+        if (axis != FearAxis.Illuminance) return false;
+        string source = _previewSource ?? (NightRun.IsCaptured ? NightRun.Cause.SourceId : null);
+        return source == LibraryDuck.CaptureSource || source == NightRun.CampCaptureSource;   // 104차: 경비실 버티기도 얼굴 장면부터(검은 남자)
+    }
+
+    /// <summary>104차: 출처에 맞는 조도 얼굴 대역 — 경비실 버티기는 검은 남자, 그 밖은 기본(노란 얼굴).</summary>
+    private string FaceFor(FearAxis axis)
+    {
+        if (axis != FearAxis.Illuminance) return null;
+        string source = _previewSource ?? (NightRun.IsCaptured ? NightRun.Cause.SourceId : null);
+        return source == NightRun.CampCaptureSource ? "mob.blackman" : null;
+    }
+
+    /// <summary>컷신 Timeline을 얼굴이 켜지기 직전으로 옮긴다(김진선님 프리팹·Timeline은 그대로 — 이번 인스턴스의 재생 시각만). 못 옮기면 false.</summary>
+    public static bool SkipToFace(DeathCutscene cs)
+    {
+        PlayableDirector d = cs != null ? cs.GetComponentInChildren<PlayableDirector>(true) : null;
+        if (d == null) return false;
+        double reveal = RevealSeconds(d);
+        d.time = Math.Max(0.0, reveal - FaceLeadSeconds);
+        d.Evaluate();
+        return true;
+    }
+
+    /// <summary>조도 컷신에서 얼굴(Dummy)이 켜지는 시각 — 「Dummy Active」 활성 클립 시작 + 0.05초(빌더가 0.05초 일찍 세운다).</summary>
+    public static double RevealSeconds(PlayableDirector d)
+    {
+        TimelineAsset timeline = d != null ? d.playableAsset as TimelineAsset : null;
+        if (timeline != null)
+        {
+            foreach (TrackAsset track in timeline.GetOutputTracks())
+            {
+                if (!(track is ActivationTrack) || track.name != "Dummy Active") continue;
+                foreach (TimelineClip clip in track.GetClips()) return clip.start + 0.05;
+            }
+        }
+
+        return FallbackRevealSeconds;
     }
 
     /// <summary>

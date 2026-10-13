@@ -781,7 +781,29 @@ public sealed partial class DevModePanel
         }
         if (GUILayout.Button("회차 바꾸기")) Later(() => captureRepeat = captureRepeat % 3 + 1);
         GUILayout.EndHorizontal();
+        // 104차: 조도 처형 — 얼굴 장면부터(도서관 노란 얼굴 사망과 같은 방식), 얼굴만 바꿔 미리 보기.
+        GUILayout.BeginHorizontal();
+        GUILayout.Label("조도 얼굴만", GUILayout.Width(70));
+        foreach (string face in CutsceneFace.IlluminanceFaces)
+        {
+            string f = face;
+            if (GUILayout.Button(CutsceneFace.FaceName(f))) Later(() => PreviewFaceOnly(f));
+        }
+        GUILayout.EndHorizontal();
         EndSection();
+    }
+
+    private void PreviewFaceOnly(string face)
+    {
+        CaptureDirector cd = CaptureDirector.Active;
+        if (cd == null || !cd.PreviewFaceOnly(face))
+        {
+            Note("조도 얼굴 장면 미리 보기 실패(연출기 없음 또는 진행 중)");
+            return;
+        }
+
+        SetShow(false);
+        StartCoroutine(LogWhenDone(cd));
     }
 
     private void PreviewCapture(FearAxis axis, string source)

@@ -73,6 +73,12 @@ namespace NightDuty
     /// <summary>수칙 ID → 판정기. 판정 조건이 없는 수칙(G3·K4)은 기록만 하는 판정기를 받는다.</summary>
     public static class FinalJudges
     {
+        /// <summary>
+        /// 104차: L3(도서관 노란 얼굴)의 「비추기 시작」·「끊김」 허용(초) — 사실상 끝까지 본다. 3초 비춤·사망은 노란 얼굴 쪽(LibraryDuck)이 정하고,
+        /// 판정은 창이 닫힐 때 한 번이라도 비췄는지만 본다(옛 2초·0.5초 — 3초를 채워 살아도 위반이 남았다).
+        /// </summary>
+        public const float L3PatienceSeconds = 600f;
+
         /// <summary>그 수칙의 새 판정기. 모르는 ID면 null.</summary>
         public static FinalJudge Create(RuleDef def)
         {
@@ -102,7 +108,7 @@ namespace NightDuty
                 case "T7": return new DontStareJudge(null, FinalCues.MirrorTarget, 3f);   // 79차
                 case "L1": return new DwellNearJudge(FinalCues.L1Shelf, 1.5f, 3f);
                 case "L2": return new LeaveAfterCueJudge(FinalCues.Pages, LeaveAfterCueJudge.GraceSeconds);
-                case "L3": return new KeepBeamJudge(FinalCues.YellowFace, FinalCues.FaceTarget, 2f, 0.5f, null);   // 84차: 창밖 노란 얼굴이 이제 노란 얼굴의 전날(빌드업)이라 빛을 떼도 예약하지 않는다
+                case "L3": return new KeepBeamJudge(FinalCues.YellowFace, FinalCues.FaceTarget, L3PatienceSeconds, L3PatienceSeconds, null);   // 84차: 빛을 떼도 예약하지 않는다 · 104차: 벌은 노란 얼굴(LibraryDuck)이 직접 — 3초 못 비추고 잡히면 사망. 판정은 끝까지 한 번이라도 비췄는지만
                 case "L4": return new ProximityAvoidJudge(FinalCues.L4Box, 1.5f);
                 case "L5": return new DontGreetJudge(FinalCues.WindowKnock, FinalCues.ManTarget, 2f);
                 case "L6": return new BeamUpwardJudge();   // 79차
@@ -1118,6 +1124,13 @@ namespace NightDuty
                 return;
             }
 
+            // 104차 QA: 붙잡혔으면 한 번 비췄어도 실패 — 넘어짐(밤이 이어짐)으로 창이 닫혀도 「끝까지 비춤」 통과·신뢰 보상이 나오지 않게.
+            if (s.Kind == SignalKind.EncounterCaught && s.TargetId == _target)
+            {
+                FailAndReserve("붙잡힘");
+                return;
+            }
+
             if (s.Kind != SignalKind.Tick) return;
             if (_lastLitMs < 0)
             {
@@ -1311,6 +1324,7 @@ namespace NightDuty
             }
 
             if (s.Kind != SignalKind.Tick) return;
+            if (w.DwellPaused != null && w.DwellPaused(_space)) return;   // 104차 QA: 그 공간에서 할 일을 하는 중 — 멈춤(0으로 돌리지 않음)
             Trigger();
             _dwell += s.Value;
             if (_dwell >= _limit)

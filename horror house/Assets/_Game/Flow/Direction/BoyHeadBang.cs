@@ -11,6 +11,8 @@
 /// 눈을 떼면 천천히 원래 속도로 돌아오고 <see cref="LookAwayGrace"/>초 뒤 다음 박기에서 엎드려 멈춘다. 박을 때마다 화면이 툭 흔들린다(가까울수록·빠를수록 세게, <see cref="BodyMeter.Jolt"/>).
 /// 103차(민: 「소년이 나타나고 머리 박기를 시작하면, 플레이어가 교실을 나가거나 밖에 있어도 계속 박다가 사라지게」): 조우가 건 머리 박기(<see cref="UntilGone"/>)는
 /// 눈을 떼도·교실을 나가도 멈추지 않고 대역이 거둬질 때(창이 끝나 시야 밖에서 사라질 때)까지 박는다. 3초 이어 바라보면 놀람은 그대로.
+/// 104차(사용자: 「릴리스로 빌드하면 소년 머리박는게 적용이 안된다」): 대역에 애니메이터가 없어 빌드에서는 비레거시 클립의 <c>SampleAnimation</c>이
+/// 「Non-Legacy animations cannot be sampled outside the Editor without an Animator」로 아무것도 하지 않았다(편집기에서만 됨) → 클립을 레거시로(<see cref="StandInClips"/>).
 /// </summary>
 [DisallowMultipleComponent]
 public sealed class BoyHeadBang : MonoBehaviour

@@ -319,6 +319,37 @@ namespace NightDuty.Tests
             }
         }
 
+        [Test]
+        public void 역설은_안전한_읽기로_끝나면_한_번_알린다()
+        {
+            string id = OpenWithMessage();
+            int ended = 0;
+            string endedId = null;
+            EventBus.ParadoxEnded += r =>
+            {
+                ended++;
+                endedId = r;
+            };
+
+            Assert.IsTrue(NightRun.DebugSendParadox(id));
+            Assert.AreEqual(0, ended, "받은 직후는 아직");
+            Assert.IsTrue(NightRun.DebugSafeRead());
+            Assert.AreEqual(1, ended, "104차: 역설이 끝나면 태블릿이 그 문자를 지운다");
+            Assert.AreEqual(id, endedId);
+            Assert.IsTrue(NightRun.ParadoxEndedTonight);
+        }
+
+        [Test]
+        public void 역설은_아무것도_하지_않아도_시간이_지나면_끝난다()
+        {
+            string id = OpenWithMessage();
+            int ended = 0;
+            EventBus.ParadoxEnded += r => ended++;
+            Assert.IsTrue(NightRun.DebugSendParadox(id));
+            for (int i = 0; i < (int)NightRun.ParadoxLingerSeconds + 2 && ended == 0; i++) NightRun.Tick(1f);
+            Assert.AreEqual(1, ended, "문자가 영영 남지 않는다");
+        }
+
         private void SafeReadCore()
         {
             string id = OpenWithMessage();

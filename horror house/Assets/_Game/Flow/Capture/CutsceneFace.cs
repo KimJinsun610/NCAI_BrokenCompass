@@ -77,6 +77,7 @@ public sealed class CutsceneFace : MonoBehaviour
     private VolumeProfile _profile;
     private DepthOfField _dof;
     private readonly List<KeyValuePair<Light, float>> _lamps = new List<KeyValuePair<Light, float>>();
+    private readonly List<ScareFace.Stare> _stares = new List<ScareFace.Stare>();
 
     /// <summary>바꾼 모델(없으면 null).</summary>
     public GameObject Model
@@ -100,7 +101,8 @@ public sealed class CutsceneFace : MonoBehaviour
     /// 컷신 인스턴스의 몹을 바꾸고 빛·심도를 붙인다. <c>Play</c> 전에, <see cref="CaptureDirector.FitDummyFace"/> 뒤에 부른다.
     /// 소년(Boy)이 있으면 화장실 소녀, 인체 모형(Dummy/Model)이 있으면 노란 얼굴. 바꿨으면 그 컴포넌트, 못 바꿨으면 null.
     /// </summary>
-    public static CutsceneFace Attach(DeathCutscene cs)
+    /// <param name="illuminanceStandIn">104차: 조도 컷신 얼굴을 이 대역으로(비면 <see cref="IlluminanceStandIn"/> — 노란 얼굴). <see cref="IlluminanceFaces"/> 참고.</param>
+    public static CutsceneFace Attach(DeathCutscene cs, string illuminanceStandIn = null)
     {
         if (cs == null) return null;
         Transform boy = cs.transform.Find("Boy");
@@ -108,8 +110,27 @@ public sealed class CutsceneFace : MonoBehaviour
 
         Transform dummy = Deep(cs.transform, "Dummy");
         Transform model = dummy != null ? dummy.Find("Model") : null;
-        if (model != null) return Build(cs, dummy, model, IlluminanceStandIn, true);
+        if (model != null) return Build(cs, dummy, model, string.IsNullOrEmpty(illuminanceStandIn) ? IlluminanceStandIn : illuminanceStandIn, true);
         return null;
+    }
+
+    /// <summary>
+    /// 104차(사용자: 「조도 처형 씬의 얼굴만 나오는 부분부터 해서 인체 모형 버전, 사람 나무 버전, black boy 버전도」 — black boy = CCTV 사람의 검은 남자):
+    /// 조도 컷신 얼굴 장면에 쓸 수 있는 대역 — 노란 얼굴(기본) · 인체 모형 · 사람 나무 · 검은 남자. 지금은 만들어만 두었다(개발자 모드 ⑤ 장면에서 미리 보기).
+    /// </summary>
+    public static readonly string[] IlluminanceFaces = { IlluminanceStandIn, "mob.dummy.stand", "mob.tree", "mob.blackman" };
+
+    /// <summary>104차: <see cref="IlluminanceFaces"/>의 이름(개발자 모드 단추).</summary>
+    public static string FaceName(string standIn)
+    {
+        switch (standIn)
+        {
+            case IlluminanceStandIn: return "노란 얼굴";
+            case "mob.dummy.stand": return "인체 모형";
+            case "mob.tree": return "사람 나무";
+            case "mob.blackman": return "검은 남자";
+            default: return standIn;
+        }
     }
 
     /// <param name="parent">새 모델을 둘 자리(원래 몸의 부모 또는 몸 자체 — 그 변환이 Timeline·비명 이동을 받는다).</param>
@@ -143,11 +164,15 @@ public sealed class CutsceneFace : MonoBehaviour
         foreach (Animator a in go.GetComponentsInChildren<Animator>(true)) a.cullingMode = AnimatorCullingMode.AlwaysAnimate;
         foreach (SkinnedMeshRenderer smr in go.GetComponentsInChildren<SkinnedMeshRenderer>(true)) smr.updateWhenOffscreen = true;
 
-        Transform head = ScareFace.Find(go.transform, "head");
-        Transform neck = ScareFace.Find(go.transform, "neck");
+        string faceBone = FaceBone(standIn);
+        Transform head = faceBone != null ? Deep(go.transform, faceBone) : ScareFace.Find(go.transform, "head");
+        Transform neck = faceBone != null ? null : ScareFace.Find(go.transform, "neck");
         Vector3 center;
         float front, height;
-        ScareFace.Measure(go, head, neck, out center, out front, out height);
+        if (faceBone == null || head == null || !MeasureNear(go, head, FaceBoneUp, FaceBoneRadius, out center, out height))
+        {
+            ScareFace.Measure(go, head, neck, out center, out front, out height);
+        }
 
         // 머리 크기를 원래 얼굴과 같게 — 구도(카메라 키)는 원래 얼굴 크기로 잡혀 있다.
         float scale = Mathf.Clamp(refHeight / Mathf.Max(0.05f, height), 0.4f, 2.5f);
@@ -181,10 +206,72 @@ public sealed class CutsceneFace : MonoBehaviour
         f._centerLocal = head != null ? head.InverseTransformPoint(go.transform.TransformPoint(centerInRoot)) : centerInRoot;
         f._grabbed = grabbed;
         f.SetRef(refHead, headEnd);
+        f._refLift += FaceLift(standIn);
         f.Follow();
         Camera cam = Camera.main;
-        if (head != null && cam != null) ScareFace.Stare.Attach(go, head, cam);
+        if (cam != null) f.AttachStares(head, faceBone, standIn, cam);
         return f;
+    }
+
+    /// <summary>
+    /// 104차(사용자: 「각 버전으로 만든 연출 중에 고개가 플레이어를 향해 있으면 좋겠네. 다른 곳을 쳐다봐서 이질감이 들어」): 얼굴이 카메라를 <b>정확히</b>(무게 1) 본다.
+    /// 시선은 얼굴 가운데에서 잰다(뼈에서 재면 카메라가 얼굴 앞 20~30cm라 크게 어긋났다 — 사람 나무는 고개가 하늘로 꺾였다). 사람 나무는 일곱 얼굴이 모두 카메라를 본다.
+    /// 인체 모형은 머리뼈 +z가 얼굴 앞(99차 — 선 자세 고개가 몸 앞에서 17° 돌아가 있다).
+    /// </summary>
+    private void AttachStares(Transform head, string faceBone, string standIn, Camera cam)
+    {
+        if (head != null)
+        {
+            Vector3 axis = FaceAxis(standIn, head, _model.transform);
+            _stares.Add(ScareFace.Stare.Attach(_model, head, cam, 1f, axis, _centerLocal, true));
+        }
+
+        if (faceBone == null) return;
+        float k = _model.transform.lossyScale.y;
+        foreach (Transform b in _model.GetComponentsInChildren<Transform>(true))
+        {
+            if (b == head || !b.name.EndsWith("_Head")) continue;
+            Vector3 origin = b.InverseTransformPoint(b.position + b.up * (FaceBoneUp * k));
+            _stares.Add(ScareFace.Stare.Attach(_model, b, cam, 1f, b.InverseTransformDirection(_model.transform.forward), origin, true));
+        }
+    }
+
+    /// <summary>
+    /// 104차: 검은 남자의 얼굴 앞(머리뼈 기준) — 모델 얼굴이 머리 안에서 옆으로 25°·아래로 숙어 있어 「몸 앞 = 얼굴 앞」으로 맞추면 정수리·옆얼굴을 들이밀었다.
+    /// PlayScene 정면 촬영에서 얼굴이 좌우 대칭이 되는 머리 돌림(옆 25°)에, 컷신 위에서 내려다보는 카메라로 눈·입이 보이게 턱을 30° 든 축.
+    /// </summary>
+    public static readonly Vector3 BlackmanFaceAxis = new Vector3(-0.408f, -0.442f, 0.799f);
+
+    /// <summary>
+    /// 104차(사용자: 「인체 모형이 너무 턱을 내밀고 있어」): 인체 모형 얼굴 축을 머리뼈 +z에서 이만큼(°) 위로 — 쳐다볼 때 고개를 그만큼 덜 든다.
+    /// 컷신 카메라가 위에서 내려다봐 정확히 맞추면 턱을 치켜들었다. PlayScene 실측: 20°는 고개를 숙여 입이 잘리고, 12°에서 정면 얼굴로 눈이 카메라를 본다.
+    /// </summary>
+    public const float DummyStandChinTuck = 12f;
+
+    /// <summary>104차: 대역 얼굴 앞(머리뼈 기준 축). 인체 모형은 머리뼈 +z(99차), 검은 남자는 <see cref="BlackmanFaceAxis"/>, 나머지는 만들 때 몸 앞.</summary>
+    private static Vector3 FaceAxis(string standIn, Transform head, Transform root)
+    {
+        switch (standIn)
+        {
+            case "mob.dummy.stand": return Quaternion.AngleAxis(-DummyStandChinTuck, Vector3.right) * Vector3.forward;
+            case "mob.blackman": return BlackmanFaceAxis;
+            default: return head.InverseTransformDirection(root.forward);
+        }
+    }
+
+    /// <summary>104차: 얼굴들이 카메라와 이루는 가장 큰 각(°, 검수용).</summary>
+    public float StareError
+    {
+        get
+        {
+            float max = 0f;
+            foreach (ScareFace.Stare s in _stares)
+            {
+                if (s != null) max = Mathf.Max(max, s.Error);
+            }
+
+            return max;
+        }
     }
 
     private void SetRef(Transform head, Transform headEnd)
@@ -200,6 +287,82 @@ public sealed class CutsceneFace : MonoBehaviour
         return Vector3.Lerp(_refA.position, _refB.position, _refT) + Vector3.up * _refLift;
     }
 
+    /// <summary>104차: 사람 나무에서 얼굴로 쓸 머리 — 일곱 얼굴 중 몸통 한가운데(<c>Heart_Head</c>). 「head」 이름으로 찾으면 꼭대기 얼굴(Crown)이 잡혔다.</summary>
+    public const string TreeFaceBone = "Heart_Head";
+
+    /// <summary>104차: <see cref="TreeFaceBone"/>처럼 뼈를 정해 둔 얼굴은 뼈에서 위로 <see cref="FaceBoneUp"/>m 간 점의 이 반지름(m) 안 꼭짓점으로 잰다(이웃 얼굴·몸통을 빼고).</summary>
+    public const float FaceBoneRadius = 0.15f;
+
+    /// <summary>104차: 사람 나무의 머리뼈는 목 밑동에 있다 — 얼굴 가운데는 뼈 위쪽 축으로 이만큼(m, 대역 크기 1 기준). PlayScene 실측(정면 촬영에서 가운데 사람 머리 위·아래와 맞음).</summary>
+    public const float FaceBoneUp = 0.18f;
+
+    /// <summary>
+    /// 104차: 조도 얼굴 대역별 높이 손질(m, +면 얼굴이 화면에서 위로). 잰 가운데가 눈·코와 어긋나는 대역 — PlayScene 실측(얼굴 장면 +0.8초):
+    /// 인체 모형은 눈이 화면 위 끝에 걸려 내리고, 검은 남자는 머리털이 위를 차지해 얼굴이 아래로 쏠려 올린다.
+    /// </summary>
+    public static float FaceLift(string standIn)
+    {
+        switch (standIn)
+        {
+            case "mob.dummy.stand": return DummyStandFaceLift;
+            case "mob.blackman": return BlackmanFaceLift;
+            case "mob.tree": return TreeFaceLift;
+            default: return 0f;
+        }
+    }
+
+    public const float DummyStandFaceLift = -0.08f;
+    public const float BlackmanFaceLift = 0.04f;
+
+    /// <summary>104차: 사람 나무 — 가운데 얼굴이 카메라를 정확히 보게 고개를 들자 이마가 화면 위로 잘려 조금 내린다.</summary>
+    public const float TreeFaceLift = -0.04f;
+
+    /// <summary>104차: 「head」 뼈가 얼굴이 아닌 대역의 얼굴 뼈 이름(없으면 null — 「head」·「neck」으로 잰다).</summary>
+    public static string FaceBone(string standIn)
+    {
+        return standIn == "mob.tree" ? TreeFaceBone : null;
+    }
+
+    /// <summary>뼈 <paramref name="bone"/>에서 위쪽 축으로 <paramref name="up"/>m 간 점의 <paramref name="radius"/>m 안 꼭짓점 묶음 가운데(월드)·높이(대역 크기만큼 늘림). 하나도 없으면 false.</summary>
+    private static bool MeasureNear(GameObject go, Transform bone, float up, float radius, out Vector3 center, out float height)
+    {
+        float k = go.transform.lossyScale.y;
+        Vector3 at = bone.position + bone.up * (up * k);
+        radius *= k;
+        Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        Vector3 max = new Vector3(float.MinValue, float.MinValue, float.MinValue);
+        Transform root = go.transform;
+        Mesh baked = new Mesh();
+        bool any = false;
+        foreach (SkinnedMeshRenderer r in go.GetComponentsInChildren<SkinnedMeshRenderer>())
+        {
+            r.BakeMesh(baked, true);
+            Vector3[] v = baked.vertices;
+            Matrix4x4 toWorld = r.transform.localToWorldMatrix;
+            for (int i = 0; i < v.Length; i++)
+            {
+                Vector3 w = toWorld.MultiplyPoint3x4(v[i]);
+                if ((w - at).sqrMagnitude > radius * radius) continue;
+                Vector3 l = root.InverseTransformPoint(w);
+                min = Vector3.Min(min, l);
+                max = Vector3.Max(max, l);
+                any = true;
+            }
+        }
+
+        Destroy(baked);
+        if (!any)
+        {
+            center = at;
+            height = 0.3f;
+            return false;
+        }
+
+        center = root.TransformPoint((min + max) * 0.5f);
+        height = (max.y - min.y) * root.lossyScale.y;
+        return true;
+    }
+
     private static Transform Deep(Transform root, string name)
     {
         foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
@@ -212,7 +375,8 @@ public sealed class CutsceneFace : MonoBehaviour
 
     private Vector3 FaceCenter()
     {
-        return _head != null ? _head.TransformPoint(_centerLocal) : _model.transform.position + Vector3.up * 1.5f;
+        // 104차: 머리뼈가 없으면 잰 가운데(뿌리 기준) — 예전 「뿌리 + 1.5m」는 큰 대역(사람 나무)에서 얼굴이 화면 밖으로 갔다.
+        return _head != null ? _head.TransformPoint(_centerLocal) : _model.transform.TransformPoint(_centerLocal);
     }
 
     /// <summary>새 얼굴 가운데를 원래 얼굴 가운데(지금 뼈 자리)에.</summary>
@@ -225,6 +389,17 @@ public sealed class CutsceneFace : MonoBehaviour
     private void LateUpdate()
     {
         Follow();
+        if (_stares.Count > 0)
+        {
+            // 자리 맞춤 → 카메라 쪽으로 고개 → 돌린 만큼 옮겨 간 얼굴 가운데를 다시 제자리에.
+            foreach (ScareFace.Stare s in _stares)
+            {
+                if (s != null) s.Apply();
+            }
+
+            Follow();
+        }
+
         bool on = _cs != null && DeathCutscene.Playing == _cs && _model != null && _model.activeInHierarchy;
         if (on && _cam == null) Begin();
         if (_cam == null) return;

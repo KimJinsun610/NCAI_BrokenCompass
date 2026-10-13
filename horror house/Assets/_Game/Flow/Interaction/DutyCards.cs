@@ -83,6 +83,8 @@ public sealed class DutyCards : MonoBehaviour
     private Bounds _drawer;
     private bool _drawerFound;
     private bool _drawerSearched;
+    private Transform _box;   // 104차: 찾은 열쇠함(배치 연출이 꺼 두어도 그대로 쓴다)
+    private float _nextSearch;
     private GameObject _placed;
     private string _placedDuty;
     private DutyDispatcher _seen;
@@ -211,7 +213,7 @@ public sealed class DutyCards : MonoBehaviour
             return;
         }
 
-        if (carried != null && _slot != null && Aimed(_slot.transform))
+        if (carried != null && _slot != null && AimedSlot())
         {
             Transform outline = KeyBoxOutline();
             if (outline != null) InteractionOutline.Request(outline);
@@ -498,22 +500,31 @@ public sealed class DutyCards : MonoBehaviour
 
     // ── 열쇠함 ───────────────────────────────────────────────
 
+    /// <summary>
+    /// 104차(피드백: 「보안카드 회수 지시에서 열쇠함이 흔들리는 연출이 걸리면 회수가 안 된다」): 경비실 배치 구간 3 이상인 밤에는
+    /// <see cref="LayoutCabinets"/>가 밤 첫 프레임(실행 순서 0 — 여기 30보다 먼저)에 원래 열쇠함을 꺼 두고 흔들릴 대역으로 바꾼다.
+    /// 전에는 <c>GameObject.Find</c>(꺼진 것은 못 찾음)로 찾고 한 번 실패하면 그 밤 내내 다시 찾지 않아 넣을 자리(<c>duty.keybox</c>)가 생기지 않았다 →
+    /// 꺼져 있어도 씬 뿌리에서 경로로 찾고, 서랍 상자는 콜라이더 bounds(꺼지면 0) 대신 변환 행렬로 잰다. 못 찾으면 1초마다 다시.
+    /// </summary>
     private void FindDrawer()
     {
-        if (_drawerSearched) return;
-        _drawerSearched = true;
-        GameObject box = GameObject.Find("/" + KeyBoxPath);
+        if (_drawerSearched || Time.unscaledTime < _nextSearch) return;
+        _nextSearch = Time.unscaledTime + 1f;
+        Transform box = FindKeyBox();
         if (box == null)
         {
             Debug.LogWarning("[DutyCards] 경비실 열쇠함(LibraryCardCatalogB)을 찾지 못했습니다: " + KeyBoxPath);
             return;
         }
 
+        _drawerSearched = true;
+        _box = box;
+
         // 서랍 상자 콜라이더(작고 납작한 것) 중 가로 면적이 가장 큰 것 = 가장 많이 열린 서랍.
         float best = 0f;
         foreach (BoxCollider c in box.GetComponentsInChildren<BoxCollider>(true))
         {
-            Bounds b = c.bounds;
+            Bounds b = WorldBox(c);
             if (b.size.y > 0.2f || b.size.y < 0.06f || b.size.x > 0.35f) continue;
             float area = b.size.x * b.size.z;
             if (area <= best) continue;
@@ -537,24 +548,83 @@ public sealed class DutyCards : MonoBehaviour
         c.enabled = false;
     }
 
+    /// <summary>104차: 열쇠함 — 켜져 있으면 <c>GameObject.Find</c>, 꺼져 있으면(배치 연출 대역으로 바뀜) 씬 뿌리에서 경로로.</summary>
+    private Transform FindKeyBox()
+    {
+        GameObject on = GameObject.Find("/" + KeyBoxPath);
+        if (on != null) return on.transform;
+        int cut = KeyBoxPath.IndexOf('/');
+        string rootName = KeyBoxPath.Substring(0, cut);
+        foreach (GameObject root in gameObject.scene.GetRootGameObjects())
+        {
+            if (root.name != rootName) continue;
+            Transform t = root.transform.Find(KeyBoxPath.Substring(cut + 1));
+            if (t != null) return t;
+        }
+
+        return null;
+    }
+
+    /// <summary>104차: 상자 콜라이더의 월드 상자 — 꺼져 있어도(<c>Collider.bounds</c>는 0) 변환 행렬로 잰다.</summary>
+    private static Bounds WorldBox(BoxCollider c)
+    {
+        Matrix4x4 m = c.transform.localToWorldMatrix;
+        Vector3 e = c.size * 0.5f;
+        Bounds b = new Bounds(m.MultiplyPoint3x4(c.center), Vector3.zero);
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 corner = c.center + new Vector3((i & 1) == 0 ? -e.x : e.x, (i & 2) == 0 ? -e.y : e.y, (i & 4) == 0 ? -e.z : e.z);
+            b.Encapsulate(m.MultiplyPoint3x4(corner));
+        }
+
+        return b;
+    }
+
     /// <summary>열쇠함 몸통에서 서랍이 나온 쪽(수평 단위 벡터, 없으면 +z).</summary>
     private Vector3 KeyBoxOutward()
     {
-        GameObject box = GameObject.Find("/" + KeyBoxPath);
+        Transform box = _box;
         if (box == null) return Vector3.forward;
-        Vector3 d = _drawer.center - box.transform.position;
+        Vector3 d = _drawer.center - box.position;
         d.y = 0f;
-        Vector3 f = box.transform.forward;
+        Vector3 f = box.forward;
         f.y = 0f;
         if (f.sqrMagnitude < 1e-4f) return Vector3.forward;
         f.Normalize();
         return Vector3.Dot(f, d) >= 0f ? f : -f;
     }
 
-    private static Transform KeyBoxOutline()
+    /// <summary>테두리 빛낼 열쇠함 — 104차: 원래 것이 꺼져 있으면(배치 연출) 대역.</summary>
+    private Transform KeyBoxOutline()
     {
-        GameObject box = GameObject.Find("/" + KeyBoxPath);
-        return box != null ? box.transform : null;
+        if (_box != null && _box.gameObject.activeInHierarchy) return _box;
+        return LayoutCabinets.Active != null ? LayoutCabinets.Active.DrawerInstance : null;
+    }
+
+    /// <summary>
+    /// 104차: 넣을 자리(<c>duty.keybox</c>)를 겨눴는지 — 조준선에 걸린 것 중 열쇠함 자신(원래 것 · 흔들림 대역의 튀어나온 서랍 · 경비실 보충 상자)은
+    /// 건너뛰고 자리를 찾는다(벽 등 다른 것이 먼저 가리면 아님). 전에는 처음 맞은 것 하나만 봐서 덜컹 연출로 나온 서랍이 자리를 가릴 수 있었다.
+    /// </summary>
+    private bool AimedSlot()
+    {
+        Camera cam = Camera.main;
+        if (cam == null || _slot == null) return false;
+        Transform slot = _slot.transform;
+        Transform standIn = LayoutCabinets.Active != null ? LayoutCabinets.Active.DrawerInstance : null;
+        RaycastHit[] hits = Physics.SphereCastAll(cam.transform.position, AimRadius, cam.transform.forward, Reach, ~0, QueryTriggerInteraction.Ignore);
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        foreach (RaycastHit h in hits)
+        {
+            Transform t = h.collider.transform;
+            if (t == slot || t.IsChildOf(slot)) return true;
+            if (_box != null && t.IsChildOf(_box)) continue;
+            if (standIn != null && t.IsChildOf(standIn)) continue;
+            if (t.name.EndsWith("LibraryCardCatalogB")) continue;   // GuardRoomColliders 보충 상자
+            if (PlayerSensors.Active != null && PlayerSensors.Active.PlayerRoot != null && t.IsChildOf(PlayerSensors.Active.PlayerRoot)) continue;
+            return false;
+        }
+
+        return false;
     }
 
     // ── 정리 ────────────────────────────────────────────────

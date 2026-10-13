@@ -62,11 +62,11 @@ MonoBehaviour:
     hits:
     - 5.8760624
   - key: duty.sign
-    clip: {fileID: 8300000, guid: c5acaa50d4e5be249a1d42397fef4dc0, type: 3}
+    clip: {fileID: 8300000, guid: 7ad5e8fc61e5fa04badbb758fe1677dd, type: 3}
     more: []
-    volume: 0.45
+    volume: 0.35
     hits:
-    - 0.27347916
+    - 0.31629166
   - key: E.BoyBang.headbang
     clip: {fileID: 8300000, guid: de04e7190ec841d41b831fd161db348d, type: 3}
     more: []

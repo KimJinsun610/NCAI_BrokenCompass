@@ -15,7 +15,7 @@ namespace NightDuty.Tests
             Assert.AreEqual("교실의 소녀는 무시하십시오.", BlankDecoding.Decode("C2", ProgramCatalog.Rule("C2").Text));
             Assert.AreEqual("복도 끝에 선임이 서 있으면 빛을 끄고 기다리십시오.", BlankDecoding.Decode("S5", ProgramCatalog.Rule("S5").Text));
             Assert.AreEqual("도서관 담당자를 계속 비추십시오.", BlankDecoding.Decode("L3", ProgramCatalog.Rule("L3").Text));
-            Assert.AreEqual("화면 속 사망자가 지나갈 때까지 채널을 넘기지 마십시오.", BlankDecoding.Decode("K1", ProgramCatalog.Rule("K1").Text));
+            Assert.AreEqual("화면 속 사망자가 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.",BlankDecoding.Decode("K1", ProgramCatalog.Rule("K1").Text));
 
             // 변조본에도 같이 적용된다.
             Assert.AreEqual("교실 의 소녀는 무시 대상 입니 다.", BlankDecoding.Decode("C2", ParadoxCatalog.Find("C2").Variant));

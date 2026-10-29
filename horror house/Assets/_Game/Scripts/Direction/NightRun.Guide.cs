@@ -235,6 +235,19 @@ namespace NightDuty
             return r.Def.Id == ProgramCatalog.CeilingLegs && SequentialCorpseLead;
         }
 
+        /// <summary>
+        /// 2026-10-29 김진선님(「공포 조우 이전에 CCTV 확인하라는 지시가 나와 중복」): CCTV 사람 차례에는 앞선 지시 K-1(「CCTV 모든 채널이 정상인지 확인」)이
+        /// 이미 같은 말을 한다 — 그 지시가 나가 있고 아직 보고 전이면 「경비실 CCTV 화면을 확인」 유도 문자를 따로 내지 않는다.
+        /// 보고를 마쳤는데도 조우가 오지 않았으면 그때 유도한다.
+        /// </summary>
+        private static bool LeadSaysSame(EncounterRun r)
+        {
+            if (r == null || r.Def.Id != ProgramCatalog.CctvPerson || Board == null) return false;
+            string lead = LeadItemOf(r);
+            if (string.IsNullOrEmpty(lead)) return false;
+            return Board.IsIssued(lead) && !Board.IsHeld(lead) && Board.StateOf(lead) == InspectionState.Pending;
+        }
+
         /// <summary>104차: 고정 편성 밤의 시체 낙하는 사다리 점검(C-3)을 묶어 두었다가 차례에 낸다.</summary>
         private static bool SequentialCorpseLead
         {
@@ -294,6 +307,7 @@ namespace NightDuty
             if (state.SentAt < 0f)
             {
                 if (ownLead && now - state.OpenedAt < GuideGraceSeconds) return;
+                if (LeadSaysSame(head)) return;
                 SendGuide(head, state, minute);
                 return;
             }

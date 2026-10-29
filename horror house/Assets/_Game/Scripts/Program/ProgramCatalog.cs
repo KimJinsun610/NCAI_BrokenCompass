@@ -258,7 +258,7 @@ namespace NightDuty
             new RuleDef("L6", SpaceId.Library, I, true, "도서관에서는 손전등을 천장으로 향하지 마십시오.", usesFlashlight: true),   // 79차 민 채택
             new RuleDef("L7", SpaceId.Library, L, true, "도서관에서는 뒷걸음질하지 마십시오."),   // 80차 민 채택(새 수칙 B — 역설 없음)
 
-            new RuleDef("K1", SpaceId.SecurityRoom, L, true, "화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오.", boundEncounter: CctvPerson),   // 52차 민: 원래대로(점프스케어를 예고하는 수칙은 쓰지 않는다)
+            new RuleDef("K1", SpaceId.SecurityRoom, L, true, "화면 속 !_ 이 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.", boundEncounter: CctvPerson),   // 2026-10-29 김진선님: 문구만 「눈을 떼지」로(판정은 그대로 — 채널을 넘기면 위반, 공포 연출 동안 채널은 잠김)
             new RuleDef("K2", SpaceId.SecurityRoom, I, true, "공실 채널은 오래 보지 마십시오."),   // 103차 편성 균형: 청각 → 조도(화면 불빛 — 경비실 수칙이 모두 청각이던 것)
             new RuleDef("K3", SpaceId.SecurityRoom, A, true, "서명 시간 외에는 경비실에 오래 머물지 마십시오."),
             new RuleDef("K4", SpaceId.SecurityRoom, L, false, "근무 종료 후에는 경비실을 나가지 마십시오."),

@@ -212,6 +212,22 @@ public sealed class CctvSystem : MonoBehaviour
         get { return _view != ViewState.None; }
     }
 
+    /// <summary>
+    /// 공포 연출(화면 속 사람·얼굴 점프스케어 — <see cref="CctvFaceScare.HorrorOnScreen"/>)이 지금 채널에 떠 있어 채널을 넘길 수 없는지.
+    /// 김진선님: 「공포 이벤트 나오는 걸 볼 수 있게 공포 나오면 화면 못 옮기게」. 나가기(E·Esc·S)는 막지 않는다.
+    /// 걸려 영영 멈추지 않게 이어서 <see cref="MaxChannelLockSeconds"/>초까지만.
+    /// </summary>
+    public bool ChannelLocked
+    {
+        get { return IsViewing && _channelLocked; }
+    }
+
+    /// <summary>채널 잠금이 이어지는 최대 시간(초).</summary>
+    public const float MaxChannelLockSeconds = 25f;
+
+    private bool _channelLocked;
+    private float _lockedFor;
+
     /// <summary>화면 신호 세기(0 = 신호 없음, 1 = 정상). 연출이 「신호 끊김」을 낼 때 쓴다.</summary>
     public float Signal
     {
@@ -816,11 +832,20 @@ public sealed class CctvSystem : MonoBehaviour
 
         ClaimPrompt(ViewPrompt, false);
 
+        bool horror = CctvFaceScare.HorrorOnScreen(this);
+        _lockedFor = horror ? _lockedFor + Time.deltaTime : 0f;
+        _channelLocked = horror && _lockedFor < MaxChannelLockSeconds;
+
 #if ENABLE_LEGACY_INPUT_MANAGER
         if (Input.GetKeyDown(interactKey) || Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.S))
         {
             BeginExit();
             return;
+        }
+
+        if (_channelLocked)
+        {
+            return;   // 공포 연출이 떠 있는 동안 채널을 넘기지 못한다
         }
 
         if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))

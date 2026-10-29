@@ -473,6 +473,20 @@ namespace NightDuty.Tests
             }
         }
 
+        [Test]
+        public void CCTV_사람_밤에는_CCTV로_역설을_고르지_않는다()
+        {
+            // 김진선님: CCTV 사람 조우 앞에 「CCTV 화면을 확인」 지시가 따로 나와 K3 역설과 겹친다 — 덱에 K1이 있으면 CCTV로 역설은 빠진다.
+            bool k3WithoutK1 = false;
+            for (int seed = 0; seed < 30; seed++)
+            {
+                Assert.AreEqual("C1", Sent(seed).Plan(3, Band.Band1, Deck("K3", "K1", "C1")).Ambiguous, "씨앗 " + seed);
+                if (Sent(seed).Plan(3, Band.Band1, Deck("K3", "C1")).Ambiguous == "K3") k3WithoutK1 = true;
+            }
+
+            Assert.IsTrue(k3WithoutK1, "K1이 없는 밤에는 K3 역설이 나올 수 있다");
+        }
+
         // ── 회피 불가 역설: 편성 ───────────────────────────────────
 
         [Test]

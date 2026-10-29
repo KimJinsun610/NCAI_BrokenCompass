@@ -81,6 +81,12 @@ namespace NightDuty
             }
         }
 
+        /// <summary>남은 면제 한도(초) — 0이면 할 일이 있어도 센다.</summary>
+        public float ExemptLeft
+        {
+            get { return Math.Max(0f, ExemptBudgetSeconds - _exemptUsed); }
+        }
+
         /// <summary>정전 뒤 붙잡힘까지 남은 초(정전 전이면 음수 아님 — 0 이상, 정전 단계가 아니면 <see cref="CaptureGraceSeconds"/>).</summary>
         public float CaptureLeft
         {

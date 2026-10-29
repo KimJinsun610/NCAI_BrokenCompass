@@ -29,7 +29,7 @@ namespace NightDuty.Tests
             // 52차 민 문구.
             Assert.AreEqual("교실의 _? 는 무시하십시오.", ProgramCatalog.Rule("C2").Text);
             Assert.AreEqual("초록 불빛 아래에서는 손전등을 끄십시오.", ProgramCatalog.Rule("C4").Text, "66차: 붉은 → 초록");
-            Assert.AreEqual("화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오.", ProgramCatalog.Rule("K1").Text, "원래대로");
+            Assert.AreEqual("화면 속 !_ 이 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.", ProgramCatalog.Rule("K1").Text, "2026-10-29 김진선님");
             InspectionItem c3 = InspectionCatalog.Find("C-3");
             Assert.AreEqual("교실 안쪽에 작은 사다리가 있는지 확인해주십시오.", c3.TabletLine);   // 76차 민 문구
             Assert.AreEqual(FearAxis.Layout, c3.Axis, "이상 = 사다리 없음(배치)");

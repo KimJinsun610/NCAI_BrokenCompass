@@ -74,6 +74,21 @@ public sealed class CctvFaceScare : MonoBehaviour
         if (s_active != null) s_active._people.RemoveAll(p => p.Go == null || p.Go == person);
     }
 
+    /// <summary>
+    /// 지금 보고 있는 채널에 공포 연출이 떠 있는지 — 화면 속 사람이 걷고 있거나 얼굴 점프스케어 중.
+    /// 김진선님(「공포 이벤트 나오는 걸 볼 수 있게 공포 나오면 화면 못 옮기게」): <see cref="CctvSystem"/>이 그동안 채널을 넘기지 못하게 한다.
+    /// 길 끝에 닿아 멈췄거나(걷기 끝) 잠시 숨은 동안(왕복 쉼)은 아니다.
+    /// </summary>
+    public static bool HorrorOnScreen(CctvSystem cctv)
+    {
+        if (s_active == null || cctv == null || !cctv.IsViewing) return false;
+        if (s_active._busy) return true;
+        Person p = s_active.Watched(cctv);
+        if (p == null) return false;
+        CctvWalker walker = p.Go.GetComponent<CctvWalker>();
+        return walker == null || walker.Walking;
+    }
+
     private void OnDestroy()
     {
         if (s_active == this) s_active = null;

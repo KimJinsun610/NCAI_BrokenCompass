@@ -274,6 +274,7 @@ namespace NightDuty
                     if (id == "K2" && emptyRoomChannel < 0) continue;
                     if (first && e.Pattern != SafeReadPattern.EyesOnly) continue;      // 회차의 첫 역설은 「눈으로만」
                     if (band >= 3 && e.Pattern == SafeReadPattern.Cctv) continue;     // CCTV 고장
+                    if (e.Pattern == SafeReadPattern.Cctv && Has(deck, CctvPersonRule)) continue;   // 김진선님: CCTV 사람 밤엔 그 조우 앞에 「CCTV 화면을 확인」 지시가 따로 나와 겹친다
                     pool.Add(id);
                 }
 
@@ -337,6 +338,9 @@ namespace NightDuty
 
         /// <summary>공통 수칙 G1(복도에서 뛰지 마십시오).</summary>
         public const string CommonRunRule = "G1";
+
+        /// <summary>CCTV 사람 조우의 수칙 K1 — 덱에 있으면 그날 「CCTV로 확인하라」 역설(K3)을 고르지 않는다.</summary>
+        public const string CctvPersonRule = "K1";
 
         private static bool Has(IReadOnlyList<RuleDef> deck, string id)
         {

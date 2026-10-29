@@ -25,7 +25,8 @@
                 if (!CampEnabled || !_nightOpen) return LoiterStage.None;
                 LoiterStage s = _loiter.Stage;
                 // 104차 QA: 경비실에서 CCTV 일(K-1 점검·CCTV 역설·CCTV 사람 조우 등)을 하는 동안 얼굴로 채널을 가리지 않는다 — 깜빡임까지만.
-                if (s == LoiterStage.CctvFace && GuardRoomDwellPaused(SpaceId.SecurityRoom)) return LoiterStage.Flicker;
+                // 단 면제 한도를 다 썼으면(일을 남겨 두고 버팀) 얼굴 경고를 그대로 보인다 — 옛: 한도가 끝나도 깜빡임 → 곧장 정전·붙잡힘.
+                if (s == LoiterStage.CctvFace && (GuardRoomEncounterLive || (CampExempt && _loiter.ExemptLeft > 0f))) return LoiterStage.Flicker;
                 return s;
             }
         }
@@ -112,13 +113,20 @@
             get { return _paradox.Sent && !_paradox.SafeRead && !_paradoxEnded && _paradox.Pattern == SafeReadPattern.Cctv; }
         }
 
+        /// <summary>CCTV 역설이 K3 자신을 겨눈다 — 「CCTV로 확인하라」에 남아 버티게 만드는 함정이라 K3 판정은 쉬지 않는다.</summary>
+        private static bool CctvParadoxBaitsCampRule
+        {
+            get { return CctvParadoxPending && _paradox.RuleId == ProgramDirector.CampRule; }
+        }
+
         /// <summary>
         /// 104차 QA: K3 머문 시간 판정을 쉬는지 — 경비실에서 할 일이 있는 동안(<see cref="CampExempt"/> · 경비실 조우).
         /// 버티기 장치와 달리 한도가 없다(오래 쓰면 장치 쪽 면제 한도가 먼저 끝난다).
+        /// K3를 겨눈 CCTV 역설은 쉬는 이유로 치지 않는다(옛: K3 역설을 받으면 K3가 멈춰 함정이 성립하지 않았다).
         /// </summary>
         private static bool GuardRoomDwellPaused(SpaceId space)
         {
-            return SpaceIds.Canonical(space) == SpaceId.SecurityRoom && (CampExempt || GuardRoomEncounterLive);
+            return SpaceIds.Canonical(space) == SpaceId.SecurityRoom && (ExemptFor(false) || GuardRoomEncounterLive);
         }
 
         /// <summary>K3 머문 시간 판정이 지금 경비실에서 쉬는지(검수용).</summary>
@@ -139,22 +147,25 @@
 
         private static bool CampExempt
         {
-            get
-            {
-                if (CanSignCheckpointNow) return true;
-                if (_duties != null && _duties.Active != null && SpaceIds.Canonical(_duties.Active.Space) == SpaceId.SecurityRoom) return true;
-                if (Board != null && Board.IssuedPendingCount > Board.IssuedPendingCountExcept(SpaceId.SecurityRoom)) return true;
-                if (CctvParadoxPending) return true;
-                if (_tension != null)
-                {
-                    foreach (RuleTriggerRun r in _tension.RuleRuns)
-                    {
-                        if (r != null && r.Running && r.Script != null && SpaceIds.Canonical(r.Script.Space) == SpaceId.SecurityRoom) return true;
-                    }
-                }
+            get { return ExemptFor(true); }
+        }
 
-                return false;
+        /// <summary>경비실에서 할 일이 있는지. <paramref name="forCamp"/> 거짓이면 K3 판정용 — K3를 겨눈 CCTV 역설은 빼고 본다.</summary>
+        private static bool ExemptFor(bool forCamp)
+        {
+            if (CanSignCheckpointNow) return true;
+            if (_duties != null && _duties.Active != null && SpaceIds.Canonical(_duties.Active.Space) == SpaceId.SecurityRoom) return true;
+            if (Board != null && Board.IssuedPendingCount > Board.IssuedPendingCountExcept(SpaceId.SecurityRoom)) return true;
+            if (CctvParadoxPending && (forCamp || !CctvParadoxBaitsCampRule)) return true;
+            if (_tension != null)
+            {
+                foreach (RuleTriggerRun r in _tension.RuleRuns)
+                {
+                    if (r != null && r.Running && r.Script != null && SpaceIds.Canonical(r.Script.Space) == SpaceId.SecurityRoom) return true;
+                }
             }
+
+            return false;
         }
 
         private static void CampObserve(in JudgeSignal signal)

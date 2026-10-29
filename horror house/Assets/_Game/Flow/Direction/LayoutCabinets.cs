@@ -416,7 +416,7 @@ public sealed class LayoutCabinets : MonoBehaviour
 
     /// <summary>
     /// 104차: 흔들림이 끝나면 다시 처음부터(응시할 때까지) — 응시를 시작하고 <see cref="StopAfterGazeSeconds"/>초 뒤 첫 자세로 멈춘다.
-    /// 붙잡힘·사망 컷신 중에는 되풀이하지 않는다(멈추지도 않음 — 끝나면 이어서).
+    /// 다른 연출(조우·놀람·붙잡힘·사망 컷신·피날레 — <see cref="Busy"/>) 중에는 새로 되풀이하지 않는다(멈추지도 않음 — 끝나면 이어서).
     /// </summary>
     private static void KeepShaking(Spot s, Camera cam)
     {
@@ -439,7 +439,7 @@ public sealed class LayoutCabinets : MonoBehaviour
             return;
         }
 
-        if (NightRun.IsCaptured || DeathCutscene.Playing != null) return;
+        if (Busy()) return;   // QA: 옛 — 붙잡힘·컷신만 봐서 다른 조우·놀람·피날레 중에도 밤새 덜컹거렸다
         bool playing = d.state == PlayState.Playing && d.time < d.duration - 0.02;
         if (playing || (s.Event != null && s.Event.IsPlaying)) return;
         d.time = 0;
@@ -449,27 +449,53 @@ public sealed class LayoutCabinets : MonoBehaviour
 
     /// <summary>
     /// 104차: 화면 가운데 <see cref="GazeDegrees"/>° 안에 가림 없이 보이는지. 경비실 서랍장은 따로 둔 충돌체(GuardRoomColliders)가 몸을 덮고 있어
-    /// 화면 판정(<see cref="UnseenDespawn.VisibleTo"/>)이 늘 가려진 것으로 봤다 — 시선이 닿은 점이 물건 곁(<see cref="GazeHitSlack"/>m)이면 보인 것으로 친다.
+    /// 화면 판정(<see cref="UnseenDespawn.VisibleTo"/>)이 늘 가려진 것으로 봤다 — 시선이 닿은 점이 물건의 그림 상자(+<see cref="GazeHitSlack"/>m) 안이면 보인 것으로 친다.
+    /// QA: 옛 — 거리 제한이 없고 「피벗에서 수평 1m」라 옆 방에서 벽(사물함이 기댄 벽의 반대 면)을 봐도 멈췄다.
     /// </summary>
     private static bool Gazed(Transform t, Camera cam)
     {
         if (t == null || cam == null) return false;
-        Vector3 target = t.position + Vector3.up * 1f;
+        Bounds box;
+        if (!RenderBox(t, out box)) box = new Bounds(t.position + Vector3.up * 1f, Vector3.one);
+        Vector3 target = box.center;
         Vector3 from = cam.transform.position;
         Vector3 to = target - from;
+        if (to.magnitude > GazeMaxDistance) return false;
         if (Vector3.Angle(cam.transform.forward, to) > GazeDegrees) return false;
         RaycastHit hit;
         if (!Physics.Linecast(from, target, out hit, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore)) return true;
         if (hit.collider.transform.IsChildOf(t)) return true;
         PlayerSensors hub = PlayerSensors.Active;
         if (hub != null && hub.PlayerRoot != null && hit.collider.transform.IsChildOf(hub.PlayerRoot)) return true;
-        Vector3 d = hit.point - t.position;
-        d.y = 0f;
-        return d.magnitude <= GazeHitSlack;
+        box.Expand(GazeHitSlack * 2f);
+        return box.Contains(hit.point);
     }
 
-    /// <summary>104차: 시선이 닿은 점이 물건(바닥 기준)에서 이만큼(m, 수평) 안이면 그 물건을 본 것.</summary>
-    public const float GazeHitSlack = 1.0f;
+    private static readonly List<Renderer> s_renderers = new List<Renderer>();
+
+    /// <summary>켜진 렌더러를 모두 감싸는 상자.</summary>
+    private static bool RenderBox(Transform t, out Bounds box)
+    {
+        box = default(Bounds);
+        bool any = false;
+        t.GetComponentsInChildren(false, s_renderers);
+        foreach (Renderer r in s_renderers)
+        {
+            if (r == null || !r.enabled) continue;
+            if (!any) box = r.bounds;
+            else box.Encapsulate(r.bounds);
+            any = true;
+        }
+
+        s_renderers.Clear();
+        return any;
+    }
+
+    /// <summary>시선이 닿은 점이 물건의 그림 상자에서 이만큼(m) 안이면 그 물건을 본 것(덮어 둔 충돌체 GuardRoomColliders 때문). 벽 두께보다 작게.</summary>
+    public const float GazeHitSlack = 0.15f;
+
+    /// <summary>이보다 멀면(m) 응시로 치지 않는다.</summary>
+    public const float GazeMaxDistance = 12f;
 
     private static void Restore(Spot s)
     {

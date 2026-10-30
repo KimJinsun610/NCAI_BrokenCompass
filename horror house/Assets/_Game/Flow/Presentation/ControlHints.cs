@@ -48,7 +48,7 @@ public sealed class ControlHints : MonoBehaviour
     /// 안내 전체의 눈에 보이는 불투명도. 프로젝트가 선형 색 공간이라 UI 알파를 그대로 넣으면 훨씬 진하게 보인다
     /// (0.6을 넣어도 약 83%) — 넣을 때 <see cref="GroupAlpha"/>로 바꾼다.
     /// </summary>
-    public const float Opacity = 0.6f;
+    public const float Opacity = 0.4f;
 
     /// <summary><see cref="Opacity"/>를 CanvasGroup 알파로 — 선형 색 공간이면 감마를 풀어 넣는다(검은 바탕 위 흰 글씨가 정확히 그 밝기).</summary>
     public static float GroupAlpha

@@ -44,6 +44,18 @@ public sealed class ControlHints : MonoBehaviour
     private const float WideKeyFontSize = 16f;
     private const float WidePad = 9f;
 
+    /// <summary>
+    /// 안내 전체의 눈에 보이는 불투명도. 프로젝트가 선형 색 공간이라 UI 알파를 그대로 넣으면 훨씬 진하게 보인다
+    /// (0.6을 넣어도 약 83%) — 넣을 때 <see cref="GroupAlpha"/>로 바꾼다.
+    /// </summary>
+    public const float Opacity = 0.6f;
+
+    /// <summary><see cref="Opacity"/>를 CanvasGroup 알파로 — 선형 색 공간이면 감마를 풀어 넣는다(검은 바탕 위 흰 글씨가 정확히 그 밝기).</summary>
+    public static float GroupAlpha
+    {
+        get { return QualitySettings.activeColorSpace == ColorSpace.Linear ? Mathf.GammaToLinearSpace(Opacity) : Opacity; }
+    }
+
     private static readonly Color KeyFill = new Color(0.56f, 0.56f, 0.56f, 0.92f);
 
     private RectTransform _root;
@@ -93,7 +105,8 @@ public sealed class ControlHints : MonoBehaviour
         if (_infoImage != null && _infoImage.enabled) _infoImage.enabled = false;
         if (_guideImage != null && _guideImage.enabled) _guideImage.enabled = false;
 
-        bool show = GameSession.CurrentDay <= LastDay();
+        // 2026-10-30: 1일차는 태블릿 안내(TabletIntroCallout)를 거둔 뒤에 보인다.
+        bool show = GameSession.CurrentDay <= LastDay() && !TabletIntroCallout.HoldsControlHints;
         if (_root.gameObject.activeSelf != show) _root.gameObject.SetActive(show);
     }
 
@@ -144,6 +157,10 @@ public sealed class ControlHints : MonoBehaviour
         _root.pivot = new Vector2(0f, 1f);
         _root.anchoredPosition = Vector2.zero;
         _root.sizeDelta = new Vector2(600f, 320f);
+        CanvasGroup group = go.AddComponent<CanvasGroup>();   // 2026-10-30(김진선님: 「좌상단 UI 오퍼시티 80으로」): 키캡·글씨 모두 눈에 보이는 80%
+        group.alpha = GroupAlpha;
+        group.interactable = false;
+        group.blocksRaycasts = false;
 
         TMP_FontAsset font = PickFont(hud);
         for (int r = 0; r < Rows.Length; r++)

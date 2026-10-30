@@ -156,7 +156,7 @@ namespace NightDuty
         /// <summary>점검 공간 상한(경비실 포함).</summary>
         public const int MaxSpaces = 4;
 
-        private static readonly int[] ItemsByDay = { 4, 5, 5, 6, 6 };   // 67차(민: 「물품 점검이 비중이 더 높은데, 지시 사항과 비중이 균일했으면」): 5·6·6·7·7 → 4·5·5·6·6(근무 지시 3·3·4·4·4와 번갈아).   // 57차(민: 「점검도 빨리빨리 안 나와서 지겨웠다 — 맵이 좁으니 스피디하게」): 5·5·6·6·7 → 5·6·7·7·8. 66차(민: 「점검은 안 겹칠수록 좋아, 필요하면 하루 점검을 줄여도 돼」): 항목 29개와 맞춰 5·6·6·7·7
+        private static readonly int[] ItemsByDay = { 5, 5, 5, 6, 6 };   // 2026-10-30: 1일차 4 → 5(경비실 화분 K-3을 맨 앞에).   // 67차(민: 「물품 점검이 비중이 더 높은데, 지시 사항과 비중이 균일했으면」): 5·6·6·7·7 → 4·5·5·6·6(근무 지시 3·3·4·4·4와 번갈아).   // 57차(민: 「점검도 빨리빨리 안 나와서 지겨웠다 — 맵이 좁으니 스피디하게」): 5·5·6·6·7 → 5·6·7·7·8. 66차(민: 「점검은 안 겹칠수록 좋아, 필요하면 하루 점검을 줄여도 돼」): 항목 29개와 맞춰 5·6·6·7·7
         private static readonly int[] AnomaliesByDay = { 2, 2, 3, 3, 3 };
 
         /// <summary>그날 점검 항목 수.</summary>
@@ -180,8 +180,8 @@ namespace NightDuty
     /// <summary>
     /// 이상 배정기(최종 기획서 「이상 배정」). 회차 동안 살아 있으며 공간을 처음 점검한 날을 기억한다.
     /// <list type="bullet">
-    /// <item>점검 수(그중 이상): 4(2) · 5(2) · 5(3) · 6(3) · 6(3)(67차). 점검 공간은 경비실 포함 4곳 이하이고, 2일차부터는 좌·우 동에 각각 하나 이상.</item>
-    /// <item>1일차는 튜토리얼 고정: 복도·교실·과학실 + 경비실, 이상은 S-2 현미경 불(빛, 과학실이라 호출 2에 열림)과 C-1 화분(옮김), 첫 점검 K-1은 정상. 복도는 정상 항목 하나.</item>
+    /// <item>점검 수(그중 이상): 5(2) · 5(2) · 5(3) · 6(3) · 6(3)(67차, 2026-10-30 1일차 4 → 5). 점검 공간은 경비실 포함 4곳 이하이고, 2일차부터는 좌·우 동에 각각 하나 이상.</item>
+    /// <item>1일차는 튜토리얼 고정: 복도·교실·과학실 + 경비실, 이상은 S-2 현미경 불(빛)과 C-1 화분(옮김), 경비실 화분 K-3 → CCTV K-1 순으로 정상. 복도는 정상 항목 하나.</item>
     /// <item>이상의 축은 그 축의 <b>연출 구간</b>이 1 이상일 때만 고르고, 구간이 높을수록 가중치가 크다(가중치 = 구간 번호).</item>
     /// <item>공간을 처음 점검하는 날에는 그 공간에 이상을 두지 않는다(1일차 튜토리얼 제외).</item>
     /// <item>그날 마지막 점검 공간 하나는 호출 2(02:16)에 열린다(경비실 제외, 좌측 동 우선). 호출 1은 먼저 열린 항목 하나를 가리킨다.</item>
@@ -275,6 +275,9 @@ namespace NightDuty
             for (int i = 0; i < plan.Assignments.Count; i++)
             {
                 InspectionAssignment a = plan.Assignments[i];
+                // 2026-10-30: 1일차 맨 앞 경비실 화분(K-3)은 튜토리얼 자리라 세지 않는다 — 세면 경비실에 「안 나온 항목」이 줄어
+                // 4일차 경비실 점검(K-1 재점검 → 가짜 회피 불가 → 5일차 진짜)이 200판 중 150+ → 6으로 무너졌다(실측).
+                if (day == 1 && a.Id == InspectionCatalog.TutorialOpening) continue;
                 Count(_used, a.Id);
                 if (a.IsAnomaly) Count(_anomalyUsed, a.Id);
             }
@@ -294,6 +297,9 @@ namespace NightDuty
             InspectionItem light = InspectionCatalog.Find(InspectionCatalog.TutorialLight);
 
             // 51차: 1일차 호출 2(02:16)는 복도 정상 1항목(경비실 앞 재방문)만 — 과학실·교실은 앞쪽에 열려 1시대에 다 나온다.
+            // 2026-10-30: 경비실 화분(K-3, 정상)을 맨 앞에 — 같은 방 지시는 편성 순서라 K-3 → K-1로 나간다.
+            InspectionItem opening = InspectionCatalog.Find(InspectionCatalog.TutorialOpening);
+            if (opening != null) list.Add(new InspectionAssignment(opening, false, Band.Band0, false));
             list.Add(new InspectionAssignment(first, false, Band.Band0, false));
             list.Add(new InspectionAssignment(move, true, Intensity(shown, move.Axis), move.Space == Day1LateSpace));
             list.Add(new InspectionAssignment(light, true, Intensity(shown, light.Axis), light.Space == Day1LateSpace));
@@ -314,13 +320,13 @@ namespace NightDuty
             }
 
             rest.RemoveAll(x => x.Space == Day1LateSpace);   // 늦은 항목은 하나만
-            if (list.Count < InspectionQuota.Items(1))   // 67차: 1일차 4항목이면 덧붙이지 않는다
+            if (list.Count < InspectionQuota.Items(1))   // 67차: 정원이 차면 덧붙이지 않는다(지금 K-3 · K-1 · C-1 · S-2 · 복도 1 = 5)
             {
                 InspectionItem extra = PickFresh(rest);
                 list.Add(new InspectionAssignment(extra, false, Band.Band0, false));
             }
 
-            string call1 = PickCall1(list, InspectionCatalog.FirstInspection);
+            string call1 = PickCall1(list, InspectionCatalog.FirstInspection, InspectionCatalog.TutorialOpening);   // 경비실 둘은 출근 직후에 나가므로 호출 1 몫이 아니다
             return new InspectionPlan(1, list, Day1LateSpace, call1);
         }
 
@@ -517,12 +523,12 @@ namespace NightDuty
             return any.Count > 0 ? Pick(any) : SpaceId.None;
         }
 
-        private string PickCall1(List<InspectionAssignment> list, string exclude)
+        private string PickCall1(List<InspectionAssignment> list, string exclude, string alsoExclude = null)
         {
             List<string> ids = new List<string>();
             for (int i = 0; i < list.Count; i++)
             {
-                if (!list[i].IsLate && list[i].Id != exclude) ids.Add(list[i].Id);
+                if (!list[i].IsLate && list[i].Id != exclude && list[i].Id != alsoExclude) ids.Add(list[i].Id);
             }
 
             return ids.Count > 0 ? Pick(ids) : string.Empty;

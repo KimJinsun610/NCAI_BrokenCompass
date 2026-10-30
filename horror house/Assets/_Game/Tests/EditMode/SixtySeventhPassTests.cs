@@ -46,7 +46,7 @@ namespace NightDuty.Tests
         [Test]
         public void 점검과_근무_지시_수가_비슷하다()
         {
-            int[] items = { 4, 5, 5, 6, 6 };
+            int[] items = { 5, 5, 5, 6, 6 };   // 2026-10-30: 1일차 4 → 5(경비실 화분 K-3을 맨 앞에)
             int[] duties = { 3, 3, 4, 4, 4 };
             for (int day = 1; day <= 5; day++)
             {

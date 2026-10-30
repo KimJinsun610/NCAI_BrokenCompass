@@ -577,7 +577,9 @@ namespace NightDuty
                     if (rp != rq) return rp.CompareTo(rq);
                 }
 
-                return Cost(SpaceOf(p)).CompareTo(Cost(SpaceOf(q)));
+                int byCost = Cost(SpaceOf(p)).CompareTo(Cost(SpaceOf(q)));
+                if (byCost != 0) return byCost;
+                return PlanIndex(p).CompareTo(PlanIndex(q));   // 2026-10-30: 같은 방이면 편성 순서대로(1일차 경비실 화분 K-3 → CCTV K-1)
             });
             List<string> issued = new List<string>();
             for (int i = 0; i < ordered.Count && issued.Count < OrderItemsMax; i++)
@@ -958,6 +960,17 @@ namespace NightDuty
             if (_board.IsHeld(a.Id)) return false;   // 51차: 목격 전 T4 변기
             if (banned != SpaceId.None && SpaceIds.Canonical(a.Item.Space) == banned) return false;
             return includeIssuedPending || !_board.IsIssued(a.Id);
+        }
+
+        private int PlanIndex(string itemId)
+        {
+            IReadOnlyList<InspectionAssignment> rows = _board.Plan.Assignments;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                if (rows[i].Id == itemId) return i;
+            }
+
+            return int.MaxValue;
         }
 
         private List<string> UnissuedIn(SpaceId space, SpaceId banned)

@@ -173,6 +173,31 @@ namespace NightDuty
 
         private static bool s_shiftStarted;
         private static float s_startHoldSeconds;
+        private static bool s_holdUntilReleased;
+
+        /// <summary>
+        /// 2026-10-30(김진선님: 「초반에 시간 멈춰주는 거 1일차에는 태블릿 내리기 전까지로」): 이 밤의 시작 붙듦을 경비실을 나서거나 상한이 지나도 풀지 않고
+        /// <see cref="ReleaseStartHold"/>를 부를 때까지 잡아 둔다. 1일차 태블릿 안내(<c>TabletIntroCallout</c>)가 켜고, 태블릿을 내리면 푼다.
+        /// 밤 시작·재시작(<see cref="ResetStartHold"/>)에 꺼진다. 이미 근무가 시작됐으면 아무것도 하지 않는다.
+        /// </summary>
+        public static void HoldStartUntilReleased()
+        {
+            if (s_shiftStarted) return;
+            s_holdUntilReleased = true;
+        }
+
+        /// <summary><see cref="HoldStartUntilReleased"/>로 잡아 둔 붙듦을 풀고 근무를 시작한다. 잡아 두지 않았으면 아무것도 하지 않는다.</summary>
+        public static void ReleaseStartHold(string reason)
+        {
+            if (!s_holdUntilReleased) return;
+            s_holdUntilReleased = false;
+            if (s_shiftStarted) return;
+            s_shiftStarted = true;
+            UnityEngine.Debug.Log("[NightRun] " + reason + " — 밤 시계 시작(" + s_startHoldSeconds.ToString("0.0") + "초 붙듦)");
+        }
+
+        /// <summary>시작 붙듦을 <see cref="ReleaseStartHold"/>까지 잡아 두는 중인지(검수용).</summary>
+        public static bool StartHoldPinned { get { return s_holdUntilReleased; } }
 
         /// <summary>
         /// 104차 후속: 밤 시작(00:00) 뒤 경비실을 아직 나서지 않았다 — 구동기가 밤 시계를 붙든다(수칙을 읽을 시간). 모든 밤에 건다.
@@ -190,12 +215,13 @@ namespace NightDuty
         {
             s_shiftStarted = false;
             s_startHoldSeconds = 0f;
+            s_holdUntilReleased = false;
         }
 
         /// <summary>경비실을 나서면(경비실 공간을 나가거나 다른 공간에 들어서면) 근무가 시작된다.</summary>
         private static void ObserveShiftStart(in JudgeSignal signal)
         {
-            if (s_shiftStarted) return;
+            if (s_shiftStarted || s_holdUntilReleased) return;   // 1일차: 태블릿을 내릴 때까지(경비실을 나서도 붙든다)
             bool left = (signal.Kind == SignalKind.SpaceExited && SpaceIds.Canonical(signal.Space) == SpaceId.SecurityRoom)
                      || (signal.Kind == SignalKind.SpaceEntered && signal.Space != SpaceId.None && SpaceIds.Canonical(signal.Space) != SpaceId.SecurityRoom);
             if (!left) return;
@@ -207,7 +233,7 @@ namespace NightDuty
         {
             if (s_shiftStarted) return;
             s_startHoldSeconds += realSeconds;
-            if (s_startHoldSeconds < StartHoldMaxSeconds) return;
+            if (s_holdUntilReleased || s_startHoldSeconds < StartHoldMaxSeconds) return;   // 1일차: 상한 없이 태블릿을 내릴 때까지
             s_shiftStarted = true;
             UnityEngine.Debug.Log("[NightRun] 경비실에서 " + StartHoldMaxSeconds + "초가 지나 밤 시계 시작");
         }

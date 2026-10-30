@@ -130,6 +130,42 @@ public sealed class TabletZoom : MonoBehaviour
         get { return _blend > 0.5f; }
     }
 
+    /// <summary>확대하려는 중인지(넘어가는 동안에도 목표 기준 — 우클릭으로 내리는 순간 거짓).</summary>
+    public bool ZoomWanted
+    {
+        get { return _zoomTarget; }
+    }
+
+    /// <summary>
+    /// 2026-10-30: 태블릿 화면 판(<c>Screen/BG</c>)이 지금 화면에서 차지하는 사각형(화면 픽셀, 왼쪽 아래 원점).
+    /// 1일차 안내(<see cref="TabletIntroCallout"/>)가 화면 옆에 붙을 자리를 재는 데 쓴다. 판이나 카메라를 못 찾으면 false.
+    /// </summary>
+    public bool TryGetPlateScreenRect(out Rect rect)
+    {
+        rect = default;
+        if (!Bind()) return false;
+        Transform plate = FindPlate();
+        Camera cam = ViewmodelCamera();
+        MeshFilter mf = plate != null ? plate.GetComponent<MeshFilter>() : null;
+        if (mf == null || mf.sharedMesh == null || cam == null) return false;
+
+        Bounds b = mf.sharedMesh.bounds;
+        float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+        for (int i = 0; i < 8; i++)
+        {
+            Vector3 corner = b.center + Vector3.Scale(b.extents, new Vector3((i & 1) == 0 ? -1f : 1f, (i & 2) == 0 ? -1f : 1f, (i & 4) == 0 ? -1f : 1f));
+            Vector3 s = cam.WorldToScreenPoint(plate.TransformPoint(corner));
+            if (s.z <= 0f) return false;
+            minX = Mathf.Min(minX, s.x);
+            minY = Mathf.Min(minY, s.y);
+            maxX = Mathf.Max(maxX, s.x);
+            maxY = Mathf.Max(maxY, s.y);
+        }
+
+        rect = Rect.MinMaxRect(minX, minY, maxX, maxY);
+        return true;
+    }
+
     /// <summary>확대 진행도 0(든 상태) ~ 1(확대). 확대·축소 동안 화면 움직임과 같은 곡선으로 바뀐다 — 이동 속도가 이것을 본다(FPController).</summary>
     public float ZoomAmount
     {

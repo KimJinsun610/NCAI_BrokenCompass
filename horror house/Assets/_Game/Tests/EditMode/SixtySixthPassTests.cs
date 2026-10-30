@@ -110,6 +110,7 @@ namespace NightDuty.Tests
                 {
                     foreach (InspectionAssignment r in a.Build(day, axes).Assignments)
                     {
+                        if (day == 1 && r.Id == InspectionCatalog.TutorialOpening) continue;   // 2026-10-30: 1일차 경비실 화분은 튜토리얼 자리(편성 횟수에 세지 않는다)
                         int c;
                         n.TryGetValue(r.Id, out c);
                         n[r.Id] = c + 1;

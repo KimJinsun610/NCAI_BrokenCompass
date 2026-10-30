@@ -213,6 +213,28 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void 일차1은_경비실_화분을_먼저_내고_보고하면_곧_CCTV를_낸다()
+        {
+            // 2026-10-30(김진선님): 1일차 첫 지시 CCTV(K-1) 앞에 경비실 화분(K-3, 정상).
+            InspectionPlan plan = new AnomalyAssigner(new System.Random(3)).Build(1, FixedBands.All(Band.Band0));
+            Assert.AreEqual(InspectionCatalog.TutorialOpening, plan.Assignments[0].Id, plan.ToString());
+            Assert.IsFalse(plan.Find(InspectionCatalog.TutorialOpening).IsAnomaly, "경비실 화분은 늘 정상");
+            Assert.AreNotEqual(InspectionCatalog.TutorialOpening, plan.Call1ItemId, "호출 1 몫이 아니다");
+
+            InspectionAssignment[] rows = new InspectionAssignment[plan.Assignments.Count];
+            for (int i = 0; i < rows.Length; i++) rows[i] = plan.Assignments[i];
+            Rig r = new Rig(1, plan.Call1ItemId, null, rows);
+            r.Minute = 2f;
+            r.Wait(8.2f);
+            Assert.AreEqual(1, r.Orders.Count);
+            CollectionAssert.AreEqual(new[] { "K-3" }, r.Orders[0].ItemIds);
+            r.Report("K-3");
+            r.Wait(InspectionDispatcher.NextAfterReport + 0.5f);
+            Assert.AreEqual(2, r.Orders.Count);
+            CollectionAssert.AreEqual(new[] { "K-1" }, r.Orders[1].ItemIds, "같은 방이라 곧이어 CCTV");
+        }
+
+        [Test]
         public void 보고하면_몇_초_뒤_가까운_공간을_다음으로()
         {
             Rig r = new Rig(2, null, Row("K-1"), Row("H-1"), Row("S-1"), Row("L-1", true));

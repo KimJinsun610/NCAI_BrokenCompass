@@ -103,8 +103,9 @@ namespace NightDuty.Tests
                 AnomalyAssigner a = new AnomalyAssigner(new System.Random(seed));
                 InspectionPlan plan = a.Build(1, FixedBands.All(Band.Band0));
 
-                Assert.AreEqual(InspectionQuota.Items(1), plan.Count, plan.ToString());   // 67차: 4항목(K-1 · C-1 · S-2 · 복도 1)
+                Assert.AreEqual(InspectionQuota.Items(1), plan.Count, plan.ToString());   // 2026-10-30: 5항목(K-3 · K-1 · C-1 · S-2 · 복도 1)
                 Assert.AreEqual(2, plan.AnomalyCount, plan.ToString());
+                Assert.IsFalse(plan.Find("K-3").IsAnomaly, "경비실 화분은 정상");
                 Assert.IsFalse(plan.Find("K-1").IsAnomaly, "첫 점검 K-1은 정상");
                 Assert.IsTrue(plan.Find("C-1").IsAnomaly, "화분(옮김)");
                 Assert.IsFalse(plan.Find("C-1").IsLate, "50차: 교실은 먼저 열린다(순차 지시에서 호출 1 몫)");

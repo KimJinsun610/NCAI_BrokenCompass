@@ -182,6 +182,15 @@ public sealed class DeskStarterKit : MonoBehaviour
             if (relay != null && relay.IsOn) relay.SetOn(false);
         }
 
+        // 2026-10-30(김진선님: 「손전등 관련 안내도 태블릿 내린 후부터」): 1일차 태블릿 안내가 떠 있는 동안은 외곽선·줍기 안내·알림을 내지 않는다.
+        if (TabletIntroCallout.HoldsControlHints)
+        {
+            ReleasePrompt();
+            s_notice = null;
+            TickNotice();
+            return;
+        }
+
         GameObject aimed = null;
         if (showLight || showBattery)
         {

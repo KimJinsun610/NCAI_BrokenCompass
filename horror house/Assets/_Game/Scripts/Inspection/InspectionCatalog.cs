@@ -90,6 +90,9 @@ namespace NightDuty
         /// <summary>회차 첫 점검. 반드시 정상이다.</summary>
         public const string FirstInspection = "K-1";
 
+        /// <summary>2026-10-30(김진선님: 「1일차 첫 수칙이 CCTV인데, 그 전에 경비실 화분 확인 — 무조건 정상」): 1일차 맨 앞 점검(경비실 화분, 정상 고정). K-1보다 먼저 지시된다.</summary>
+        public const string TutorialOpening = "K-3";
+
         /// <summary>역보고(T4)가 걸리는 항목.</summary>
         public const string ReverseReportItem = "T-1";
 

@@ -270,6 +270,28 @@ namespace NightDuty.Tests
             Assert.IsFalse(NightRun.StartHeld, "00:00이 아닌 시각(체크포인트·개발자 이동)");
         }
 
+        /// <summary>2026-10-30(김진선님: 「1일차에는 태블릿 내리기 전까지」): 잡아 둔 붙듦은 경비실을 나서도·상한이 지나도 풀리지 않고 놓아야 풀린다.</summary>
+        [Test]
+        public void 잡아_둔_시작_붙듦은_놓을_때까지_풀리지_않는다()
+        {
+            NightRun.StartNewRun();
+            NightRun.BeginNight(1, () => 0);
+            NightRun.HoldStartUntilReleased();
+            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceExited, SpaceId.SecurityRoom));
+            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
+            for (int i = 0; i < 10; i++) NightRun.Tick(NightRun.StartHoldMaxSeconds / 5f);
+            Assert.IsTrue(NightRun.StartHeld, "경비실을 나서도·상한이 지나도");
+
+            NightRun.ReleaseStartHold("시험");
+            Assert.IsFalse(NightRun.StartHeld);
+            Assert.IsTrue(NightRun.ShiftStarted);
+
+            NightRun.BeginNight(1, () => 0);   // 다시 연 밤(재시작)에는 잡아 둔 것이 풀려 평소 규칙
+            Assert.IsFalse(NightRun.StartHoldPinned);
+            NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceExited, SpaceId.SecurityRoom));
+            Assert.IsFalse(NightRun.StartHeld, "평소처럼 나서면 시작");
+        }
+
         [Test]
         public void 빈_칸은_체크포인트_전에_걸렸으면_재시작해도_다시_걸지_않는다()
         {

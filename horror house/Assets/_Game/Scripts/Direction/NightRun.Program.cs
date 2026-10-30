@@ -65,7 +65,7 @@ namespace NightDuty
         private static void ResetExtensions(bool clearSwitches)
         {
             ResetTabletState();
-            ResetFinale(clearSwitches);
+            ResetFinale(true);   // 2026-10-30: 결말 기록은 회차 단위 — 스위치와 상관없이 지운다(새 회차 1일차 끝에 바로 엔딩으로 가던 버그)
             ResetParadox(clearSwitches);
             ResetUnavoidable();
             ResetBattery(clearSwitches);

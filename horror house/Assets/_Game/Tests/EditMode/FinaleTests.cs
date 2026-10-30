@@ -219,5 +219,19 @@ namespace NightDuty.Tests
             Assert.IsTrue(NightRun.EndFinale());
             Assert.AreEqual(FinaleEnding.ShiftOver, NightRun.LastFinaleEnding);
         }
+
+        /// <summary>2026-10-30: 엔딩을 본 뒤 같은 실행에서 새 회차를 시작하면 결말 기록이 남아 1일차가 끝나자마자 엔딩으로 갔다.</summary>
+        [Test]
+        public void 새_회차를_시작하면_지난_결말을_지운다()
+        {
+            OpenFinale();
+            Assert.IsTrue(NightRun.EndFinale());
+            Assert.AreNotEqual(FinaleEnding.None, NightRun.LastFinaleEnding);
+
+            NightRun.StartNewRun();
+
+            Assert.AreEqual(FinaleEnding.None, NightRun.LastFinaleEnding, "결과창 라우터가 엔딩으로 보내지 않게");
+            Assert.IsFalse(NightRun.FinaleBlankFilled);
+        }
     }
 }

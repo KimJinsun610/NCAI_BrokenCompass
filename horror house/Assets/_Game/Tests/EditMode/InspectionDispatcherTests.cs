@@ -682,6 +682,40 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void 출근_시계_붙듦_동안에는_지시가_오지_않고_경비실을_나서면_온다()
+        {
+            // 2026-10-30(김진선님): 수칙을 읽는 시간에는 메시지가 오면 안 된다.
+            bool window = NightRun.JudgingWindowEnabled;
+            NightRun.JudgingWindowEnabled = true;
+            try
+            {
+                UsePlan("K-1", "H-1");
+                List<InspectionOrder> sent = new List<InspectionOrder>();
+                EventBus.InspectionOrdered += sent.Add;
+                NightRun.BeginNight(2, () => 0);
+                Assert.IsTrue(NightRun.StartHoldQuiet);
+
+                Run(30f);
+                Assert.AreEqual(0, sent.Count, "경비실에서 수칙을 읽는 동안");
+
+                NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceExited, SpaceId.SecurityRoom));
+                Assert.IsFalse(NightRun.StartHoldQuiet);
+                Run(8.3f);
+                Assert.AreEqual(1, sent.Count, "나서면 평소처럼 첫 지시");
+            }
+            finally
+            {
+                NightRun.JudgingWindowEnabled = window;
+            }
+        }
+
+        [Test]
+        public void 출근_시계_붙듦은_60초가_지나면_풀린다()
+        {
+            Assert.AreEqual(60f, NightRun.StartHoldMaxSeconds);
+        }
+
+        [Test]
         public void 지시받지_않은_물품에_가까이_가도_놀라지_않는다()
         {
             UsePlan("K-1", "H-1");

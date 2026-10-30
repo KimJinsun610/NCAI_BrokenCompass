@@ -296,7 +296,12 @@ public sealed class TabletZoom : MonoBehaviour
         _tablet.readInput = false;   // 키는 여기서 받는다(실행 중 인스턴스 값만 — 프리팹은 그대로)
         _tablet.toggleKey = ZoomKey;   // 74차: 다른 곳(CCTV가 readInput을 되돌릴 때 등)에서도 Tab으로 들리지 않게
         _docs = _tablet.GetComponentsInChildren<TabletDocument>(true);
-        for (int i = 0; i < _docs.Length; i++) _docs[i].switchTabKey = SwitchTabKey;
+        for (int i = 0; i < _docs.Length; i++)
+        {
+            _docs[i].switchTabKey = SwitchTabKey;
+            MoveHintToTabRow(_docs[i]);
+        }
+
         _basePos = alwaysHeld ? heldPosition : _tablet.openedPosition;
         _baseRot = Quaternion.Euler(alwaysHeld ? heldRotation : _tablet.openedRotation);
         _restorePos = _tablet.openedPosition;
@@ -308,6 +313,25 @@ public sealed class TabletZoom : MonoBehaviour
             _tablet.Open();   // 기본(내린) 상태는 없다
         }
         return true;
+    }
+
+    /// <summary>
+    /// 2026-10-30(김진선님: 「Tab·스크롤 안내를 [근무수칙][메시지] 줄로 우측으로 올려줘」): 조작 안내 줄(<c>Txt_Hint</c>, 맨 아래)을
+    /// 탭 줄(<c>Txt_Tabs</c>)과 같은 높이로 올려 오른쪽 정렬한다. 탭 이름은 왼쪽 정렬이라 한 줄에 함께 놓인다. 실행 중 인스턴스만 — 프리팹은 그대로.
+    /// </summary>
+    private static void MoveHintToTabRow(TabletDocument doc)
+    {
+        if (doc == null || doc.hintText == null || doc.tabText == null) return;
+        RectTransform hint = doc.hintText.rectTransform;
+        RectTransform tabs = doc.tabText.rectTransform;
+        if (hint.parent != tabs.parent) return;   // 같은 화면 판 아래일 때만(좌표계가 같아야 한다)
+
+        hint.anchorMin = new Vector2(hint.anchorMin.x, tabs.anchorMin.y);
+        hint.anchorMax = new Vector2(hint.anchorMax.x, tabs.anchorMax.y);
+        hint.pivot = new Vector2(hint.pivot.x, tabs.pivot.y);
+        hint.anchoredPosition = new Vector2(hint.anchoredPosition.x, tabs.anchoredPosition.y);
+        hint.sizeDelta = new Vector2(hint.sizeDelta.x, tabs.sizeDelta.y);
+        doc.hintText.alignment = TMPro.TextAlignmentOptions.Right;
     }
 
     private void ApplyBlend()

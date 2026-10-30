@@ -159,8 +159,17 @@ namespace NightDuty
             }
         }
 
-        /// <summary>밤 시작 시계 붙듦의 상한(실제 초) — 경비실을 나서지 않아도 이만큼 지나면 근무가 시작된다.</summary>
-        public const float StartHoldMaxSeconds = 90f;
+        /// <summary>밤 시작 시계 붙듦의 상한(실제 초) — 경비실을 나서지 않아도 이만큼 지나면 근무가 시작된다(2026-10-30 김진선님: 90 → 60초).</summary>
+        public const float StartHoldMaxSeconds = 60f;
+
+        /// <summary>
+        /// 2026-10-30(김진선님: 「초반 수칙 확인용으로 시간 주는 동안 메시지가 오면 안 된다」): 붙듦 동안 점검·근무 지시·유도 문자를 내지 않는다.
+        /// 판정 시간창을 쓰는 게임에서만(구동기가 켬) — 옛 지시기 시험은 00:00에서 바로 지시를 받는다.
+        /// </summary>
+        public static bool StartHoldQuiet
+        {
+            get { return JudgingWindowEnabled && StartHeld; }
+        }
 
         private static bool s_shiftStarted;
         private static float s_startHoldSeconds;

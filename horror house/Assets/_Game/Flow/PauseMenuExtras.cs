@@ -44,6 +44,8 @@ public sealed class PauseMenuExtras : MonoBehaviour
     private readonly List<GameObject> _optionButtons = new List<GameObject>();
     private TMP_Text _title;
     private bool _onOptions;
+    private bool _standalone;
+    private System.Action _onClose;
 
     /// <summary>덧붙인 묶음(마우스·볼륨, 시험·검수).</summary>
     public IReadOnlyList<GameObject> Groups
@@ -57,9 +59,48 @@ public sealed class PauseMenuExtras : MonoBehaviour
         get { return _onOptions; }
     }
 
+    /// <summary>메인 화면용 단독 설정 화면인지(<see cref="MakeStandalone"/>) — 첫 화면 없이 설정 화면만, BACK·Esc는 닫기.</summary>
+    public bool Standalone
+    {
+        get { return _standalone; }
+    }
+
     private void OnEnable()
     {
-        ShowMain();   // 메뉴를 열 때마다 첫 화면(PauseMenu가 밝기 묶음을 접는 것과 같게)
+        // 메뉴를 열 때마다 첫 화면(PauseMenu가 밝기 묶음을 접는 것과 같게). 단독이면 설정 화면부터.
+        if (_standalone) ShowOptions();
+        else ShowMain();
+    }
+
+    private void Update()
+    {
+        if (_standalone && Input.GetKeyDown(KeyCode.Escape)) Close();
+    }
+
+    /// <summary>
+    /// 메인 화면에서 쓰는 단독 설정 화면으로 바꾼다(2026-10-29, 김진선님: 「그 옵션을 메인 화면에서도 조작 가능하고 인게임 적용 되게」).
+    /// 첫 화면(RESUME·OPTIONS·QUIT)은 쓰지 않고, BACK·Esc는 이 화면을 끄고 <paramref name="onClose"/>를 부른다.
+    /// 값은 일시정지 화면과 같은 저장소(<see cref="BrightnessSettings"/>·<see cref="PlayerOptions"/>)라 근무에 그대로 이어진다.
+    /// </summary>
+    public void MakeStandalone(System.Action onClose)
+    {
+        _standalone = true;
+        _onClose = onClose;
+        if (isActiveAndEnabled) ShowOptions();
+    }
+
+    /// <summary>BACK — 일시정지 화면이면 첫 화면, 단독이면 닫기.</summary>
+    private void Back()
+    {
+        if (_standalone) Close();
+        else ShowMain();
+    }
+
+    private void Close()
+    {
+        CloseAll();
+        gameObject.SetActive(false);
+        if (_onClose != null) _onClose();
     }
 
     private void CloseOwn()
@@ -164,7 +205,7 @@ public sealed class PauseMenuExtras : MonoBehaviour
         extras._optionButtons.Add(extras.AddRow(root, light, bright, "VOLUME", "Volume", OptionSlider.Kind.Volume, top - 2f * RowStep, groupDy, sibling + 3));
         RectTransform back = extras.CloneButton(root, light, "BACK", "Back", top - 3f * RowStep, sibling + 4);
         Button backButton = back.GetComponent<Button>();
-        if (backButton != null) backButton.onClick.AddListener(extras.ShowMain);
+        if (backButton != null) backButton.onClick.AddListener(extras.Back);
         extras._optionButtons.Add(back.gameObject);
 
         Button lightButton = light.GetComponent<Button>();

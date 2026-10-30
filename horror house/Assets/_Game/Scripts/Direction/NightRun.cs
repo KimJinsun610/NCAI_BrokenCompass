@@ -445,7 +445,8 @@ namespace NightDuty
 
             // 점검 지시도 판정 정지 구간에 흐른다(출근 직후 첫 지시, 호출 2는 이완이 끝나는 순간).
             // 피날레 중에는 새 지시를 내지 않는다(5일차 조기 퇴근으로 일찍 열린 피날레).
-            if (!_finale.Active)
+            // 2026-10-30(김진선님): 출근 직후 경비실에서 수칙을 읽는 동안(시계 붙듦)은 지시 문자를 내지 않는다 — 경비실을 나서면 그때부터 흐른다.
+            if (!_finale.Active && !StartHoldQuiet)
             {
                 OrdersTick(judgeSeconds);
                 DutiesTick(judgeSeconds);

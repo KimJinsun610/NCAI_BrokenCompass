@@ -6,7 +6,7 @@ using UnityEngine.SceneManagement;
 /// 66차(민: 「책상 위 배터리는 1일차에만, 손전등도 같이 책상에 놓고, 손전등을 먹으면 그때부터 F로 켤 수 있도록」) — 경비실 책상 위 시작 물품의 화면 쪽.
 /// 상태는 코어 <see cref="NightRun.DeskKit"/>(스냅샷에 실린다).
 /// <list type="bullet">
-/// <item>1일차 밤: CCTV 모니터 옆 교탁(<c>TeacherTable02_static</c>) 위에 손전등(씬의 손전등 소품 복제)과 예비 배터리 하나.</item>
+/// <item>1일차 밤: 모니터 앞 상판 위에 손전등(씬의 손전등 소품 복제)과 예비 배터리 <see cref="DeskKit.Day1Batteries"/>개.</item>
 /// <item><see cref="Reach"/> 안에서 겨누면 외곽선과 「[E] 손전등 줍기」·「[E] 배터리 줍기」. 3m 안이면 손전등에 옅은 외곽선(어디 있는지 보이게).</item>
 /// <item>손전등을 줍기 전에는 F가 듣지 않는다(<see cref="FlashlightPower.CanTurnOn"/>) — 누르면 「손전등이 없습니다」 안내. 주우면 「[F] 손전등 켜기」 안내.</item>
 /// </list>
@@ -32,15 +32,15 @@ public sealed class DeskStarterKit : MonoBehaviour
     /// <summary>책상 위 손전등 자리(가로).</summary>
     public static readonly Vector3 FlashlightSpot = new Vector3(32.86f, 0f, 46.92f);   // 66차 민 스크린샷: 모니터 앞 빈 상판(TeacherTable_static (1)) 한가운데
 
-    /// <summary>책상 위 배터리 자리(가로).</summary>
-    public static readonly Vector3 BatterySpot = new Vector3(33.04f, 0f, 46.62f);
+    /// <summary>책상 위 배터리 자리(가로) — <see cref="DeskKit.Day1Batteries"/>개. 2026-11-02(김진선님: 「1일차 책상에 배터리 2개」): 둘째는 첫째 옆에 나란히(눕힌 방향의 옆으로 6cm).</summary>
+    public static readonly Vector3[] BatterySpots = { new Vector3(33.04f, 0f, 46.62f), new Vector3(33.06f, 0f, 46.68f) };
 
     private const float DeskY = 2.11f;
     private const float AimSlack = 0.12f;
     private const float NoticeSeconds = 2.8f;
 
     private GameObject _flashlight;
-    private GameObject _battery;
+    private GameObject[] _batteries;
     private Material _bodyMat;
     private Material _capMat;
     private bool _ownsPrompt;
@@ -60,10 +60,10 @@ public sealed class DeskStarterKit : MonoBehaviour
         get { return _flashlight; }
     }
 
-    /// <summary>책상 위 배터리 모형(없으면 null). 시험·검수용.</summary>
-    public GameObject BatteryModel
+    /// <summary>책상 위 배터리 모형들(없으면 null). 시험·검수용.</summary>
+    public GameObject[] BatteryModels
     {
-        get { return _battery; }
+        get { return _batteries; }
     }
 
     /// <summary>손전등 없이 F를 눌렀다 — 잠깐 안내.</summary>
@@ -156,7 +156,16 @@ public sealed class DeskStarterKit : MonoBehaviour
     {
         ReleasePrompt();
         if (_flashlight != null) Destroy(_flashlight);
-        if (_battery != null) Destroy(_battery);
+        if (_batteries != null)
+        {
+            for (int i = 0; i < _batteries.Length; i++)
+            {
+                if (_batteries[i] != null) Destroy(_batteries[i]);
+            }
+
+            _batteries = null;
+        }
+
         if (_bodyMat != null) Destroy(_bodyMat);
         if (_capMat != null) Destroy(_capMat);
         if (Active == this) Active = null;
@@ -170,10 +179,11 @@ public sealed class DeskStarterKit : MonoBehaviour
         DeskKit kit = NightRun.DeskKit;
         bool live = kit != null && NightRun.IsNightActive && !NightRun.IsCaptured;
         bool showLight = live && kit.FlashlightOnDesk;
-        bool showBattery = live && kit.BatteryOnDesk;
-        if ((showLight || showBattery) && (_flashlight == null || _battery == null)) Build();
+        int batteriesLeft = live ? kit.BatteryCount : 0;
+        bool showBattery = batteriesLeft > 0;
+        if ((showLight || showBattery) && (_flashlight == null || _batteries == null)) Build();
         if (_flashlight != null && _flashlight.activeSelf != showLight) _flashlight.SetActive(showLight);
-        if (_battery != null && _battery.activeSelf != showBattery) _battery.SetActive(showBattery);
+        SyncBatteries(batteriesLeft);
 
         // 손전등이 없는데 켜져 있으면(밤 시작에 켜진 채 들어온 경우) 끈다.
         if (!NightRun.HasFlashlight)
@@ -196,7 +206,15 @@ public sealed class DeskStarterKit : MonoBehaviour
         {
             Camera cam = Camera.main;
             if (cam != null && showLight && Vector3.Distance(cam.transform.position, _flashlight.transform.position) <= HintRange) InteractionOutline.Request(_flashlight.transform, 0.65f);
-            if (cam != null && showBattery && Vector3.Distance(cam.transform.position, _battery.transform.position) <= HintRange) InteractionOutline.Request(_battery.transform, 0.65f);
+            if (cam != null && showBattery && _batteries != null)
+            {
+                for (int i = 0; i < _batteries.Length; i++)
+                {
+                    GameObject b = _batteries[i];
+                    if (b != null && b.activeSelf && Vector3.Distance(cam.transform.position, b.transform.position) <= HintRange) InteractionOutline.Request(b.transform, 0.65f);
+                }
+            }
+
             if (CanInteract()) aimed = Aim(showLight, showBattery);
         }
 
@@ -215,15 +233,21 @@ public sealed class DeskStarterKit : MonoBehaviour
         ClaimPrompt(isLight ? "[E] 손전등 줍기" : (full ? BatteryStash.FullText : "[E] 배터리 줍기"), !full);
 
 #if ENABLE_LEGACY_INPUT_MANAGER
-        if (!full && Input.GetKeyDown(KeyCode.E)) Pick(isLight);
+        if (!full && Input.GetKeyDown(KeyCode.E)) Pick(isLight, isLight ? null : aimed);
 #endif
     }
 
-    /// <summary>줍는다([E]와 같은 처리 — 조준 검사 없이). 디버그·시험이 부른다.</summary>
+    /// <summary>줍는다([E]와 같은 처리 — 조준 검사 없이). 디버그·시험이 부른다. 배터리는 남은 것 중 하나.</summary>
     public bool Pick(bool flashlight)
+    {
+        return Pick(flashlight, null);
+    }
+
+    private bool Pick(bool flashlight, GameObject batteryModel)
     {
         bool ok = flashlight ? NightRun.PickUpFlashlight() : NightRun.TakeDeskBattery();
         if (!ok) return false;
+        if (batteryModel != null) batteryModel.SetActive(false);   // 겨눈 그 배터리가 사라지게(SyncBatteries는 남은 수만 맞춘다)
         ReleasePrompt();
         if (FlashlightPower.Active != null) FlashlightPower.Active.PlayPickup();
         if (NightRun.Battery != null && NightRun.Battery.IsEmpty) ShowEmptyHint();   // 66차: 처음 손전등은 0%
@@ -258,7 +282,40 @@ public sealed class DeskStarterKit : MonoBehaviour
     {
         float y = DeskTop(FlashlightSpot);
         if (_flashlight == null) _flashlight = MakeFlashlight(new Vector3(FlashlightSpot.x, y, FlashlightSpot.z));
-        if (_battery == null) _battery = MakeBattery(new Vector3(BatterySpot.x, DeskTop(BatterySpot), BatterySpot.z));
+        if (_batteries == null)
+        {
+            _batteries = new GameObject[BatterySpots.Length];
+            for (int i = 0; i < BatterySpots.Length; i++)
+            {
+                Vector3 s = BatterySpots[i];
+                _batteries[i] = MakeBattery(new Vector3(s.x, DeskTop(s), s.z));
+            }
+        }
+    }
+
+    /// <summary>보이는 배터리 모형 수를 책상에 남은 수에 맞춘다 — 넘치면 뒤에서부터 숨기고, 모자라면(재시작으로 되돌아옴) 앞에서부터 다시 보인다.</summary>
+    private void SyncBatteries(int left)
+    {
+        if (_batteries == null) return;
+        int shown = 0;
+        for (int i = 0; i < _batteries.Length; i++)
+        {
+            if (_batteries[i] != null && _batteries[i].activeSelf) shown++;
+        }
+
+        for (int i = _batteries.Length - 1; i >= 0 && shown > left; i--)
+        {
+            if (_batteries[i] == null || !_batteries[i].activeSelf) continue;
+            _batteries[i].SetActive(false);
+            shown--;
+        }
+
+        for (int i = 0; i < _batteries.Length && shown < left; i++)
+        {
+            if (_batteries[i] == null || _batteries[i].activeSelf) continue;
+            _batteries[i].SetActive(true);
+            shown++;
+        }
     }
 
     private static float DeskTop(Vector3 spot)
@@ -410,10 +467,10 @@ public sealed class DeskStarterKit : MonoBehaviour
         Vector3 f = cam.transform.forward;
         GameObject best = null;
         float bestT = float.MaxValue;
-        GameObject[] candidates = { light ? _flashlight : null, battery ? _battery : null };
-        for (int i = 0; i < candidates.Length; i++)
+        int n = 1 + (battery && _batteries != null ? _batteries.Length : 0);
+        for (int i = 0; i < n; i++)
         {
-            GameObject g = candidates[i];
+            GameObject g = i == 0 ? (light ? _flashlight : null) : _batteries[i - 1];
             if (g == null || !g.activeSelf) continue;
             Bounds b;
             Vector3 p = Bounds(g, out b) ? b.center : g.transform.position;

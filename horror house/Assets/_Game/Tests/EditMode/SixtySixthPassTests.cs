@@ -74,13 +74,20 @@ namespace NightDuty.Tests
             Assert.IsFalse(day2.FlashlightOnDesk, "2일차부터는 손전등을 든 채 시작");
             Assert.IsFalse(day2.BatteryOnDesk);
 
+            Assert.AreEqual(2, day1.BatteryCount, "2026-11-02 김진선님: 「1일차 책상에 배터리 2개」");
+            Assert.AreEqual(0, day2.BatteryCount);
+
             object before = day1.CaptureState();
             Assert.IsTrue(day1.TakeFlashlight());
             Assert.IsFalse(day1.TakeFlashlight(), "한 번만");
             Assert.IsTrue(day1.TakeBattery());
+            Assert.IsTrue(day1.BatteryOnDesk, "하나 남음");
+            Assert.IsTrue(day1.TakeBattery());
+            Assert.IsFalse(day1.BatteryOnDesk);
+            Assert.IsFalse(day1.TakeBattery(), "둘까지");
             day1.RestoreState(before);
             Assert.IsTrue(day1.FlashlightOnDesk, "줍기 전 체크포인트로 돌아가면 책상에 다시");
-            Assert.IsTrue(day1.BatteryOnDesk);
+            Assert.AreEqual(2, day1.BatteryCount);
         }
 
         [Test]

@@ -268,16 +268,19 @@ namespace NightDuty
             get { return Key; }
         }
 
+        private readonly int _day;   // 2026-11-06: 1·2일차 배속(C6 판정 시간)
+
         /// <summary>그날 덱으로 만든다.</summary>
-        public FinalRuleBook(IEnumerable<RuleDef> deck, FearAxisSystem axes)
+        public FinalRuleBook(IEnumerable<RuleDef> deck, FearAxisSystem axes, int day = 3)
         {
+            _day = day;
             _axes = axes ?? throw new ArgumentNullException(nameof(axes));
             Anchor = RegistryAnchor;
             if (deck == null) return;
 
             foreach (RuleDef def in deck)
             {
-                FinalJudge j = FinalJudges.Create(def);
+                FinalJudge j = FinalJudges.Create(def, _day);
                 if (j == null) continue;
                 j.Def = def;
                 j.Book = this;
@@ -289,7 +292,7 @@ namespace NightDuty
         public bool AddJudge(RuleDef def)
         {
             if (def == null || Judge(def.Id) != null) return false;
-            FinalJudge j = FinalJudges.Create(def);
+            FinalJudge j = FinalJudges.Create(def, _day);
             if (j == null) return false;
             j.Def = def;
             j.Book = this;

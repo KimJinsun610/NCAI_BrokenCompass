@@ -161,6 +161,17 @@ namespace NightDuty
         /// </summary>
         public const float NextAfterReport = 4f;
 
+        /// <summary>
+        /// 2026-11-06(김진선님: 「초반 1·2일차에 메시지가 오는 간격이 너무 짧다」 — C안): 일차별 보고 뒤 다음 지시까지(실제 초).
+        /// 1일차 15 · 2일차 10 · 3일차부터 <see cref="NextAfterReport"/>(4).
+        /// </summary>
+        public static float NextAfterReportFor(int day)
+        {
+            if (day <= 1) return 15f;
+            if (day == 2) return 10f;
+            return NextAfterReport;
+        }
+
         /// <summary>여유를 재는 끝(03:45) — 04:00 전에 다 끝낼 수 있어야 한다.</summary>
         public const int WorkDeadline = 225;   // 67차(밤 05:00): 225 → 280(04:40) · 88차(밤 04:00): 280 → 225(03:45)
 
@@ -887,7 +898,7 @@ namespace NightDuty
             int allowed = minute < 0f ? int.MaxValue / 2 : Allowed(minute);
 
             // 53차: 받은 지시를 다 보고했으면 몇 초 뒤 바로 다음 공간(시간표를 보지 않는다).
-            if (backlog == 0 && _lastReport >= _lastIssue && _lastReport > float.NegativeInfinity && Now - _lastReport >= NextAfterReport) return QuickReason;
+            if (backlog == 0 && _lastReport >= _lastIssue && _lastReport > float.NegativeInfinity && Now - _lastReport >= NextAfterReportFor(_day)) return QuickReason;
 
             if (backlog == 0)
             {
@@ -908,8 +919,8 @@ namespace NightDuty
         public float Slack(float minute, SpaceId banned)
         {
             float m = Math.Max(0f, minute);
-            float left = NightClock.RealSecondsAt(WorkDeadline) - NightClock.RealSecondsAt(m);
-            if (m < NightClock.Call2) left -= NightClock.RealSecondsAt(NightClock.Call2 - Math.Max(m, NightClock.RelaxStart));
+            float left = NightClock.RealSecondsAt(WorkDeadline, _day) - NightClock.RealSecondsAt(m, _day);   // 2026-11-06: 1·2일차는 밤이 길다
+            if (m < NightClock.Call2) left -= NightClock.RealSecondsAt(NightClock.Call2 - Math.Max(m, NightClock.RelaxStart), _day);
             return left - EstimateWork(banned);
         }
 

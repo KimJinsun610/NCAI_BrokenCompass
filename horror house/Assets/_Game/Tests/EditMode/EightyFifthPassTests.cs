@@ -167,5 +167,17 @@ namespace NightDuty.Tests
             NightRun.Send(JudgeSignal.Gaze(FinalCues.WindowFaceTarget, 0.1f));
             Assert.IsTrue(NightRun.WindowFaceFled, "2초");
         }
+
+        [Test]
+        public void 대면_전에_창밖_얼굴을_보고_달아나게_하면_조우는_본_것으로_끝난다()
+        {
+            // 2026-11-06(김진선님: 「얼굴 보고 도망치는 것까지 봤는데 다음 조우가 안 나온다」) — 세운 대역을 못 봤다고 거둔 뒤에도 얼굴은 창밖에 남는다.
+            DirectorFixture f = new DirectorFixture(3, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.SuitMan));
+            Assert.AreEqual(EncounterRunState.Waiting, f.Run(ProgramCatalog.SuitMan).State);
+            Assert.IsTrue(f.Director.NotifySeenOutside(ProgramCatalog.SuitMan));
+            Assert.AreEqual(EncounterRunState.Done, f.Run(ProgramCatalog.SuitMan).State, "다시 서지 않는 얼굴을 기다리지 않는다");
+            Assert.GreaterOrEqual(f.Run(ProgramCatalog.SuitMan).ConfrontMinute, 0f, "목격한 것으로 센다");
+            Assert.IsFalse(f.Director.NotifySeenOutside(ProgramCatalog.SuitMan), "이미 끝난 조우는 받지 않는다");
+        }
     }
 }

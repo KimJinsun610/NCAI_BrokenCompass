@@ -33,7 +33,7 @@ namespace NightDuty
                 return;
             }
 
-            _finalBook = new FinalRuleBook(_program.Deck, _axes);
+            _finalBook = new FinalRuleBook(_program.Deck, _axes, Day);
             _finalBook.Settled += OnFinalSettled;
             _finalBook.ReverseReportArmed += OnReverseReportArmed;
             _finalBook.EncounterRequested += ReserveEncounter;

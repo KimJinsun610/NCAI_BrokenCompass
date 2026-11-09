@@ -513,12 +513,12 @@ namespace NightDuty.Tests
 
             DirectorFixture early = new DirectorFixture(2, 0.0, null);
             early.Minute = NightClock.JudgingStart + 1f;
-            early.Wait(NightClock.RealSecondsAt(NightClock.JudgingStart) + TensionDirector.FirstFakeMin - 1f);
+            early.Wait(NightClock.RealSecondsAt(NightClock.JudgingStart, 2) + TensionDirector.FirstFakeMin - 1f);
             Assert.AreEqual(0, early.Director.FakesUsed, "50차: 판정이 열리자마자 놀래지 않는다(25초 전에는 없음)");
 
             DirectorFixture open = new DirectorFixture(2, 0.99, null);
             open.Minute = NightClock.JudgingStart + 1f;
-            open.Wait(NightClock.RealSecondsAt(NightClock.JudgingStart) + TensionDirector.FirstFakeMax + 0.5f);
+            open.Wait(NightClock.RealSecondsAt(NightClock.JudgingStart, 2) + TensionDirector.FirstFakeMax + 0.5f);
             Assert.AreEqual(1, open.Director.FakesUsed, "판정이 열린 뒤 50초 안에 첫 가짜 놀람");
         }
 

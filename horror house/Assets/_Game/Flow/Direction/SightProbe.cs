@@ -7,7 +7,7 @@ using UnityEngine;
 /// 세워 둔 대역(<see cref="DirectionPhase.Present"/>)에 붙어, 플레이어가 그것을 <b>알아볼 만큼</b> 봤는지 잰다.
 /// <list type="bullet">
 /// <item>몸통 가운데·머리 중 하나가 화면 안쪽(가장자리 <see cref="ScreenMargin"/>은 뺀다)에 있고, <see cref="MaxDistance"/>m 안이고,
-/// 카메라에서 그 점까지 가리는 것이 없을 것(대역 자신·플레이어 몸·대역 앞 1m의 유리·창틀은 무시).</item>
+/// 카메라에서 그 점까지 가리는 것이 없을 것(대역 자신·플레이어 몸·대역 앞 <see cref="GlassDepth"/>m의 유리·창틀은 무시).</item>
 /// <item>그 상태가 <see cref="RecognizeSeconds"/>초 이어지면 한 번 알린다(<see cref="NightRun.EncounterSeen"/>) — 대면은 그다음 틱.</item>
 /// </list>
 /// <b>판정과 무관하다</b>(응시 판정은 판정 기준점이 따로 본다).
@@ -23,6 +23,12 @@ public sealed class SightProbe : MonoBehaviour
 
     /// <summary>이보다 멀면 세지 않는다(m).</summary>
     public const float MaxDistance = 30f;
+
+    /// <summary>
+    /// 대역 앞 이 거리(m) 안의 창(이름에 Window·Glass)은 가림으로 치지 않는다.
+    /// 2026-11-06: 도서관 서쪽 창 벽은 두께가 2m라, 창밖 노란 얼굴 앞 1.2m의 안쪽 벽(<c>WallInside_4m_WindowDouble</c>)에 늘 가려 「봤다」가 되지 않았다(옛 1m).
+    /// </summary>
+    public const float GlassDepth = 2.2f;
 
     private string _encounterId;
     private Action _onSeen;
@@ -174,7 +180,7 @@ public sealed class SightProbe : MonoBehaviour
             Transform t = h.collider.transform;
             if (t == root || t.IsChildOf(root)) continue;
             if (player != null && t.IsChildOf(player)) continue;
-            if (dist - h.distance < 1f && IsGlass(t)) continue;   // 창밖 남자 — 대역 앞 유리·창틀
+            if (dist - h.distance < GlassDepth && IsGlass(t)) continue;   // 창밖 남자 — 대역 앞 유리·창틀(창 벽 두께까지)
             return false;
         }
 

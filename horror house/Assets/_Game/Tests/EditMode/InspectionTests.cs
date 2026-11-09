@@ -69,7 +69,7 @@ namespace NightDuty.Tests
             Assert.IsNull(InspectionCatalog.Find("X-9"));
         }
 
-        [TestCase(1, 4, 2)]   // 67차(민: 「물품 점검이 비중이 더 높은데 지시 사항과 균일했으면」): 5·6·6·7·7 → 4·5·5·6·6
+        [TestCase(1, 5, 2)]   // 2026-10-30: 1일차 경비실 화분(K-3)을 더해 4 → 5 · 67차(민: 「물품 점검이 비중이 더 높은데 지시 사항과 균일했으면」): 5·6·6·7·7 → 4·5·5·6·6
         [TestCase(2, 5, 2)]
         [TestCase(3, 5, 3)]
         [TestCase(4, 6, 3)]

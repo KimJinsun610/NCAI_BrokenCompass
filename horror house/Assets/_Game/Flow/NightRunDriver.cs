@@ -178,15 +178,7 @@ public sealed class NightRunDriver : MonoBehaviour
         }
 
         MatchShiftEnd(gameTime);   // 88차(씬에 미리 놓인 구동기)
-        if (MatchDesignPace)
-        {
-            int span = gameTime.EndMinutes - gameTime.StartMinutes;
-            if (span > 0)
-            {
-                // 게임 초 / 실제 초. 00:00~04:00(240분)이면 24배속 → 실시간 10분(88차).
-                gameTime.SetTimeMultiplier(span * 60f / NightClock.RealSecondsPerNight);
-            }
-        }
+        ApplyDesignPace();
 
         gameTime.ShiftEnded += OnShiftEnded;
         EventBus.NightRestarted += OnNightRestarted;
@@ -317,11 +309,23 @@ public sealed class NightRunDriver : MonoBehaviour
         if (s_owner != this) return;
         if (NightRun.IsNightActive) NightRun.AbandonNight();
         GameSession.SetDay(day);
+        ApplyDesignPace();   // 2026-11-06: 일차마다 배속이 다르다
         _rewindOffset = 0f;
         _tracker.Reset(NightMinute);
         DoorRelay.RescanForNight(gameObject.scene);
         NightRun.BeginNight(GameSession.CurrentDay, CurrentNightMinute);
         Debug.Log("[NightRunDriver] 디버그: " + GameSession.CurrentDay + "일차로 다시 열었습니다.", this);
+    }
+
+    /// <summary>
+    /// 게임 초 / 실제 초. 00:00~04:00(240분)이면 24배속 → 실시간 10분(88차).
+    /// 2026-11-06(김진선님 A안: 「초반부에 익숙해지기 전 상황이 너무 급함」): 1일차 15분(16배) · 2일차 12분 30초(19.2배) · 3일차부터 10분.
+    /// </summary>
+    private void ApplyDesignPace()
+    {
+        if (!MatchDesignPace || gameTime == null) return;
+        int span = gameTime.EndMinutes - gameTime.StartMinutes;
+        if (span > 0) gameTime.SetTimeMultiplier(span * 60f / NightClock.RealSecondsPerNightFor(GameSession.CurrentDay));
     }
 
     private int CurrentNightMinute()

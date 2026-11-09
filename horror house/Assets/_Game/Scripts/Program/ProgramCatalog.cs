@@ -210,6 +210,12 @@ namespace NightDuty
         /// <summary>C6 판정 시간(실제 초) — 문구의 게임 분을 실제 초로 바꾼 값(60초).</summary>
         public const float ClassroomDwellRealSeconds = ClassroomDwellGameMinutes * 60f / NightClock.GameSecondsPerRealSecond;
 
+        /// <summary>2026-11-06(1·2일차 밤이 길다): 그날 배속으로 바꾼 C6 판정 시간(1일차 90 · 2일차 75 · 그 뒤 60초) — 문구 「24분」은 그대로 맞는다.</summary>
+        public static float ClassroomDwellRealSecondsFor(int day)
+        {
+            return ClassroomDwellGameMinutes * 60f / NightClock.GameSecondsPerRealSecondFor(day);
+        }
+
         /// <summary>하루 손전등 수칙 한도.</summary>
         public const int FlashlightPerDay = 3;
 

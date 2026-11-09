@@ -229,7 +229,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(1, r.Orders.Count);
             CollectionAssert.AreEqual(new[] { "K-3" }, r.Orders[0].ItemIds);
             r.Report("K-3");
-            r.Wait(InspectionDispatcher.NextAfterReport + 0.5f);
+            r.Wait(InspectionDispatcher.NextAfterReportFor(1) + 0.5f);
             Assert.AreEqual(2, r.Orders.Count);
             CollectionAssert.AreEqual(new[] { "K-1" }, r.Orders[1].ItemIds, "같은 방이라 곧이어 CCTV");
         }
@@ -241,7 +241,7 @@ namespace NightDuty.Tests
             r.Minute = 20f;   // 53차: 시간표가 아직 허락하지 않아도 보고 뒤 바로
             r.Wait(8.2f);
             r.Report("K-1");
-            r.Wait(InspectionDispatcher.NextAfterReport - 0.5f);
+            r.Wait(InspectionDispatcher.NextAfterReportFor(2) - 0.5f);
             Assert.AreEqual(1, r.Orders.Count, "보고 직후에는 아직");
             r.Wait(1f);
             Assert.AreEqual(2, r.Orders.Count);
@@ -385,7 +385,7 @@ namespace NightDuty.Tests
             r.Report("K-1");
             for (int i = 0; i < 5; i++) r.Pacer.Impulse(PacerImpulse.Startle);
             Assert.IsTrue(r.Pacer.IsHot);
-            r.Wait(InspectionDispatcher.NextAfterReport + 0.5f);
+            r.Wait(InspectionDispatcher.NextAfterReportFor(2) + 0.5f);
             Assert.AreEqual(2, r.Orders.Count, "53차 민: 한번 점검하면 몇 초 뒤 바로 다음");
         }
 

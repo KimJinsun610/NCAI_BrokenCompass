@@ -49,8 +49,25 @@ namespace NightDuty
         /// <summary>하룻밤의 게임 길이(분). 00:00~04:00(88차 — 67차 05:00).</summary>
         public const int NightMinutes = 240;
 
-        /// <summary>실시간 1초에 흐르는 게임 초. 240분 × 60 / 600초 = 24.</summary>
+        /// <summary>실시간 1초에 흐르는 게임 초. 240분 × 60 / 600초 = 24. 3일차부터의 값 — 1·2일차는 <see cref="GameSecondsPerRealSecondFor"/>.</summary>
         public const float GameSecondsPerRealSecond = NightMinutes * 60f / RealSecondsPerNight;
+
+        /// <summary>
+        /// 2026-11-06(김진선님: 「초반부에 익숙해지기 전 상황이 너무 급함」 — A안): 일차별 하룻밤의 실시간 길이(초).
+        /// 1일차 15분 · 2일차 12분 30초 · 3일차부터 10분. 게임 시계(00:00~04:00)와 구간 경계(게임 분)는 그대로 — 배속만 16 · 19.2 · 24배.
+        /// </summary>
+        public static float RealSecondsPerNightFor(int day)
+        {
+            if (day <= 1) return 900f;
+            if (day == 2) return 750f;
+            return RealSecondsPerNight;
+        }
+
+        /// <summary>그날 실시간 1초에 흐르는 게임 초(1일차 16 · 2일차 19.2 · 그 뒤 24).</summary>
+        public static float GameSecondsPerRealSecondFor(int day)
+        {
+            return NightMinutes * 60f / RealSecondsPerNightFor(day);
+        }
 
         /// <summary>출근이 끝나고 수칙 판정이 시작되는 시각(00:16, 88차 — 67차 00:20).</summary>
         public const int JudgingStart = 16;
@@ -118,16 +135,28 @@ namespace NightDuty
             return PhaseAt(minute) == NightPhase.Relax;
         }
 
-        /// <summary>그 게임 시각까지 흐른 실시간(초).</summary>
+        /// <summary>그 게임 시각까지 흐른 실시간(초) — 3일차부터의 배속.</summary>
         public static float RealSecondsAt(float minute)
         {
             return minute * 60f / GameSecondsPerRealSecond;
         }
 
-        /// <summary>그 실시간(초)이 흐른 뒤의 게임 시각(분).</summary>
+        /// <summary>그날 배속으로 그 게임 시각까지 흐른 실시간(초).</summary>
+        public static float RealSecondsAt(float minute, int day)
+        {
+            return minute * 60f / GameSecondsPerRealSecondFor(day);
+        }
+
+        /// <summary>그 실시간(초)이 흐른 뒤의 게임 시각(분) — 3일차부터의 배속.</summary>
         public static float MinuteAtRealSeconds(float realSeconds)
         {
             return realSeconds * GameSecondsPerRealSecond / 60f;
+        }
+
+        /// <summary>그날 배속으로 그 실시간(초)이 흐른 뒤의 게임 시각(분).</summary>
+        public static float MinuteAtRealSeconds(float realSeconds, int day)
+        {
+            return realSeconds * GameSecondsPerRealSecondFor(day) / 60f;
         }
     }
 

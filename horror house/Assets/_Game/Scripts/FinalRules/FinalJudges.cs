@@ -80,7 +80,7 @@ namespace NightDuty
         public const float L3PatienceSeconds = 600f;
 
         /// <summary>그 수칙의 새 판정기. 모르는 ID면 null.</summary>
-        public static FinalJudge Create(RuleDef def)
+        public static FinalJudge Create(RuleDef def, int day = 3)
         {
             if (def == null) return null;
             switch (def.Id)
@@ -94,7 +94,7 @@ namespace NightDuty
                 case "C3": return new StayStillJudge(FinalCues.BellStart, FinalCues.Bell);   // 103차: 소년 단서 → 종(끝)이 아니라 수업 종이 울리는 동안
                 case "C4": return new LightOffJudge(FinalCues.RedLight, LightOffJudge.GraceSeconds);   // 52차: 붉은 불빛 아래에서는 손전등을 끈다
                 case "C5": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
-                case "C6": return new DwellSpaceJudge(SpaceId.Classroom, ProgramCatalog.ClassroomDwellRealSeconds);   // 103차: 교실에 실제 1분(게임 24분) 이어 머물면 위반
+                case "C6": return new DwellSpaceJudge(SpaceId.Classroom, ProgramCatalog.ClassroomDwellRealSecondsFor(day));   // 103차: 교실에 게임 24분(3일차부터 실제 1분) 이어 머물면 위반 · 2026-11-06: 1·2일차 배속에 맞춤
                 case "S1": return new NoPassageJudge(FinalCues.S1Center);
                 case "S2": return new LeaveAfterCueJudge(FinalCues.Glass, ScienceLeaveSeconds);   // 79차 민: 「5초로 하자」   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
                 case "S3": return new BeamAvoidJudge(FinalCues.ModelTarget, BeamAvoidJudge.LimitSeconds, ProgramCatalog.ModelRush);   // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」(미션처럼 읽히던 50차 문구 폐기)

@@ -70,10 +70,10 @@ namespace NightDuty.Tests
         public void 점검_공백이_30초_이어지면_가까운_지시가_나간다()
         {
             Rig r = new Rig(1);
-            r.Since = DutyDispatcher.GapSeconds - 1f;
+            r.Since = DutyDispatcher.GapFor(1) - 1f;
             r.Wait(0.5f);
             Assert.AreEqual(0, r.Events.Count, "공백 30초 전");
-            r.Since = DutyDispatcher.GapSeconds + 1f;
+            r.Since = DutyDispatcher.GapFor(1) + 1f;
             r.Wait(0.2f);
             Assert.AreEqual(1, r.Events.Count);
             Assert.AreEqual(DutyOutcome.Issued, r.Last.Outcome);

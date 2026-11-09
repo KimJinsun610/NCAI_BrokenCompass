@@ -159,6 +159,23 @@ namespace NightDuty.Tests
         }
 
         [Test]
+        public void K_1_지시가_나가_있으면_K1_조우는_어느_채널에서든_걸린다()
+        {
+            // 2026-11-06(김진선님: 「3일차 CCTV 지시 두 개가 하라는 행동이 같아 중복」) — K-1대로 채널을 넘기며 보는 도중에 사람이 나와야 유도 문자가 또 나가지 않는다.
+            DirectorFixture f = new DirectorFixture(3, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.CctvPerson));
+            f.Director.CctvPersonChannel = "cctv.ch3";
+            f.Director.CctvAnyChannel = true;
+            f.Minute = NightClock.Call1 + 10f;
+            f.Enter(SpaceId.SecurityRoom);
+            f.Send(JudgeSignal.Channel("cctv.ch0"));
+            for (int i = 0; i < 10; i++) f.Send(JudgeSignal.CctvView("cctv.ch0", 0.1f)).Wait(0.1f);
+            f.Send(JudgeSignal.Channel("cctv.ch1"));
+            for (int i = 0; i < 30; i++) f.Send(JudgeSignal.CctvView("cctv.ch1", 0.1f)).Wait(0.1f);
+            Assert.AreNotEqual(EncounterRunState.Waiting, f.Run(ProgramCatalog.CctvPerson).State, "정한 채널(ch3)이 아니어도 CCTV를 2초 보면 걸린다 — 채널을 넘겨도 셈은 이어진다");
+            Assert.IsTrue(f.Out.Exists(x => x.Kind == SignalKind.CueStarted && x.TargetId == FinalCues.CctvPerson + "@cctv.ch1"), "단서는 지금 보던 채널");
+        }
+
+        [Test]
         public void 슬롯_끝_무렵에는_어느_채널이든_걸린다()
         {
             DirectorFixture f = new DirectorFixture(3, 0.99, null, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.CctvPerson));

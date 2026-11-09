@@ -232,7 +232,7 @@ namespace NightDuty
         {
             if (_duties == null || _lastInstruction != LastInstruction.Inspection) return false;
             if (_orders != null && _orders.SpaceUnfinished) return false;   // 103차: 지시한 공간의 남은 점검을 먼저
-            if (_instructionClock - _lastInstructionAt > TurnWaitMax + DutyDispatcher.GapSeconds) return false;
+            if (_instructionClock - _lastInstructionAt > TurnWaitMax + DutyDispatcher.GapFor(Day)) return false;
             return _duties.CanIssueSoon(minute);
         }
 
@@ -285,7 +285,7 @@ namespace NightDuty
         {
             OrderLimit l;
             if (!_orderLimits.TryGetValue(index, out l) || l.Seconds <= 0f || l.IssuedMinute < 0f) return string.Empty;
-            return DutyCatalog.DeadlineText(l.IssuedMinute, l.Seconds);
+            return DutyCatalog.DeadlineText(l.IssuedMinute, l.Seconds, Day);
         }
 
         /// <summary>그 지시의 제한시간(초) — 모르면 0.</summary>
@@ -335,7 +335,7 @@ namespace NightDuty
                 l.Expired = true;
                 changed = true;
                 AddWarning(1, "order.late." + l.Index, OrderAxis(FindOrder(l.Index)));   // 103차: 처벌 원인 축
-                UnityEngine.Debug.Log("[NightRun] 점검 지시 #" + l.Index + " 기한 지남(" + DutyCatalog.DeadlineText(l.IssuedMinute, l.Seconds) + ") — 경고 1");
+                UnityEngine.Debug.Log("[NightRun] 점검 지시 #" + l.Index + " 기한 지남(" + DutyCatalog.DeadlineText(l.IssuedMinute, l.Seconds, Day) + ") — 경고 1");
             }
 
             if (changed) EventBus.RaiseTabletTextChanged();

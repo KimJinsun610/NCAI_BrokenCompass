@@ -283,6 +283,21 @@ namespace NightDuty
             return Board.IsIssued(lead) && !Board.IsHeld(lead) && Board.StateOf(lead) == InspectionState.Pending;
         }
 
+        /// <summary>
+        /// 2026-11-06(김진선님: 「CCTV 지시가 서로 다르게 2개 나오는데 하라는 행동이 같아서 중복」): CCTV 사람 조우의 앞선 지시(K-1)가 나가 있는지(보고 뒤 포함).
+        /// 참이면 디렉터가 채널을 가리지 않는다(<see cref="TensionDirector.CctvAnyChannel"/>) — K-1대로 채널을 넘기며 보는 도중에 사람이 나온다.
+        /// 저장하지 않고 점검판 상태에서 매번 계산하므로 재시작으로 K-1이 되돌아가면 함께 거짓이 된다.
+        /// </summary>
+        public static bool CctvLeadIssued
+        {
+            get
+            {
+                string lead;
+                if (Board == null || !s_leadItems.TryGetValue(ProgramCatalog.CctvPerson, out lead)) return false;
+                return Board.IsIssued(lead) && !Board.IsHeld(lead);
+            }
+        }
+
         /// <summary>104차: 고정 편성 밤의 시체 낙하는 사다리 점검(C-3)을 묶어 두었다가 차례에 낸다.</summary>
         private static bool SequentialCorpseLead
         {

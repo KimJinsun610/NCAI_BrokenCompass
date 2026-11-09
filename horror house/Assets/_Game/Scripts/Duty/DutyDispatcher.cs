@@ -93,6 +93,17 @@ namespace NightDuty
         /// <summary>점검 공백이 이만큼 이어지면 지시(실제 초 — 제안서 「게임 8분」).</summary>
         public const float GapSeconds = 10f;   // 57차: 30 → 40(지시가 점검을 덮지 않게) · 67차(민: 「점검과 지시 비중을 균일하게」): 40 → 10 — 점검 지시와 번갈아 낸다
 
+        /// <summary>
+        /// 2026-11-06(김진선님: 「초반 1·2일차에 메시지가 오는 간격이 너무 짧다」 — C안): 일차별 점검 공백(실제 초).
+        /// 1일차 30 · 2일차 20 · 3일차부터 <see cref="GapSeconds"/>(10).
+        /// </summary>
+        public static float GapFor(int day)
+        {
+            if (day <= 1) return 30f;
+            if (day == 2) return 20f;
+            return GapSeconds;
+        }
+
         /// <summary>역설 문자 뒤 쉬는 초.</summary>
         public const float AfterMessage = 12f;
 
@@ -484,7 +495,7 @@ namespace NightDuty
             }
 
             if (minute < NightClock.JudgingStart || minute >= NightClock.JudgingEnd) return false;
-            if (input.DirectorBusy || input.InspectionBacklog > 0 || input.SinceInspection < GapSeconds || input.InspectionTurn || input.HoldNew) return false;
+            if (input.DirectorBusy || input.InspectionBacklog > 0 || input.SinceInspection < GapFor(_day) || input.InspectionTurn || input.HoldNew) return false;
             if (Now - _lastMessage < AfterMessage || Now - _lastEnd < AfterDuty) return false;
             if (_issued >= Allowed(minute)) return false;
 

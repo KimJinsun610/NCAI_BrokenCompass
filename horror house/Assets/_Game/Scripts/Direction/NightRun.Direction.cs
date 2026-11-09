@@ -271,6 +271,7 @@ namespace NightDuty
         {
             if (_tension == null) return;
             _tension.SightGated = EncounterSightGating;   // 61차: 연출 쪽이 늦게 서도 따라간다
+            _tension.CctvAnyChannel = CctvLeadIssued;     // 2026-11-06: K-1이 나가 있으면 CCTV 사람은 어느 채널에서든
 
             int highest = _axes.GetValue(HighestSensory());
             Band auditory = _bands.Shown.GetBand(FearAxis.Auditory);

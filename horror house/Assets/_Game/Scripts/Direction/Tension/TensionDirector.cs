@@ -423,6 +423,36 @@ namespace NightDuty
             return false;
         }
 
+        /// <summary>
+        /// 2026-11-06(김진선님: 「얼굴 보고 도망치는 것까지 봤는데 다음 조우가 안 나온다」): 연출이 대면 단계 밖에서 그 몹을 확실히 봤다고 알린다
+        /// (창밖 노란 얼굴이 2초 응시로 달아남 — 세운 대역을 못 봤다고 거둔 뒤에도 얼굴은 창밖에 남아 있다).
+        /// 세워 두고 기다리는 중이면 평소처럼 다음 틱에 대면, 아직 기다림·전조면 본 것으로 끝낸다 — 달아난 얼굴은 다시 서지 않아 옛날엔 순서가 영영 막혔다.
+        /// 받았으면 true.
+        /// </summary>
+        public bool NotifySeenOutside(string encounterId)
+        {
+            for (int i = 0; i < _runs.Count; i++)
+            {
+                EncounterRun r = _runs[i];
+                if (r.Def.Id != encounterId) continue;
+                if (r.State == EncounterRunState.Presenting)
+                {
+                    r.Seen = true;
+                    return true;
+                }
+
+                if (r.State != EncounterRunState.Waiting && r.State != EncounterRunState.Foreshadow) continue;
+                if (r.State == EncounterRunState.Foreshadow)
+                    Emit(DirectionEventKind.Encounter, DirectionPhase.Aborted, r.Def.Id, r.Script.Cue, r.Script.Space, r.Def.Intensity, r.Point, 0f, "대면 전에 봄");
+                r.ConfrontMinute = _minute;   // 목격한 것으로 센다(재시작이면 ResetToRest가 다시 기다리게 한다)
+                Note(r.Def.Id, "대면 단계 밖에서 봄 — 본 것으로 끝냄");
+                Finish(r);
+                return true;
+            }
+
+            return false;
+        }
+
         private bool GazeTargetNear(string targetId)
         {
             if (GazeTargetNearRadius <= 0f || GazeTargetPosition == null) return true;
@@ -477,7 +507,7 @@ namespace NightDuty
             }
 
             // 44차: 출근(00:00~00:16, 실시간 1분)은 조용히 둔다. 50차: 판정이 열린 뒤 25~50초(2일차부터) — 1일차는 첫 조우 결과 뒤(TryFakeScare).
-            _nextFake = NightClock.RealSecondsAt(NightClock.JudgingStart) + Range(FirstFakeMin, FirstFakeMax);
+            _nextFake = NightClock.RealSecondsAt(NightClock.JudgingStart, _day) + Range(FirstFakeMin, FirstFakeMax);
         }
 
         private static int IndexIn(IReadOnlyList<string> order, string id)
@@ -548,6 +578,12 @@ namespace NightDuty
 
         /// <summary>71차: 그 밤 CCTV 사람(K1 조우)이 나타날 자리의 채널(<c>cctv.chN</c>). 비면 아무 채널(옛 동작).</summary>
         public string CctvPersonChannel { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 2026-11-06(김진선님: 「3일차 CCTV 지시 두 개가 하라는 행동이 같아 중복」): 참이면 CCTV 사람 조우는 채널을 가리지 않는다(CCTV를 <see cref="EncounterScript.Dwell"/>초 보면).
+        /// NightRun이 매 틱 넣는다 — 앞선 지시 K-1(CCTV 전 채널)이 나가 있는 동안 참. 채널을 넘기며 확인하는 도중에 사람이 나오게(옛: 정해 둔 채널을 이어서 봐야 해 유도 문자가 또 나갔다).
+        /// </summary>
+        public bool CctvAnyChannel { get; set; }
 
         /// <summary>그날의 빈 방 채널(<c>cctv.chN</c>) — K2 단서가 늘 이 채널을 가리킨다. 비면 지금 보지 않는 채널 하나를 고른다(옛 동작).</summary>
         public string EmptyRoomChannel { get; set; } = string.Empty;
@@ -896,7 +932,7 @@ namespace NightDuty
                     if (!ViewingCctv || Now - _cctvSince < s.Dwell) return false;
                     // 71차(민: 「CCTV 등장 장소 다양화 — 이벤트가 결정되면 장소도 함께」): 밤 시작에 정한 자리의 채널을 보고 있어야 한다(그 채널에 머문 지 Dwell).
                     // 슬롯 끝 10분 전부터는 어느 채널이든 — 그때는 연출이 보고 있는 채널의 자리로 바꾼다.
-                    if (CctvPersonChannel.Length == 0 || lastCall) return true;
+                    if (CctvPersonChannel.Length == 0 || lastCall || CctvAnyChannel) return true;   // 2026-11-06: K-1 지시가 나가 있으면 어느 채널이든
                     return _channel == CctvPersonChannel && Now - Mathf.Max(_cctvSince, _channelSince) >= s.Dwell;
                 case EncounterTrigger.GazeTarget:
                     if (GazeTargetReady != null && !GazeTargetReady(s.GazeTargetId)) return false;
@@ -1085,7 +1121,7 @@ namespace NightDuty
                 {
                     float from, to;
                     RunWindow(r, out from, out to);
-                    window = NightClock.RealSecondsAt(to) - NightClock.RealSecondsAt(_minute);
+                    window = NightClock.RealSecondsAt(to, _day) - NightClock.RealSecondsAt(_minute, _day);   // 2026-11-06: 1·2일차는 밤이 길다
                     if (window < 1f) window = 1f;
                 }
             }

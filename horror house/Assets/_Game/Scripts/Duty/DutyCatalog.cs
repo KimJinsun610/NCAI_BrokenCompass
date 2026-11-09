@@ -306,7 +306,13 @@ namespace NightDuty
         /// <summary>그 게임 분에 받은 지시의 마감 「HH:MM까지」(근무 시작 00:00 기준 = 태블릿 시계).</summary>
         public static string DeadlineText(float issuedMinute, float seconds = LimitSeconds)
         {
-            float due = issuedMinute + seconds * NightClock.GameSecondsPerRealSecond / 60f;
+            return DeadlineText(issuedMinute, seconds, 3);
+        }
+
+        /// <summary>2026-11-06: 그날 배속(1·2일차는 밤이 길다)으로 잰 마감 「HH:MM까지」.</summary>
+        public static string DeadlineText(float issuedMinute, float seconds, int day)
+        {
+            float due = issuedMinute + seconds * NightClock.GameSecondsPerRealSecondFor(day) / 60f;
             return Clock((int)Math.Ceiling(due - 0.0001f)) + "까지";
         }
 
@@ -347,7 +353,7 @@ namespace NightDuty
             string text = OrderText(def, day);
             if (def == null || issuedMinute < 0f || TimeLimitsEnabled) return text;
             if (def.Kind == DutyKind.LogSign) return text + "\n" + Clock(NightClock.Call2) + "까지";
-            if (def.Id == "W21") return text + "\n" + DeadlineText(issuedMinute, EffectiveSeconds(def));
+            if (def.Id == "W21") return text + "\n" + DeadlineText(issuedMinute, EffectiveSeconds(def), day);
             return text;
         }
 

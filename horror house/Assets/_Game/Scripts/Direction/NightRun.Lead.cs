@@ -218,6 +218,8 @@ namespace NightDuty
             if (_windowGaze < WindowFleeSeconds) return;
             _windowFled = true;
             UnityEngine.Debug.Log("[NightRun] 창밖 노란 얼굴을 " + WindowFleeSeconds + "초 응시 — 달아남");
+            // 2026-11-06: 달아나게 만들었다면 본 것이다 — 조우가 아직 대면 전이어도 끝낸다(달아난 얼굴은 다시 서지 않아 순서가 막혔다).
+            if (_tension != null) _tension.NotifySeenOutside(ProgramCatalog.SuitMan);
         }
 
         private static void ResetWindowGaze()

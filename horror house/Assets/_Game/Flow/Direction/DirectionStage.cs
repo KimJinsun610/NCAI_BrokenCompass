@@ -305,6 +305,9 @@ public sealed class DirectionStage : MonoBehaviour
     /// <summary>104차: 나무 자리를 다시 고르는 간격(초).</summary>
     private const float TreePollSeconds = 0.25f;
 
+    /// <summary>2026-11-09: CCTV 사람이 사라진 뒤 K1 단서 끝이 판정에 닿을 때까지 채널을 잠가 두는 시간(초).</summary>
+    private const float VanishLockSeconds = 0.3f;
+
     /// <summary>104차: 사람 나무 조우의 마지막 자리 고르기 결과(검수용).</summary>
     public static string LastTreePick { get; private set; }
 
@@ -1635,10 +1638,15 @@ public sealed class DirectionStage : MonoBehaviour
         st.Objects.Add(walker.gameObject);
         // 52차 K1 「화면 속 !_ 이 지나갈 때까지 채널을 넘기지 마십시오」: 한 번 가로지르고 끝에서 사라진다.
         // 3초 이어서 보면 얼굴 점프스케어(3일차부터, 밤당 한 번) — 그 뒤에도 사라진다.
+        // 2026-11-09 QA: 사람이 사라지면(걷기 끝 · 얼굴 점프스케어 뒤) 채널 잠금이 풀리는데 K1 단서 창은 남아
+        // 「지나갔다」고 보고 채널을 넘기면 K1 위반이었다 → 사라지는 순간 대면 창도 닫는다(다음 Tick에 단서 끝),
+        // 그 사이 한두 프레임은 채널을 잠가 둔다.
         CctvOnlyVisible only = walker.Only;
         System.Action vanish = () =>
         {
             if (only != null) only.enabled = false;
+            CctvFaceScare.HoldChannel(VanishLockSeconds);
+            NightRun.EndEncounterWindow(ProgramCatalog.CctvPerson);
         };
         walker.Walk(from, to, false, 0f, vanish);
         CctvFaceScare.Register(walker.gameObject, ch, vanish);

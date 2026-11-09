@@ -113,7 +113,7 @@ namespace NightDuty
                 case "L5": return new DontGreetJudge(FinalCues.WindowKnock, FinalCues.ManTarget, 2f);
                 case "L6": return new BeamUpwardJudge();   // 79차
                 case "L7": return new NoBackwardWalkJudge();   // 80차
-                case "K1": return new NoChannelChangeJudge(FinalCues.CctvPerson);   // 52차 민: 원래대로
+                case "K1": return new KeepWatchingJudge(FinalCues.CctvPerson);   // 2026-11-09 김진선님: 채널 넘김 → 사람이 지나가기 전 CCTV를 그만보면 위반
                 case "K2": return new DontWatchJudge(FinalCues.EmptyRoom, 3f);
                 case "K3": return new DwellSpaceJudge(SpaceId.SecurityRoom, 45f);
                 case "K5": return new AnswerAfterRingsJudge();   // 79차
@@ -1250,17 +1250,21 @@ namespace NightDuty
         }
     }
 
-    /// <summary>K1: 단서 동안 채널을 넘기면 위반.</summary>
-    public sealed class NoChannelChangeJudge : CueEpisodeJudge
+    /// <summary>
+    /// K1 「화면 속 !_ 이 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.」: 단서 동안(사람이 사라질 때까지) CCTV를 스스로 그만보면 위반.
+    /// 2026-11-09(김진선님: 「넘기지 마십시오가 아니잖아 — 제대로 보기 전에 화면을 내리면(E로 그만보기) 어긴 걸로」): 옛 「채널을 넘기면 위반」(52차)을 대신한다.
+    /// 공포 연출 동안 채널은 잠기므로(CctvSystem.ChannelLocked) 채널 넘김은 더 보지 않는다. 붙잡힘·일시정지의 강제 복귀는 신호가 오지 않는다.
+    /// </summary>
+    public sealed class KeepWatchingJudge : CueEpisodeJudge
     {
         /// <summary>만든다.</summary>
-        public NoChannelChangeJudge(string cueId) : base(cueId)
+        public KeepWatchingJudge(string cueId) : base(cueId)
         {
         }
 
         protected override void OnSignal(in JudgeSignal s, FinalWorld w)
         {
-            if (s.Kind == SignalKind.CctvChannel) Fail("사람이 지나가기 전 채널을 넘김");
+            if (s.Kind == SignalKind.CctvLeft) Fail("사람이 지나가기 전 CCTV를 그만봄");
         }
     }
 

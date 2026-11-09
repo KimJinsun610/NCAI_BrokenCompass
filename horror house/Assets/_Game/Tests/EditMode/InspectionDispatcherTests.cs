@@ -142,6 +142,7 @@ namespace NightDuty.Tests
             public TensionPacer Pacer;
             public bool AutoReport;
             public SpaceId Banned = SpaceId.None;
+            public float DutyWait;
 
             public Rig(int day, IEnumerable<KeyValuePair<EncounterSlot, SpaceId>> encounters, params InspectionAssignment[] rows)
                 : this(day, string.Empty, encounters, rows)
@@ -167,7 +168,7 @@ namespace NightDuty.Tests
                 int n = Mathf.RoundToInt(seconds * 10f);
                 for (int i = 0; i < n; i++)
                 {
-                    InspectionOrder o = D.Tick(new DispatchInput { Minute = Minute, Dt = 0.1f, DirectorBusy = Busy, Pacer = Pacer, Banned = Banned });
+                    InspectionOrder o = D.Tick(new DispatchInput { Minute = Minute, Dt = 0.1f, DirectorBusy = Busy, Pacer = Pacer, Banned = Banned, DutyWait = DutyWait });
                     if (o == null) continue;
                     Orders.Add(o);
                     if (!AutoReport) continue;
@@ -232,6 +233,30 @@ namespace NightDuty.Tests
             r.Wait(InspectionDispatcher.NextAfterReportFor(1) + 0.5f);
             Assert.AreEqual(2, r.Orders.Count);
             CollectionAssert.AreEqual(new[] { "K-1" }, r.Orders[1].ItemIds, "같은 방이라 곧이어 CCTV");
+        }
+
+        [Test]
+        public void 근무_지시_직후에는_점검_지시를_잇달아_내지_않는다()
+        {
+            // 2026-11-09 QA: 근무 지시가 나가는 순간 「근무 지시 차례」가 풀려 다음 틱에 점검 지시가 붙어 나갔다.
+            Rig r = new Rig(2, null, Row("K-1"), Row("H-1"), Row("S-1"), Row("L-1", true));
+            r.Minute = 20f;
+            r.Wait(8.2f);
+            r.Report("K-1");
+            r.DutyWait = InspectionDispatcher.AfterDutyFor(2);
+            r.Wait(InspectionDispatcher.NextAfterReportFor(2) + 1f);
+            Assert.AreEqual(1, r.Orders.Count, "보고 뒤 간격이 지났어도 근무 지시 직후라 기다린다");
+            r.DutyWait = 0f;
+            r.Wait(0.5f);
+            Assert.AreEqual(2, r.Orders.Count, "근무 지시 뒤 간격이 지나면 낸다");
+        }
+
+        [TestCase(1, 15f)]
+        [TestCase(2, 10f)]
+        [TestCase(3, 8f)]
+        public void 근무_지시_뒤_점검_지시까지_간격(int day, float seconds)
+        {
+            Assert.AreEqual(seconds, InspectionDispatcher.AfterDutyFor(day), 0.001f);
         }
 
         [Test]

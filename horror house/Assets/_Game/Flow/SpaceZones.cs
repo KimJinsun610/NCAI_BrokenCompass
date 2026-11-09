@@ -88,6 +88,28 @@ public sealed class SpaceZones : MonoBehaviour
         return false;
     }
 
+    private void OnEnable()
+    {
+        EventBus.NightRestarted += OnNightRestarted;
+    }
+
+    private void OnDisable()
+    {
+        EventBus.NightRestarted -= OnNightRestarted;
+    }
+
+    /// <summary>
+    /// 2026-11-09 QA: 붙잡혀 그 밤을 다시 하면 코어는 지금 공간·구역을 잊는다(<c>NightRun._currentSpace = None</c>, 근무 지시기 구역 비움).
+    /// 여기는 바뀔 때만 보내므로 같은 방(경비실 버티기 붙잡힘은 늘 경비실)에서 다시 시작하면 신호가 다시 오지 않아
+    /// 경비실을 한 번 나갔다 올 때까지 K3·K5·경비실 구역 판정이 멈췄다 → 기억을 비워 다음 샘플에 지금 공간·구역을 다시 보낸다.
+    /// </summary>
+    private void OnNightRestarted(RestartResult result)
+    {
+        _current = SpaceId.None;
+        _inZone = null;
+        _acc = 0f;
+    }
+
     /// <summary>신호 한 건을 코어로 보낸다(옛 큐 발신기 AnomalyCueDirector는 2026-10-03 폐기).</summary>
     private static void Send(in JudgeSignal s)
     {

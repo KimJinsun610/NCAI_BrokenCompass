@@ -91,6 +91,7 @@ public sealed class FinalRuleRelay : MonoBehaviour
     {
         PlayerSensors.Sampled += OnSampled;
         CctvSystem.ChannelChanged += OnChannelChanged;
+        CctvSystem.PlayerLeftView += OnCctvLeft;
         JudgeTargetRegistry.Changed += OnTargetsChanged;
         _targetsDirty = true;
         _hasLast = false;
@@ -100,7 +101,15 @@ public sealed class FinalRuleRelay : MonoBehaviour
     {
         PlayerSensors.Sampled -= OnSampled;
         CctvSystem.ChannelChanged -= OnChannelChanged;
+        CctvSystem.PlayerLeftView -= OnCctvLeft;
         JudgeTargetRegistry.Changed -= OnTargetsChanged;
+    }
+
+    /// <summary>2026-11-09: CCTV를 스스로 그만봤다 — K1(사람이 지나가기 전에 눈을 뗌).</summary>
+    private void OnCctvLeft()
+    {
+        if (NightRun.FinalRules == null) return;
+        NightRun.Send(JudgeSignal.CctvLeft());
     }
 
     private void OnTargetsChanged()

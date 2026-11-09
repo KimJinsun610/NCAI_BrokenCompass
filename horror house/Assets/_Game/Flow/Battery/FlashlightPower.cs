@@ -207,7 +207,8 @@ public sealed class FlashlightPower : MonoBehaviour
             if (Swapping && Time.time >= _swapUntil) FinishSwap(relay, b);
             else if (!Swapping && ReadSwapInput())
             {
-                if (SwapLocked) DeskStarterKit.ShowNotice(SwapLockedText);   // 104차: 소등 중 실수 예방
+                if (!NightRun.HasFlashlight) DeskStarterKit.ShowNoFlashlight();   // 2026-11-09 QA: 손에 손전등이 없으면 예비를 쓰지 않는다
+                else if (SwapLocked) DeskStarterKit.ShowNotice(SwapLockedText);   // 104차: 소등 중 실수 예방
                 else if (b.Charge >= SwapBlockCharge) DeskStarterKit.ShowStillCharged();   // 102차: 막 갈았거나 거의 가득 — 예비를 쓰지 않는다
                 else BeginSwap();
             }

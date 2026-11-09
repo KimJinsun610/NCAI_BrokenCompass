@@ -579,14 +579,25 @@ namespace NightDuty.Tests
         }
 
         [Test]
-        public void K1_사람이_지나가기_전_채널을_넘기면_위반()
+        public void K1_사람이_지나가기_전_CCTV를_그만보면_위반()
         {
-            // 52차 민: K1은 원래대로.
+            // 2026-11-09 김진선님: 「제대로 보기 전에 화면을 내리면(E로 그만보기) 어긴 걸로」 — 채널 넘김은 더 보지 않는다.
             FinalFixture f = new FinalFixture("K1");
-            f.Send(JudgeSignal.Channel("cctv.ch1"));
-            Assert.AreEqual(0, f.Value(FearAxis.Layout));
+            f.Send(JudgeSignal.CctvLeft());
+            Assert.AreEqual(0, f.Value(FearAxis.Layout), "단서 전에는 그만봐도 된다");
             f.Cue(FinalCues.CctvPerson + "@cctv.ch1").Wait(2f).Send(JudgeSignal.Channel("cctv.ch2"));
+            Assert.AreEqual(0, f.Value(FearAxis.Layout), "채널 넘김은 위반이 아니다");
+            f.Send(JudgeSignal.CctvLeft());
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Layout));
+        }
+
+        [Test]
+        public void K1_사람이_지나간_뒤에는_그만봐도_된다()
+        {
+            FinalFixture f = new FinalFixture("K1");
+            f.Cue(FinalCues.CctvPerson + "@cctv.ch1").Wait(2f).End(FinalCues.CctvPerson + "@cctv.ch1");
+            f.Send(JudgeSignal.CctvLeft());
+            Assert.AreEqual(0, f.Value(FearAxis.Layout));
         }
 
         [Test]

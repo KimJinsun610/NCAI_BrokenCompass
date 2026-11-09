@@ -80,6 +80,9 @@ namespace NightDuty
         /// <summary>104차 QA: 조우 몹에게 붙잡혔다(죽지 않고 넘어지는 붙잡힘 포함). TargetId = 그 몹의 비춤 대상 ID — 위협 수칙(L3)은 창이 닫히기 전에 실패로 정산한다.</summary>
         EncounterCaught = 50,
 
+        /// <summary>2026-11-09: 플레이어가 CCTV 들여다보기를 스스로 그만뒀다(E·Esc·S — 강제 복귀 제외). K1 「눈을 떼지 마십시오」.</summary>
+        CctvLeft = 51,
+
         /// <summary>태블릿(Tab) 상태가 바뀌었다. Flag = 열림.</summary>
         TabChanged = 60
     }
@@ -221,6 +224,12 @@ namespace NightDuty
         public static JudgeSignal CctvView(string channelId, float sampleSeconds)
         {
             return new JudgeSignal(SignalKind.CctvViewSample, SpaceId.None, channelId, ActionSource.Player, false, sampleSeconds);
+        }
+
+        /// <summary>2026-11-09: 플레이어가 CCTV를 그만봤다(K1).</summary>
+        public static JudgeSignal CctvLeft()
+        {
+            return new JudgeSignal(SignalKind.CctvLeft, SpaceId.None, string.Empty, ActionSource.Player, false, 0f);
         }
 
         /// <summary>79차: 시선 위아래 각도 샘플.</summary>

@@ -33,6 +33,7 @@ public sealed class CctvFaceScare : MonoBehaviour
     private static CctvFaceScare s_active;
     private static int s_scares;
     private static object s_night;
+    private static float s_holdUntil;
 
     private readonly List<Person> _people = new List<Person>();
     private float _watch;
@@ -45,6 +46,7 @@ public sealed class CctvFaceScare : MonoBehaviour
         s_active = null;
         s_scares = 0;
         s_night = null;
+        s_holdUntil = 0f;
     }
 
     private static CctvFaceScare Ensure()
@@ -68,6 +70,17 @@ public sealed class CctvFaceScare : MonoBehaviour
         s._people.Add(new Person { Go = person, Channel = channel, OnScared = onScared });
     }
 
+    /// <summary>
+    /// 2026-11-09: 지금부터 <paramref name="seconds"/>초 동안 채널 잠금을 유지한다 — CCTV 사람이 사라진 순간
+    /// K1 단서 끝이 판정에 닿기 전(다음 Tick)에 채널을 넘겨 위반되지 않게.
+    /// </summary>
+    public static void HoldChannel(float seconds)
+    {
+        Ensure();
+        float until = Time.unscaledTime + Mathf.Max(0f, seconds);
+        if (until > s_holdUntil) s_holdUntil = until;
+    }
+
     /// <summary>등록을 푼다.</summary>
     public static void Unregister(GameObject person)
     {
@@ -82,7 +95,7 @@ public sealed class CctvFaceScare : MonoBehaviour
     public static bool HorrorOnScreen(CctvSystem cctv)
     {
         if (s_active == null || cctv == null || !cctv.IsViewing) return false;
-        if (s_active._busy) return true;
+        if (s_active._busy || Time.unscaledTime < s_holdUntil) return true;
         Person p = s_active.Watched(cctv);
         if (p == null) return false;
         CctvWalker walker = p.Go.GetComponent<CctvWalker>();

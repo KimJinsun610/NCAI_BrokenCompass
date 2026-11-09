@@ -84,6 +84,11 @@ namespace NightDuty
 
         /// <summary>67차(민: 「점검 지시와 근무 지시의 비중이 균일하게」): 지난 지시가 점검이었고 근무 지시 차례다 — 평소 지시는 기다린다.</summary>
         public bool DutyTurn;
+
+        /// <summary>
+        /// 2026-11-09 QA: 근무 지시가 나간 뒤 아직 기다려야 하는 실제 초(<see cref="InspectionDispatcher.AfterDutyFor"/> − 지난 근무 지시 뒤 흐른 초, 0 = 기다리지 않음).
+        /// </summary>
+        public float DutyWait;
     }
 
     /// <summary>
@@ -170,6 +175,16 @@ namespace NightDuty
             if (day <= 1) return 15f;
             if (day == 2) return 10f;
             return NextAfterReport;
+        }
+
+        /// <summary>
+        /// 2026-11-09 QA: 근무 지시가 나간 뒤 점검 지시까지 띄우는 실제 초 — 1일차 15 · 2일차 10 · 3일차부터 <see cref="ForcedGap"/>(8).
+        /// 옛: 근무 지시가 나가는 순간 「근무 지시 차례」가 풀려 다음 틱에 점검 지시가 이어서 나갔다(문자 두 통이 한꺼번에).
+        /// 호출·따라잡기·목격 지시는 <see cref="ForcedGap"/>만 띄운다.
+        /// </summary>
+        public static float AfterDutyFor(int day)
+        {
+            return Math.Max(NextAfterReportFor(day), ForcedGap);
         }
 
         /// <summary>여유를 재는 끝(03:45) — 04:00 전에 다 끝낼 수 있어야 한다.</summary>
@@ -415,7 +430,7 @@ namespace NightDuty
                 {
                     _call2Done = true;
                 }
-                else if (ForcedReady(input.DirectorBusy))
+                else if (ForcedReady(input.DirectorBusy, input.DutyWait))
                 {
                     _call2Done = true;
                     return Issue(OrderKind.Call2, whole, late);
@@ -445,7 +460,7 @@ namespace NightDuty
                 {
                     _call1Done = true;
                 }
-                else if (ForcedReady(input.DirectorBusy))
+                else if (ForcedReady(input.DirectorBusy, input.DutyWait))
                 {
                     _call1Done = true;
                     return Issue(OrderKind.Call1, whole, call);
@@ -475,7 +490,7 @@ namespace NightDuty
                         if (_board.IssuedPendingCountExcept(input.Banned) > 1 && since < CatchUpChainGap) return Hold("따라잡기 — 앞 지시 보고를 기다림");
                     }
 
-                    if (!ForcedReady(input.DirectorBusy)) return Hold("따라잡기 — 조우 끝을 기다림");
+                    if (!ForcedReady(input.DirectorBusy, input.DutyWait)) return Hold("따라잡기 — 조우 끝을 기다림");
                     if (!_call1Done && minute >= NightClock.Call1) _call1Done = true;
                     List<string> rest = EarlyUnissued(minute, input.Banned, true);
                     return Issue(OrderKind.CatchUp, whole, rest);
@@ -508,6 +523,7 @@ namespace NightDuty
             if (input.DirectorBusy) return Hold("조우 중");
             if (input.DutyActive) return Hold("근무 지시 진행 중");
             if (input.DutyTurn) return Hold("근무 지시 차례");
+            if (input.DutyWait > 0f) return Hold("근무 지시 직후");
             if (Now - _busyEndedAt < AfterBusy) return Hold("조우 직후");
             if (Now - _lastMessage < AfterMessage) return Hold("문자 직후");
             bool quick = reason == QuickReason;   // 53차: 보고 뒤 바로 — 지시 간격·긴장 미룸을 건너뛴다
@@ -528,10 +544,11 @@ namespace NightDuty
             return null;
         }
 
-        private bool ForcedReady(bool busy)
+        private bool ForcedReady(bool busy, float dutyWait)
         {
             if (_forcedSince < 0f) _forcedSince = Now;
             if (Now - _lastIssue < ForcedGap) return false;
+            if (dutyWait > AfterDutyFor(_day) - ForcedGap) return false;   // 2026-11-09: 근무 지시 뒤에도 ForcedGap은 띄운다
             return !busy || Now - _forcedSince >= ForcedBusyWaitMax;
         }
 

@@ -121,7 +121,7 @@ public sealed class BatteryHud : MonoBehaviour
 
         for (int i = 0; i < _pips.Length; i++) _pips[i].color = i < b.Spare ? Frame : PipEmpty;
 
-        bool hint = !swapping && b.Spare > 0 && b.Charge < BatteryRules.DimBelow;
+        bool hint = !swapping && b.Spare > 0 && b.Charge < BatteryRules.DimBelow && NightRun.HasFlashlight;   // 2026-11-09 QA: 손전등을 줍기 전에는 R을 띄우지 않는다
         if (_hint != null && _hint.gameObject.activeSelf != hint) _hint.gameObject.SetActive(hint);
     }
 

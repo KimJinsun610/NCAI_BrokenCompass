@@ -200,7 +200,8 @@ namespace NightDuty
                 Pacer = _tension != null ? _tension.Pacer : null,
                 Banned = _unavoidable.Banned,
                 DutyActive = _duties != null && _duties.Active != null && DutyCatalog.EffectiveSeconds(_duties.Active) > 0f,   // 제한 없는 지시(W2·W4·W5·W15)는 점검을 막지 않는다
-                DutyTurn = DutyTurnNow(minute)
+                DutyTurn = DutyTurnNow(minute),
+                DutyWait = Math.Max(0f, InspectionDispatcher.AfterDutyFor(Day) - (_instructionClock - _lastDutyAt))   // 2026-11-09 QA
             };
 
             ReleaseToiletOrder(input.Minute);
@@ -223,6 +224,7 @@ namespace NightDuty
         private static LastInstruction _lastInstruction;
         private static float _lastInstructionAt;
         private static float _instructionClock;
+        private static float _lastDutyAt = float.NegativeInfinity;   // 2026-11-09: 마지막 근무 지시(지시 시계 기준)
 
         /// <summary>한쪽 차례를 이만큼(실제 초) 넘게 기다리면 다른 쪽도 낼 수 있다 — 한쪽이 낼 것이 없을 때 밤이 비지 않게.</summary>
         public const float TurnWaitMax = 45f;
@@ -248,6 +250,7 @@ namespace NightDuty
         {
             _lastInstruction = duty ? LastInstruction.Duty : LastInstruction.Inspection;
             _lastInstructionAt = _instructionClock;
+            if (duty) _lastDutyAt = _instructionClock;
         }
 
         private static void TickInstructionClock(float realSeconds)
@@ -382,6 +385,7 @@ namespace NightDuty
 
             for (int i = 0; i < drop.Count; i++) _orderLimits.Remove(drop[i]);
             _lastInstruction = LastInstruction.None;
+            _lastDutyAt = float.NegativeInfinity;
         }
 
         /// <summary>61차: 변기 지시가 여자아이 슬롯보다 이만큼(게임 분) 먼저 나간다 — 지시를 읽고 화장실에 들어서면 슬롯이 열려 있다.</summary>
@@ -442,6 +446,7 @@ namespace NightDuty
             _lastInstruction = LastInstruction.None;
             _lastInstructionAt = 0f;
             _instructionClock = 0f;
+            _lastDutyAt = float.NegativeInfinity;
         }
 
         /// <summary>디버그: 다음 점검 지시를 지금 낸다(조건 무시). 낼 것이 없으면 false.</summary>

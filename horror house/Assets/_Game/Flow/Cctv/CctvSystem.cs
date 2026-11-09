@@ -55,6 +55,12 @@ public sealed class CctvSystem : MonoBehaviour
     /// <summary>플레이어가 모니터에서 눈을 뗐다.</summary>
     public static event Action ViewExited;
 
+    /// <summary>
+    /// 2026-11-09(김진선님: 「제대로 보기 전에 화면을 내리면(E로 그만보기) 어긴 걸로」): 플레이어가 키(E·Esc·S)로 그만보기를 눌렀다.
+    /// 붙잡힘·일시정지로 강제로 몸에 돌아가는 것은 아니다. K1 판정이 쓴다(<see cref="JudgeSignal.CctvLeft"/>).
+    /// </summary>
+    public static event Action PlayerLeftView;
+
     [Tooltip("비우면 Resources/CctvConfig를 읽고, 그것도 없으면 코드 기본값을 쓴다.")]
     [SerializeField] private CctvConfigSO config;
 
@@ -262,6 +268,7 @@ public sealed class CctvSystem : MonoBehaviour
         ChannelChanged = null;
         ViewEntered = null;
         ViewExited = null;
+        PlayerLeftView = null;
         if (s_hooked)
         {
             SceneManager.sceneLoaded -= OnSceneLoaded;
@@ -839,6 +846,8 @@ public sealed class CctvSystem : MonoBehaviour
 #if ENABLE_LEGACY_INPUT_MANAGER
         if (Input.GetKeyDown(interactKey) || Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.S))
         {
+            Action left = PlayerLeftView;   // 2026-11-09: 플레이어가 스스로 그만봄(K1) — 붙잡힘·멈춤의 강제 복귀는 아니다
+            if (left != null) left();
             BeginExit();
             return;
         }

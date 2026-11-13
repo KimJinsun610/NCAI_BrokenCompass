@@ -688,6 +688,7 @@ public sealed class TabletBridge : MonoBehaviour
         if (glitch == null) glitch = tablet.GetComponentInChildren<TabletGlitch>(true);
         if (gameTime == null) gameTime = FindAnyObjectByType<GameTime>();
         if (_alarm == null) ConfigureAlarm(tablet.GetComponentInChildren<TabletAlarm>(true));
+        if (GetComponent<TabletGlyphGlitch>() == null) gameObject.AddComponent<TabletGlyphGlitch>();   // 글자 한 자 깨짐 연출(신뢰 구간 1+)
 
         return true;
     }

@@ -714,6 +714,51 @@ public sealed class CctvSystem : MonoBehaviour
         }
     }
 
+    // ───────────── 무작위 노이즈 튐 (2일차부터, 연출 디테일) ─────────────
+    // 채널 전환 때와 같은 지직거림(_static = 1, 기본 0.3초)을 가끔 저절로 낸다. 판정·채널은 건드리지 않는다.
+
+    private const int GlitchFromDay = 2;
+    private float _nextGlitchAt = -1f;
+
+    private void TickRandomGlitch()
+    {
+        if (!NightRun.IsNightActive || NightRun.IsCaptured || NightRun.Day < GlitchFromDay || _override != null)
+        {
+            _nextGlitchAt = -1f;   // 밤이 아니면 다음 밤에 다시 잡는다.
+            return;
+        }
+
+        if (_nextGlitchAt < 0f)
+        {
+            _nextGlitchAt = Time.time + NextGlitchGap();
+            return;
+        }
+
+        if (Time.time < _nextGlitchAt)
+        {
+            return;
+        }
+
+        _nextGlitchAt = Time.time + NextGlitchGap();
+
+        // 화면이 보이는 중이거나 들여다보는 중일 때만 낸다. 안 보이는 곳의 소리는 낭비다.
+        if (_view == ViewState.None && !PlayerCanSeeScreen())
+        {
+            return;
+        }
+
+        _static = 1f;
+        PlaySwitchSound();
+    }
+
+    private static float NextGlitchGap()
+    {
+        // 일차가 올라갈수록 조금 잦아진다: 2일차 35~80초 → 5일차 20~50초.
+        int d = Mathf.Clamp(NightRun.Day, GlitchFromDay, 5);
+        float scale = 1f - 0.15f * (d - GlitchFromDay);
+        return UnityEngine.Random.Range(35f, 80f) * scale;
+    }
+
     private void LateUpdate()
     {
         if (!_built)
@@ -722,6 +767,7 @@ public sealed class CctvSystem : MonoBehaviour
         }
 
         UpdateViewBlend();
+        TickRandomGlitch();
 
         _static = Mathf.MoveTowards(_static, 0f, Time.deltaTime / Mathf.Max(0.01f, config.SwitchStaticSeconds));
         _mat.SetFloat("_Static", _static);

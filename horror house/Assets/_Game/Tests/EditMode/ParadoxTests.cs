@@ -791,6 +791,8 @@ namespace NightDuty.Tests
             foreach (string id in new[] { "C3", "C5", "L2", "L5", "K1" }) Assert.IsFalse(ParadoxCatalog.Find(id).HasMessage, id);
             Assert.AreEqual(SafeReadPattern.EyesOnly, ParadoxCatalog.Find("S2").Pattern);
             Assert.IsFalse(ParadoxCatalog.Find("S3").HasVariant);
+            Assert.IsFalse(ParadoxCatalog.Find("L4").HasMessage, "2026-11-13: 늘 있는 상자라 「쏟아져 있습니다」 문자 폐기");
+            Assert.IsTrue(ParadoxCatalog.Find("L4").HasVariant, "변조본은 그대로");
             Assert.AreEqual("인체 모형에는 빛을 비추지 마십시오.", ProgramCatalog.Rule("S3").Text, "51차 민: 미션처럼 읽히던 「3초간 비추라」 폐기");
             Assert.AreEqual("근무 종료 후에는 경비실을 나가지 마십시오.", ProgramCatalog.Rule("K4").Text);
         }

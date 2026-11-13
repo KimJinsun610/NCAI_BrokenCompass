@@ -659,6 +659,7 @@ public sealed class DirectionStage : MonoBehaviour
         {
             // 51차: 리지드바디 시체를 떨어뜨린다. 103차(민: 「무조건 시야 안에 등장하게 — 등장할 때 플레이어가 웬만하면 목격」):
             // 전조 때 고른 자리를 다시 쓰지 않는다 — 떨어지는 지금의 시선으로 화면 안·가림 없는 자리를 고른다(CorpseSpot).
+            // 시체가 시선을 돌려 사라지면 교탁 옆에 선 사람이 나타나 다가가면 교실 문 밖으로 달려나간다(CorpseDrop → CorpseRunner.SpawnAtDesk).
             float ceilingY;
             Vector3 spot = CorpseSpot(out ceilingY);
 
@@ -1041,6 +1042,15 @@ public sealed class DirectionStage : MonoBehaviour
         ceilingY = CeilingY(fallback, player);
         return fallback;
     }
+
+    /// <summary>1-3 교실 교탁(40.38, 36.02, 크기 0.7×1.5) 바로 옆 바닥 — 서 있는 시체가 나오는 자리(2026-11 실측).</summary>
+    public static readonly Vector3 TeacherDeskCorpseSpot = new Vector3(40.27f, 1.356f, 37.407f);
+
+    /// <summary>1-3 교실 문(40.5, 40.9) 바로 안쪽 — 달리는 길의 중간 지점(문을 정확히 지나가게).</summary>
+    public static readonly Vector3 ClassroomDoorInside = new Vector3(40.5f, 1.5f, 39.4f);
+
+    /// <summary>1-3 교실 문(40.5, 40.9) 바로 밖 복도 — 서 있는 시체가 뛰어나가는 곳.</summary>
+    public static readonly Vector3 ClassroomDoorOutside = new Vector3(40.5f, 1.5f, 42.6f);
 
     /// <summary>103차: 그 바닥 점 위로 떨어지는 몸(바닥 위 0.5·1.2m)이 지금 화면 안쪽에 있고 카메라에서 가리는 것이 없는지.</summary>
     private static bool CorpseVisible(Camera cam, Vector3 floor, Transform player)

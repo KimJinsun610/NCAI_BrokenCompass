@@ -127,6 +127,20 @@ public sealed class StandInExit : MonoBehaviour
         BeginMove(Flat(d), Mathf.Max(0.3f, maxSeconds));
     }
 
+    private Vector3[] _path;
+    private int _pathIndex;
+
+    /// <summary>
+    /// 여러 지점을 차례로 지나 달려간다(문을 정확히 지나가게 할 때). 마지막 지점에 닿으면 <see cref="RunTo"/>와 같이 가려지거나 시간이 다하면 사라진다.
+    /// </summary>
+    public void RunPath(Vector3[] points, float maxSeconds, System.Func<bool> hidden)
+    {
+        if (_leaving || points == null || points.Length == 0) return;
+        _path = points;
+        _pathIndex = 0;
+        RunTo(points[0], maxSeconds, hidden);
+    }
+
     private void BeginMove(Vector3 dir, float until)
     {
         _leaving = true;
@@ -206,8 +220,21 @@ public sealed class StandInExit : MonoBehaviour
             if (left.magnitude <= step.magnitude)
             {
                 step = left;
-                _arrived = true;
-                if (_anim != null) _anim.speed = 0f;   // 닿았다 — 그 자리에 굳는다(가려지면 곧 사라진다)
+                if (_path != null && _pathIndex < _path.Length - 1)
+                {
+                    // 다음 지점으로 — 돌아서 계속 달린다(걸음은 멈추지 않는다).
+                    _pathIndex++;
+                    _target = _path[_pathIndex];
+                    Vector3 nd = _target - transform.position - step;
+                    nd.y = 0f;
+                    _dir = Flat(nd);
+                    transform.rotation = Quaternion.LookRotation(_dir, Vector3.up);
+                }
+                else
+                {
+                    _arrived = true;
+                    if (_anim != null) _anim.speed = 0f;   // 닿았다 — 그 자리에 굳는다(가려지면 곧 사라진다)
+                }
             }
         }
 

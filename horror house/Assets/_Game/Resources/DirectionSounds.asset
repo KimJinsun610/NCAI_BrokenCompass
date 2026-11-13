@@ -133,6 +133,12 @@ MonoBehaviour:
     volume: 1
     hits:
     - 0
+  - key: duck.chase
+    clip: {fileID: 8300000, guid: b198b56015f9db44a81237f385518d27, type: 3}
+    more: []
+    volume: 0.9
+    hits:
+    - 0
   - key: E.SuitMan.confront
     clip: {fileID: 8300000, guid: 4947d59be765b2a449c8fc9acfd71d7e, type: 3}
     more: []
@@ -353,6 +359,12 @@ MonoBehaviour:
     volume: 1
     hits:
     - 0
+  - key: corpse.rasp
+    clip: {fileID: 8300000, guid: a6c2da87017bc2545a6bbb9dfb2e272b, type: 3}
+    more: []
+    volume: 0.6
+    hits:
+    - 6.39725
   - key: cctv.face
     clip: {fileID: 8300000, guid: 04fc8b26ba4bc2b459b924deb5e0b3db, type: 3}
     more: []

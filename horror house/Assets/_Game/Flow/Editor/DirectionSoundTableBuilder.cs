@@ -84,6 +84,7 @@ public static class DirectionSoundTableBuilder
         { "stinger.yellowface", Au + "stinger/SFX_STING_YellowFace.mp3", "1" },   // 103차(민 제공 「발자국_앞으로지나감,노란얼굴_놀람연출」): 노란 얼굴 점프스케어(옛 공용 중 스팅어)
         { "stinger.toiletgirl", Au + "stinger/SFX_STING_ToiletGirl.mp3", "1" },   // 103차(민 제공 「화장실_소녀_놀람연출」): 화장실 여자아이 점프스케어(옛 공용 중 스팅어)
         { "corpse.fall", Au + "class/SFX_CLASS_CorpseFall.mp3", "1" },   // 75차(민 제공 「시체_낙하음」): 천장 시체가 바닥에 처음 부딪힐 때 — 옛 HeadThud
+        { "corpse.rasp", Au + "body/SFX_BODY_RoughBreath_03.wav", "0.6" },   // 서 있는 시체의 거친 숨(3D 루프, 작게)
         { "cctv.face", Au + "ui/SFX_TABLET_Glitch.wav", "0.9" },
         { "C1.cue", Au + "class/SFX_CLASS_ChalkStroke.wav", "1" },
         { "C4.cue", Au + "class/SFX_CLASS_C4_RedHum.wav", "0.9" },

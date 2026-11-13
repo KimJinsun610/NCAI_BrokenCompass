@@ -340,6 +340,7 @@ public sealed class CorpseDrop : MonoBehaviour
         {
             Debug.Log("[CorpseDrop] 시선을 돌려 사라짐(착지 뒤 " + (now - _landedAt).ToString("F1") + "초)");
             Vanish();
+            CorpseRunner.SpawnAtDesk();   // 시선을 돌려 사라졌을 때만 교탁 옆에 사람이 선다(플레이어마다 경험이 조금씩 다르게)
         }
     }
 

@@ -779,6 +779,25 @@ public sealed class DirectionStage : MonoBehaviour
             ApplyScreenFx(id, st);
             if (Impact() != null) Impact().Confront(id);
             // 대면 소리는 가깝고 크게(최소 거리 6m, 75%만 3D) — 4~8m 앞 몹의 소리가 PlayClipAtPoint(최소 1m)로 묻혔다(44차).
+            // 달려오는 발소리: 한 점에서 틀지 않고 소리가 플레이어 뒤에서 앞으로 달리며, 지나가는 길의 복도 형광등이 순서대로 깜빡인다.
+            if (id == ProgramCatalog.FollowSteps)
+            {
+                // 따라오는 발소리 — 플레이어 걸음에 맞춰 뒤에서 따라온다(대면 소리 한 점 없음).
+                FollowSteps follow = FollowSteps.Begin(id);
+                st.Undo.Add(follow.Cancel);
+                return;
+            }
+
+            if (id == ProgramCatalog.Footsteps)
+            {
+                FootstepLampRun run = FootstepLampRun.Begin(id + ".confront", soundAt, PlayerFeet(), Zones());
+                if (run != null)
+                {
+                    st.Undo.Add(run.Cancel);
+                    return;
+                }
+            }
+
             PlaySound(id + ".confront", soundAt, ConfrontMinDistance, ConfrontSpatial);
         };
 

@@ -43,11 +43,12 @@ namespace NightDuty.Tests
             Assert.AreEqual(0, d.Build(Request(1, Band.Band0)).Sequence.Count, "1일차는 조우 없음");
 
             NightProgram day2 = d.Build(Request(2, Band.Band0));
-            CollectionAssert.AreEquivalent(new[] { ProgramCatalog.CeilingLegs, ProgramCatalog.ScienceBlackout }, day2.Sequence);
+            CollectionAssert.AreEquivalent(new[] { ProgramCatalog.CeilingLegs, ProgramCatalog.FollowSteps, ProgramCatalog.ScienceBlackout }, day2.Sequence);
             Assert.AreEqual(ProgramCatalog.CeilingLegs, day2.Sequence[day2.Sequence.Count - 1], "2일차 클라이맥스는 맨 뒤");
             Assert.IsTrue(day2.Sequential);
             Assert.IsTrue(day2.HasEncounter(ProgramCatalog.CeilingLegs));
             Assert.IsTrue(day2.Has("S4"));
+            Assert.IsTrue(day2.Has("H5"), "2일차 덱에 따라오는 발소리 수칙(H5)");
 
             NightProgram day3 = d.Build(Request(3, Band.Band0));
             CollectionAssert.AreEquivalent(new[] { ProgramCatalog.SuitMan, ProgramCatalog.Footsteps, ProgramCatalog.CctvPerson, ProgramCatalog.ToiletBlackout }, day3.Sequence, "창밖 노란 얼굴 · 화장실 소등 3일차");

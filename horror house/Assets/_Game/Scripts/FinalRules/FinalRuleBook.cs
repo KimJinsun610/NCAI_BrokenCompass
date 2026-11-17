@@ -189,6 +189,12 @@ namespace NightDuty
             Triggered = true;
         }
 
+        /// <summary>일반 수칙 위반의 델타(기본 <see cref="Deltas.RuleViolation"/>).</summary>
+        protected internal virtual int ViolationDelta
+        {
+            get { return Deltas.RuleViolation; }
+        }
+
         /// <summary>위반을 알린다.</summary>
         protected void Violate(string reason)
         {
@@ -408,7 +414,7 @@ namespace NightDuty
 
             if (j.Violated) return;   // 일반 수칙은 첫 위반에서 한 번만.
             j.Violated = true;
-            Commit(new FinalRuleResult(j.Def.Id, FinalOutcome.Violated, j.Def.Axis, Deltas.RuleViolation, reason));
+            Commit(new FinalRuleResult(j.Def.Id, FinalOutcome.Violated, j.Def.Axis, j.ViolationDelta, reason));
         }
 
         internal void ReportThreatKept(FinalJudge j, string reason)

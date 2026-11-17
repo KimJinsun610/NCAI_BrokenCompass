@@ -256,6 +256,13 @@ namespace NightDuty
                 },
                 new EncounterScript
                 {
+                    Id = ProgramCatalog.FollowSteps, Trigger = EncounterTrigger.CorridorWalk, Space = SpaceId.Corridor, Dwell = 6f,
+                    Cue = FinalCues.Follow, Window = 45f, After = 0f,   // 연출(FollowSteps)이 소리가 사라질 때 창을 일찍 닫는다 — 45초는 아무도 걷지 않을 때의 상한
+                    Placement = CuePlacement.BehindPlayer, Distance = 3f,
+                    Note = "H5(104차, 사용자): 걸으면 0.6초 뒤 3발자국 뒤에서 느리게(0.85배) 따라오는 발소리, 멈추면 뒤로 2발자국 물러나 사라진다. 3번 뒤돌아보면 위반(청각 +15), 10초 무시하면 사라짐(뒤돌아보면 10초 초기화)."
+                },
+                new EncounterScript
+                {
                     Id = ProgramCatalog.CallingVoice, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Corridor, Dwell = 5f,
                     Cue = FinalCues.Voice, Window = 6f,
                     Placement = CuePlacement.BehindPlayer, Distance = 6f,

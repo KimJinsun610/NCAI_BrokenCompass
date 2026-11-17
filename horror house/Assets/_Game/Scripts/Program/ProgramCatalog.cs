@@ -145,6 +145,9 @@ namespace NightDuty
         public const string BoyBang = "E.BoyBang";
         public const string ToiletGirl = "E.ToiletGirl";
         public const string Footsteps = "E.Footsteps";
+
+        /// <summary>104차(사용자): 뒤에서 따라오는 발소리(2일차 청각 조우) — 수칙 H5. 뒤돌아봄 2번이면 위반, 10초 무시하거나 멈추면 소리가 사라진다.</summary>
+        public const string FollowSteps = "E.FollowSteps";
         public const string CallingVoice = "E.CallingVoice";
         public const string YellowFace = "E.YellowFace";
         public const string HallEndFigure = "E.HallEndFigure";
@@ -235,6 +238,7 @@ namespace NightDuty
             new RuleDef("H2", SpaceId.Corridor, L, true, "열린 문은 열린 채로 두십시오."),
             new RuleDef("H3", SpaceId.Corridor, A, true, "발소리가 들리면 가까운 방으로 대피하십시오.", isThreat: true, isWaitType: true, boundEncounter: Footsteps),
             new RuleDef("H4", SpaceId.Corridor, A, true, "뒤에서 부르면 돌아보지 마십시오.", isThreat: true, boundEncounter: CallingVoice),
+            new RuleDef("H5", SpaceId.Corridor, A, true, "인기척이 느껴질 때 무작정 뒤돌아 보시면 안됩니다.", boundEncounter: FollowSteps),
 
             new RuleDef("C1", SpaceId.Classroom, A, true, "교실은 판서가 끝난 뒤에 들어가십시오.", isWaitType: true),   // 57차 민: 앞에 「교실」을 밝힘
             new RuleDef("C2", SpaceId.Classroom, A, true, "교실의 _? 는 무시하십시오.", boundEncounter: BoyBang),   // 52차 민: 앉은 소년과 묶음(C2 + C3 + 소년) — 3초 바라보면 책상에 머리를 박는다
@@ -281,6 +285,7 @@ namespace NightDuty
             new EncounterDef(BoyBang, "소년 머리 박기", A, SpaceId.Classroom, "C2", 4, "boy", new[] { Need(A, Band.Band2), Need(L, Band.Band2) }, true, "C3"),
             new EncounterDef(ToiletGirl, "화장실 여자아이", A, SpaceId.Toilet, "T4", 2, "girl", new[] { Need(A, Band.Band1) }),
             new EncounterDef(Footsteps, "달려오는 발소리", A, SpaceId.Corridor, "H3", 3, "footsteps", new[] { Need(A, Band.Band1) }),   // 103차(모든 조우 목격): 청각 2 → 1 — 3일차 위협 수칙 0장이던 것
+            new EncounterDef(FollowSteps, "따라오는 발소리", A, SpaceId.Corridor, "H5", 2, "footsteps", new[] { Need(A, Band.Band0) }),
             new EncounterDef(CallingVoice, "부르는 목소리", A, SpaceId.Corridor, "H4", 2, "voice", new[] { Need(A, Band.Band3) }),
             new EncounterDef(YellowFace, "노란 얼굴", I, SpaceId.Library, "L3", 3, "duck", new[] { Need(I, Band.Band1) }),
             new EncounterDef(HallEndFigure, "복도 끝에 선 자", I, SpaceId.ScienceRoom, "S5", 3, "dummy", new[] { Need(I, Band.Band2) }),   // 70차: 인체 모형, 모형 급습 전날(ProgramDirector 날짜 사슬)

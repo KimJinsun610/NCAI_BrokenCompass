@@ -16,6 +16,9 @@
         /// <summary>근무수칙 위반. 위협 수칙이 아닌 조우의 대응 실패도 이 값이다.</summary>
         public const int RuleViolation = 12;
 
+        /// <summary>104차(사용자): 따라오는 발소리(H5) — 2번 이상 뒤돌아본 위반의 청각 증가.</summary>
+        public const int FollowViolation = 15;
+
         /// <summary>위협 수칙(H3·H4·C3·S5·T3·L3·L5) 대응 실패. 이때는 +12를 더하지 않는다.</summary>
         public const int ThreatFailure = 20;
 

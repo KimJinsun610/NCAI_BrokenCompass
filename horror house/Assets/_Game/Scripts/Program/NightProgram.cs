@@ -402,6 +402,7 @@ namespace NightDuty
             {
                 case 2:
                     list.Add(ProgramCatalog.CeilingLegs);
+                    list.Add(ProgramCatalog.FollowSteps);   // 104차(사용자): 2일차 청각 조우 — 따라오는 발소리
                     list.Add(_earlyBlackout);
                     break;
                 case 3:

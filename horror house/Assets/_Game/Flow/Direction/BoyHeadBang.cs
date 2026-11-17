@@ -152,6 +152,8 @@ public sealed class BoyHeadBang : MonoBehaviour
             _wrapPose = new Quaternion[names.Length];
             _clips.Bang.SampleAnimation(_clips.ClipRoot, 0f);
             for (int i = 0; i < _clipBones.Length; i++) if (_clipBones[i] != null) _wrapPose[i] = _clipBones[i].localRotation;
+            if (_head != null) _faceAxisLocal = _head.InverseTransformDirection(transform.forward);   // 105차: 얼굴 앞 = 몸 앞(처음 자세 기준)
+            _pauseAfter = Random.Range(3, 6);   // 세 번째~다섯 번째 박기 뒤에 한 번 멈춘다
         }
     }
 
@@ -241,8 +243,16 @@ public sealed class BoyHeadBang : MonoBehaviour
         }
 
 
+        // 105차(사용자: 「박는 박자를 불규칙하게, 한 번 멈춘 뒤 고개를 플레이어 쪽으로」): 멈춘 동안은 그 자세에서 고개만 플레이어 쪽으로 돌린다.
+        if (Time.time < _pauseUntil)
+        {
+            _clips.Bang.SampleAnimation(_clips.ClipRoot, _pauseT);
+            TurnHead(true, dt);
+            return;
+        }
+
         float prev = _clipT;
-        _clipT += dt * _speed;
+        _clipT += dt * _speed * _beatMul;
         // 머리가 닿는 순간을 지났는지(되풀이 경계 포함).
         for (int k = 0; k < thuds.Length; k++)
         {
@@ -252,6 +262,7 @@ public sealed class BoyHeadBang : MonoBehaviour
             if (!crossed) continue;
             Thud(_played);
             _played++;
+            _beatMul = Random.Range(BeatMulMin, BeatMulMax);   // 105차: 다음 박기까지의 박자를 박을 때마다 다르게
             if (_stopping)
             {
                 _stopped = true;
@@ -264,6 +275,22 @@ public sealed class BoyHeadBang : MonoBehaviour
                 }
                 return;
             }
+
+            if (!_pauseDone && _played >= _pauseAfter && !_scared)
+            {
+                // 한 번 멈춘다 — 머리가 막 들리는 자세(닿은 뒤 짧게)에서, 고개를 플레이어 쪽으로.
+                _pauseDone = true;
+                _pauseUntil = Time.time + Random.Range(PauseMin, PauseMax);
+                _pauseT = Mathf.Min(th + 0.14f, cycle - 0.02f);
+            }
+        }
+
+        if (Time.time < _pauseUntil)
+        {
+            // 방금 멈추기로 했다 — 이번 프레임부터 그 자세로.
+            _clips.Bang.SampleAnimation(_clips.ClipRoot, _pauseT);
+            TurnHead(true, dt);
+            return;
         }
 
         if (_clipT >= cycle) _clipT -= cycle;
@@ -279,6 +306,51 @@ public sealed class BoyHeadBang : MonoBehaviour
                 if (_clipBones[i] != null) _clipBones[i].localRotation = Quaternion.Slerp(_clipBones[i].localRotation, _wrapPose[i], w);
             }
         }
+
+        TurnHead(false, dt);   // 멈춤이 끝나면 고개가 천천히 원래대로
+    }
+
+    // ── 105차: 박자 불규칙 · 한 번 멈춤 · 고개 돌림 ──────────────────────
+
+    /// <summary>다음 박기까지의 박자 배수 범위 — 박을 때마다 다시 뽑는다.</summary>
+    public const float BeatMulMin = 0.72f;
+    public const float BeatMulMax = 1.4f;
+
+    /// <summary>한 번 멈추는 길이(초) 범위. 멈추면 그동안 고개만 플레이어 쪽으로 돈다.</summary>
+    public const float PauseMin = 0.9f;
+    public const float PauseMax = 1.5f;
+
+    /// <summary>고개를 돌리는 최대 각(°) — 목이 꺾여 보이지 않게.</summary>
+    public const float HeadTurnMaxDegrees = 75f;
+
+    /// <summary>고개가 돌아가고 돌아오는 빠르기(초당 비율, 4 = 0.25초).</summary>
+    private const float HeadTurnRate = 4f;
+
+    private float _beatMul = 1f;
+    private float _pauseUntil = -1f;
+    private float _pauseT;
+    private bool _pauseDone;
+    private int _pauseAfter = -1;
+    private float _turn;
+    private Vector3 _faceAxisLocal = Vector3.forward;
+
+    /// <summary>
+    /// 머리뼈를 카메라 쪽으로 돌린다(<paramref name="on"/>이면 돌리고, 아니면 원래대로 풀어 준다). 동작 자세를 먼저 표본한 뒤 그 위에 덧붙인다.
+    /// 응시 판정(<see cref="Watched"/>)과는 무관하다.
+    /// </summary>
+    private void TurnHead(bool on, float dt)
+    {
+        _turn = Mathf.MoveTowards(_turn, on ? 1f : 0f, HeadTurnRate * dt);
+        if (_turn < 0.001f || _head == null) return;
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        Vector3 cur = _head.TransformDirection(_faceAxisLocal);
+        Vector3 want = cam.transform.position - _head.position;
+        if (cur.sqrMagnitude < 1e-6f || want.sqrMagnitude < 1e-6f) return;
+        Quaternion q = Quaternion.FromToRotation(cur, want.normalized);
+        q = Quaternion.RotateTowards(Quaternion.identity, q, HeadTurnMaxDegrees);
+        _head.rotation = Quaternion.Slerp(Quaternion.identity, q, _turn) * _head.rotation;
     }
 
     /// <summary>플레이어가 소년(머리)을 바라보는지 — 시선 <see cref="WatchDegrees"/>° 안, 25m 안, 가리는 것 없음.</summary>

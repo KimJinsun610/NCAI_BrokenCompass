@@ -249,6 +249,7 @@ namespace NightDuty
                 case ProgramCatalog.ToiletGirl: return "화장실을 순찰해주십시오.";
                 case ProgramCatalog.SuitMan: return "도서관 입구 맞은편 창의 블라인드를 확인해주십시오.";
                 case ProgramCatalog.Footsteps: return "복도를 한 바퀴 순찰해주십시오.";
+                case ProgramCatalog.FollowSteps: return "복도를 한 바퀴 순찰해주십시오.";
                 case ProgramCatalog.CallingVoice: return "복도를 순찰해주십시오.";
                 case ProgramCatalog.PeopleTree: return "복도를 순찰해주십시오.";
                 case ProgramCatalog.CctvPerson: return "경비실 CCTV 화면을 확인해주십시오.";

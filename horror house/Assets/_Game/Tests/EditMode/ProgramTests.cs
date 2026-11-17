@@ -20,9 +20,9 @@ namespace NightDuty.Tests
         [Test]
         public void 공간수칙_28장과_공통_G1_G3()
         {
-            Assert.AreEqual(36, ProgramCatalog.AllRules.Count);   // 79차: T7·L6·K5·G4 추가(T3·T5·L5는 폐기 — 정의는 남김) · 80차: L7 추가 · 103차: C6 추가
+            Assert.AreEqual(37, ProgramCatalog.AllRules.Count);   // 79차: T7·L6·K5·G4 추가(T3·T5·L5는 폐기 — 정의는 남김) · 80차: L7 추가 · 103차: C6 추가 // 104차: H5 추가
             Assert.IsNull(ProgramCatalog.Rule("G2"), "G2는 2026-10-04 폐기");
-            Assert.AreEqual(4, ProgramCatalog.RulesIn(SpaceId.Corridor).Count);
+            Assert.AreEqual(5, ProgramCatalog.RulesIn(SpaceId.Corridor).Count);
             Assert.AreEqual(6, ProgramCatalog.RulesIn(SpaceId.Classroom).Count);   // 103차: C6
             Assert.AreEqual(5, ProgramCatalog.RulesIn(SpaceId.ScienceRoom).Count);
             Assert.AreEqual(6, ProgramCatalog.RulesIn(SpaceId.Toilet).Count);
@@ -80,7 +80,7 @@ namespace NightDuty.Tests
                 if (e.SecondRule.Length > 0) Assert.AreEqual(e.Space, ProgramCatalog.Rule(e.SecondRule).Space, e.Id);
             }
 
-            Assert.AreEqual(15, ProgramCatalog.AllEncounters.Count);
+            Assert.AreEqual(16, ProgramCatalog.AllEncounters.Count);
             Assert.AreEqual("boy", ProgramCatalog.Encounter(ProgramCatalog.CeilingLegs).Mob, "천장 다리는 소년 모델");
         }
 

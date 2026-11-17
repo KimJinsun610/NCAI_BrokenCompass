@@ -11,6 +11,10 @@ namespace NightDuty
         // 복도
         public const string H1Object = "rule.H1.object";
         public const string Footsteps = "cue.footsteps";
+
+        /// <summary>104차(사용자): 따라오는 발소리 — 단서(조우 창)와 뒤돌아봄 한 번마다 보내는 단서.</summary>
+        public const string Follow = "cue.follow";
+        public const string FollowTurn = "cue.follow.turn";
         public const string Voice = "cue.voice";
 
         // 교실
@@ -89,6 +93,7 @@ namespace NightDuty
                 case "H2": return new DoorKeepOpenJudge();
                 case "H3": return new TakeShelterJudge(FinalCues.Footsteps, 6f, 2f);
                 case "H4": return new DontAnswerJudge(FinalCues.Voice);
+                case "H5": return new FollowTurnJudge();
                 case "C1": return new NoEntryDuringCueJudge(FinalCues.Chalk, SpaceId.Classroom, 1f);
                 case "C2": return new DontStareJudge(FinalCues.BoySeated, FinalCues.BoyTarget, 3f);   // 52차: 앉은 소년을 3초 바라보면 위반 → 머리 박기
                 case "C3": return new StayStillJudge(FinalCues.BellStart, FinalCues.Bell);   // 103차: 소년 단서 → 종(끝)이 아니라 수업 종이 울리는 동안
@@ -1726,6 +1731,56 @@ namespace NightDuty
     {
         internal override void Observe(in JudgeSignal s, FinalWorld w)
         {
+        }
+    }
+}
+
+namespace NightDuty
+{
+    /// <summary>
+    /// H5(104차, 사용자): 뒤에서 따라오는 발소리 — 인기척(단서) 동안 뒤돌아본 횟수가 3번 이상이면 위반(청각 +<see cref="Deltas.FollowViolation"/>).
+    /// 뒤돌아봄은 연출(<c>FollowSteps</c>)이 잰 뒤 <see cref="FinalCues.FollowTurn"/> 단서로 보낸다. 0~1번이면 소리가 멈출 때 준수.
+    /// </summary>
+    public sealed class FollowTurnJudge : CueEpisodeJudge
+    {
+        /// <summary>위반이 되는 뒤돌아봄 횟수.</summary>
+        public const int TurnLimit = 3;
+
+        private int _turns;
+
+        /// <summary>만든다.</summary>
+        public FollowTurnJudge() : base(FinalCues.Follow)
+        {
+        }
+
+        /// <inheritdoc/>
+        protected internal override int ViolationDelta
+        {
+            get { return Deltas.FollowViolation; }
+        }
+
+        /// <inheritdoc/>
+        public override string Status
+        {
+            get { return Active ? "뒤돌아봄 " + _turns + "/" + TurnLimit : string.Empty; }
+        }
+
+        protected override bool OnStart(in JudgeSignal s, FinalWorld w)
+        {
+            _turns = 0;
+            return true;
+        }
+
+        protected override void OnEnd(FinalWorld w)
+        {
+            Pass("뒤돌아보지 않거나 한 번만 봄");
+        }
+
+        protected override void OnSignal(in JudgeSignal s, FinalWorld w)
+        {
+            if (!IsCue(s, SignalKind.CueStarted, FinalCues.FollowTurn)) return;
+            _turns++;
+            if (_turns >= TurnLimit) Fail("뒤돌아봄 " + _turns + "번");
         }
     }
 }

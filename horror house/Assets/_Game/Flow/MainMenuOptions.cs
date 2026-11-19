@@ -26,8 +26,11 @@ public sealed class MainMenuOptions : MonoBehaviour
     /// <summary>버튼 글자.</summary>
     public const string Label = "OPTIONS";
 
-    /// <summary>복제한 버튼 폭에 더하는 양(px) — QUIT보다 글자가 길어 누르는 자리를 넓힌다.</summary>
-    public const float ExtraWidth = 60f;
+    /// <summary>
+    /// 복제한 버튼 폭에 더하는 양(버튼 로컬 단위). 0 — 2026-11-19 김진선님: 「옵션 뒤에 표시되는 마크가 너무 커」.
+    /// 메인 화면 버튼은 scale 4라 옛 60이 화면에서 240px로 늘어 호버 마크가 START·QUIT의 두 배였다. 「OPTIONS」 글자 폭(44)은 QUIT 폭(60) 안에 든다.
+    /// </summary>
+    public const float ExtraWidth = 0f;
 
     private Button _quit;
     private Button _options;
@@ -124,9 +127,10 @@ public sealed class MainMenuOptions : MonoBehaviour
         _label = clone.GetComponentInChildren<TMP_Text>(true);
         if (_label != null)
         {
-            _label.text = Label;
             _label.textWrappingMode = TextWrappingModes.NoWrap;
+            RefreshLabel();
             if (_quitLabel != null) _label.alpha = _quitLabel.alpha;
+            GameLanguage.Changed += RefreshLabel;
         }
 
         _options = clone.GetComponent<Button>();
@@ -219,8 +223,18 @@ public sealed class MainMenuOptions : MonoBehaviour
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);
     }
 
+    /// <summary>OPTIONS 글자를 지금 언어로(한국어면 「설정」).</summary>
+    private void RefreshLabel()
+    {
+        if (_label == null) return;
+        string text = GameLanguage.Localize(Label);
+        _label.text = text;
+        GameLanguage.FitFont(_label, text);
+    }
+
     private void OnDestroy()
     {
+        GameLanguage.Changed -= RefreshLabel;
         if (_screen != null) Destroy(_screen);
     }
 }

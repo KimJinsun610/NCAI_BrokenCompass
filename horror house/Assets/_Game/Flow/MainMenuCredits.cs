@@ -109,6 +109,24 @@ public sealed class MainMenuCredits : MonoBehaviour
         _group = _button.gameObject.GetComponent<CanvasGroup>();
         _released = _quit.interactable;
         _button.interactable = _released;
+        RefreshLabel();
+        GameLanguage.Changed += RefreshLabel;
+    }
+
+    /// <summary>버튼 글자를 지금 언어로(한국어면 「도움주신 분들...」).</summary>
+    private void RefreshLabel()
+    {
+        if (_button == null) return;
+        TMP_Text label = _button.GetComponentInChildren<TMP_Text>(true);
+        if (label == null) return;
+        string text = GameLanguage.Localize(ButtonLabel);
+        label.text = text;
+        GameLanguage.FitFont(label, text);
+    }
+
+    private void OnDestroy()
+    {
+        GameLanguage.Changed -= RefreshLabel;
     }
 
     private Button FindButton(string buttonName)
@@ -182,6 +200,7 @@ public sealed class MainMenuCredits : MonoBehaviour
 
         // 제목.
         TMP_Text title = MakeText(root, "Title", Title, 64f, TextAlignmentOptions.Center);
+        GameLanguage.FitFont(title, Title);   // 한글 글꼴
         RectTransform titleRt = title.rectTransform;
         titleRt.anchorMin = titleRt.anchorMax = titleRt.pivot = new Vector2(0.5f, 1f);
         titleRt.anchoredPosition = new Vector2(0f, -150f);
@@ -317,7 +336,7 @@ public sealed class MainMenuCredits : MonoBehaviour
     }
 
     /// <summary>QUIT 글자의 글꼴을 쓰되 한글이 없으면 한글이 있는 불러온 글꼴을 찾는다.</summary>
-    private static TMP_FontAsset PickFont(TMP_Text quitLabel)
+    internal static TMP_FontAsset PickFont(TMP_Text quitLabel)
     {
         TMP_FontAsset font = quitLabel != null ? quitLabel.font : null;
         if (font != null && font.HasCharacter('제', true, true)) return font;

@@ -29,6 +29,9 @@ public sealed class PauseMenuExtras : MonoBehaviour
     /// <summary>버튼 줄 간격(캔버스 1080 기준 px) — 버튼 높이 45 + 틈 20.</summary>
     public const float RowStep = 65f;
 
+    /// <summary>설정 화면 줄들(LIGHT~LANGUAGE)을 제목 쪽으로 올리는 만큼. BACK은 제자리라 그 위 여유가 커진다.</summary>
+    public const float OptionsLift = 45f;
+
     /// <summary>설정 화면 슬라이더 묶음을 오른쪽으로 비키는 양(px) — 버튼 글자가 길어도 닿지 않게.</summary>
     public const float GroupShiftX = 36f;
 
@@ -38,6 +41,13 @@ public sealed class PauseMenuExtras : MonoBehaviour
     /// <summary>설정 화면 제목.</summary>
     public const string OptionsTitle = "OPTIONS";
 
+    /// <summary>언어 칸 첫 번째의 가로 위치(LANGUAGE 버튼에서 오른쪽으로, 캔버스 px — 슬라이더 묶음이 시작하는 자리쯤).</summary>
+    public const float LanguageCellX = 330f;
+
+    /// <summary>언어 칸 사이 간격(px).</summary>
+    public const float LanguageCellStep = 250f;
+
+    private readonly List<LanguageCell> _languageCells = new List<LanguageCell>();
     private GameObject _brightness;
     private readonly List<GameObject> _groups = new List<GameObject>();
     private readonly List<GameObject> _mainButtons = new List<GameObject>();
@@ -142,7 +152,7 @@ public sealed class PauseMenuExtras : MonoBehaviour
         CloseAll();
         for (int i = 0; i < _mainButtons.Count; i++) if (_mainButtons[i] != null) _mainButtons[i].SetActive(!options);
         for (int i = 0; i < _optionButtons.Count; i++) if (_optionButtons[i] != null) _optionButtons[i].SetActive(options);
-        if (_title != null) _title.text = options ? OptionsTitle : MainTitle;
+        SetTitle();
         if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(null);   // 누른 버튼이 강조된 채 남지 않게
     }
 
@@ -197,21 +207,67 @@ public sealed class PauseMenuExtras : MonoBehaviour
         extras._mainButtons.Add(quit.gameObject);
 
         // 설정 화면: LIGHT · MOUSE · VOLUME · BACK
-        SetLocalY(light, top);
-        SetLocalY(bright, top + groupDy);
+        // 제목(「설정」)과 첫 줄 사이가 너무 넓어 줄들을 OptionsLift만큼 위로 붙이고, 그만큼 BACK 위쪽에 여유가 생긴다.
+        float optTop = top + OptionsLift;
+        SetLocalY(light, optTop);
+        SetLocalY(bright, optTop + groupDy);
         bright.anchoredPosition += new Vector2(GroupShiftX, 0f);   // 「MOUSE」·「VOLUME」 글자가 슬라이더에 닿지 않게(복제 묶음도 따라감)
         extras._optionButtons.Add(light.gameObject);
-        extras._optionButtons.Add(extras.AddRow(root, light, bright, "MOUSE", "Mouse", OptionSlider.Kind.Mouse, top - RowStep, groupDy, sibling + 2));
-        extras._optionButtons.Add(extras.AddRow(root, light, bright, "VOLUME", "Volume", OptionSlider.Kind.Volume, top - 2f * RowStep, groupDy, sibling + 3));
-        RectTransform back = extras.CloneButton(root, light, "BACK", "Back", top - 3f * RowStep, sibling + 4);
+        extras._optionButtons.Add(extras.AddRow(root, light, bright, "MOUSE", "Mouse", OptionSlider.Kind.Mouse, optTop - RowStep, groupDy, sibling + 2));
+        extras._optionButtons.Add(extras.AddRow(root, light, bright, "VOLUME", "Volume", OptionSlider.Kind.Volume, optTop - 2f * RowStep, groupDy, sibling + 3));
+        extras._optionButtons.Add(extras.AddLanguageRow(root, light, optTop - 3f * RowStep, sibling + 4));
+        RectTransform back = extras.CloneButton(root, light, "BACK", "Back", top - 4f * RowStep, sibling + 6);
         Button backButton = back.GetComponent<Button>();
         if (backButton != null) backButton.onClick.AddListener(extras.Back);
         extras._optionButtons.Add(back.gameObject);
 
         Button lightButton = light.GetComponent<Button>();
         if (lightButton != null) lightButton.onClick.AddListener(extras.CloseOwn);   // LIGHT를 펼치면 우리 묶음은 접는다(밝기 여닫기는 김진선님 OnClick)
+        // 버튼 글자를 지금 언어로(한국어면 입장·설정·종료·밝기·감도·소리·언어·복귀하기 …) — 글자가 영어인 지금 상태를 원문으로 기억해 둔다.
+        foreach (GameObject b in extras._mainButtons) extras.Track(b);
+        foreach (GameObject b in extras._optionButtons) extras.Track(b);
+        GameLanguage.Changed += extras.RefreshLabels;
+        extras.RefreshLabels();
         extras.ShowMain();
         return extras;
+    }
+
+    private struct Tracked
+    {
+        public TMP_Text Label;
+        public string English;
+    }
+
+    private readonly List<Tracked> _tracked = new List<Tracked>();
+
+    private void Track(GameObject button)
+    {
+        if (button == null) return;
+        TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+        if (text != null) _tracked.Add(new Tracked { Label = text, English = text.text });
+    }
+
+    /// <summary>모든 버튼·제목 글자를 지금 언어로 다시 쓴다.</summary>
+    private void RefreshLabels()
+    {
+        for (int i = 0; i < _tracked.Count; i++)
+        {
+            Tracked t = _tracked[i];
+            if (t.Label == null) continue;
+            string text = GameLanguage.Localize(t.English);
+            t.Label.text = text;
+            GameLanguage.FitFont(t.Label, text);
+        }
+
+        SetTitle();
+    }
+
+    private void SetTitle()
+    {
+        if (_title == null) return;
+        string text = GameLanguage.Localize(_onOptions ? OptionsTitle : MainTitle);
+        _title.text = text;
+        GameLanguage.FitFont(_title, text);
     }
 
     /// <summary>LIGHT 버튼 모양의 버튼 하나(김진선님 OnClick은 비움).</summary>
@@ -259,6 +315,77 @@ public sealed class PauseMenuExtras : MonoBehaviour
         Button button = brt.GetComponent<Button>();
         if (button != null) button.onClick.AddListener(() => Toggle(group));
         return brt.gameObject;
+    }
+
+    /// <summary>
+    /// LANGUAGE 줄(2026-11-19) — 버튼을 누르면 그 줄 오른쪽에 「한국어」·「English」 두 칸이 펼쳐진다(MOUSE·VOLUME 슬라이더 묶음과 같은 자리·같은 여닫기).
+    /// 고른 칸은 밑줄·흰색, 나머지는 흐리게. 값은 <see cref="GameLanguage"/>(PlayerPrefs)라 메인 화면 「언어」 버튼과 같다.
+    /// </summary>
+    private GameObject AddLanguageRow(Transform root, RectTransform lightButton, float y, int sibling)
+    {
+        RectTransform brt = CloneButton(root, lightButton, "LANGUAGE", "Language", y, sibling);
+        TMP_Text rowLabel = brt.GetComponentInChildren<TMP_Text>(true);
+        if (rowLabel != null) rowLabel.textWrappingMode = TextWrappingModes.NoWrap;
+
+        GameObject group = new GameObject("Group_Language", typeof(RectTransform));
+        group.transform.SetParent(root, false);
+        RectTransform grt = (RectTransform)group.transform;
+        grt.anchorMin = Vector2.zero;
+        grt.anchorMax = Vector2.one;
+        grt.offsetMin = Vector2.zero;
+        grt.offsetMax = Vector2.zero;
+        group.transform.SetSiblingIndex(Mathf.Min(sibling + 1, root.childCount - 1));
+        group.SetActive(false);
+
+        GameLanguage.Lang[] langs = { GameLanguage.Lang.Korean, GameLanguage.Lang.English };
+        for (int i = 0; i < langs.Length; i++)
+        {
+            GameLanguage.Lang lang = langs[i];
+            RectTransform cell = CloneButton(root, lightButton, GameLanguage.NativeName(lang), "Lang" + lang, y, sibling + 1);
+            cell.SetParent(grt, false);
+            cell.anchoredPosition += new Vector2(LanguageCellX + i * LanguageCellStep, 0f);
+            TMP_Text text = cell.GetComponentInChildren<TMP_Text>(true);
+            if (text != null) text.textWrappingMode = TextWrappingModes.NoWrap;
+            Button button = cell.GetComponent<Button>();
+            if (button != null) button.onClick.AddListener(() => GameLanguage.Set(lang));
+            _languageCells.Add(new LanguageCell { Lang = lang, Label = text });
+        }
+
+        GameLanguage.Changed -= RefreshLanguageCells;
+        GameLanguage.Changed += RefreshLanguageCells;
+        RefreshLanguageCells();
+        _groups.Add(group);
+
+        Button rowButton = brt.GetComponent<Button>();
+        if (rowButton != null) rowButton.onClick.AddListener(() => Toggle(group));
+        return brt.gameObject;
+    }
+
+    /// <summary>고른 언어 칸은 밑줄·흰색, 아닌 칸은 흐리게.</summary>
+    private void RefreshLanguageCells()
+    {
+        for (int i = 0; i < _languageCells.Count; i++)
+        {
+            LanguageCell cell = _languageCells[i];
+            if (cell.Label == null) continue;
+            bool on = cell.Lang == GameLanguage.Current;
+            string name = GameLanguage.NativeName(cell.Lang);
+            cell.Label.text = on ? "<u>" + name + "</u>" : name;
+            cell.Label.alpha = on ? 1f : 0.55f;
+            GameLanguage.FitFont(cell.Label, name);
+        }
+    }
+
+    private void OnDestroy()
+    {
+        GameLanguage.Changed -= RefreshLanguageCells;
+        GameLanguage.Changed -= RefreshLabels;
+    }
+
+    private struct LanguageCell
+    {
+        public GameLanguage.Lang Lang;
+        public TMP_Text Label;
     }
 
     /// <summary>캔버스 안 높이(localPosition.y)를 맞춘다(기준점·축은 그대로).</summary>

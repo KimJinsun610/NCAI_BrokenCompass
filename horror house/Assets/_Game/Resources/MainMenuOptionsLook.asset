@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: MainMenuOptionsLook
   m_EditorClassIdentifier: Assembly-CSharp::MainMenuOptionsLook
   pauseScreen: {fileID: 1992461081768549865, guid: b3262ad7989fa754b992f2244ac65e15, type: 3}
+  koreanFont: {fileID: 11400000, guid: 4a78f016907f53f4f9d74cd782fee09c, type: 2}

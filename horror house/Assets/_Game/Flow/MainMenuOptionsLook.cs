@@ -11,6 +11,9 @@ public sealed class MainMenuOptionsLook : ScriptableObject
     [Tooltip("일시정지 화면 프리팹(지금: 0. Main/01 Scene/HUD_Pause_Design). 고치지 않고 한 벌 세워 설정 화면만 쓴다.")]
     public GameObject pauseScreen;
 
+    [Tooltip("한국어 글자에 쓸 글꼴(지금: Freesentation-5Medium SDF). 메뉴 기본 글꼴(neurimbo)은 영문 장식체라 한글이 눌려 보인다 — 비우면 기본 글꼴 그대로. GameLanguage가 읽는다.")]
+    public TMPro.TMP_FontAsset koreanFont;
+
     /// <summary>Resources에서 읽는다. 없으면 null.</summary>
     public static MainMenuOptionsLook Load()
     {

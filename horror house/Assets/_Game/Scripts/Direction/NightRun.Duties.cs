@@ -236,10 +236,10 @@ namespace NightDuty
         private static readonly NightTallies s_tallies = new NightTallies();
 
         /// <summary>103차 후속(사용자: 「근무 평가 반영 메시지는 매번 뜨면 정신없다 — 중간에 한번씩, 한 2회 정도」): 회차에 「근무 평가에 반영되었습니다.」 줄을 보이는 횟수.</summary>
-        public const int TrustLinesPerRun = 2;
+        public static int TrustLinesPerRun => global::NightDuty.DesignData.SettingInt(390187);   // DT 390187 「근무 평가에 반영되었습니다.」 줄
 
         /// <summary>103차 후속: 둘째 줄은 이 날부터(첫 줄은 회차의 첫 신뢰 보상 — 그 뒤로는 한동안 조용히).</summary>
-        public const int TrustLineSecondDay = 3;
+        public static int TrustLineSecondDay => global::NightDuty.DesignData.SettingInt(390188);   // DT 390188 둘째 줄 시작 일차
 
         private static int _trustLinesShown;
 
@@ -252,7 +252,7 @@ namespace NightDuty
         }
 
         /// <summary>103차 후속(사용자 7번: 「너무 미루면 독촉 문자와 함께 다음 지시가 진행되도록」): 지시받은 점검을 이만큼(실제 초) 보고하지 않으면 독촉한다.</summary>
-        public const float InspectionStallSeconds = 90f;
+        public static float InspectionStallSeconds => global::NightDuty.DesignData.Setting(390184);   // DT 390184 미룬 점검 판정
 
         /// <summary>103차 후속: 독촉 문자를 다시 보내는 간격(실제 초).</summary>
         public const float StallNagRepeatSeconds = 120f;

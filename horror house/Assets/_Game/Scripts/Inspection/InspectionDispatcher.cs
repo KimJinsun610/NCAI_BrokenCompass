@@ -122,49 +122,49 @@ namespace NightDuty
         public const string Key = "inspection.orders";
 
         /// <summary>밤 시작 뒤 첫 지시까지(실제 초).</summary>
-        public const float OpeningDelay = 8f;
+        public static float OpeningDelay => global::NightDuty.DesignData.Setting(390198);   // DT 390198 밤 시작 뒤 첫 지시
 
         /// <summary>지시 사이 최소 간격(초).</summary>
-        public const float MinGap = 14f;   // 57차: 20 → 14
+        public static float MinGap => global::NightDuty.DesignData.Setting(390201);   // DT 390201 지시 간 최소 간격 — 57차: 20 → 14
 
         /// <summary>조우가 끝난 뒤 지시를 쉬는 초.</summary>
-        public const float AfterBusy = 10f;
+        public static float AfterBusy => global::NightDuty.DesignData.Setting(390207);   // DT 390207 조우 뒤 쉼
 
         /// <summary>역설 문자 뒤 지시를 쉬는 초.</summary>
-        public const float AfterMessage = 12f;
+        public static float AfterMessage => global::NightDuty.DesignData.Setting(390208);   // DT 390208 역설 문자 뒤 쉼
 
         /// <summary>긴장이 뜨거울 때 최대로 미루는 초.</summary>
-        public const float HotHoldMax = 20f;
+        public static float HotHoldMax => global::NightDuty.DesignData.Setting(390209);   // DT 390209 긴장 뜨거울 때 최대 미룸
 
         /// <summary>호출·따라잡기도 직전 지시 뒤 이만큼은 띄운다(알람 두 번이 겹치지 않게).</summary>
-        public const float ForcedGap = 8f;
+        public static float ForcedGap => global::NightDuty.DesignData.Setting(390210);   // DT 390210 호출 시 직전 지시 뒤
 
         /// <summary>103차 QA 4회: 따라잡기 둘째 통부터 — 밀린 점검이 남아 있어도 이만큼(실제 초) 지나면 다음 통을 낸다.</summary>
-        public const float CatchUpChainGap = 30f;
+        public static float CatchUpChainGap => global::NightDuty.DesignData.Setting(390212);   // DT 390212 따라잡기 둘째 통부터
 
         /// <summary>호출·따라잡기가 조우를 기다리는 최대 초.</summary>
-        public const float ForcedBusyWaitMax = 30f;
+        public static float ForcedBusyWaitMax => global::NightDuty.DesignData.Setting(390211);   // DT 390211 호출 시 조우 최대 대기
 
         /// <summary>경비실에 이만큼 머물고 밀린 지시가 없으면 다음 지시.</summary>
-        public const float GuardRoomIdle = 10f;
+        public static float GuardRoomIdle => global::NightDuty.DesignData.Setting(390206);   // DT 390206 경비실 대기 뒤 다음 지시
 
         /// <summary>잔잔할 때 연속 지시 — 지난 지시 뒤 최소 초.</summary>
-        public const float LullGap = 27f;   // 57차: 60 → 40 · 59차(밤 10분): 40 → 27
+        public static float LullGap => global::NightDuty.DesignData.Setting(390204);   // DT 390204 잔잔할 때 연속 지시 간격 — 57차: 60 → 40 · 59차(밤 10분): 40 → 27
 
         /// <summary>잔잔할 때 연속 지시 — 다음 공간까지 최대 거리(m).</summary>
-        public const float LullRange = 20f;
+        public static float LullRange => global::NightDuty.DesignData.Setting(390205);   // DT 390205 잔잔할 때 연속 지시 거리
 
         /// <summary>먼저 열릴 항목을 모두 낼 시각(01:40) — 시간표의 끝. 51차(민: 「초반 3개는 괜찮은데 이후 2개가 너무 늦다」): 03:00 → 01:40.</summary>
-        public const int EarlyDeadline = 100;   // 67차(밤 05:00): 100 → 125(×1.25, 02:05) · 88차(밤 04:00): 125 → 100
+        public static int EarlyDeadline => global::NightDuty.DesignData.SettingInt(390200);   // DT 390200 먼저 열릴 항목을 01:40까지 고르게 — 67차(밤 05:00): 100 → 125(×1.25, 02:05) · 88차(밤 04:00): 125 → 100
 
         /// <summary>남은 지시가 있으면 지난 지시 뒤 이 시간(실제 초, 게임 30분) 안에 다음 지시를 낸다(밀린 지시 1 이하일 때).</summary>
-        public const float MaxQuiet = 47f;   // 57차: 112 → 70 · 59차(밤 10분): 70 → 47(게임 약 19분)
+        public static float MaxQuiet => global::NightDuty.DesignData.Setting(390203);   // DT 390203 조용할 때 최대 공백 — 57차: 112 → 70 · 59차(밤 10분): 70 → 47(게임 약 19분)
 
         /// <summary>
         /// 받은 지시를 다 보고하면 이만큼 뒤 다음 지시(53차 민: 「점검을 기다리는 과정이 루즈하다 — 한번 점검하면 몇 초 뒤에 바로 다음」).
         /// 시간표·지시 간격·긴장 미룸을 보지 않는다(호출 1 몫·늦은 공간·이완 구간·조우 중·문자 직후는 그대로 지킨다).
         /// </summary>
-        public const float NextAfterReport = 4f;
+        public static float NextAfterReport => global::NightDuty.DesignData.Setting(390202);   // DT 390202 보고 뒤 다음 지시
 
         /// <summary>
         /// 2026-11-06(김진선님: 「초반 1·2일차에 메시지가 오는 간격이 너무 짧다」 — C안): 일차별 보고 뒤 다음 지시까지(실제 초).
@@ -188,19 +188,19 @@ namespace NightDuty
         }
 
         /// <summary>여유를 재는 끝(03:45) — 04:00 전에 다 끝낼 수 있어야 한다.</summary>
-        public const int WorkDeadline = 225;   // 67차(밤 05:00): 225 → 280(04:40) · 88차(밤 04:00): 280 → 225(03:45)
+        public static int WorkDeadline => global::NightDuty.DesignData.SettingInt(390213);   // DT 390213 따라잡기 마감(03:45) — 67차(밤 05:00): 225 → 280(04:40) · 88차(밤 04:00): 280 → 225(03:45)
 
         /// <summary>따라잡기 여유 기준(초).</summary>
-        public const float SlackMin = 60f;
+        public static float SlackMin => global::NightDuty.DesignData.Setting(390214);   // DT 390214 여유가 이보다 작으면 따라잡기
 
         /// <summary>예상 걷기 속도(m/s, 멈춤·둘러봄 포함).</summary>
         public const float WalkSpeed = 1.2f;
 
         /// <summary>항목당 예상 작업(초) — 찾기·1초 응시·길게 누르기·판단.</summary>
-        public const float SecondsPerItem = 27f;
+        public static float SecondsPerItem => global::NightDuty.DesignData.Setting(390216);   // DT 390216 남은 일 예상 항목당
 
         /// <summary>조우가 곧 열린다고 보는 게임 분.</summary>
-        public const float ArmedLeadMinutes = 8f;   // 67차: 8 → 10(게임 분 ×1.25) · 88차: 10 → 8
+        public static float ArmedLeadMinutes => global::NightDuty.DesignData.Setting(390217);   // DT 390217 조우가 곧 열린다고 보는 시간 — 67차: 8 → 10(게임 분 ×1.25) · 88차: 10 → 8
 
         /// <summary>복도 중심선 z.</summary>
         public const float CorridorZ = 44f;
@@ -366,13 +366,14 @@ namespace NightDuty
         }
 
         /// <summary>목격 뒤 지시까지(초) — 51차 T4: 여자아이가 칸에 들어가는 것을 보고 3초 뒤 그 칸 변기.</summary>
-        public const float WitnessDelay = 3f;
+        public static float WitnessDelay => global::NightDuty.DesignData.Setting(390218);   // DT 390218 T4 목격 뒤 변기 지시
 
         /// <summary>
         /// 묶어 둔 항목(<see cref="InspectionBoard.Hold"/>)을 <paramref name="delay"/>초 뒤 단독 지시로 낸다(51차 T4 목격).
         /// 조우·긴장·간격을 기다리지 않는다(직전 지시 뒤 <see cref="ForcedGap"/>만). 이미 냈거나 묶여 있지 않으면 false.
         /// </summary>
-        public bool QueueWitness(string itemId, float delay = WitnessDelay)
+        public bool QueueWitness(string itemId) => QueueWitness(itemId, WitnessDelay);   // 기본 지연은 DT 값이라 기본 인자로 못 씀
+        public bool QueueWitness(string itemId, float delay)
         {
             if (itemId == null || !_board.IsHeld(itemId)) return false;
             for (int i = 0; i < _witness.Count; i++)
@@ -556,7 +557,7 @@ namespace NightDuty
         /// 103차(사용자: 「과학실에 점검 두 개를 하라는 지시가 하나의 타임스탬프에 와 버려 — 다른 장소도 그렇다」): 지시 한 통에 담는 항목 수.
         /// 옛 50차는 공간 단위 묶음(그 공간의 남은 항목 전부)이었다. 남은 항목은 다음 지시로 — 같은 공간을 먼저 끝낸다(<see cref="SpaceUnfinished"/>).
         /// </summary>
-        public const int OrderItemsMax = 1;
+        public static int OrderItemsMax => global::NightDuty.DesignData.SettingInt(390199);   // DT 390199 지시 한 통 항목 수
 
         /// <summary>103차: 지시한 공간에 남은 항목을 이어서 낼 때까지 근무 지시를 미루는 최대 시간(실제 초).</summary>
         public const float ContinueWindowSeconds = 90f;

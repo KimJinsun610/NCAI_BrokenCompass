@@ -56,10 +56,10 @@ namespace NightDuty
     public sealed class ParadoxRun
     {
         /// <summary>「눈으로만」 — 대상을 시야에 두는 시간(초).</summary>
-        public const float EyesOnlySeconds = 1f;
+        public static float EyesOnlySeconds => global::NightDuty.DesignData.Setting(390085);   // DT 390085 안전한 읽기 — 눈으로만
 
         /// <summary>「CCTV로」 — 채널을 보는 시간(초).</summary>
-        public const float CctvSeconds = 2f;
+        public static float CctvSeconds => global::NightDuty.DesignData.Setting(390086);   // DT 390086 안전한 읽기 — CCTV로
 
         /// <summary>점검표에 붙는 말 — 이상 있음.</summary>
         public const string RevealAnomaly = "확인 필요";
@@ -189,7 +189,7 @@ namespace NightDuty
         }
 
         /// <summary>K2 「눈으로만」 — 빈 방 채널을 잠깐(0.5초) 본 뒤 다른 채널로 넘긴다(3초 넘게 보면 K2 위반이라 거기서 끝난다).</summary>
-        public const float EmptyRoomGlanceSeconds = 0.5f;
+        public static float EmptyRoomGlanceSeconds => global::NightDuty.DesignData.Setting(390087);   // DT 390087 안전한 읽기 — K2 빈 방 채널 특례
 
         private ParadoxStep ObserveEmptyRoom(in JudgeSignal s)
         {

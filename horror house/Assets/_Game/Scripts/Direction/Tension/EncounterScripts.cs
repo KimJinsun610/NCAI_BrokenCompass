@@ -195,7 +195,7 @@ namespace NightDuty
         public const string CorpseStandIn = "mob.corpse";
 
         /// <summary>103차: 모형 급습이 「과학실 쪽 복도에 들어섰다」로 치는 거리(m, 복도 끝 급습 자리에서 수평).</summary>
-        public const float RushNearMeters = 15f;
+        public static float RushNearMeters => global::NightDuty.DesignData.Setting(390178);   // DT 390178 모형 급습 근접 거리
 
         private const string RushNearMetersText = "15";
 
@@ -396,13 +396,13 @@ namespace NightDuty
     public static class RuleTriggers
     {
         /// <summary>CCTV 채널 수(0~4). 연출 쪽 채널 ID는 <c>cctv.ch&lt;n&gt;</c>.</summary>
-        public const int CctvChannels = 5;
+        public static int CctvChannels => global::NightDuty.DesignData.SettingInt(390177);   // DT 390177 CCTV 채널 수
 
         /// <summary>103차 C3: 수업 종이 울리는(= 멈춰 있어야 하는) 시간(초).</summary>
-        public const float ClassBellSeconds = 8f;
+        public static float ClassBellSeconds => global::NightDuty.DesignData.Setting(390175);   // DT 390175 C3 수업 종 길이
 
         /// <summary>79차 K5: 전화가 울리는 시간(초) — 벨 8번 × 3초.</summary>
-        public const float PhoneRingSeconds = 24f;
+        public static float PhoneRingSeconds => global::NightDuty.DesignData.Setting(390176);   // DT 390176 K5 전화 울림(벨 8번 × 3초)
 
         private static readonly Dictionary<string, RuleTriggerScript> s_byRule = Build();
 

@@ -164,28 +164,28 @@ namespace NightDuty
         }
 
         /// <summary>이상이 있는 공간이면 모호 역설을 보낼 확률(%). 103차(민: 「변조/역설 수칙들이 잘 나오도록」): 75 → 90.</summary>
-        public const int SendPercentAnomaly = 90;
+        public static int SendPercentAnomaly => global::NightDuty.DesignData.SettingInt(390073);   // DT 390073 그 공간에 오늘 이상 있음 → 역설 발송 확률
 
         /// <summary>이상이 없는 공간이면 모호 역설을 보낼 확률(%). 103차: 25 → 50(「문자 = 약한 단서」 기울기는 남긴다).</summary>
-        public const int SendPercentClear = 50;
+        public static int SendPercentClear => global::NightDuty.DesignData.SettingInt(390074);   // DT 390074 이상 없음 → 발송 확률
 
         /// <summary>103차: 미세 변조가 열리는 신뢰 구간(옛 3).</summary>
-        public const int TamperMinBand = 2;
+        public static int TamperMinBand => global::NightDuty.DesignData.SettingInt(390075);   // DT 390075 미세 변조 개방 구간
 
         /// <summary>103차: 붕괴형 변조가 열리는 신뢰 구간(옛 4). 검은 줄은 4 그대로.</summary>
-        public const int CollapseMinBand = 3;
+        public static int CollapseMinBand => global::NightDuty.DesignData.SettingInt(390076);   // DT 390076 붕괴형 변조 구간
 
         /// <summary>
         /// 103차(민: 「역설/변조가 적절히 나오고」): 이 날부터는 신뢰 구간 1에서도 미세 변조를 건다 — 신뢰가 낮은 플레이어도 회차 후반에 변조를 본다
         /// (옛: 미숙 플레이어 약 40%가 회차 내내 변조를 못 봄).
         /// </summary>
-        public const int TamperLateDay = 3;   // 103차: 4 → 3 — 2일차 첫 역설 → 3일차 첫 변조 → 5일차 붕괴형·회피 불가로 날마다 새것이 하나씩
+        public static int TamperLateDay => global::NightDuty.DesignData.SettingInt(390077);   // DT 390077 이 날부터 구간 1도 미세 변조 — 103차: 4 → 3 — 2일차 첫 역설 → 3일차 첫 변조 → 5일차 붕괴형·회피 불가로 날마다 새것이 하나씩
 
         /// <summary>
         /// 103차 후속(사용자: 「변조는 수칙이 처음 등장해도 신뢰가 높다면 변조돼서 처음 등장할 수 있는 게 원래 의도」): 이 신뢰 구간부터는 처음 보는 수칙도 변조 후보.
         /// 그 아래(미세 변조)는 원본을 본 적 있는 수칙만 — 원본을 모르면 「?.」 미세 변조는 알아챌 수 없다. 붕괴형 구간(<see cref="CollapseMinBand"/>)과 같게 둔다.
         /// </summary>
-        public const int UnseenTamperMinBand = CollapseMinBand;
+        public static int UnseenTamperMinBand => CollapseMinBand;
 
         /// <summary>그날 그 신뢰 구간에서 변조를 거는지.</summary>
         public static bool TamperOpen(int day, int band)

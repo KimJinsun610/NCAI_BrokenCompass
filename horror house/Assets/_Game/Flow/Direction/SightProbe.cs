@@ -22,7 +22,7 @@ public sealed class SightProbe : MonoBehaviour
     public const float ScreenMargin = 0.12f;
 
     /// <summary>이보다 멀면 세지 않는다(m).</summary>
-    public const float MaxDistance = 30f;
+    public static float MaxDistance => global::NightDuty.DesignData.Setting(390242);   // DT 390242 봤다 판정 최대 거리
 
     /// <summary>
     /// 대역 앞 이 거리(m) 안의 창(이름에 Window·Glass)은 가림으로 치지 않는다.

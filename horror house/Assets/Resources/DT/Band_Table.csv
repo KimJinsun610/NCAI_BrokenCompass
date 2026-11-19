@@ -1,0 +1,7 @@
+﻿ID,Name,Sense_Lower,Sense_Upper,Trust_Lower,Trust_Upper
+uint,string,uint,uint,uint,uint
+330000,평상,0,24,0,9
+330001,미약한 위화감,25,49,10,17
+330002,명백한 이상,50,74,18,25
+330003,고조,75,89,26,41
+330004,붙잡힘 직전,90,99,42,100

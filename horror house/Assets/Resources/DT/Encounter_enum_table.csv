@@ -1,0 +1,14 @@
+﻿ID,Category,Name,Desc
+uint,string,string,string
+540101,조우 방아쇠,공간 진입,
+540102,조우 방아쇠,공간에 Trigger_Value초 머묾,
+540103,조우 방아쇠,복도를 Trigger_Value m 걸음,
+540104,조우 방아쇠,앞 점검 보고,
+540105,조우 방아쇠,앞 점검 지시 순간,
+540106,조우 방아쇠,앞 근무 지시 물품을 집음,
+540107,조우 방아쇠,앞 점검 지시 뒤 Trigger_Value초,
+540108,조우 방아쇠,CCTV를 Trigger_Value초 봄,
+540109,조우 방아쇠,밤새 대기,Trigger_Value = 근접 m
+540201,조우 편성 칸,본 묶음,구 Order_Group 1. 같은 날 여러 개면 섞음(Is_Shuffled)
+540202,조우 편성 칸,클라이맥스,구 Order_Group 2
+540203,조우 편성 칸,밤새 대기,구 Day.Standing_Encounter_ID

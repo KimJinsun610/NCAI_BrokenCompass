@@ -157,7 +157,7 @@ namespace NightDuty
         public const int MaxSpaces = 4;
 
         private static readonly int[] ItemsByDay = { 5, 5, 5, 6, 6 };   // 2026-10-30: 1일차 4 → 5(경비실 화분 K-3을 맨 앞에).   // 67차(민: 「물품 점검이 비중이 더 높은데, 지시 사항과 비중이 균일했으면」): 5·6·6·7·7 → 4·5·5·6·6(근무 지시 3·3·4·4·4와 번갈아).   // 57차(민: 「점검도 빨리빨리 안 나와서 지겨웠다 — 맵이 좁으니 스피디하게」): 5·5·6·6·7 → 5·6·7·7·8. 66차(민: 「점검은 안 겹칠수록 좋아, 필요하면 하루 점검을 줄여도 돼」): 항목 29개와 맞춰 5·6·6·7·7
-        private static readonly int[] AnomaliesByDay = { 2, 2, 3, 3, 3 };
+        private static int[] AnomaliesByDay => DesignData.DayInts("Anomaly_Count", r => r.Anomaly_Count);   // DT Day_Table.Anomaly_Count
 
         /// <summary>그날 점검 항목 수.</summary>
         public static int Items(int day)

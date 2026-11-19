@@ -167,7 +167,7 @@ namespace NightDuty
         }
 
         /// <summary>가짜 놀람을 미룰 거리(m) — 지시받은 점검 대상에서 이만큼 안이면(57차).</summary>
-        public const float FakeQuietRadius = 2.5f;
+        public static float FakeQuietRadius => global::NightDuty.DesignData.Setting(390173);   // DT 390173 지시받은 점검 대상 근처면 가짜 놀람 미룸
 
         private static readonly System.Collections.Generic.HashSet<string> _voidRules = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
 

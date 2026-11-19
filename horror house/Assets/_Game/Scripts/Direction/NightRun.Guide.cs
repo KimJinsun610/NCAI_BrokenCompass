@@ -15,7 +15,7 @@ namespace NightDuty
     public static partial class NightRun
     {
         /// <summary>조우가 남았으면 이 시각(게임 분, 03:30)에서 밤 시계를 붙든다 — 판정 끝(03:32) 전이라 지시·판정은 그대로 돈다.</summary>
-        public const float HoldMinute = NightClock.JudgingEnd - 2f;
+        public static float HoldMinute => NightClock.JudgingEnd - 2f;
 
         /// <summary>앞선 지시(그 공간 점검 등)가 있는 조우가 그 지시 뒤 이만큼(실제 초) 시작하지 않으면 유도 문자를 보낸다(마지막 수단).</summary>
         public const float GuideGraceSeconds = 45f;

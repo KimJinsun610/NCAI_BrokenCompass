@@ -10,16 +10,16 @@ namespace NightDuty
     public sealed class SurpriseBudget
     {
         /// <summary>강도 3↑ 시작 사이 최소 간격(초).</summary>
-        public const float GapAfter3 = 60f;   // 59차(밤 15분 → 10분): 90 → 60
+        public static float GapAfter3 => global::NightDuty.DesignData.Setting(390138);   // DT 390138 강도 3↑ 시작 사이 최소 간격 — 59차(밤 15분 → 10분): 90 → 60
 
         /// <summary>강도 4↑ 시작 뒤 최소 간격(초).</summary>
-        public const float GapAfter4 = 80f;   // 59차: 120 → 80
+        public static float GapAfter4 => global::NightDuty.DesignData.Setting(390139);   // DT 390139 강도 4↑ 시작 뒤 최소 간격 — 59차: 120 → 80
 
         /// <summary>조우가 끝난 뒤 위협을 걸지 않는 시간(초) 최소.</summary>
-        public const float QuietMin = 40f;   // 59차: 60~90 → 40~60
+        public static float QuietMin => global::NightDuty.DesignData.Setting(390140);   // DT 390140 조우 뒤 휴지 최소 — 59차: 60~90 → 40~60
 
         /// <summary>최대.</summary>
-        public const float QuietMax = 60f;
+        public static float QuietMax => global::NightDuty.DesignData.Setting(390141);   // DT 390141 조우 뒤 휴지 최대
 
         private readonly int _day;
         private int _used3;

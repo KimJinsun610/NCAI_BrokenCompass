@@ -1,7 +1,9 @@
 {
     "name": "NightDuty.Core",
     "rootNamespace": "NightDuty",
-    "references": [],
+    "references": [
+        "InstructionDT"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

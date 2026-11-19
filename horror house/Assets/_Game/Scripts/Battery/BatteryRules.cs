@@ -24,19 +24,19 @@ namespace NightDuty
         /// 완충으로 켜 둘 수 있는 실제 초. 59차(밤 15분 → 10분, 민: 「손전등 밸런스 조절도」): 240 → 160 — 밤 길이와 같은 2/3로 줄여
         /// 104차 재검증(밤 600초 · 수요 480초=3칸 · 날 넘김 이월 · 4·4·4·3·3): 75% 찾으면 1.35 · 1.37 · 1.41 · 1.19 · 1.04배, 다 찾으면 1.7~2.3배(이월 상한 3칸 탓), 절반만 찾으면 1.0 · 0.8 · 0.8 · 0.6 · 0.5배.
         /// </summary>
-        public const float FullSeconds = 160f;   // 67차(밤 10분 → 12분 30초): 160 → 200 — 밤과 같은 ×1.25(56차 설계 비율 유지) · 88차(밤 10분): 200 → 160
+        public static float FullSeconds => global::NightDuty.DesignData.Setting(390243);   // DT 390243 완충으로 켜 둘 수 있는 실제 시간 — 67차(밤 10분 → 12분 30초): 160 → 200 — 밤과 같은 ×1.25(56차 설계 비율 유지) · 88차(밤 10분): 200 → 160
 
         /// <summary>주머니에 들 수 있는 예비 수.</summary>
-        public const int PocketMax = 2;
+        public static int PocketMax => global::NightDuty.DesignData.SettingInt(390244);   // DT 390244 예비 배터리 최대 보유
 
         /// <summary>갈아 끼우는 동안 꺼져 있는 초.</summary>
-        public const float SwapSeconds = 1.2f;
+        public static float SwapSeconds => global::NightDuty.DesignData.Setting(390245);   // DT 390245 갈아 끼우는 시간
 
         /// <summary>이 충전량 아래면 빛이 약해지고 가끔 깜빡인다.</summary>
-        public const float DimBelow = 0.30f;
+        public static float DimBelow => global::NightDuty.DesignData.Setting(390247);   // DT 390247 희미해지기 시작
 
         /// <summary>이 충전량 아래면 깜빡임이 잦고 비춤 판정 거리가 짧다.</summary>
-        public const float LowBelow = 0.10f;
+        public static float LowBelow => global::NightDuty.DesignData.Setting(390248);   // DT 390248 위험 구간
 
         /// <summary>0%에 가까울 때의 빛 세기 배율.</summary>
         public const float DimIntensity = 0.45f;
@@ -45,13 +45,13 @@ namespace NightDuty
         public const float DimRange = 0.60f;
 
         /// <summary><see cref="LowBelow"/> 아래의 비춤 판정 거리(m).</summary>
-        public const float LowBeamRange = 5f;
+        public static float LowBeamRange => global::NightDuty.DesignData.Setting(390016);   // DT 390016 배터리 10% 미만 비춤 판정 거리
 
         /// <summary>가짜 놀람 「손전등 끊김」은 이 충전량 이상일 때만 — 배터리 탓으로 읽히면 놀라지 않는다.</summary>
         public const float FakeFlickerMinCharge = 0.5f;
 
         /// <summary>밤마다 풀어 두는 복도 사물함 수(어느 것이 풀렸는지는 열어 봐야 안다).</summary>
-        public const int UnlockedLockers = 3;
+        public static int UnlockedLockers => global::NightDuty.DesignData.SettingInt(390269);   // DT 390269 밤마다 푸는 잠긴 사물함
 
         /// <summary>
         /// 칸으로 쓰려면 몸통이 이만큼 서 있어야 한다(위 방향의 y 성분, cos 약 16°). 56차 QA: 복도의 「Bookcase」 중 다섯은 눕혀 문에 박은 판자,
@@ -85,7 +85,7 @@ namespace NightDuty
         public const float LibraryShare = 0.5f;
 
         /// <summary>104차: 그 밤 이미 놓인 공간은 하나마다 몫에 이것을 곱한다(먼저 다른 공간으로 퍼진다).</summary>
-        public const float RepeatShare = 0.25f;
+        public static float RepeatShare => global::NightDuty.DesignData.Setting(390265);   // DT 390265 같은 공간 반복 배율
 
         /// <summary>104차: 한 밤 한 공간에 놓는 상한(도서관 1 · 그 밖 2 · 공간 모름은 제한 없음).</summary>
         public static int MaxPerSpace(SpaceId space)

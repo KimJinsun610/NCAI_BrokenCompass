@@ -32,10 +32,10 @@
         public const string LobbyTreeSource = "stare.lobbytree";
 
         /// <summary>103차: 현관 인체 나무 응시 1초마다 오르는 축 값(이상·이하, 무작위).</summary>
-        public const int LobbyTreeMin = 1;
+        public static int LobbyTreeMin => global::NightDuty.DesignData.SettingInt(390051);   // DT 390051 현관 인체 나무 응시 1초마다 무작위 감각축 상승 최소
 
         /// <inheritdoc cref="LobbyTreeMin"/>
-        public const int LobbyTreeMax = 2;
+        public static int LobbyTreeMax => global::NightDuty.DesignData.SettingInt(390052);   // DT 390052 같은 상승 최대
 
         /// <summary>
         /// 103차(민: 「인체 나무는 제대로 응시하면 1초마다 축이 랜덤하게 조금씩 올라가게 · 화면 울렁임과 함께」): 현관 인체 나무를 1초 이어 바라볼 때마다

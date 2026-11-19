@@ -21,22 +21,22 @@ namespace NightDuty
     public static class RestartPolicy
     {
         /// <summary>재시작 보정 하한. 이보다 낮은 값에서 시작한 축은 보정하지 않는다 — 일부러 죽어서 축을 깎는 악용을 막는다.</summary>
-        public const int ReliefFloor = 40;
+        public static int ReliefFloor => global::NightDuty.DesignData.SettingInt(390056);   // DT 390056 재시작 보정 하한: max(min(스냅샷,40), 스냅샷−10k)
 
         /// <summary>이 수만큼 재시작한 뒤(6번째 시도) 또 붙잡히면 결근이다.</summary>
-        public const int AbsenceAfterRestarts = 5;
+        public static int AbsenceAfterRestarts => global::NightDuty.DesignData.SettingInt(390057);   // DT 390057 이만큼 재시작 뒤 또 붙잡히면 결근
 
         /// <summary>결근한 다음 밤 감각 축의 상한.</summary>
-        public const int AbsenceNextNightCap = 60;
+        public static int AbsenceNextNightCap => global::NightDuty.DesignData.SettingInt(390058);   // DT 390058 결근 다음 밤 감각축 상한
 
         /// <summary>이 k부터 보너스 슬롯 C를 끄고 헛예고를 절반으로 줄인다(장치 1).</summary>
-        public const int CalmFrom = 2;
+        public static int CalmFrom => global::NightDuty.DesignData.SettingInt(390059);   // DT 390059 보너스 슬롯 C 끄기
 
         /// <summary>이 k부터 붙잡힌 축의 공간 수칙 1장을 다른 축 수칙으로 바꾼다(장치 2).</summary>
         public const int SwapRuleFrom = 3;
 
         /// <summary>이 k부터 근무일지에서 「조퇴」를 고를 수 있다.</summary>
-        public const int VoluntaryLeaveFrom = 4;
+        public static int VoluntaryLeaveFrom => global::NightDuty.DesignData.SettingInt(390061);   // DT 390061 조퇴 선택 가능
 
         /// <summary>
         /// k번째 재시작의 감각 축 시작값 = max(min(스냅샷, 40), 스냅샷 − 10×k).

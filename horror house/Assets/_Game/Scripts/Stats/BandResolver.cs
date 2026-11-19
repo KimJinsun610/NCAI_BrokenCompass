@@ -46,7 +46,7 @@ namespace NightDuty
         /// 붙잡힘·판정에는 영향이 없다. 다음 밤(재시작 포함)은 다시 그날 하한에서 시작한다.
         /// 시뮬(2~5일차 밤): 한 구간 오른 밤 숙련 15 · 보통 45 · 미숙 79%(옛 0 · 2 · 32%).
         /// </summary>
-        public const int NightRiseBoost = 20;
+        public static int NightRiseBoost => global::NightDuty.DesignData.SettingInt(390048);   // DT 390048 한 밤 안에서 20 이상 오르면 그 밤 연출 구간 +1
         private Band _dayFloor = Band.Band0;
 
         /// <summary>해석기를 만든다. 초기 도달값은 현재 생존 수치다.</summary>

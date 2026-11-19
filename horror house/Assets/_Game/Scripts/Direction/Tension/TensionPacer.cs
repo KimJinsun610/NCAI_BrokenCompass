@@ -69,54 +69,54 @@ namespace NightDuty
     public sealed class TensionPacer
     {
         /// <summary>절정으로 넘어가는 긴장도.</summary>
-        public const float PeakAt = 70f;
+        public static float PeakAt => global::NightDuty.DesignData.Setting(390113);   // DT 390113 절정 — 새 비트 없음
 
         /// <summary>해소가 끝나 휴식으로 넘어가는 긴장도.</summary>
-        public const float FadeTo = 35f;
+        public static float FadeTo => global::NightDuty.DesignData.Setting(390114);   // DT 390114 해소가 이 아래면 휴식
 
         /// <summary>휴식을 끝낼 수 있는 긴장도.</summary>
-        public const float RelaxUntil = 25f;
+        public static float RelaxUntil => global::NightDuty.DesignData.Setting(390115);   // DT 390115 휴식을 끝낼 수 있는 긴장도
 
         /// <summary>점검 지시를 미루는 긴장도.</summary>
-        public const float HotAt = 60f;
+        public static float HotAt => global::NightDuty.DesignData.Setting(390116);   // DT 390116 이상이면 점검 지시를 미룸
 
         /// <summary>가짜 놀람을 낼 수 있는 긴장도 상한(이 값 미만에서만).</summary>
-        public const float FakeRoomBelow = 50f;
+        public static float FakeRoomBelow => global::NightDuty.DesignData.Setting(390117);   // DT 390117 가짜 놀람은 이 미만에서만
 
         /// <summary>사건 뒤 감쇠를 시작하기까지(초).</summary>
-        public const float Grace = 4f;
+        public static float Grace => global::NightDuty.DesignData.Setting(390118);   // DT 390118 사건 뒤 감쇠 시작까지
 
         /// <summary>초당 감쇠.</summary>
-        public const float Decay = 1.2f;
+        public static float Decay => global::NightDuty.DesignData.Setting(390119);   // DT 390119 초당 감쇠
 
         /// <summary>경비실 감쇠 배수.</summary>
-        public const float GuardRoomDecayScale = 2f;
+        public static float GuardRoomDecayScale => global::NightDuty.DesignData.Setting(390120);   // DT 390120 경비실 안 감쇠 배수
 
         /// <summary>압력이 쌓이기 시작하는 긴장도.</summary>
-        public const float PressureFrom = 50f;
+        public static float PressureFrom => global::NightDuty.DesignData.Setting(390121);   // DT 390121 이 초과 동안 압력 상승
 
         /// <summary>압력 초당 상승·하강.</summary>
-        public const float PressureRise = 1f;
+        public static float PressureRise => global::NightDuty.DesignData.Setting(390122);   // DT 390122 압력 상승
 
         /// <summary>압력 초당 하강.</summary>
-        public const float PressureFall = 0.3f;
+        public static float PressureFall => global::NightDuty.DesignData.Setting(390123);   // DT 390123 압력 하강
 
         /// <summary>강제 휴식을 거는 압력.</summary>
-        public const float PressureLimit = 70f;
+        public static float PressureLimit => global::NightDuty.DesignData.Setting(390124);   // DT 390124 이상이면 강제 휴식
 
         /// <summary>강제 휴식 길이(초).</summary>
-        public const float ForcedRelaxSeconds = 45f;
+        public static float ForcedRelaxSeconds => global::NightDuty.DesignData.Setting(390125);   // DT 390125 강제 휴식 길이
 
         /// <summary>강제 휴식 뒤 압력.</summary>
-        public const float PressureAfterRelax = 30f;
+        public static float PressureAfterRelax => global::NightDuty.DesignData.Setting(390126);   // DT 390126 강제 휴식 직후 압력
 
         /// <summary>휴식 최대 길이(초).</summary>
-        public const float RelaxMax = 75f;
+        public static float RelaxMax => global::NightDuty.DesignData.Setting(390127);   // DT 390127 휴식 최대 길이
 
         /// <summary>바닥값 상한.</summary>
-        public const float FloorMax = 20f;
+        public static float FloorMax => global::NightDuty.DesignData.Setting(390128);   // DT 390128 바닥값 상한
 
-        private static readonly int[] FakeCaps = { 3, 5, 6, 7, 8 };   // 57차(민: 「3일차까지 놀람이 별로 없다」): 2/4/5/6/7 → +1, 멀리서 보이는 몹(fake.glimpse) 몫
+        private static int[] FakeCaps => DesignData.DayInts("Fake_Scare_Cap", r => r.Fake_Scare_Cap);   // DT Day_Table.Fake_Scare_Cap — 57차(민: 「3일차까지 놀람이 별로 없다」): 2/4/5/6/7 → +1, 멀리서 보이는 몹(fake.glimpse) 몫
 
         private readonly int _day;
         private float _lastImpulse = float.NegativeInfinity;

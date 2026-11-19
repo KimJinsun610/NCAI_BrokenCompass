@@ -177,7 +177,7 @@ namespace NightDuty
         public const int Relief = 3;
 
         /// <summary>103차(축 균형): 지시 완료로 한 축에서 하룻밤 빠지는 양의 상한 — 청각 지시가 많아 청각만 계속 내려가던 것을 막는다.</summary>
-        public const int ReliefCapPerAxis = 6;
+        public static int ReliefCapPerAxis => global::NightDuty.DesignData.SettingInt(390049);   // DT 390049 지시 완료로 한 축에서 하룻밤 빠지는 상한
 
         private static readonly List<DutyDef> s_all = new List<DutyDef>
         {
@@ -292,7 +292,7 @@ namespace NightDuty
         public const int TrustTimed = 2;
 
         /// <summary>103차: 하룻밤 지시로 오르는 신뢰 상한 — 심부름만으로 변조 구간에 닿지 않게.</summary>
-        public const int TrustCapPerNight = 4;
+        public static int TrustCapPerNight => global::NightDuty.DesignData.SettingInt(390050);   // DT 390050 하룻밤 지시로 오르는 신뢰 상한
 
         /// <summary>103차: 완료 답장 끝에 붙는 근무 평가 줄(신뢰가 올랐을 때).</summary>
         public const string TrustLine = "근무 평가에 반영되었습니다.";

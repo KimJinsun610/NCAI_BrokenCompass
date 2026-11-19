@@ -91,7 +91,7 @@ namespace NightDuty
         public const string Key = "duty.orders";
 
         /// <summary>점검 공백이 이만큼 이어지면 지시(실제 초 — 제안서 「게임 8분」).</summary>
-        public const float GapSeconds = 10f;   // 57차: 30 → 40(지시가 점검을 덮지 않게) · 67차(민: 「점검과 지시 비중을 균일하게」): 40 → 10 — 점검 지시와 번갈아 낸다
+        public static float GapSeconds => global::NightDuty.DesignData.Setting(390180);   // DT 390180 마지막 점검 지시·보고 뒤 근무 지시까지 — 57차: 30 → 40(지시가 점검을 덮지 않게) · 67차(민: 「점검과 지시 비중을 균일하게」): 40 → 10 — 점검 지시와 번갈아 낸다
 
         /// <summary>
         /// 2026-11-06(김진선님: 「초반 1·2일차에 메시지가 오는 간격이 너무 짧다」 — C안): 일차별 점검 공백(실제 초).
@@ -105,10 +105,10 @@ namespace NightDuty
         }
 
         /// <summary>역설 문자 뒤 쉬는 초.</summary>
-        public const float AfterMessage = 12f;
+        public static float AfterMessage => global::NightDuty.DesignData.Setting(390181);   // DT 390181 역설·회피 불가 문자 뒤 쉼
 
         /// <summary>지시가 끝난 뒤 다음 지시까지 최소 초.</summary>
-        public const float AfterDuty = 12f;   // 67차: 20 → 12
+        public static float AfterDuty => global::NightDuty.DesignData.Setting(390182);   // DT 390182 지시 사이 최소 간격 — 67차: 20 → 12
 
         private readonly int _day;
         private readonly Func<SpaceId, float> _cost;

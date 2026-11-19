@@ -17,40 +17,40 @@ namespace NightDuty
     public static class SensingRules
     {
         /// <summary>응시 원뿔 반각(°).</summary>
-        public const float GazeConeDegrees = 10f;
+        public static float GazeConeDegrees => global::NightDuty.DesignData.Setting(390012);   // DT 390012 응시 판정 원뿔
 
         /// <summary>응시가 끊겨도 연속으로 보는 틈(초).</summary>
-        public const float GazeGapSeconds = 0.2f;
+        public static float GazeGapSeconds => global::NightDuty.DesignData.Setting(390013);   // DT 390013 연속 응시·비춤·시청에서 허용하는 끊김
 
         /// <summary>손전등 비춤 원뿔 반각(°).</summary>
-        public const float BeamConeDegrees = 15f;
+        public static float BeamConeDegrees => global::NightDuty.DesignData.Setting(390014);   // DT 390014 손전등 비춤 판정 원뿔
 
         /// <summary>손전등 비춤 거리(m).</summary>
-        public const float BeamRange = 8f;
+        public static float BeamRange => global::NightDuty.DesignData.Setting(390015);   // DT 390015 손전등 비춤 판정 거리(배터리 10% 이상)
 
         /// <summary>정지로 보는 수평 변위 한도(m).</summary>
-        public const float StillRadius = 0.2f;
+        public static float StillRadius => global::NightDuty.DesignData.Setting(390017);   // DT 390017 정지 판정 수평 변위 한도
 
         /// <summary>보고가 켜지는 거리(m).</summary>
-        public const float ReportRange = 2f;
+        public static float ReportRange => global::NightDuty.DesignData.Setting(390018);   // DT 390018 점검 보고가 켜지는 거리
 
         /// <summary>보고가 켜지기까지의 응시 시간(초).</summary>
-        public const float ReportGazeSeconds = 1f;
+        public static float ReportGazeSeconds => global::NightDuty.DesignData.Setting(390019);   // DT 390019 보고가 켜지기까지 응시
 
         /// <summary>[정상]/[이상] 확정에 필요한 길게 누르기(초).</summary>
-        public const float ReportHoldSeconds = 0.5f;
+        public static float ReportHoldSeconds => global::NightDuty.DesignData.Setting(390020);   // DT 390020 [정상]/[이상] 길게 누르기
 
         /// <summary>점검 수칙 「가까이」 거리(m).</summary>
-        public const float NearRange = 0.8f;
+        public static float NearRange => global::NightDuty.DesignData.Setting(390021);   // DT 390021 점검 「가까이」 거리
 
         /// <summary>「가까이」를 들여다보기로 치는 응시 시간(초). 지나가다 스친 것은 세지 않는다.</summary>
-        public const float NearGazeSeconds = 0.3f;
+        public static float NearGazeSeconds => global::NightDuty.DesignData.Setting(390022);   // DT 390022 「가까이」로 치는 응시
 
         /// <summary>태블릿을 든 동안의 응시 기준점 높이(뷰포트 0~1).</summary>
-        public const float TabletGazeViewportY = 0.78f;
+        public static float TabletGazeViewportY => global::NightDuty.DesignData.Setting(390023);   // DT 390023 태블릿 든 동안 응시 기준점 높이
 
         /// <summary>평소 응시 기준점 높이(뷰포트, 화면 중심).</summary>
-        public const float NormalGazeViewportY = 0.5f;
+        public static float NormalGazeViewportY => global::NightDuty.DesignData.Setting(390024);   // DT 390024 평소 응시 기준점 높이
 
         /// <summary>응시 기준점 높이(뷰포트). 태블릿을 들었으면 78%.</summary>
         public static float GazeViewportY(bool tabletRaised)

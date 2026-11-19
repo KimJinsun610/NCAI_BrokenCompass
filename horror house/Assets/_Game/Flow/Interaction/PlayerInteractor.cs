@@ -45,7 +45,7 @@ public sealed class PlayerInteractor : MonoBehaviour
     /// 손이 닿는 거리(m). <b>짧게 잡는 것이 맞습니다</b> — 2.5m로 두었더니 복도 건너편 문까지 안내가 떠서
     /// 어느 문을 겨눈 것인지 알 수 없었습니다(2026-09-22 사용자 보고).
     /// </summary>
-    private const float DefaultReach = 1.8f;
+    private static float DefaultReach => global::NightDuty.DesignData.Setting(390307);   // DT 390307 문·수납 조작 거리
 
     /// <summary>기획에 없는 문, 그리고 열쇠가 필요한 문에 띄우는 한 줄.</summary>
     private const string SealedPrompt = "잠겨 있습니다";

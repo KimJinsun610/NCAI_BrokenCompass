@@ -1,0 +1,2 @@
+﻿ID,Name,Trigger_ID,Space_ID,Rule_ID,Encounter_ID,Task_ID,World_State_ID,Axis_ID,Value,Interval_Sec,Day_From,Day_To,Desc
+uint,string,uint,uint,uint,uint,uint,uint,uint,int,float,uint,uint,string

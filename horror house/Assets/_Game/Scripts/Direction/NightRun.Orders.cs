@@ -227,7 +227,7 @@ namespace NightDuty
         private static float _lastDutyAt = float.NegativeInfinity;   // 2026-11-09: 마지막 근무 지시(지시 시계 기준)
 
         /// <summary>한쪽 차례를 이만큼(실제 초) 넘게 기다리면 다른 쪽도 낼 수 있다 — 한쪽이 낼 것이 없을 때 밤이 비지 않게.</summary>
-        public const float TurnWaitMax = 45f;
+        public static float TurnWaitMax => global::NightDuty.DesignData.Setting(390183);   // DT 390183 점검/근무 지시 번갈아 대기 한도
 
         /// <summary>근무 지시 차례인지 — 지난 지시가 점검이었고, 근무 지시를 곧 낼 수 있고, 그 뒤 오래 기다리지 않았다.</summary>
         private static bool DutyTurnNow(float minute)
@@ -389,7 +389,7 @@ namespace NightDuty
         }
 
         /// <summary>61차: 변기 지시가 여자아이 슬롯보다 이만큼(게임 분) 먼저 나간다 — 지시를 읽고 화장실에 들어서면 슬롯이 열려 있다.</summary>
-        public const float ToiletOrderLeadMinutes = 4f;   // 67차(밤 05:00): 4 → 5 · 88차(밤 04:00): 5 → 4
+        public static float ToiletOrderLeadMinutes => global::NightDuty.DesignData.Setting(390189);   // DT 390189 조우 앞 근무 지시 발송 시점 —   // 67차(밤 05:00): 4 → 5 · 88차(밤 04:00): 5 → 4
 
         /// <summary>61차: T4 날 묶어 둔 변기(T-1)를 여자아이 슬롯에 맞춰 단독 지시로 낸다(한 번).</summary>
         private static void ReleaseToiletOrder(float minute)

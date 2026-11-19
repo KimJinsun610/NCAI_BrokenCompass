@@ -153,7 +153,7 @@ namespace NightDuty
         /// <summary>검게 지운 줄(신뢰 구간 4) — 원문 길이에 맞춘 먹색 막대(TMP 색 태그).</summary>
         public static string Blacked(string original)
         {
-            int n = string.IsNullOrEmpty(original) ? 12 : Math.Max(8, (int)(original.Length * 0.8f));
+            int n = string.IsNullOrEmpty(original) ? 12 : Math.Max(global::NightDuty.DesignData.SettingInt(390339), (int)(original.Length * global::NightDuty.DesignData.Setting(390340)));   // DT 390339 최소 칸 · 390340 배율
             return "<color=" + BlackedColor + ">" + new string('█', n) + "</color>";
         }
     }

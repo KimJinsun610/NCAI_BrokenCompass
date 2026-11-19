@@ -199,20 +199,21 @@ namespace NightDuty
             switch (kind)
             {
                 case PacerImpulse.Foreshadow:
+                    return global::NightDuty.DesignData.Setting(390129);   // DT 390129 조우 전조
                 case PacerImpulse.FalseForeshadow:
-                    return 8f;
+                    return global::NightDuty.DesignData.Setting(390130);   // DT 390130 헛예고
                 case PacerImpulse.Confront:
-                    return 10f + 10f * Math.Max(1, Math.Min(5, strength));
+                    return global::NightDuty.DesignData.Setting(390131) + global::NightDuty.DesignData.Setting(390132) * Math.Max(1, Math.Min(5, strength));   // DT 390131 + 390132×강도
                 case PacerImpulse.Fake:
-                    return 10f;
+                    return global::NightDuty.DesignData.Setting(390133);   // DT 390133 가짜 놀람
                 case PacerImpulse.Startle:
-                    return 15f;
+                    return global::NightDuty.DesignData.Setting(390134);   // DT 390134 점검 「가까이」 놀람
                 case PacerImpulse.Violation:
-                    return 5f;
+                    return global::NightDuty.DesignData.Setting(390135);   // DT 390135 수칙 위반
                 case PacerImpulse.Order:
-                    return 3f;
+                    return global::NightDuty.DesignData.Setting(390136);   // DT 390136 점검 지시 문자
                 case PacerImpulse.RuleCue:
-                    return 6f;
+                    return global::NightDuty.DesignData.Setting(390137);   // DT 390137 수칙 단서
                 default:
                     return 0f;
             }

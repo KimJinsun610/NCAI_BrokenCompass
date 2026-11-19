@@ -194,7 +194,7 @@ namespace NightDuty
         public static float SlackMin => global::NightDuty.DesignData.Setting(390214);   // DT 390214 여유가 이보다 작으면 따라잡기
 
         /// <summary>예상 걷기 속도(m/s, 멈춤·둘러봄 포함).</summary>
-        public const float WalkSpeed = 1.2f;
+        public static float WalkSpeed => global::NightDuty.DesignData.Setting(390215);   // DT 390215 남은 일 예상 걷기 속도
 
         /// <summary>항목당 예상 작업(초) — 찾기·1초 응시·길게 누르기·판단.</summary>
         public static float SecondsPerItem => global::NightDuty.DesignData.Setting(390216);   // DT 390216 남은 일 예상 항목당

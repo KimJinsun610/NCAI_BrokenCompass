@@ -142,8 +142,8 @@ namespace NightDuty
         /// <param name="allow">쌍 자체를 더 거르는 조건(104차 검토 — 고정 편성 조우 방의 재입실 불가). null이면 묻지 않는다.</param>
         public UnavoidableDef PlanUnavoidable(int day, Band trustBand, InspectionPlan inspections, Func<string, bool> canForce = null, Func<UnavoidableDef, bool> allow = null)
         {
-            if ((int)trustBand < 3) return null;
-            bool real = (int)trustBand >= 4 && UnavoidableInRun;
+            if ((int)trustBand < global::NightDuty.DesignData.SettingInt(390079)) return null;   // DT 390079 가짜 회피 불가 최소 구간
+            bool real = (int)trustBand >= global::NightDuty.DesignData.SettingInt(390080) && UnavoidableInRun;   // DT 390080 진짜 회피 불가 최소 구간
             List<UnavoidableDef> pool = new List<UnavoidableDef>();
             IReadOnlyList<UnavoidableDef> all = UnavoidableCatalog.All;
             for (int i = 0; i < all.Count; i++)
@@ -227,7 +227,7 @@ namespace NightDuty
                     pool.Add(id);
                     // 103차: 회차에 이미 변조한 수칙은 거의 다시 고르지 않고, 위협 수칙(S5 등)보다 평소 수칙을 앞세운다(옛: 5일차 변조의 60%가 S5).
                     RuleDef def0 = ProgramCatalog.Rule(id);
-                    weights.Add((_tamperedInRun.Contains(id) ? 1 : 6) * (def0 != null && (def0.IsThreat || def0.Space == SpaceId.None) ? 1 : 2));   // 공통 수칙(G4)도 한 단 아래
+                    weights.Add((_tamperedInRun.Contains(id) ? global::NightDuty.DesignData.SettingInt(390081) : global::NightDuty.DesignData.SettingInt(390082)) * (def0 != null && (def0.IsThreat || def0.Space == SpaceId.None) ? global::NightDuty.DesignData.SettingInt(390083) : global::NightDuty.DesignData.SettingInt(390084)));   // DT 390081~390084 변조 가중치   // 공통 수칙(G4)도 한 단 아래
                 }
 
                 if (pool.Count > 0)
@@ -297,7 +297,7 @@ namespace NightDuty
             // 3) 검게 지운 줄(신뢰 4).
             string blacked = null;
             string blackedText = null;
-            if (band >= 4)
+            if (band >= global::NightDuty.DesignData.SettingInt(390078))   // DT 390078 검은 줄 최소 구간
             {
                 List<string> pool = new List<string>();
                 for (int i = 0; i < deck.Count; i++)

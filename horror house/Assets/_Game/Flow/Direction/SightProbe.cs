@@ -19,7 +19,7 @@ public sealed class SightProbe : MonoBehaviour
     public const float RecognizeSeconds = 0.35f;
 
     /// <summary>화면 가장자리에서 빼는 몫(0~0.5). 곁눈으로 스친 것은 세지 않는다.</summary>
-    public const float ScreenMargin = 0.12f;
+    public static float ScreenMargin => global::NightDuty.DesignData.Setting(390241);   // DT 390241 봤다 판정: 화면 가장자리 안쪽
 
     /// <summary>이보다 멀면 세지 않는다(m).</summary>
     public static float MaxDistance => global::NightDuty.DesignData.Setting(390242);   // DT 390242 봤다 판정 최대 거리

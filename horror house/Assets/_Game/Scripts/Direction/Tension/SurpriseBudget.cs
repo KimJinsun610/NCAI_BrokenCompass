@@ -168,32 +168,37 @@ namespace NightDuty
         /// <summary>최고 감각 생존 수치와 재시작 횟수로 단계를 정한다.</summary>
         public static DirectorMood Of(int highestSensory, int restarts)
         {
-            if (highestSensory >= 75 || restarts >= RestartPolicy.CalmFrom) return DirectorMood.Danger;
-            return highestSensory >= 50 ? DirectorMood.Normal : DirectorMood.Easy;
+            if (highestSensory >= global::NightDuty.DesignData.SettingInt(390143) || restarts >= RestartPolicy.CalmFrom) return DirectorMood.Danger;   // DT 390143 위험 단계 시작
+            return highestSensory >= global::NightDuty.DesignData.SettingInt(390142) ? DirectorMood.Normal : DirectorMood.Easy;   // DT 390142 보통 단계 시작
         }
 
         /// <summary>대응 창 배율.</summary>
         public static float WindowScale(DirectorMood m)
         {
-            return m == DirectorMood.Easy ? 0.8f : m == DirectorMood.Danger ? 1.3f : 1f;
+            return global::NightDuty.DesignData.Setting(ByMood(m, 390144, 390328, 390329));   // DT 대응 창 배율 쉬움·보통·위험
         }
 
         /// <summary>전조 길이 배율.</summary>
         public static float ForeshadowScale(DirectorMood m)
         {
-            return m == DirectorMood.Danger ? 1.5f : 1f;
+            return global::NightDuty.DesignData.Setting(ByMood(m, 390145, 390330, 390331));   // DT 전조 길이 배율 쉬움·보통·위험
         }
 
         /// <summary>헛예고 확률 배율.</summary>
         public static float FalseScale(DirectorMood m)
         {
-            return m == DirectorMood.Danger ? 0.5f : 1f;
+            return global::NightDuty.DesignData.Setting(ByMood(m, 390146, 390332, 390333));   // DT 헛예고 확률 배율 쉬움·보통·위험
         }
 
         /// <summary>가짜 놀람 추가 횟수.</summary>
         public static int ExtraFakes(DirectorMood m)
         {
-            return m == DirectorMood.Easy ? 1 : 0;
+            return global::NightDuty.DesignData.SettingInt(ByMood(m, 390147, 390334, 390335));   // DT 가짜 놀람 추가 쉬움·보통·위험
+        }
+
+        static uint ByMood(DirectorMood m, uint easy, uint normal, uint danger)
+        {
+            return m == DirectorMood.Easy ? easy : m == DirectorMood.Danger ? danger : normal;
         }
     }
 }

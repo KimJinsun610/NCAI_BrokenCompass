@@ -252,7 +252,7 @@ namespace NightDuty
         /// 76차(민: 「지시 사항들의 제한 시간도 폐기해줘」): 기본 꺼짐 — 근무 지시·점검 지시 모두 기한·「HH:MM까지」·기한 지남 경고가 없다.
         /// 67차 제한 방식을 시험하는 옛 시험만 켠다. 켜지 않는 한 <see cref="DutyDef.Seconds"/>는 읽지 않고 <see cref="EffectiveSeconds"/>를 쓴다.
         /// </summary>
-        public static bool TimeLimitsEnabled { get; set; }
+        public static bool TimeLimitsEnabled { get; set; } = global::NightDuty.DesignData.SettingBool(390004);   // DT 390004 기본값만 DT(시험이 바꿈)
 
         /// <summary>
         /// 103차(민: 「전화 받기와 근무일지 서명, 비상구 손전등 3번만 시간제한」): 76차에 끈 제한을 이 지시들에만 다시 건다 — 기한이 상황에서 나오는 것들.

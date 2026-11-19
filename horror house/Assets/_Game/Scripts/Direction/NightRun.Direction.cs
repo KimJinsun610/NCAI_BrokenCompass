@@ -80,7 +80,7 @@ namespace NightDuty
             FearAxis axis = HighestSensory();
             string[] pool = WildcardPool(axis);
             string pick = pool[s_wildcardRoll.Next(pool.Length)];
-            float at = NightClock.Call1 + (float)s_wildcardRoll.NextDouble() * 120f;
+            float at = NightClock.Call1 + (float)s_wildcardRoll.NextDouble() * global::NightDuty.DesignData.Setting(390174);   // DT 390174 그날의 빈 칸 시간창
             _tension.SetWildcard(pick, at);
             Debug.Log("[NightRun] 그날의 빈 칸 — " + pick + " (가장 높은 축 " + axis + ", " + NightClock.Clock(at) + " 뒤)");
         }

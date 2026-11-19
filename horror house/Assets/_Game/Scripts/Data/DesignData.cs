@@ -69,5 +69,14 @@ namespace NightDuty
 
         public static int SettingInt(uint id) => Mathf.RoundToInt(Setting(id));
         public static bool SettingBool(uint id) => Setting(id) != 0f;
+
+        /// <summary>값이 Band_Table ID(330000~330004)인 설정을 구간 번호(0~4)로.</summary>
+        public static int BandLevel(uint id)
+        {
+            int band = SettingInt(id);
+            Ensure();
+            if (DT.Band.Get((uint)band) == null) throw new System.InvalidOperationException("DT Setting " + id + " 값 " + band + "은 Band_Table ID가 아님");
+            return band - 330000;
+        }
     }
 }

@@ -296,10 +296,18 @@ namespace NightDuty
         public bool SightGated { get; set; }
 
         /// <summary>61차: 세운 대역을 이만큼(초) 못 보면 거두고 다시 기다린다.</summary>
-        public const float PresentMaxSeconds = 40f;
+        public static float PresentMaxSeconds => global::NightDuty.DesignData.Setting(390152);   // DT 390152 세운 대역을 이만큼 못 보면 거둠
 
         /// <summary>61차: 거둔 뒤 다시 시도까지(초).</summary>
-        public const float PresentRetrySeconds = 15f;
+        public static float PresentRetrySeconds => global::NightDuty.DesignData.Setting(390153);   // DT 390153 거둔 뒤 재시도
+
+        /// <summary>전조 길이(초) 범위 — 헛예고·진짜 전조 모두.</summary>
+        public static float ForeshadowMin => global::NightDuty.DesignData.Setting(390148);   // DT 390148
+        public static float ForeshadowMax => global::NightDuty.DesignData.Setting(390149);   // DT 390149
+
+        /// <summary>헛예고 확률(청각 구간 3 이상이면 High).</summary>
+        public static float FalseForeshadowChance => global::NightDuty.DesignData.Setting(390150);   // DT 390150
+        public static float FalseForeshadowChanceHigh => global::NightDuty.DesignData.Setting(390151);   // DT 390151
 
         /// <summary>
         /// 61차(민: 「교실 안쪽에서 시체 떨어지는 건, 플레이어가 그 안쪽에서 나오면서 플레이어 쪽으로 떨어지게」): 켜면 시체 낙하(응시 방아쇠)를
@@ -1056,10 +1064,10 @@ namespace NightDuty
             // 57차: 슬롯이 얼마 안 남았거나 이월된 실행은 헛예고로 속이지 않는다(진짜를 놓치게 된다).
             if (!r.Forced && !Sequential && r.FalseCount == 0 && !r.CarriedOver && _minute < winTo - LastCallMinutes * 2f)   // 104차: 순서대로 여는 밤은 헛예고 없이(목격 보장)
             {
-                float pFalse = (auditoryShown >= Band.Band3 ? 0.4f : 0.3f) * DirectorMoods.FalseScale(Mood);
+                float pFalse = (auditoryShown >= Band.Band3 ? FalseForeshadowChanceHigh : FalseForeshadowChance) * DirectorMoods.FalseScale(Mood);
                 if (_rng.NextDouble() < pFalse)
                 {
-                    float d = Range(1f, 8f) * scale;
+                    float d = Range(ForeshadowMin, ForeshadowMax) * scale;
                     r.FalseCount++;
                     r.RetryAt = Now + d + FalseRetry;
                     r.Rearmed = true;   // 57차: 다시 시도할 때는 그 방에 있기만 하면
@@ -1069,7 +1077,7 @@ namespace NightDuty
                 }
             }
 
-            float length = r.Forced ? 2f : Range(1f, 8f) * scale;
+            float length = r.Forced ? 2f : Range(ForeshadowMin, ForeshadowMax) * scale;
             if (_restarts > 0 && r.Def.Intensity >= 4 && _seenHigh.Contains(r.Def.Id)) length *= 0.5f;   // 이미 본 강도 4↑의 전조는 절반.
             r.State = EncounterRunState.Foreshadow;
             r.PhaseEnds = Now + length;

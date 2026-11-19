@@ -128,7 +128,7 @@
 
 **DT(기획 데이터 테이블) 적용 — 2026-11-19 1차 완료, 남은 이전**
 - 끝난 것: 설정 141개 · Band 경계 · 밤 시간표 7개 · Day 2칸(CLAUDE.md §4.7, CHANGELOG 2026-11-19).
-- 남은 설정: 이름을 못 찾은 63개(`Docs/Claude outputs/DT_설정대조_1단계.tsv`의 NOTFOUND — 지역 값·배열·switch 안 숫자), `PacerImpulse` 충격량(enum이 아니라 값 표를 찾아 연결), `NightClock.HourMarks`·`DirectorMoods` 배열, 런타임 스위치 10개(테스트가 바꾸므로 기본값만 DT로 할지 결정).
+- 1단계(남은 설정) 2026-11-19 완료: 스위치 5개 기본값·개별 4개·NOTFOUND 55개·PacerImpulse 9개·HourMarks(CHANGELOG 같은 날 「1단계」). **확인 필요: DT 390030(90초)과 코드 `StartHoldMaxSeconds`(60초)가 다름 — xlsx 값을 60으로 고칠지 결정.** 다음은 2단계(표시 코드 칸·옛 코드→ID 치환 도구).
 - 남은 표: Rule·Day_Rule·Encounter·Encounter_Window·Task·Message·Marker·Space·Fx·Layout_Prop·Ending·Day(나머지 칸) — 카탈로그 클래스(`FinalRuleBook`·`ProgramCatalog`·`ParadoxCatalog`·`InspectionCatalog`·`DutyCatalog` 등)가 옛 코드(H1·W5…) 대신 DT 행에서 만들어지게. 옛 코드→ID 대응은 변경내역 부록 A. 표 하나씩 「대조 테스트 → 교체 → EditMode」 순서로.
 - **v6 신규(4일차 추가 근무 수칙·장소 상태·교실 전이)는 적용하지 않음(2026-11-19 사용자 결정: 기획자가 실수로 넣은 미완성본).** 표를 옮길 때 이 행들(Rule 110037~110051 · Day_Rule 220048~220062 · Encounter 120016 · Marker 310100~310102 · World_State · Axis_Effect · Fx 422001)은 빼야 함 — 2026-11-19 프로젝트 xlsx에서 직접 삭제함(행 841개). 빈 칸·빈 표는 남아 있음.
 - 확정 결정(2026-11-19, 사용자 — 권장안 전부): ① 옛 문자열 키(H1·K-3·W5·E.xxx·메시지·표식 키)는 표 이전 때 DT ID로 치환, 공간·밤 구간 enum은 유지 ② xlsx에 표시 코드 칸 추가(표시용) ③ 김진선님 파일 10개도 치환 포함(진행 중 작업 없음), 끝나면 목록 공유 ④ 런타임 스위치 10개는 기본값만 DT ⑤ Fx는 에디터 도구로 SO에 굽기 ⑥ Marker는 씬 정본 + 대조 테스트. 기획 질문은 없음(v6 삭제로 소멸).

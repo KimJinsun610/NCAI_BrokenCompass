@@ -273,7 +273,7 @@ namespace NightDuty
         /// 104차(사용자: 「재촉 제거 필요 — 원래 유도 문자와 겹침. 재촉하는 걸 다 없애줘」): 점검 독촉 문자를 보내는지 — 기본 끔.
         /// 미룬 점검을 더 기다리지 않고 근무 지시를 내는 것(<see cref="InspectionsStalled"/>)은 그대로다.
         /// </summary>
-        public static bool StallNagEnabled { get; set; }
+        public static bool StallNagEnabled { get; set; } = global::NightDuty.DesignData.SettingBool(390006);   // DT 390006 점검 독촉 문자 — 기본값만 DT
 
         private static void NagStalledInspections(float realSeconds, bool stalled, int backlog)
         {

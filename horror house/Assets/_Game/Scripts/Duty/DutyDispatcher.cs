@@ -511,7 +511,7 @@ namespace NightDuty
         /// </summary>
         public int Allowed(float minute)
         {
-            int n = minute < NightClock.Call1 ? 2 : minute < NightClock.Call2 ? 3 : 5;   // 57차: 2·3·4 → 1·2·상한 · 67차: 2·3·상한(점검 지시와 번갈아)
+            int n = minute < NightClock.Call1 ? global::NightDuty.DesignData.SettingInt(390179) : minute < NightClock.Call2 ? global::NightDuty.DesignData.SettingInt(390336) : global::NightDuty.DesignData.SettingInt(390337);   // DT 390179·390336·390337 마디 상한 — 57차: 2·3·4 → 1·2·상한 · 67차: 2·3·상한(점검 지시와 번갈아)
             return Math.Min(DutyCatalog.DailyCap(_day), n);
         }
 
@@ -608,7 +608,7 @@ namespace NightDuty
             }
 
             // 57차: 가까운 셋 중 하나 — 늘 같은 지시가 먼저 나오지 않게.
-            return open[_rng.Next(Math.Min(3, open.Count))].Value;
+            return open[_rng.Next(Math.Min(global::NightDuty.DesignData.SettingInt(390186), open.Count))].Value;   // DT 390186 가까운 N개 중 무작위
         }
 
         /// <summary>디버그·연출: 그 지시를 지금 낸다(진행 중인 지시가 있으면 false).</summary>

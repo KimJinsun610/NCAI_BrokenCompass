@@ -348,7 +348,7 @@ namespace NightDuty
         /// <item>5일차: 사람 나무 · 부르는 목소리 · 도서관 노란 얼굴 · 모형 급습</item>
         /// </list>
         /// </summary>
-        public static bool FixedSchedule = true;
+        public static bool FixedSchedule = global::NightDuty.DesignData.SettingBool(390001);   // DT 390001 고정 날짜 편성 사용 — 기본값만 DT(시험이 바꿈)
 
         /// <summary>104차: 고정 편성에서 첫 역설(C2 — 소년)이 나오는 날(소년 머리 박기 날). 옛 편성은 2일차.</summary>
         public const int FixedFirstParadoxDay = 4;
@@ -1494,14 +1494,14 @@ namespace NightDuty
         /// </summary>
         private int RecencyWeight(RuleDef r)
         {
-            if (_lastDeck.Contains(r.Id)) return 1;
+            if (_lastDeck.Contains(r.Id)) return global::NightDuty.DesignData.SettingInt(390070);   // DT 390070 지난 밤에 본 채움
             if (_buildDay >= ParadoxPlanner.TamperLateDay && _runRules.Contains(r.Id))
             {
                 ParadoxEntry e = ParadoxCatalog.Find(r.Id);
-                if (e != null && e.HasVariant) return 4;
+                if (e != null && e.HasVariant) return global::NightDuty.DesignData.SettingInt(390072);   // DT 390072 변조본 있는 채움(3일차~)
             }
 
-            return 3;
+            return global::NightDuty.DesignData.SettingInt(390071);   // DT 390071 처음 보는 채움
         }
 
         private RuleDef Weighted(List<RuleDef> c, List<int> w)
@@ -1730,7 +1730,7 @@ namespace NightDuty
                 if (r.Id == "S3" && PlanHas(_planForFill, "S-1")) continue;   // 51차: 모형을 비추지 말라는 날에 모형 점검은 없다
                 if (onlyAxis.HasValue && r.Axis != onlyAxis.Value) continue;
                 candidates.Add(r);
-                weights.Add((r.Axis == highest ? 2 : 1) * RecencyWeight(r));
+                weights.Add((r.Axis == highest ? global::NightDuty.DesignData.SettingInt(390069) : 1) * RecencyWeight(r));   // DT 390069 가장 높은 감각 축 배수
             }
 
             return Weighted(candidates, weights);

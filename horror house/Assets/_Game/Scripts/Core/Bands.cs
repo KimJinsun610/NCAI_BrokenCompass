@@ -20,10 +20,10 @@ namespace NightDuty
     public static class Bands
     {
         /// <summary>축 값의 하한(포함).</summary>
-        public const int Min = 0;
+        public static int Min => global::NightDuty.DesignData.SettingInt(390312);   // DT 390312 축 최소
 
         /// <summary>축 값의 상한(포함). 이 값에 도달하면 붙잡힘이다.</summary>
-        public const int Max = 100;
+        public static int Max => global::NightDuty.DesignData.SettingInt(390313);   // DT 390313 축 최대 (390315 붙잡힘 값과 같음 — 판정은 Max 하나로)
 
         /// <summary>구간 개수.</summary>
         public const int Count = 5;

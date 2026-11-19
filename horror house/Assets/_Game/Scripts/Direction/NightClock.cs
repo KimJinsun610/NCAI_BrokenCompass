@@ -91,7 +91,7 @@ namespace NightDuty
         public static int ShiftEnd => DesignData.SegmentMinute(340007u, end: true);   // DT Night_Segment_Table 340007.End_Min
 
         /// <summary>67차(민: 「1시간마다 알림」): 정시 알림을 보내는 시각(01:00 · 02:00 · 03:00). 04:00은 근무 종료라 따로 없다(88차).</summary>
-        public static readonly int[] HourMarks = { 60, 120, 180 };
+        public static readonly int[] HourMarks = { global::NightDuty.DesignData.SettingInt(390029), global::NightDuty.DesignData.SettingInt(390326), global::NightDuty.DesignData.SettingInt(390327) };   // DT 390029·390326·390327 정시 알림 1~3
 
         /// <summary>그 게임 분의 「HH:MM」(근무 시작 00:00 기준).</summary>
         public static string Clock(float minute)

@@ -32,10 +32,10 @@ public sealed class InspectionAnomalies : MonoBehaviour
     /// 66차 실시간 조작(민 피드백 6단계 「실시간 조작」 — 원문이 남아 있지 않아 이렇게 읽었다): 그날 늦게 열리는 공간(호출 2)의 이상은 밤 시작에 세우지 않고,
     /// 그 점검이 열린 뒤 플레이어가 보지 않고 4m 넘게 떨어져 있을 때 세운다 — 앞서 지나가며 본 정상 모습이 나중에 바뀌어 있다. 판정(편성)은 그대로다. 끄면 옛 동작.
     /// </summary>
-    public static bool LiveTamper = true;
+    public static bool LiveTamper = global::NightDuty.DesignData.SettingBool(390009);   // DT 390009 늦은 공간 이상을 안 볼 때 세움 — 기본값만 DT
 
     /// <summary>실시간 조작을 기다리는 동안 플레이어와 떨어져 있어야 하는 거리(m).</summary>
-    public const float TamperMinDistance = 4f;
+    public static float TamperMinDistance => global::NightDuty.DesignData.Setting(390219);   // DT 390219 안 보고 이만큼 떨어지면 이상을 세움
 
     /// <summary>[빛] 이상의 세기 배수(53차 민: 「빛과 관련된 점검 물품들은 빛이 아주 약하게」).</summary>
     public static float LightAnomalyScale = 0.3f;

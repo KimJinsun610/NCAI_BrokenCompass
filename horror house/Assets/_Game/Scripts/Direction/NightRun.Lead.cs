@@ -15,7 +15,7 @@ namespace NightDuty
     public static partial class NightRun
     {
         /// <summary>조우 앞 지시가 슬롯보다 이만큼(게임 분) 먼저 나간다(변기 지시와 같은 간격).</summary>
-        public const float LeadMinutes = ToiletOrderLeadMinutes;
+        public static float LeadMinutes => ToiletOrderLeadMinutes;   // DT 390189
 
         /// <summary>창밖 노란 얼굴을 이만큼(초) 이어서 보면 달아난다(민: 「응시를 2초 이상 하면 도망감」).</summary>
         public const float WindowFleeSeconds = 2f;

@@ -51,9 +51,9 @@ namespace NightDuty
 
             List<InspectionAssignment> rows = new List<InspectionAssignment>(plan.Assignments);
             bool changed = false;
-            if (corpse && plan.Find("C-3") == null)
+            if (corpse && plan.Find("135009") == null)
             {
-                rows.Add(new InspectionAssignment(InspectionCatalog.Find("C-3"), false, Band.Band0, false));
+                rows.Add(new InspectionAssignment(InspectionCatalog.Find("135009"), false, Band.Band0, false));
                 changed = true;
             }
 
@@ -82,7 +82,7 @@ namespace NightDuty
                     changed = true;
                 }
 
-                if (rows.RemoveAll(r => r.Id == "T-2") > 0) changed = true;
+                if (rows.RemoveAll(r => r.Id == "135019") > 0) changed = true;
 
                 // 61차(민: 「변기 수칙 → 변기 지시 → 화장실 입장 → 소녀가 칸에 들어가는 것 목격 → 핏물·머리카락 → 정상 보고」):
                 // 화장실로 부르는 것은 변기 지시(T-1) 자신이다 — 여자아이 슬롯이 열릴 때 단독 지시로 나간다(<see cref="ReleaseToiletOrder"/>).
@@ -116,7 +116,7 @@ namespace NightDuty
                 bool added = false;
                 foreach (InspectionItem item in InspectionCatalog.InSpace(room))
                 {
-                    if (rows.Exists(r => r.Id == item.Id) || (reverse && (item.Id == "T-2" || item.Id == InspectionCatalog.ReverseReportItem))) continue;
+                    if (rows.Exists(r => r.Id == item.Id) || (reverse && (item.Id == "135019" || item.Id == InspectionCatalog.ReverseReportItem))) continue;
                     rows.Add(new InspectionAssignment(item, false, Band.Band0, lateRoom && !needEarly));
                     changed = true;
                     added = true;

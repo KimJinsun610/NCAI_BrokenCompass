@@ -104,7 +104,7 @@ public sealed class DutyStage : MonoBehaviour
             _book = book.GetComponent<DutyPickupItem>();
             if (_book == null) _book = book.AddComponent<DutyPickupItem>();
             _book.UseCleanVisual(LibraryBookVisual);
-            _book.Setup(DutyCatalog.LibraryBookTarget, "W15", "[E] biology 책 줍기");
+            _book.Setup(DutyCatalog.LibraryBookTarget, "130009", "[E] biology 책 줍기");
         }
         else Debug.LogWarning("[DutyStage] 도서관 biology 책을 찾지 못했습니다(W15): " + LibraryBookPath);
 

@@ -6,17 +6,17 @@ namespace NightDuty.Tests
     /// <summary>66차(민: 「점검은 안 겹칠수록 좋아. 점검 항목을 추가해도 돼, 필요하면 하루 점검을 줄여도 돼」).</summary>
     public sealed class SixtySixthPassTests
     {
-        [TestCase("H-5", SpaceId.Corridor, AnomalyTemplate.Sound)]
-        [TestCase("H-6", SpaceId.Corridor, AnomalyTemplate.Move)]
-        [TestCase("C-4", SpaceId.Classroom, AnomalyTemplate.Move)]
-        [TestCase("C-5", SpaceId.Classroom, AnomalyTemplate.Move)]
-        [TestCase("S-4", SpaceId.ScienceRoom, AnomalyTemplate.Switch)]
-        [TestCase("S-5", SpaceId.ScienceRoom, AnomalyTemplate.Light)]
-        [TestCase("S-6", SpaceId.ScienceRoom, AnomalyTemplate.Move)]
-        [TestCase("T-5", SpaceId.Toilet, AnomalyTemplate.Move)]
-        [TestCase("L-5", SpaceId.Library, AnomalyTemplate.Move)]
-        [TestCase("K-2", SpaceId.SecurityRoom, AnomalyTemplate.Move)]
-        [TestCase("K-3", SpaceId.SecurityRoom, AnomalyTemplate.Move)]
+        [TestCase("135005", SpaceId.Corridor, AnomalyTemplate.Sound)]
+        [TestCase("135006", SpaceId.Corridor, AnomalyTemplate.Move)]
+        [TestCase("135010", SpaceId.Classroom, AnomalyTemplate.Move)]
+        [TestCase("135011", SpaceId.Classroom, AnomalyTemplate.Move)]
+        [TestCase("135015", SpaceId.ScienceRoom, AnomalyTemplate.Switch)]
+        [TestCase("135016", SpaceId.ScienceRoom, AnomalyTemplate.Light)]
+        [TestCase("135017", SpaceId.ScienceRoom, AnomalyTemplate.Move)]
+        [TestCase("135021", SpaceId.Toilet, AnomalyTemplate.Move)]
+        [TestCase("135024", SpaceId.Library, AnomalyTemplate.Move)]
+        [TestCase("135026", SpaceId.SecurityRoom, AnomalyTemplate.Move)]
+        [TestCase("135027", SpaceId.SecurityRoom, AnomalyTemplate.Move)]
         public void 새_점검_항목(string id, SpaceId space, AnomalyTemplate template)
         {
             InspectionItem item = InspectionCatalog.Find(id);
@@ -30,14 +30,14 @@ namespace NightDuty.Tests
         public void 빠진_ID는_되살리지_않는다()
         {
             Assert.IsNull(InspectionCatalog.Find("L-3"), "65차에 뺀 반납 상자");
-            Assert.AreEqual("복도 쓰레기통", InspectionCatalog.Find("H-4").Name, "49차에 뺀 복도 사물함이 아니다");   // 104차(사용자 결정): 옛 이름 「쓰레기통」(L-5와 같았음)
+            Assert.AreEqual("복도 쓰레기통", InspectionCatalog.Find("135004").Name, "49차에 뺀 복도 사물함이 아니다");   // 104차(사용자 결정): 옛 이름 「쓰레기통」(L-5와 같았음)
         }
 
         [Test]
         public void 도서관_쓰레기통은_원래_쓰러져_있다()
         {
-            StringAssert.Contains("누워 있는지", InspectionCatalog.Find("L-5").TabletLine, "104차(사용자 결정) — 씬의 도서관 쓰레기통은 누워 있다(정상), 이상이면 누가 세워 놓았다. 옛 76차 「세워져 있는지」는 정상·이상이 문장과 반대였다");
-            StringAssert.Contains("제자리", InspectionCatalog.Find("C-4").TabletLine, "76차 민 문구 — 이상이면 바닥에 떨어져 있다");
+            StringAssert.Contains("누워 있는지", InspectionCatalog.Find("135024").TabletLine, "104차(사용자 결정) — 씬의 도서관 쓰레기통은 누워 있다(정상), 이상이면 누가 세워 놓았다. 옛 76차 「세워져 있는지」는 정상·이상이 문장과 반대였다");
+            StringAssert.Contains("제자리", InspectionCatalog.Find("135010").TabletLine, "76차 민 문구 — 이상이면 바닥에 떨어져 있다");
         }
 
         [Test]

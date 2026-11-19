@@ -1,9 +1,9 @@
-﻿ID,Name,Start_Min,End_Min,Is_Judging,Desc
-uint,string,uint,uint,bool,string
-340001,출근,0,16,FALSE,판정 정지. 경비실 출근
-340002,저긴장,16,60,TRUE,자유 점검. 판정 시작
-340003,슬롯 A,60,112,TRUE,호출 1 뒤 조우 슬롯 A
-340004,이완,112,136,FALSE,판정 정지. 근무일지 중간 서명(체크포인트)
-340005,슬롯 B,136,188,TRUE,호출 2 뒤 조우 슬롯 B(메인)
-340006,슬롯 C,188,212,TRUE,보너스 슬롯 C
-340007,복귀,212,240,FALSE,"수칙 판정 종료, 새 조우 없음, 보고 가능"
+﻿ID,Name,Start_Min,End_Min,Is_Judging,Desc,Code
+uint,string,uint,uint,bool,string,string
+340001,출근,0,16,FALSE,판정 정지. 경비실 출근,Arrival
+340002,저긴장,16,60,TRUE,자유 점검. 판정 시작,LowTension
+340003,슬롯 A,60,112,TRUE,호출 1 뒤 조우 슬롯 A,SlotA
+340004,이완,112,136,FALSE,판정 정지. 근무일지 중간 서명(체크포인트),Relax
+340005,슬롯 B,136,188,TRUE,호출 2 뒤 조우 슬롯 B(메인),SlotB
+340006,슬롯 C,188,212,TRUE,보너스 슬롯 C,SlotC
+340007,복귀,212,240,FALSE,"수칙 판정 종료, 새 조우 없음, 보고 가능",Wrap

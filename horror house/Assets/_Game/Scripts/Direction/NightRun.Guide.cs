@@ -91,7 +91,7 @@ namespace NightDuty
                 foreach (InspectionItem item in InspectionCatalog.InSpace(kv.Key))
                 {
                     if (have >= kv.Value) break;
-                    if (rows.Exists(r => r.Id == item.Id) || IsBuiltInLeadItem(item.Id, reverse) || (reverse && item.Id == "T-2")) continue;
+                    if (rows.Exists(r => r.Id == item.Id) || IsBuiltInLeadItem(item.Id, reverse) || (reverse && item.Id == "135019")) continue;
                     rows.Add(new InspectionAssignment(item, false, Band.Band0, false));
                     have++;
                     changed = true;
@@ -103,7 +103,7 @@ namespace NightDuty
 
         private static bool IsBuiltInLeadItem(string itemId, bool reverse)
         {
-            return itemId == "C-3" || itemId == "L-2" || (reverse && itemId == InspectionCatalog.ReverseReportItem);
+            return itemId == "135009" || itemId == "135023" || (reverse && itemId == InspectionCatalog.ReverseReportItem);
         }
 
         /// <summary>밤 시작 — 순서대로 여는 밤에 조우마다 그 공간 점검 하나를 묶는다(CCTV 사람은 K-1을 먼저).</summary>
@@ -310,7 +310,7 @@ namespace NightDuty
         {
             if (r == null || r.Script == null) return string.Empty;
             if (r.Script.AfterOrder.Length > 0) return r.Script.AfterOrder;
-            if (r.Def.Id == ProgramCatalog.CeilingLegs && SequentialCorpseLead) return "C-3";
+            if (r.Def.Id == ProgramCatalog.CeilingLegs && SequentialCorpseLead) return "135009";
             string item;
             return s_leadItems.TryGetValue(r.Def.Id, out item) ? item : string.Empty;   // 104차: 그 공간 점검
         }

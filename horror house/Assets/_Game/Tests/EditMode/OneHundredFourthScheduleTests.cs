@@ -334,7 +334,7 @@ namespace NightDuty.Tests
             f.Minute = 60f;
             f.Enter(SpaceId.Classroom).Wait(2f);
             Assert.AreEqual(EncounterRunState.Waiting, t.Runs[0].State, "보고 키를 누르기 전에는 떨어지지 않는다");
-            t.NoteReportHold(InspectionCatalog.TargetPrefix + "C-3");
+            t.NoteReportHold(InspectionCatalog.TargetOf("135009"));
             f.Wait(0.1f);
             Assert.AreNotEqual(EncounterRunState.Waiting, t.Runs[0].State, "누르는 순간");
             Assert.IsTrue(t.ReportInterrupted, "보고 도중 — 보고를 멈춘다");
@@ -353,7 +353,7 @@ namespace NightDuty.Tests
             t.GazeTargetReportMode = true;
             f.Minute = 60f;
             f.Enter(SpaceId.Classroom).Wait(1f);
-            t.NoteReportHold(InspectionCatalog.TargetPrefix + "C-1");
+            t.NoteReportHold(InspectionCatalog.TargetOf("135007"));
             f.Wait(1f);
             Assert.AreEqual(EncounterRunState.Waiting, t.Runs[0].State);
         }
@@ -391,10 +391,10 @@ namespace NightDuty.Tests
             f.Minute = 60f;
             f.Enter(SpaceId.Classroom).Wait(8f);
             Assert.AreEqual(EncounterRunState.Waiting, t.Runs[0].State, "교실에 있어도 화분 보고 전에는 아직");
-            t.NoteReported("C-2");
+            t.NoteReported("135008");
             f.Wait(0.2f);
             Assert.AreEqual(EncounterRunState.Waiting, t.Runs[0].State, "다른 항목은 아님");
-            t.NoteReported("C-1");
+            t.NoteReported("135007");
             f.Wait(0.1f);
             Assert.AreNotEqual(EncounterRunState.Waiting, t.Runs[0].State, "화분 보고 — 곧바로");
             Assert.AreNotEqual(EncounterRunState.Foreshadow, t.Runs[0].State, "전조 없이");

@@ -30,23 +30,23 @@ namespace NightDuty.Tests
         public void 보고한_판정을_바꾸면_지난_몫을_되돌리고_다시_판정한다()
         {
             InspectionBoard b = new InspectionBoard();
-            b.Begin(new InspectionPlan(3, new[] { Row("H-2", true), Row("S-1") }, SpaceId.None, string.Empty));
+            b.Begin(new InspectionPlan(3, new[] { Row("135002", true), Row("135012") }, SpaceId.None, string.Empty));
             FearAxisSystem axes = new FearAxisSystem();
-            FearAxis ax = InspectionCatalog.Find("H-2").Axis;
+            FearAxis ax = InspectionCatalog.Find("135002").Axis;
             axes.Apply(ax, 30, "준비", SpaceId.None);
 
-            Assert.AreEqual(ReportRejection.NotReported, b.Revise("H-2", true, -1, axes, SpaceId.Corridor).Rejection, "보고 전에는 정정이 아니다");
-            Assert.AreEqual(ReportOutcome.Missed, b.Report("H-2", false, -1, axes, SpaceId.Corridor).Outcome);
+            Assert.AreEqual(ReportRejection.NotReported, b.Revise("135002", true, -1, axes, SpaceId.Corridor).Rejection, "보고 전에는 정정이 아니다");
+            Assert.AreEqual(ReportOutcome.Missed, b.Report("135002", false, -1, axes, SpaceId.Corridor).Outcome);
             Assert.AreEqual(30 + Deltas.MissedAnomaly, axes.GetValue(ax));
-            Assert.AreEqual(ReportRejection.CannotRevise, b.Revise("H-2", false, -1, axes, SpaceId.Corridor).Rejection, "같은 판정");
+            Assert.AreEqual(ReportRejection.CannotRevise, b.Revise("135002", false, -1, axes, SpaceId.Corridor).Rejection, "같은 판정");
 
-            InspectionReport fixedUp = b.Revise("H-2", true, -1, axes, SpaceId.Corridor);
+            InspectionReport fixedUp = b.Revise("135002", true, -1, axes, SpaceId.Corridor);
             Assert.AreEqual(ReportOutcome.CorrectAnomaly, fixedUp.Outcome);
             Assert.AreEqual(30 - Deltas.CorrectReportRelief, axes.GetValue(ax), "놓침 +8을 되돌리고 정확 보고 −5");
-            Assert.AreEqual(InspectionState.ReportedAnomaly, b.StateOf("H-2"));
+            Assert.AreEqual(InspectionState.ReportedAnomaly, b.StateOf("135002"));
             Assert.AreEqual(Deltas.CorrectReportRelief, b.ReliefUsed(ax));
 
-            InspectionReport back = b.Revise("H-2", false, -1, axes, SpaceId.Corridor);
+            InspectionReport back = b.Revise("135002", false, -1, axes, SpaceId.Corridor);
             Assert.AreEqual(ReportOutcome.Missed, back.Outcome);
             Assert.AreEqual(30 + Deltas.MissedAnomaly, axes.GetValue(ax), "몇 번이든 — 정확 보고 몫과 그 한도도 돌려준다");
             Assert.AreEqual(0, b.ReliefUsed(ax));
@@ -60,7 +60,7 @@ namespace NightDuty.Tests
             f.Director.GazeTargetPosition = id => new UnityEngine.Vector3(10f, 0f, 0f);
             f.Director.GazeTargetNearRadius = NightRun.CorpseLadderRoomRadius;
             f.Minute = 30f;
-            string ladder = InspectionCatalog.TargetPrefix + "C-3";
+            string ladder = InspectionCatalog.TargetOf("135009");
             f.Enter(SpaceId.Classroom_1_3).Pose(4f, 0f).Wait(0.1f);
             for (int i = 0; i < 10; i++) f.Send(JudgeSignal.Gaze(ladder, 0.1f)).Wait(0.1f);
             Assert.IsFalse(f.HasPhase(ProgramCatalog.CeilingLegs, DirectionPhase.Foreshadow), "교실 입구(6m)에서 봐도 아직");
@@ -73,12 +73,12 @@ namespace NightDuty.Tests
         public void T4_역보고가_걸린_변기는_바꿀_수_없다()
         {
             InspectionBoard b = new InspectionBoard();
-            b.Begin(new InspectionPlan(3, new[] { Row("T-1") }, SpaceId.None, string.Empty));
+            b.Begin(new InspectionPlan(3, new[] { Row("135018") }, SpaceId.None, string.Empty));
             FearAxisSystem axes = new FearAxisSystem();
-            b.SetReverseReport("T-1", true);
-            Assert.AreEqual(ReportOutcome.ReverseKept, b.Report("T-1", false, -1, axes, SpaceId.Toilet).Outcome);
-            Assert.IsFalse(b.CanRevise("T-1", -1));
-            Assert.AreEqual(ReportRejection.CannotRevise, b.Revise("T-1", true, -1, axes, SpaceId.Toilet).Rejection);
+            b.SetReverseReport("135018", true);
+            Assert.AreEqual(ReportOutcome.ReverseKept, b.Report("135018", false, -1, axes, SpaceId.Toilet).Outcome);
+            Assert.IsFalse(b.CanRevise("135018", -1));
+            Assert.AreEqual(ReportRejection.CannotRevise, b.Revise("135018", true, -1, axes, SpaceId.Toilet).Rejection);
         }
     }
 }

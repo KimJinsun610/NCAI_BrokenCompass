@@ -121,6 +121,7 @@ namespace NightDuty
         {
             List<EncounterSlot> list = new List<EncounterSlot>();
             if (n <= 0) return list;
+            if (FromDesignData(n, list)) return list;   // DT Encounter_Window_Table(1~4개) — 없는 수는 아래 옛 규칙
             if (n == 1)
             {
                 list.Add(EncounterSlot.B);
@@ -142,6 +143,26 @@ namespace NightDuty
             for (int i = 0; i < rest - a; i++) list.Add(EncounterSlot.B);
             for (int i = 0; i < c; i++) list.Add(EncounterSlot.C);
             return list;
+        }
+
+        /// <summary>DT Encounter_Window_Table에서 그날 조우 수의 창 배정을 읽는다. 행이 없으면 false.</summary>
+        private static bool FromDesignData(int n, List<EncounterSlot> list)
+        {
+            global::NightDuty.DesignData.Ensure();
+            foreach (var row in InstructionDT.DT.EncounterWindow.All)
+            {
+                if (row.Encounter_Count != n) continue;
+                uint[] seg = { row.Window_1_Segment_ID, row.Window_2_Segment_ID, row.Window_3_Segment_ID, row.Window_4_Segment_ID };
+                for (int i = 0; i < n && i < seg.Length; i++)
+                {
+                    if (seg[i] == global::NightDuty.DesignData.SegmentRowId(NightPhase.SlotA)) list.Add(EncounterSlot.A);
+                    else if (seg[i] == global::NightDuty.DesignData.SegmentRowId(NightPhase.SlotB)) list.Add(EncounterSlot.B);
+                    else if (seg[i] == global::NightDuty.DesignData.SegmentRowId(NightPhase.SlotC)) list.Add(EncounterSlot.C);
+                    else throw new System.InvalidOperationException("DT Encounter_Window " + row.ID + ": 창 구간 " + seg[i] + "은 A·B·C 구간이 아님");
+                }
+                return list.Count == n;
+            }
+            return false;
         }
 
         /// <summary>빈 편성.</summary>
@@ -302,9 +323,7 @@ namespace NightDuty
         {
             // 103차(사용자: 「가짜 수칙은 첫날에 원래 수칙 4개 + 가짜 2개로 첫날에만」): 2~5일차에 한 줄씩 끼던 가짜 수칙 자리를 진짜 수칙으로 — 2~4일차 5 → 6, 5일차 6 → 7.
             // 태블릿 줄 수는 그대로(1일차 4 + 가짜 2 = 6). 잘 안 나오던 수칙(도서관 L1·L2 13 → 37%)·변조(회차 1.5 → 2.5번)가 는다.
-            if (day <= 1) return 4;
-            if (day >= 5) return 7;
-            return 6;
+            return (int)global::NightDuty.DesignData.Day(day).Rule_Count;   // DT Day_Table.Rule_Count (4·6·6·6·7)
         }
 
         /// <summary>1일차 수칙 후보(57차, 민: 「1~2일차 수칙이 너무 풀이 좁다」) — 조우에 묶이지 않은 수칙 중 1일차 점검 공간(복도·교실·과학실·경비실)의 것. S1·G1은 고정.</summary>
@@ -351,7 +370,7 @@ namespace NightDuty
         public static bool FixedSchedule = global::NightDuty.DesignData.SettingBool(390001);   // DT 390001 고정 날짜 편성 사용 — 기본값만 DT(시험이 바꿈)
 
         /// <summary>104차: 고정 편성에서 첫 역설(C2 — 소년)이 나오는 날(소년 머리 박기 날). 옛 편성은 2일차.</summary>
-        public const int FixedFirstParadoxDay = 4;
+        public static int FixedFirstParadoxDay { get { for (int d = 1; d <= global::NightDuty.DesignData.LastDay; d++) if (global::NightDuty.DesignData.Day(d).Paradox_First_Day) return d; return 4; } }   // DT Day_Table.Paradox_First_Day
 
         /// <summary>104차: 고정 편성에서 남은 소등이 나올 수 있는 날(4·5일차 중 하루).</summary>
         public const int LateBlackoutFrom = 4;
@@ -1727,7 +1746,7 @@ namespace NightDuty
                 if (!r.IsStandalone || !r.HasAxis) continue;
                 if (ProgramCatalog.IsRetired(r.Id)) continue;   // 60차: 폐기한 수칙(C1 판서)
                 if (r.UsesFlashlight && flash >= ProgramCatalog.FlashlightPerDay) continue;
-                if (r.Id == "S3" && PlanHas(_planForFill, "S-1")) continue;   // 51차: 모형을 비추지 말라는 날에 모형 점검은 없다
+                if (r.Id == "S3" && PlanHas(_planForFill, "135012")) continue;   // 51차: 모형을 비추지 말라는 날에 모형 점검은 없다
                 if (onlyAxis.HasValue && r.Axis != onlyAxis.Value) continue;
                 candidates.Add(r);
                 weights.Add((r.Axis == highest ? global::NightDuty.DesignData.SettingInt(390069) : 1) * RecencyWeight(r));   // DT 390069 가장 높은 감각 축 배수

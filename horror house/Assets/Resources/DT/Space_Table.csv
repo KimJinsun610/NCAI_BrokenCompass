@@ -1,8 +1,8 @@
-﻿ID,Name,Is_Patrol,Is_Battery_Space,Battery_Share,Battery_Max,Desc
-uint,string,bool,bool,float,uint,string
-320001,복도,TRUE,TRUE,1,2,중앙 복도. 복도
-320002,화장실,TRUE,TRUE,1,2,좌측 동. 화장실
-320003,과학실,TRUE,TRUE,1,2,우측 동. 과학실
-320004,도서관,TRUE,TRUE,0.5,1,좌측 동. 배터리 몫은 1일차에 0. 도서관
-320005,경비실,TRUE,FALSE,,,우측 동. 경비실
-320006,교실,TRUE,TRUE,1,2,"우측 동. 우측 동 Classroom02, 문틀만 두 개인 창고형 교실(최종 기획서의 유일한 교실)"
+﻿ID,Name,Is_Patrol,Is_Battery_Space,Battery_Share,Battery_Max,Desc,Code
+uint,string,bool,bool,float,uint,string,string
+320001,복도,TRUE,TRUE,1,2,중앙 복도. 복도,Corridor
+320002,화장실,TRUE,TRUE,1,2,좌측 동. 화장실,Toilet
+320003,과학실,TRUE,TRUE,1,2,우측 동. 과학실,ScienceRoom
+320004,도서관,TRUE,TRUE,0.5,1,좌측 동. 배터리 몫은 1일차에 0. 도서관,Library
+320005,경비실,TRUE,FALSE,,,우측 동. 경비실,SecurityRoom
+320006,교실,TRUE,TRUE,1,2,"우측 동. 우측 동 Classroom02, 문틀만 두 개인 창고형 교실(최종 기획서의 유일한 교실)",Classroom

@@ -78,5 +78,161 @@ namespace NightDuty
             if (DT.Band.Get((uint)band) == null) throw new System.InvalidOperationException("DT Setting " + id + " 값 " + band + "은 Band_Table ID가 아님");
             return band - 330000;
         }
+
+        // ── 표시 코드(2단계) ─────────────────────────────────────────────
+        static System.Collections.Generic.Dictionary<uint, string> _labels;
+        static System.Collections.Generic.Dictionary<string, uint> _codes;
+        static object _labelSource;
+
+        /// <summary>
+        /// 행의 표시 코드(xlsx 「표시 코드」 칸 = 옛 코드, 예: 110001 → "H1"). 없으면 이름(Name), 그것도 없으면 문구(Text), 그것도 없으면 ID 숫자.
+        /// 로그·테스트·디버그 표시 전용 — 키로 쓰지 마십시오(키는 ID).
+        /// </summary>
+        public static string Label(uint id)
+        {
+            BuildLabels();
+            return _labels.TryGetValue(id, out var s) ? s : id.ToString();
+        }
+
+        /// <summary>표시 코드로 행 ID를 찾는다(전 표에서 유일해야 함). 없으면 0. 테스트·이전 도구용.</summary>
+        public static uint IdOfCode(string code)
+        {
+            BuildLabels();
+            return code != null && _codes.TryGetValue(code, out var id) ? id : 0u;
+        }
+
+        /// <summary>공간 enum → Space_Table ID(표시 코드 = enum 이름). 표에 없는 공간(None·교실 1-1/1-3 같은 세부 공간)은 0.</summary>
+        public static uint SpaceRowId(SpaceId space) => RowIdByCode(DT.Space.All, space.ToString());
+
+        /// <summary>밤 구간 enum → Night_Segment_Table ID(표시 코드 = enum 이름). Ended는 0.</summary>
+        public static uint SegmentRowId(NightPhase phase) => RowIdByCode(DT.NightSegment.All, phase.ToString());
+
+        static uint RowIdByCode<T>(System.Collections.Generic.IReadOnlyList<T> rows, string code) where T : class, IDTRow
+        {
+            Ensure();
+            var f = typeof(T).GetField("Code");
+            for (int i = 0; i < rows.Count; i++)
+                if (f != null && (string)f.GetValue(rows[i]) == code) return rows[i].Id;
+            return 0u;
+        }
+
+        static void BuildLabels()
+        {
+            Ensure();
+            if (_labels != null && ReferenceEquals(_labelSource, DT.Setting)) return;
+            var labels = new System.Collections.Generic.Dictionary<uint, string>();
+            var codes = new System.Collections.Generic.Dictionary<string, uint>();
+            foreach (var p in typeof(DT).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static))
+            {
+                if (!p.PropertyType.IsGenericType) continue;
+                var rowType = p.PropertyType.GetGenericArguments()[0];
+                var all = p.PropertyType.GetProperty("All")?.GetValue(p.GetValue(null)) as System.Collections.IEnumerable;
+                if (all == null) continue;
+                var fc = rowType.GetField("Code"); var fn = rowType.GetField("Name"); var ft = rowType.GetField("Text");
+                foreach (IDTRow r in all)
+                {
+                    string code = fc?.GetValue(r) as string;
+                    string s = !string.IsNullOrEmpty(code) ? code : fn?.GetValue(r) as string;
+                    if (string.IsNullOrEmpty(s)) s = ft?.GetValue(r) as string;
+                    if (!string.IsNullOrEmpty(s)) labels[r.Id] = s;
+                    if (!string.IsNullOrEmpty(code))
+                    {
+                        if (codes.TryGetValue(code, out var prev) && prev != r.Id)
+                            throw new System.InvalidOperationException("DT 표시 코드 중복: " + code + " (" + prev + ", " + r.Id + ")");
+                        codes[code] = r.Id;
+                    }
+                }
+            }
+            _labels = labels; _codes = codes; _labelSource = DT.Setting;
+        }
+
+        // ── Day·Space 행(3단계) ──────────────────────────────────────────
+        static System.Collections.Generic.List<DayRow> _days;
+        static object _daysSource;
+
+        static System.Collections.Generic.List<DayRow> Days()
+        {
+            Ensure();
+            if (_days != null && ReferenceEquals(_daysSource, DT.Day)) return _days;
+            var rows = new System.Collections.Generic.List<DayRow>(DT.Day.All);
+            rows.Sort((a, b) => a.Day_No.CompareTo(b.Day_No));
+            _days = rows; _daysSource = DT.Day;
+            return rows;
+        }
+
+        /// <summary>Day_Table 그 일차 행. 첫날 전은 첫날, 마지막 날 뒤는 마지막 날 행(옛 코드의 클램프와 같음).</summary>
+        public static DayRow Day(int day)
+        {
+            var rows = Days();
+            if (rows.Count == 0) throw new System.InvalidOperationException("DT Day_Table 비어 있음");
+            for (int i = 0; i < rows.Count; i++) if (rows[i].Day_No >= day) return rows[i];
+            return rows[rows.Count - 1];
+        }
+
+        /// <summary>Day_Table 그 일차 행 — 표에 없는 날은 null(클램프 없음).</summary>
+        public static DayRow DayExact(int day)
+        {
+            var rows = Days();
+            for (int i = 0; i < rows.Count; i++) if (rows[i].Day_No == day) return rows[i];
+            return null;
+        }
+
+        /// <summary>표에 정의된 마지막 일차.</summary>
+        public static int LastDay { get { var rows = Days(); return rows.Count == 0 ? 0 : (int)rows[rows.Count - 1].Day_No; } }
+
+        /// <summary>Band_Table ID(330000~) → 구간 번호.</summary>
+        public static int BandOfId(uint bandId)
+        {
+            Ensure();
+            if (DT.Band.Get(bandId) == null) throw new System.InvalidOperationException("DT Band " + bandId + " 없음");
+            return (int)bandId - 330000;
+        }
+
+        /// <summary>Space_Table ID → 공간 enum(표시 코드 = enum 이름). 0·없는 ID는 None.</summary>
+        public static SpaceId SpaceOf(uint spaceRowId)
+        {
+            Ensure();
+            var row = spaceRowId == 0 ? null : DT.Space.Get(spaceRowId);
+            return row != null && System.Enum.TryParse(row.Code, out SpaceId s) ? s : SpaceId.None;
+        }
+
+        /// <summary>
+        /// 공간 enum의 Space_Table 행. 세부 공간 교실 1-3(Classroom_1_3 = 씬 Classroom02)은 표의 「교실」 행을 쓴다(표 설명: 유일한 교실). 없으면 null.
+        /// </summary>
+        public static SpaceRow SpaceRowOf(SpaceId space)
+        {
+            Ensure();
+            uint id = SpaceRowId(space == SpaceId.Classroom_1_3 ? SpaceId.Classroom : space);
+            return id == 0 ? null : DT.Space.Get(id);
+        }
+
+        /// <summary>Common_enum 공포 축 ID → 축.</summary>
+        public static FearAxis AxisOf(uint axisId)
+        {
+            switch (axisId)
+            {
+                case 510101: return FearAxis.Auditory;
+                case 510102: return FearAxis.Illuminance;
+                case 510103: return FearAxis.Layout;
+                case 510104: return FearAxis.Trust;
+                default: throw new System.InvalidOperationException("DT 공포 축 " + axisId + " 모름");
+            }
+        }
+
+        /// <summary>키 문자열 → 행 ID. 6자리 숫자면 그대로, 아니면 표시 코드로 찾는다. 없으면 0.</summary>
+        public static uint IdOf(string codeOrId)
+        {
+            return uint.TryParse(codeOrId, out var n) && n >= 100000 && n <= 999999 ? n : IdOfCode(codeOrId);
+        }
+
+        /// <summary>Task_Table 행(표시 코드 또는 ID 문자열로). 없으면 예외.</summary>
+        public static TaskRow TaskRow(string codeOrId)
+        {
+            Ensure();
+            uint id = IdOf(codeOrId);
+            var row = id == 0 ? null : DT.Task.Get(id);
+            if (row == null) throw new System.InvalidOperationException("DT Task " + codeOrId + " 없음");
+            return row;
+        }
     }
 }

@@ -27,22 +27,22 @@ namespace NightDuty.EditorTools
         /// <summary>항목 ID → 씬 경로.</summary>
         public static readonly KeyValuePair<string, string>[] Map =
         {
-            Pair("H-1", "Interior/Corridors/FireExtinguisherHang (2)"),
-            Pair("H-2", "Interior/Corridors/DrinkingFountain (1)"),
-            Pair("H-3", "Interior/Corridors/Bell (7)"),
-            Pair("H-4", "Interior/Corridors/TrashCanBig_A (1)"),   // 65차 — 씬에 놓기 전까지는 TrashCanKick이 런타임에 세운다
-            Pair("C-1", "Interior/Classroom02/Plant02 (1)"),
-            Pair("C-2", "Interior/Classroom02/LampDesk (1)"),
-            Pair("C-3", "Interior/Classroom02/LibraryLadder (1)"),
-            Pair("S-1", "Interior/science classroom/Anatomical Human Torso"),
-            Pair("S-2", "Interior/science classroom/Vintage Microscope"),
-            Pair("S-3", "Interior/science classroom/Laboratory_Sink"),
-            Pair("T-1", "Interior/Toilet02/ToiletA (3)"),
-            Pair("T-2", "Interior/Toilet02/ToiletCabin_static (2)/ToiletCabinDoor"),
-            Pair("T-3", "Interior/Toilet02/Toilet_MirrorB (1)"),
-            Pair("L-1", "Interior/Library/LibraryChair (15)"),
-            Pair("L-2", "Interior/Library/JalousieE (6)"),
-            Pair("K-1", "Interior/janitor's room/Old CRT Monitor")
+            Pair("135001", "Interior/Corridors/FireExtinguisherHang (2)"),
+            Pair("135002", "Interior/Corridors/DrinkingFountain (1)"),
+            Pair("135003", "Interior/Corridors/Bell (7)"),
+            Pair("135004", "Interior/Corridors/TrashCanBig_A (1)"),   // 65차 — 씬에 놓기 전까지는 TrashCanKick이 런타임에 세운다
+            Pair("135007", "Interior/Classroom02/Plant02 (1)"),
+            Pair("135008", "Interior/Classroom02/LampDesk (1)"),
+            Pair("135009", "Interior/Classroom02/LibraryLadder (1)"),
+            Pair("135012", "Interior/science classroom/Anatomical Human Torso"),
+            Pair("135013", "Interior/science classroom/Vintage Microscope"),
+            Pair("135014", "Interior/science classroom/Laboratory_Sink"),
+            Pair("135018", "Interior/Toilet02/ToiletA (3)"),
+            Pair("135019", "Interior/Toilet02/ToiletCabin_static (2)/ToiletCabinDoor"),
+            Pair("135020", "Interior/Toilet02/Toilet_MirrorB (1)"),
+            Pair("135022", "Interior/Library/LibraryChair (15)"),
+            Pair("135023", "Interior/Library/JalousieE (6)"),
+            Pair("135025", "Interior/janitor's room/Old CRT Monitor")
         };
 
         private static KeyValuePair<string, string> Pair(string id, string path)
@@ -86,7 +86,7 @@ namespace NightDuty.EditorTools
                     continue;
                 }
 
-                GameObject child = FindOrCreateChild(host, ChildPrefix + id);
+                GameObject child = FindOrCreateChild(host, ChildPrefix + InspectionCatalog.CodeOf(id));   // 씬 이름은 표시 코드(Inspect H-1)
                 child.layer = host.layer;
                 child.isStatic = false;
                 child.transform.position = bounds.center;
@@ -105,7 +105,7 @@ namespace NightDuty.EditorTools
                 SerializedObject so = new SerializedObject(target);
                 SerializedProperty ids = so.FindProperty("_ids");
                 ids.arraySize = 1;
-                ids.GetArrayElementAtIndex(0).stringValue = InspectionCatalog.TargetPrefix + id;
+                ids.GetArrayElementAtIndex(0).stringValue = InspectionCatalog.TargetOf(id);
                 so.ApplyModifiedProperties();
 
                 EditorUtility.SetDirty(child);

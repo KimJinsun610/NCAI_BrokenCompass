@@ -38,21 +38,20 @@ namespace NightDuty
         /// <summary>강도 3 이상 상한.</summary>
         public int Cap3
         {
-            get { return _day <= 2 ? 3 : 4; }
+            get { return (int)global::NightDuty.DesignData.Day(_day).Surprise_Cap3; }   // DT Day_Table.Surprise_Cap3
         }
 
         /// <summary>강도 4 이상 상한.</summary>
         public int Cap4
         {
-            get { return _day <= 2 ? 1 : 2; }
+            get { return (int)global::NightDuty.DesignData.Day(_day).Surprise_Cap4; }   // DT Day_Table.Surprise_Cap4
         }
 
         /// <summary>강도 5 상한(3~4일차는 교차 조건을 채운 경우만 1).</summary>
         public int Cap5(bool isCross)
         {
-            if (_day <= 2) return 0;
-            if (_day <= 4) return isCross ? 1 : 0;
-            return 1;
+            var d = global::NightDuty.DesignData.Day(_day);   // DT Day_Table.Surprise_Cap5 · Cap5_Cross_Only
+            return d.Cap5_Cross_Only && !isCross ? 0 : (int)d.Surprise_Cap5;
         }
 
         /// <summary>쓴 횟수(강도 3↑, 4↑, 5).</summary>

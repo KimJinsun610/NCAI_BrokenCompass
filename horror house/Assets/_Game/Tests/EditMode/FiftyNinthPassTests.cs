@@ -54,7 +54,7 @@ namespace NightDuty.Tests
 
             public Rig GazeLadder(float seconds)
             {
-                string ladder = InspectionCatalog.TargetPrefix + "C-3";
+                string ladder = InspectionCatalog.TargetOf("135009");
                 int n = UnityEngine.Mathf.RoundToInt(seconds * 10f);
                 for (int i = 0; i < n; i++) Send(JudgeSignal.Gaze(ladder, 0.1f)).Wait(0.1f);
                 return this;

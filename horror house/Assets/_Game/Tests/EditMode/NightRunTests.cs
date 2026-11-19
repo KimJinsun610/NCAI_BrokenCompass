@@ -127,12 +127,12 @@ namespace NightDuty.Tests
             NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day,
                 new[]
                 {
-                    new InspectionAssignment(InspectionCatalog.Find("H-2"), false, Band.Band0, false),
-                    new InspectionAssignment(InspectionCatalog.Find("H-1"), false, Band.Band0, false)
+                    new InspectionAssignment(InspectionCatalog.Find("135002"), false, Band.Band0, false),
+                    new InspectionAssignment(InspectionCatalog.Find("135001"), false, Band.Band0, false)
                 },
                 SpaceId.None, string.Empty);
             NightRun.BeginNight(1, () => _clock);
-            Assert.IsTrue(NightRun.ReportInspection("H-2", false).Accepted);
+            Assert.IsTrue(NightRun.ReportInspection("135002", false).Accepted);
 
             DaySummary summary = NightRun.BuildSummary();
             Assert.AreEqual(1, summary.PatrolDone);

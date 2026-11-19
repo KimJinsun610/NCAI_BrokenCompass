@@ -32,8 +32,8 @@ namespace NightDuty.Tests
         [Test]
         public void 출입_카드_지시는_집고_열쇠함에_넣으면_완료()
         {
-            DutyDef w16 = DutyCatalog.Find("W16");
-            DutyDef w17 = DutyCatalog.Find("W17");
+            DutyDef w16 = DutyCatalog.Find("130006");
+            DutyDef w17 = DutyCatalog.Find("130007");
             Assert.AreEqual("과학실에 두고 간 출입 카드를 경비실 열쇠함에 넣어주십시오.", w16.Order);
             Assert.AreEqual("교실 교탁 서랍 출입 카드를 경비실 열쇠함에 넣어주십시오.", w17.Order);   // 103차: 열쇠함 명시
             Assert.AreEqual(DutyKind.CardDelivery, w16.Kind);
@@ -43,7 +43,7 @@ namespace NightDuty.Tests
             DutyDispatcher d = new DutyDispatcher(1, s => 0f, 5);
             DutyEvent ev;
             Assert.IsFalse(d.WantsCard(DutyCatalog.ScienceCardTarget), "지시 전");
-            Assert.IsTrue(d.Force("W16", out ev));
+            Assert.IsTrue(d.Force("130006", out ev));
             Assert.IsTrue(d.WantsCard(DutyCatalog.ScienceCardTarget));
             Assert.IsFalse(d.WantsCard(DutyCatalog.ClassroomCardTarget), "다른 카드");
             Assert.IsFalse(d.NoteCardDelivered(out ev), "들지 않고는 넣을 수 없다");
@@ -56,9 +56,9 @@ namespace NightDuty.Tests
 
             Assert.IsTrue(d.NoteCardDelivered(out ev));
             Assert.AreEqual(DutyOutcome.Done, ev.Outcome);
-            Assert.AreEqual("W16", ev.Def.Id);
+            Assert.AreEqual("130006", ev.Def.Id);
             Assert.IsNull(d.CarriedCard);
-            Assert.IsTrue(d.Finished("W16"));
+            Assert.IsTrue(d.Finished("130006"));
         }
 
         [Test]

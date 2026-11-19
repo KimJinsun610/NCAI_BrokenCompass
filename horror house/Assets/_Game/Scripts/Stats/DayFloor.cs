@@ -23,10 +23,9 @@ namespace NightDuty
         /// 일차별 연출 구간 하한. 인덱스 0은 쓰지 않는다(일차는 1부터).
         /// 곡선을 바꾸려면 <b>오직 이 배열만</b> 고치면 된다.
         /// </summary>
-        private static readonly Band[] Floors = { Band.Band0, Band.Band0, Band.Band1, Band.Band1, Band.Band2, Band.Band3 };
 
         /// <summary>하한이 정의된 마지막 일차. 그 뒤의 일차는 이 값의 하한을 그대로 쓴다.</summary>
-        public static int LastDay { get { return Floors.Length - 1; } }
+        public static int LastDay => global::NightDuty.DesignData.LastDay;   // DT Day_Table 마지막 일차
 
         /// <summary>
         /// 그 일차의 연출 구간 하한. 1 미만은 Band0, <see cref="LastDay"/>를 넘으면 마지막 값으로 클램프한다.
@@ -39,12 +38,7 @@ namespace NightDuty
                 return Band.Band0;
             }
 
-            if (day > LastDay)
-            {
-                return Floors[LastDay];
-            }
-
-            return Floors[day];
+            return (Band)global::NightDuty.DesignData.BandOfId(global::NightDuty.DesignData.Day(day).Floor_Band_ID);   // DT Day_Table.Floor_Band_ID (마지막 날 뒤는 마지막 값)
         }
     }
 }

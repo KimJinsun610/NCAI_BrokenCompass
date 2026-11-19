@@ -179,18 +179,13 @@ namespace NightDuty
         /// <summary>일차별 최소 휴식(초): 40 · 33 · 28 · 25 …</summary>
         public static float RelaxMin(int day)
         {
-            if (day <= 1) return 40f;
-            if (day == 2) return 33f;
-            if (day == 3) return 28f;
-            return 25f;
+            return global::NightDuty.DesignData.Day(day).Relax_Min_Sec;   // DT Day_Table.Relax_Min_Sec
         }
 
         /// <summary>점검 지시 뒤 가짜 놀람을 쉬는 초: 10 · 8 · 6.</summary>
         public static float OrderQuiet(int day)
         {
-            if (day <= 1) return 10f;
-            if (day == 2) return 8f;
-            return 6f;
+            return global::NightDuty.DesignData.Day(day).Order_Quiet_Sec;   // DT Day_Table.Order_Quiet_Sec
         }
 
         /// <summary>사건 하나의 긴장도 몫. <paramref name="strength"/>는 조우 강도(1~5).</summary>

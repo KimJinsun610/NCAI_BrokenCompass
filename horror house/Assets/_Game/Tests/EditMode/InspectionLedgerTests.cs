@@ -24,19 +24,19 @@ namespace NightDuty.Tests
         {
             InspectionPlan plan = new InspectionPlan(2, new[]
             {
-                new InspectionAssignment(InspectionCatalog.Find("H-1"), true, Band.Band1, false),
-                new InspectionAssignment(InspectionCatalog.Find("C-2"), false, Band.Band0, false),
-                new InspectionAssignment(InspectionCatalog.Find("K-1"), false, Band.Band0, false)
+                new InspectionAssignment(InspectionCatalog.Find("135001"), true, Band.Band1, false),
+                new InspectionAssignment(InspectionCatalog.Find("135008"), false, Band.Band0, false),
+                new InspectionAssignment(InspectionCatalog.Find("135025"), false, Band.Band0, false)
             }, SpaceId.None, string.Empty);
             Dictionary<string, ReportOutcome> o = new Dictionary<string, ReportOutcome>
             {
-                { "K-1", ReportOutcome.CorrectNormal },
-                { "H-1", ReportOutcome.Missed }
+                { "135025", ReportOutcome.CorrectNormal },
+                { "135001", ReportOutcome.Missed }
             };
 
             List<KeyValuePair<InspectionItem, LedgerMark>> rows = InspectionLedger.Build(plan, o);
             Assert.AreEqual(3, rows.Count);
-            Assert.AreEqual("H-1", rows[0].Key.Id);
+            Assert.AreEqual("135001", rows[0].Key.Id);
             Assert.AreEqual(LedgerMark.Missed, rows[0].Value);
             Assert.AreEqual(LedgerMark.Unfinished, rows[1].Value);
             Assert.AreEqual(LedgerMark.Correct, rows[2].Value);

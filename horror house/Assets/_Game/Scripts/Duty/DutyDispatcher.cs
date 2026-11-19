@@ -488,7 +488,7 @@ namespace NightDuty
             bool relax = minute >= NightClock.RelaxStart && minute < NightClock.Call2;
             if (relax)
             {
-                DutyDef log = DutyCatalog.Find("W5");
+                DutyDef log = DutyCatalog.Find("130004");
                 if (log == null || _signed || _logOpen || _finished.Contains(log.Id) || !log.OnDay(_day)) return false;   // 103차 QA 4회: 따로 연 W5가 있으면 다시 내지 않는다(옛 리뷰: 진행 중 지시가 이완 구간에 끝나면 서명 안내가 두 통)
                 ev = Issue(log);
                 return true;
@@ -551,7 +551,7 @@ namespace NightDuty
             if (_active != null) return true;
             if (minute < 0f) return false;
 
-            DutyDef log = DutyCatalog.Find("W5");
+            DutyDef log = DutyCatalog.Find("130004");
             if (log != null && log.OnDay(_day) && !_signed && !_finished.Contains(log.Id) && minute < NightClock.Call2) return true;
 
             if (minute >= NightClock.JudgingEnd || _issued >= DutyCatalog.DailyCap(_day)) return false;
@@ -652,7 +652,7 @@ namespace NightDuty
         }
 
         /// <summary>근무일지 지시 ID.</summary>
-        public const string LogDutyId = "W5";
+        public const string LogDutyId = "130004";
 
         /// <summary>103차 QA 4회: 근무일지(W5)가 다른 지시와 따로 열려 있는지.</summary>
         public bool LogOpen

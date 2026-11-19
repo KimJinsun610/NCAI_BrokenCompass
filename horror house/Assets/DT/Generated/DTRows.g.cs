@@ -115,6 +115,8 @@ namespace InstructionDT
         public string Trap_Desc;
         /// <summary>비고</summary>
         public string Desc;
+        /// <summary>표시 코드(옛 코드 — 로그·테스트 표시 전용, 키 아님)</summary>
+        public string Code;
         uint IDTRow.Id { get { return ID; } }
         HashSet<string> _blank;
         /// <summary>엑셀에서 빈칸(값 없음·미정)이었는지. 빈칸이면 필드는 0 / false / "".</summary>
@@ -176,6 +178,7 @@ namespace InstructionDT
             o.Trap_Gate = r.B("Trap_Gate", ref o._blank);
             o.Trap_Desc = r.S("Trap_Desc", ref o._blank);
             o.Desc = r.S("Desc", ref o._blank);
+            o.Code = r.S("Code", ref o._blank);
             return o;
         }
     }
@@ -246,6 +249,8 @@ namespace InstructionDT
         public uint Fx_ID;
         /// <summary>비고</summary>
         public string Desc;
+        /// <summary>표시 코드(옛 코드 — 로그·테스트 표시 전용, 키 아님)</summary>
+        public string Code;
         uint IDTRow.Id { get { return ID; } }
         HashSet<string> _blank;
         /// <summary>엑셀에서 빈칸(값 없음·미정)이었는지. 빈칸이면 필드는 0 / false / "".</summary>
@@ -284,6 +289,7 @@ namespace InstructionDT
             o.Guide_Message_ID = r.U("Guide_Message_ID", ref o._blank);
             o.Fx_ID = r.U("Fx_ID", ref o._blank);
             o.Desc = r.S("Desc", ref o._blank);
+            o.Code = r.S("Code", ref o._blank);
             return o;
         }
     }
@@ -344,6 +350,8 @@ namespace InstructionDT
         public uint Fx_ID;
         /// <summary>비고</summary>
         public string Desc;
+        /// <summary>표시 코드(옛 코드 — 로그·테스트 표시 전용, 키 아님)</summary>
+        public string Code;
         uint IDTRow.Id { get { return ID; } }
         HashSet<string> _blank;
         /// <summary>엑셀에서 빈칸(값 없음·미정)이었는지. 빈칸이면 필드는 0 / false / "".</summary>
@@ -377,6 +385,7 @@ namespace InstructionDT
             o.Template_ID = r.U("Template_ID", ref o._blank);
             o.Fx_ID = r.U("Fx_ID", ref o._blank);
             o.Desc = r.S("Desc", ref o._blank);
+            o.Code = r.S("Code", ref o._blank);
             return o;
         }
     }
@@ -413,6 +422,8 @@ namespace InstructionDT
         public string Trigger_Desc;
         /// <summary>비고</summary>
         public string Desc;
+        /// <summary>표시 코드(옛 코드 — 로그·테스트 표시 전용, 키 아님)</summary>
+        public string Code;
         uint IDTRow.Id { get { return ID; } }
         HashSet<string> _blank;
         /// <summary>엑셀에서 빈칸(값 없음·미정)이었는지. 빈칸이면 필드는 0 / false / "".</summary>
@@ -434,6 +445,7 @@ namespace InstructionDT
             o.Is_Active = r.B("Is_Active", ref o._blank);
             o.Trigger_Desc = r.S("Trigger_Desc", ref o._blank);
             o.Desc = r.S("Desc", ref o._blank);
+            o.Code = r.S("Code", ref o._blank);
             return o;
         }
     }
@@ -628,6 +640,8 @@ namespace InstructionDT
         public uint Fx_ID;
         /// <summary>비고</summary>
         public string Desc;
+        /// <summary>표시 코드(옛 코드 — 로그·테스트 표시 전용, 키 아님)</summary>
+        public string Code;
         uint IDTRow.Id { get { return ID; } }
         HashSet<string> _blank;
         /// <summary>엑셀에서 빈칸(값 없음·미정)이었는지. 빈칸이면 필드는 0 / false / "".</summary>
@@ -650,6 +664,7 @@ namespace InstructionDT
             o.Final_Text = r.S("Final_Text", ref o._blank);
             o.Fx_ID = r.U("Fx_ID", ref o._blank);
             o.Desc = r.S("Desc", ref o._blank);
+            o.Code = r.S("Code", ref o._blank);
             return o;
         }
     }
@@ -684,6 +699,8 @@ namespace InstructionDT
         public bool In_Scene;
         /// <summary>설명</summary>
         public string Desc;
+        /// <summary>표시 코드(옛 코드 — 로그·테스트 표시 전용, 키 아님)</summary>
+        public string Code;
         uint IDTRow.Id { get { return ID; } }
         HashSet<string> _blank;
         /// <summary>엑셀에서 빈칸(값 없음·미정)이었는지. 빈칸이면 필드는 0 / false / "".</summary>
@@ -704,6 +721,7 @@ namespace InstructionDT
             o.Size_Z = r.F("Size_Z", ref o._blank);
             o.In_Scene = r.B("In_Scene", ref o._blank);
             o.Desc = r.S("Desc", ref o._blank);
+            o.Code = r.S("Code", ref o._blank);
             return o;
         }
     }
@@ -726,6 +744,8 @@ namespace InstructionDT
         public uint Battery_Max;
         /// <summary>설명</summary>
         public string Desc;
+        /// <summary>표시 코드(옛 코드 — 로그·테스트 표시 전용, 키 아님)</summary>
+        public string Code;
         uint IDTRow.Id { get { return ID; } }
         HashSet<string> _blank;
         /// <summary>엑셀에서 빈칸(값 없음·미정)이었는지. 빈칸이면 필드는 0 / false / "".</summary>
@@ -740,6 +760,7 @@ namespace InstructionDT
             o.Battery_Share = r.F("Battery_Share", ref o._blank);
             o.Battery_Max = r.U("Battery_Max", ref o._blank);
             o.Desc = r.S("Desc", ref o._blank);
+            o.Code = r.S("Code", ref o._blank);
             return o;
         }
     }
@@ -793,6 +814,8 @@ namespace InstructionDT
         public bool Is_Judging;
         /// <summary>설명</summary>
         public string Desc;
+        /// <summary>표시 코드(옛 코드 — 로그·테스트 표시 전용, 키 아님)</summary>
+        public string Code;
         uint IDTRow.Id { get { return ID; } }
         HashSet<string> _blank;
         /// <summary>엑셀에서 빈칸(값 없음·미정)이었는지. 빈칸이면 필드는 0 / false / "".</summary>
@@ -806,6 +829,7 @@ namespace InstructionDT
             o.End_Min = r.U("End_Min", ref o._blank);
             o.Is_Judging = r.B("Is_Judging", ref o._blank);
             o.Desc = r.S("Desc", ref o._blank);
+            o.Code = r.S("Code", ref o._blank);
             return o;
         }
     }

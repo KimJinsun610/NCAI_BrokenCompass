@@ -569,7 +569,7 @@ namespace NightDuty.Tests
         {
             UnavoidableRun r = new UnavoidableRun(UnavoidableCatalog.Find("K1xK-1"));
             Assert.AreEqual(UnavoidableStep.None, r.Observe(JudgeSignal.Cue(FinalCues.CctvPerson, default), SpaceId.SecurityRoom, null, id => false));
-            Assert.AreEqual(UnavoidableStep.Staged, r.Observe(JudgeSignal.Cue(FinalCues.CctvPerson, default), SpaceId.SecurityRoom, null, id => id == "K-1"));
+            Assert.AreEqual(UnavoidableStep.Staged, r.Observe(JudgeSignal.Cue(FinalCues.CctvPerson, default), SpaceId.SecurityRoom, null, id => id == "135025"));
             Assert.IsFalse(r.Def.Real);
         }
 

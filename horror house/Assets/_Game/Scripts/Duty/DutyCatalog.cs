@@ -72,6 +72,8 @@ namespace NightDuty
         /// <summary>57차 <see cref="DutyKind.GazeCheck"/>의 응시 대상(<c>inspect.H-1</c>). 그 밖은 빈 문자열.</summary>
         public string Target { get; private set; } = string.Empty;
 
+        internal void SetTarget(string target) { Target = target; }
+
         /// <summary>대상이 점검 항목이면 그 ID(<c>H-1</c>) — 그날 점검에 있으면 내지 않는다.</summary>
         public string Item { get; private set; } = string.Empty;
 
@@ -81,7 +83,7 @@ namespace NightDuty
             InspectionItem it = InspectionCatalog.Find(item);
             DutyDef d = new DutyDef(id, DutyKind.GazeCheck, it != null ? it.Space : SpaceId.Corridor, axis, order, done, missed, seconds, days);
             d.Item = item;
-            d.Target = InspectionCatalog.TargetPrefix + item;
+            d.Target = InspectionCatalog.TargetOf(item);
             return d;
         }
 
@@ -179,39 +181,36 @@ namespace NightDuty
         /// <summary>103차(축 균형): 지시 완료로 한 축에서 하룻밤 빠지는 양의 상한 — 청각 지시가 많아 청각만 계속 내려가던 것을 막는다.</summary>
         public static int ReliefCapPerAxis => global::NightDuty.DesignData.SettingInt(390049);   // DT 390049 지시 완료로 한 축에서 하룻밤 빠지는 상한
 
+        /// <summary>
+        /// DT 3단계: 지시 문구·완료/미완료 답장·축·공간·등장 일차는 Task_Table(표시 코드로 찾음). 종류·정의 기한(시간 제한을 켠 시험용)은 코드.
+        /// 77차 W1 · 92차 W6 · 57차 W7~W14 · 80차 W18·W20은 폐기한 번호 — 다시 쓰지 않는다.
+        /// </summary>
+        private static DutyDef Dt(string code, DutyKind kind, float seconds, SpaceId? space = null)
+        {
+            var r = global::NightDuty.DesignData.TaskRow(code);
+            var days = new List<int>();
+            int from = (int)InstructionDT.DT.Day.Get(r.Day_From).Day_No, to = (int)InstructionDT.DT.Day.Get(r.Day_To).Day_No;
+            for (int d = from; d <= to; d++) days.Add(d);
+            return new DutyDef(code, kind, space ?? global::NightDuty.DesignData.SpaceOf(r.Space_ID), global::NightDuty.DesignData.AxisOf(r.Axis_ID), r.Text, r.Done_Reply, r.Missed_Reply, seconds, days.ToArray());
+        }
+
+        private static DutyDef WithTarget(DutyDef d, string target)
+        {
+            d.SetTarget(target);
+            return d;
+        }
+
         private static readonly List<DutyDef> s_all = new List<DutyDef>
         {
-            // 77차(민): W1 CCTV 순회 폐기(K-1 「CCTV 모든 채널」 점검과 겹침). ID W1은 다시 쓰지 않는다.
-            new DutyDef("W2", DutyKind.Patrol, SpaceId.Library, FearAxis.Auditory,
-                "도서관을 순찰해주십시오.", "도서관 순찰이 기록되었습니다.", "도서관 순찰 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 57차: 120 → 150초 · 67차(민): 제한 없음
-            new DutyDef("W3", DutyKind.LightsOutCheck, SpaceId.Classroom_1_3, FearAxis.Illuminance,   // 103차 축 균형: 청각 → 조도(소등 확인)
-                "교실을 순찰해주십시오.", "교실 순찰이 기록되었습니다.", "교실 순찰 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),   // 104차(사용자 결정): 점검 지시와 겹치지 않게 W2 도서관 순찰과 같은 꼴로 — 옛 「교실의 상태를 확인해주십시오.」 · 「1-3 교실 이상 없음.」 · 「1-3 교실 확인 기록이 없습니다.」
-            new DutyDef("W4", DutyKind.DoorTidy, SpaceId.Corridor, FearAxis.Layout,
-                "열어 둔 문들을 정리해주십시오.", "문 정리가 기록되었습니다.", "문 정리 기록이 없습니다.", 0f, 2, 3, 4, 5),   // 67차(민): 제한 없음 · 103차 띄어쓰기: 정리 해주십시오 → 정리해주십시오
-            new DutyDef("W5", DutyKind.LogSign, SpaceId.SecurityRoom, FearAxis.Auditory,
-                "경비실 근무일지에 서명해주십시오.", "근무일지 서명이 기록되었습니다.", "근무일지 서명 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),
-            // 92차(민: 「복도 끝 비상구를 응시 후 경비실에 복귀하십시오 <- 이건 폐지해줘」): W6 비상구 응시 폐기. ID W6은 다시 쓰지 않는다(ExitSignCheck 처리 코드는 남겨 둠).
-
-            // 77차(민: 「지시 문구들은 점검 지시들과 너무 겹쳐서」): 57차 비품 확인 W7~W14(점검 대상을 1초 보기) 폐기. ID W7~W14는 다시 쓰지 않는다.
-
-            // 65차(민: 「반납 상자는 book16(2) 관련 지시로 — 도서관 안쪽 책상에 있는 biology 책을 습득하세요. 클릭해서 습득하면 완료」). 문구는 민 그대로(「~바랍니다」 예외).
-            // 80차(민: W19 「경비실 전화가 울리면 받아주십시오.」 채택 — 문구 민 그대로). 지시 뒤 전화가 울린다 — K5(세 번 울린 뒤 받기)와 맞물린다.
-            new DutyDef("W19", DutyKind.PhoneAnswer, SpaceId.SecurityRoom, FearAxis.Auditory,
-                "경비실 전화가 울리면 받아주십시오.", "통화가 기록되었습니다.", "통화 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
-
-            // 80차(민: W16 「과학실에 두고 간 출입 카드를 경비실 열쇠함에 넣어주십시오.」 · W17 「교실 교탁 서랍의 출입 카드를 가져와 주십시오.」 ·
-            // 「열쇠함은 경비실의 LibraryCardCatalogB에 열려있는 서랍에 두는 걸로 · 카드키 모델 · 문구도 출입 카드로」). 둘 다 열쇠함에 넣으면 완료.
-            DutyDef.Card("W16", ScienceCardTarget, SpaceId.ScienceRoom, FearAxis.Layout, "과학실에 두고 간 출입 카드를 경비실 열쇠함에 넣어주십시오.",
-                "출입 카드 반납이 기록되었습니다.", "출입 카드 반납 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
-            // 103차(민: 「교실 카드키 회수에 경비실 열쇠함에 넣으라는 것을 명시」): 옛 「교실 교탁 서랍의 출입 카드를 가져와 주십시오.」 — 어디로 가져오는지 없었다.
-            DutyDef.Card("W17", ClassroomCardTarget, SpaceId.Classroom, FearAxis.Layout, "교실 교탁 서랍 출입 카드를 경비실 열쇠함에 넣어주십시오.",
-                "출입 카드 회수가 기록되었습니다.", "출입 카드 회수 기록이 없습니다.", LimitSeconds, 1, 2, 3, 4, 5),
-
-            // 80차(민: D1 채택 「유도등이 아니라 비상구라고 명시」). W18·W20은 폐기한 제안 번호라 쓰지 않는다.
-            new DutyDef("W21", DutyKind.ExitFlash, SpaceId.Corridor, FearAxis.Illuminance,
-                "복도 끝 비상구 앞에서 손전등을 세 번 깜빡여주십시오.", "비상구 신호가 기록되었습니다.", "비상구 신호 기록이 없습니다.", ExitFlashSeconds, 1, 2, 3, 4, 5),   // 103차: 기한 90초(시간 제한 지시)
-
-            DutyDef.Pickup("W15", LibraryBookTarget, SpaceId.Library, FearAxis.Auditory, "도서관 안쪽 책상에 있는 biology 책을 습득하세요.", "biology 책 습득이 기록되었습니다.", "biology 책 습득 기록이 없습니다.", 0f, 1, 2, 3, 4, 5),   // 67차(민): 제한 없음
+            Dt("130001", DutyKind.Patrol, 0f),
+            Dt("130002", DutyKind.LightsOutCheck, LimitSeconds, SpaceId.Classroom_1_3),   // 표는 「교실」 — 코드는 세부 공간 1-3
+            Dt("130003", DutyKind.DoorTidy, 0f),
+            Dt("130004", DutyKind.LogSign, 0f),
+            Dt("130005", DutyKind.PhoneAnswer, LimitSeconds),
+            WithTarget(Dt("130006", DutyKind.CardDelivery, LimitSeconds), ScienceCardTarget),
+            WithTarget(Dt("130007", DutyKind.CardDelivery, LimitSeconds), ClassroomCardTarget),
+            Dt("130008", DutyKind.ExitFlash, ExitFlashSeconds),
+            WithTarget(Dt("130009", DutyKind.Pickup, 0f), LibraryBookTarget),
         };
 
         /// <summary>전부(정의 순).</summary>
@@ -239,7 +238,7 @@ namespace NightDuty
         {
             // 57차(민: 「근무 지시가 많아서 귀찮다」): 날마다 4 → 1·2일차 2 · 3일차부터 3. 대신 종류를 늘려 같은 지시가 덜 겹친다.
             // 67차(민: 「물품 점검이 비중이 더 높은데, 지시 사항과 비중이 균일했으면」): 1·2일차 3 · 3일차부터 4 — 점검 4·5·5·6·6항목(지시 3~4통)과 번갈아 낸다.
-            return day <= 2 ? 3 : 4;
+            return (int)global::NightDuty.DesignData.Day(day).Duty_Cap;   // DT Day_Table.Duty_Cap
         }
 
         /// <summary>
@@ -259,7 +258,7 @@ namespace NightDuty
         /// W19 = 전화가 울리는 동안(재시도 포함 <see cref="LimitSeconds"/>초) · W21 = <see cref="ExitFlashSeconds"/>초 · W5 = 서명 시간(이완 구간, 호출 2까지 — 기한 초 대신 시간대).
         /// 기한을 넘겨도 경고는 없다 — 신뢰 보상(<see cref="TrustFor"/>)만 받지 못한다. 조우 중에는 기한이 멈춘다.
         /// </summary>
-        public static readonly string[] TimedDuties = { "W19", "W21" };
+        public static readonly string[] TimedDuties = { "130005", "130008" };
 
         /// <summary>103차: W21 비상구 손전등 기한(실제 초).</summary>
         public const float ExitFlashSeconds = 90f;
@@ -353,7 +352,7 @@ namespace NightDuty
             string text = OrderText(def, day);
             if (def == null || issuedMinute < 0f || TimeLimitsEnabled) return text;
             if (def.Kind == DutyKind.LogSign) return text + "\n" + Clock(NightClock.Call2) + "까지";
-            if (def.Id == "W21") return text + "\n" + DeadlineText(issuedMinute, EffectiveSeconds(def), day);
+            if (def.Id == "130008") return text + "\n" + DeadlineText(issuedMinute, EffectiveSeconds(def), day);
             return text;
         }
 

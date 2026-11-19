@@ -232,7 +232,7 @@ namespace NightDuty
                     // 3초 체류(안쪽 2m) → 교실에 들어서면. 앉히는 때는 연출(DirectionStage)이 자리가 화면에 없을 때로 고른다.
                     Id = ProgramCatalog.BoyBang, Trigger = EncounterTrigger.EnterSpace, Space = SpaceId.Classroom,
                     Cue = FinalCues.BoySeated, Window = 18f,   // 103차: 끝의 종 없음(C3 수업 종으로)
-                    ReportTriggerItem = "C-1",   // 104차: 교실 화분을 보고하면 곧바로
+                    ReportTriggerItem = "135007",   // 104차: 교실 화분을 보고하면 곧바로
                     Placement = CuePlacement.AheadOfPlayer, Distance = 3f, StandIn = "mob.boy", AnchorId = FinalCues.BoyTarget,
                     StageAnchor = StageAnchors.BoySeat, ExactSpace = SpaceId.Classroom_1_3,
                     Note = "52차 민: C2 「교실의 _? 는 무시하십시오.」 + C3 「수업 종이 울리면 정지하십시오.」(103차) + 앉은 소년 — 셋이 하나. " +
@@ -273,7 +273,7 @@ namespace NightDuty
                     Id = ProgramCatalog.YellowFace, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 4f, DeepMargin = 2.5f,   // 61차: 도서관 안쪽 2.5m 넘게 들어와 4초(옛 도서관 8초 체류)
                     Cue = FinalCues.YellowFace, Window = 30f,   // 44차: 8초는 알아보고 비추면 끝나 공포가 쌓이지 않았다 · 103차: 11 → 30 — 천천히 걸어오는 동안 창이 닫히지 않게(비춰 쫓아내거나 놀람이 나면 LibraryDuck이 창을 일찍 닫는다)
                     Placement = CuePlacement.AheadOfPlayer, Distance = 4f, StandIn = "mob.duck", AnchorId = FinalCues.FaceTarget,
-                    StageAnchor = StageAnchors.YellowDoor, AfterDuty = new[] { "W15" },   // 85차: biology 책 습득 또는 도서관 순찰 지시 뒤 · 104차(사용자: 「노란 얼굴 조우는 biology 책 지시와 이어져」): biology 책만
+                    StageAnchor = StageAnchors.YellowDoor, AfterDuty = new[] { "130009" },   // 85차: biology 책 습득 또는 도서관 순찰 지시 뒤 · 104차(사용자: 「노란 얼굴 조우는 biology 책 지시와 이어져」): biology 책만
                     ReportTriggerItem = DutyCatalog.LibraryBookTarget,   // 104차: biology 책을 집는 순간 문간에 서서 응시를 기다린다(응시하면 걸어온다)
                     Note = "103차: 4~5일차(창밖 노란 얼굴은 2~3일차). [근무 지시] W15(biology 책) 또는 W2(도서관 순찰)가 나간 뒤, 도서관 안쪽 2.5m · 4초면 문이 열리며(문 소리) 문간에 선다 — 문 쪽을 보면 네비메쉬로 천천히 걸어온다. " +
                            "L3 「도서관 ?_? 을 계속 비추십시오」 — 104차: 문간을 보면 추격 소리와 함께 빠르게 걸어온다(등지면 더 빨리). 3초 이어서 비추면 코앞까지 와서 멈췄다 문 밖으로 뛰어 나가고, " +
@@ -320,7 +320,7 @@ namespace NightDuty
                 new EncounterScript
                 {
                     Id = ProgramCatalog.CeilingLegs, Trigger = EncounterTrigger.GazeTarget, Space = SpaceId.Classroom, Dwell = 0.5f,
-                    GazeTargetId = InspectionCatalog.TargetPrefix + "C-3", FixedForeshadow = 1.2f,
+                    GazeTargetId = InspectionCatalog.TargetOf("135009"), FixedForeshadow = 1.2f,
                     Window = 9f,   // 52차: 대응 수칙 없음(C2는 소년으로) — 판정 단서도 없다
                     Placement = CuePlacement.AheadOfPlayer, Distance = 1.1f, StandIn = CorpseStandIn,
                     Note = "51차(민: 「천장을 확인하라는 게 노골적 — 사다리 점검 중 시체가 물리로 바로 앞에 떨어지고, 놀라 시선을 돌리면 사라지게」). " +
@@ -338,7 +338,7 @@ namespace NightDuty
                     Id = ProgramCatalog.SuitMan, Trigger = EncounterTrigger.DwellInSpace, Space = SpaceId.Library, Dwell = 6f,
                     Cue = FinalCues.WindowKnock, Window = 10f,   // 85차: 수칙 없음(L3는 문간 노란 얼굴만) — 창 두드림 소리만
                     Placement = CuePlacement.AheadOfPlayer, Distance = 5f, StandIn = "mob.windowman", AnchorId = FinalCues.WindowFaceTarget,
-                    StageAnchor = StageAnchors.WindowMan, AfterOrder = "L-2",   // 85차: 블라인드(L-2) 지시 뒤 · 창 거리 조건(61차 6m) 없앰 — 블라인드 앞에서 창이 보이게
+                    StageAnchor = StageAnchors.WindowMan, AfterOrder = "135023",   // 85차: 블라인드(L-2) 지시 뒤 · 창 거리 조건(61차 6m) 없앰 — 블라인드 앞에서 창이 보이게
                     Note = "85차: 창밖 노란 얼굴 — 도서관 노란 얼굴 전날(날짜 사슬). 「도서관 입구 맞은편 블라인드(L-2)」 단독 지시 → 도서관 6초면 북쪽 창 밖에 서서 창을 두드린다(WindowFace). 플레이어 쪽으로 고개를 돌려 보고 있다가, 2초 넘게 응시하면 창 앞을 가로질러 달아난다. 수칙 없음."
                 },
                 new EncounterScript

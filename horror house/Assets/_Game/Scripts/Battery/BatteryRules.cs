@@ -71,18 +71,19 @@ namespace NightDuty
             // 67차(민: 「배터리가 나오는 빈도 수와 위치를 늘려야 해 — 책장·선반에도, 1~5일차가 될수록 빈도 수 살짝 떨어지게」): 3·3·2·2·1 → 6·6·5·5·4.
             // 74차(민: 「초반에 나오는 배터리 갯수를 2개로」): 1일차만 6 → 2(책상 위 예비 배터리는 따로).
             // 104차(사용자: 「1일~5일 배터리 배치 갯수를 4 4 4 3 3으로」): 1일차가 가장 빠듯하던 것(3칸 = 수요 1.0배)을 풀고 2일차 넘침을 줄인다.
-            return day <= 3 ? 4 : 3;
+            return (int)global::NightDuty.DesignData.Day(day).Battery_Placed;   // DT Day_Table.Battery_Placed
         }
 
         /// <summary>104차: 공간 고르기 무게 — 도서관은 경비실에서 가장 멀어(칸 무게가 커) 몰리던 곳이라 절반, 1일차는 순찰 밖이라 0.</summary>
         public static float SpaceShare(SpaceId space, int day)
         {
-            if (space == SpaceId.Library) return day <= 1 ? 0f : LibraryShare;
-            return 1f;
+            if (space == SpaceId.Library && day <= 1) return 0f;   // 1일차 도서관은 순찰 밖(표 설명)
+            var row = global::NightDuty.DesignData.SpaceRowOf(space);   // DT Space_Table.Battery_Share(빈칸·표에 없는 공간은 1)
+            return row != null && !row.IsBlank("Battery_Share") ? row.Battery_Share : 1f;
         }
 
         /// <summary>104차: 도서관 공간 몫(다른 공간 1).</summary>
-        public const float LibraryShare = 0.5f;
+        public static float LibraryShare => global::NightDuty.DesignData.SpaceRowOf(SpaceId.Library).Battery_Share;   // DT Space_Table 320004.Battery_Share
 
         /// <summary>104차: 그 밤 이미 놓인 공간은 하나마다 몫에 이것을 곱한다(먼저 다른 공간으로 퍼진다).</summary>
         public static float RepeatShare => global::NightDuty.DesignData.Setting(390265);   // DT 390265 같은 공간 반복 배율
@@ -91,7 +92,8 @@ namespace NightDuty
         public static int MaxPerSpace(SpaceId space)
         {
             if (space == SpaceId.None) return int.MaxValue;
-            return space == SpaceId.Library ? 1 : 2;
+            var row = global::NightDuty.DesignData.SpaceRowOf(space);   // DT Space_Table.Battery_Max(빈칸·표에 없는 공간은 2)
+            return row != null && !row.IsBlank("Battery_Max") ? (int)row.Battery_Max : 2;
         }
 
         /// <summary>충전량(0~1)의 빛 세기 배율.</summary>

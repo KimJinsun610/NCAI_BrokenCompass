@@ -76,7 +76,7 @@ namespace NightDuty
         /// </summary>
         private static void PlanWildcard()
         {
-            if (_tension == null || !_tension.Sequential || Day < 2) return;
+            if (_tension == null || !_tension.Sequential || !global::NightDuty.DesignData.Day(Day).Wildcard) return;   // DT Day_Table.Wildcard(2일차부터)
             FearAxis axis = HighestSensory();
             string[] pool = WildcardPool(axis);
             string pick = pool[s_wildcardRoll.Next(pool.Length)];
@@ -148,7 +148,7 @@ namespace NightDuty
         {
             if (_tension == null || string.IsNullOrEmpty(itemId)) return;
             InspectionItem item = InspectionCatalog.FindByTarget(itemId);
-            _tension.NoteReportHold(InspectionCatalog.TargetPrefix + (item != null ? item.Id : itemId));
+            _tension.NoteReportHold(InspectionCatalog.TargetOf(item != null ? item.Id : itemId));
         }
 
         /// <summary>104차: 보고 도중 시체가 떨어져 보고를 잠깐 멈춰야 하는지(InspectionSensor가 읽는다).</summary>
@@ -216,7 +216,7 @@ namespace NightDuty
             {
                 if (!IssuedItemPending(a.Id)) continue;
                 JudgeTarget t;
-                if (!JudgeTargetRegistry.TryGet(InspectionCatalog.TargetPrefix + a.Id, out t) || t == null) continue;
+                if (!JudgeTargetRegistry.TryGet(InspectionCatalog.TargetOf(a.Id), out t) || t == null) continue;
                 if (SensingRules.HorizontalDistance(feet, t.AnchorPosition) <= FakeQuietRadius) return true;
             }
 
@@ -227,7 +227,7 @@ namespace NightDuty
         private static bool GazeTargetReady(string targetId)
         {
             if (string.IsNullOrEmpty(targetId)) return false;
-            string item = targetId.StartsWith(InspectionCatalog.TargetPrefix, System.StringComparison.Ordinal) ? targetId.Substring(InspectionCatalog.TargetPrefix.Length) : targetId;
+            string item = InspectionCatalog.ItemOfTarget(targetId);
             return IssuedItemPending(item);
         }
 

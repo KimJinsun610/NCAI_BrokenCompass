@@ -83,7 +83,7 @@ namespace NightDuty
             }
 
             // 104차: 고정 편성 밤의 시체 낙하 — 사다리 점검(C-3)을 묶어 두었다가 그 차례에 낸다(옛: 아무 때나 나간 C-3을 이미 보고해 시체가 오지 않던 것).
-            if (program.Sequential && program.HasEncounter(ProgramCatalog.CeilingLegs) && plan.Find("C-3") != null) Board.Hold("C-3");
+            if (program.Sequential && program.HasEncounter(ProgramCatalog.CeilingLegs) && plan.Find("135009") != null) Board.Hold("135009");
         }
 
         /// <summary>묶어 둔 조우 앞 점검 항목을 슬롯 <see cref="LeadMinutes"/>분 앞에 단독 지시로 낸다(한 번).</summary>

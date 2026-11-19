@@ -13,7 +13,7 @@ namespace NightDuty.Tests
         [Test]
         public void 교실_카드키_지시는_경비실_열쇠함을_말한다()
         {
-            DutyDef w17 = DutyCatalog.Find("W17");
+            DutyDef w17 = DutyCatalog.Find("130007");
             Assert.IsNotNull(w17);
             StringAssert.Contains("경비실 열쇠함", w17.Order);
             StringAssert.Contains("교탁 서랍", w17.Order);
@@ -86,8 +86,8 @@ namespace NightDuty.Tests
         public void 맞춤법_띄어쓰기_정리()
         {
             Assert.AreEqual("정전 중에는 손전등을 켜지 마십시오.", ProgramCatalog.Rule("S4").Text);
-            Assert.AreEqual("열어 둔 문들을 정리해주십시오.", DutyCatalog.Find("W4").Order);
-            Assert.AreEqual("경비실 접이식 의자 둘이 같은 쪽을 보는지 확인해주십시오.", InspectionCatalog.Find("K-2").TabletLine);
+            Assert.AreEqual("열어 둔 문들을 정리해주십시오.", DutyCatalog.Find("130003").Order);
+            Assert.AreEqual("경비실 접이식 의자 둘이 같은 쪽을 보는지 확인해주십시오.", InspectionCatalog.Find("135026").TabletLine);
             foreach (RuleDef r in ProgramCatalog.AllRules) StringAssert.DoesNotContain("키지", r.Text, r.Id);
             foreach (DutyDef d in DutyCatalog.All) StringAssert.DoesNotContain(" 해주십시오", d.Order, d.Id);
         }
@@ -98,18 +98,18 @@ namespace NightDuty.Tests
             Assert.IsFalse(DutyCatalog.TimeLimitsEnabled);
             foreach (DutyDef d in DutyCatalog.All)
             {
-                bool timed = d.Id == "W19" || d.Id == "W21" || d.Id == "W5";
+                bool timed = d.Id == "130005" || d.Id == "130008" || d.Id == "130004";
                 Assert.AreEqual(timed, DutyCatalog.IsTimed(d), d.Id);
                 Assert.AreEqual(timed ? 2 : 1, DutyCatalog.TrustFor(d), d.Id);
             }
 
-            Assert.AreEqual(DutyCatalog.LimitSeconds, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("W19")));
-            Assert.AreEqual(90f, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("W21")));
-            Assert.AreEqual(0f, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("W5")), "서명은 초가 아니라 서명 시간대");
-            Assert.AreEqual(0f, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("W3")));
-            StringAssert.EndsWith("까지", DutyCatalog.MessageText(DutyCatalog.Find("W21"), 1, 30f));
-            StringAssert.EndsWith(NightClock.Clock(NightClock.Call2) + "까지", DutyCatalog.MessageText(DutyCatalog.Find("W5"), 1, 110f));
-            StringAssert.DoesNotContain("까지", DutyCatalog.MessageText(DutyCatalog.Find("W19"), 1, 30f), "전화는 벨이 기한");
+            Assert.AreEqual(DutyCatalog.LimitSeconds, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("130005")));
+            Assert.AreEqual(90f, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("130008")));
+            Assert.AreEqual(0f, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("130004")), "서명은 초가 아니라 서명 시간대");
+            Assert.AreEqual(0f, DutyCatalog.EffectiveSeconds(DutyCatalog.Find("130002")));
+            StringAssert.EndsWith("까지", DutyCatalog.MessageText(DutyCatalog.Find("130008"), 1, 30f));
+            StringAssert.EndsWith(NightClock.Clock(NightClock.Call2) + "까지", DutyCatalog.MessageText(DutyCatalog.Find("130004"), 1, 110f));
+            StringAssert.DoesNotContain("까지", DutyCatalog.MessageText(DutyCatalog.Find("130005"), 1, 30f), "전화는 벨이 기한");
             Assert.AreEqual(4, DutyCatalog.TrustCapPerNight);
         }
 
@@ -118,7 +118,7 @@ namespace NightDuty.Tests
         {
             DutyDispatcher d = new DutyDispatcher(1, s => 0f, 5);
             DutyEvent ev;
-            Assert.IsTrue(d.Force("W21", out ev));
+            Assert.IsTrue(d.Force("130008", out ev));
             Assert.IsFalse(d.Tick(new DutyInput { Minute = 40f, Dt = 200f, DirectorBusy = true }, out ev), "조우 중에는 기한이 멈춘다");
             Assert.IsNotNull(d.Active);
             Assert.IsTrue(d.Tick(new DutyInput { Minute = 41f, Dt = 91f }, out ev));

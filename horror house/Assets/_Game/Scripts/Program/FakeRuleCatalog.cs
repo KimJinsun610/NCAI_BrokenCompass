@@ -40,8 +40,9 @@
         /// <summary>그날 가짜 수칙 줄 수(나오지 않는 날은 0).</summary>
         public static int CountFor(int day)
         {
-            if (day < FirstDay || day > LastDay || Lines.Length == 0) return 0;
-            return System.Math.Min(PerDay, Lines.Length);
+            var row = global::NightDuty.DesignData.DayExact(day);   // DT Day_Table.Fake_Rule_Count(1일차 2)
+            if (row == null || Lines.Length == 0) return 0;
+            return System.Math.Min((int)row.Fake_Rule_Count, Lines.Length);
         }
 
         private static int IndexFor(int day, int k)

@@ -56,7 +56,7 @@ namespace NightDuty
         /// <summary>씬의 점검 대상 ID(<c>inspect.H-1</c>). 센서·연출이 이 ID로 대상을 찾는다.</summary>
         public string TargetId
         {
-            get { return InspectionCatalog.TargetPrefix + Id; }
+            get { return InspectionCatalog.TargetOf(Id); }
         }
 
         /// <inheritdoc/>
@@ -82,26 +82,26 @@ namespace NightDuty
         public const string HeaderRule = "점검 대상에 가까이 가거나 손대지 마십시오.";
 
         /// <summary>1일차 튜토리얼 이상 — 과학실 현미경 불(빛).</summary>
-        public const string TutorialLight = "S-2";
+        public static string TutorialLight => global::NightDuty.DesignData.Day(1).Tutorial_Anomaly_2_ID.ToString();   // DT Day_Table 1일차 Tutorial_Anomaly_2_ID(S-2)
 
         /// <summary>1일차 튜토리얼 이상 — 교실 화분(옮김). 교실은 1일차 마지막 점검 공간이라 호출 2(02:16)에 열린다.</summary>
-        public const string TutorialMove = "C-1";
+        public static string TutorialMove => global::NightDuty.DesignData.Day(1).Tutorial_Anomaly_1_ID.ToString();   // DT Day_Table 1일차 Tutorial_Anomaly_1_ID(C-1)
 
         /// <summary>회차 첫 점검. 반드시 정상이다.</summary>
-        public const string FirstInspection = "K-1";
+        public static string FirstInspection => global::NightDuty.DesignData.Day(1).Tutorial_Normal_1_ID.ToString();   // DT Day_Table 1일차 Tutorial_Normal_1_ID(K-1)
 
         /// <summary>2026-10-30(김진선님: 「1일차 첫 수칙이 CCTV인데, 그 전에 경비실 화분 확인 — 무조건 정상」): 1일차 맨 앞 점검(경비실 화분, 정상 고정). K-1보다 먼저 지시된다.</summary>
-        public const string TutorialOpening = "K-3";
+        public const string TutorialOpening = "135027";   // K-3 경비실 화분 — Day_Table에 칸 없음(코드 정본)
 
         /// <summary>역보고(T4)가 걸리는 항목.</summary>
-        public const string ReverseReportItem = "T-1";
+        public const string ReverseReportItem = "135018";
 
         /// <summary>
         /// 104차(사용자: 「T-2는 그냥 폐기해줘」): 폐기한 항목 ID. <see cref="All"/>·<see cref="Find"/>에는 남아 있지만(옛 기록·씬 대상·소리 표가 그대로 읽힌다)
         /// <see cref="InSpace"/>가 걸러 배정기(<see cref="AnomalyAssigner"/>)·조우 보충(<c>NightRun.PatchPlanForProgram</c>)에 나오지 않는다 — 지시·태블릿·결과에도 나오지 않는다.
         /// 되살리려면 여기서 ID를 빼면 된다. 옛 81차 T-4·80차 L-4처럼 줄을 지우지 않은 것은 되살릴 수 있게 하려는 것이다.
         /// </summary>
-        public static readonly string[] Retired = { "T-2" };
+        public static readonly string[] Retired = { "135019" };
 
         /// <summary>폐기한 항목인지(<see cref="Retired"/>).</summary>
         public static bool IsRetired(string id)
@@ -109,42 +109,61 @@ namespace NightDuty
             return id != null && Array.IndexOf(Retired, id) >= 0;
         }
 
+        /// <summary>DT 3단계: 공간·축·이상 틀·지시 문구는 Task_Table(표시 코드로 찾음), 짧은 이름만 코드.</summary>
+        private static InspectionItem Dt(string code, string name)
+        {
+            var r = global::NightDuty.DesignData.TaskRow(code);
+            return new InspectionItem(code, name, global::NightDuty.DesignData.SpaceOf(r.Space_ID), global::NightDuty.DesignData.AxisOf(r.Axis_ID), TemplateOf(r.Template_ID), r.Text);
+        }
+
+        private static AnomalyTemplate TemplateOf(uint id)
+        {
+            switch (id)
+            {
+                case 550401: return AnomalyTemplate.Light;    // DT Task_enum 빛
+                case 550402: return AnomalyTemplate.Switch;   // 켬
+                case 550403: return AnomalyTemplate.Sound;    // 소리
+                case 550404: return AnomalyTemplate.Move;     // 옮김
+                default: throw new InvalidOperationException("DT 점검 이상 틀 " + id + " 모름");
+            }
+        }
+
         private static readonly InspectionItem[] Items =
         {
-            new InspectionItem("H-1", "소화기", SpaceId.Corridor, FearAxis.Illuminance, AnomalyTemplate.Light, "화장실 쪽 복도 소화기가 빛나지 않는지 확인해주십시오."),   // 104차(사용자 결정): 옛 「화장실 쪽 복도 소화기의 상태를 보고해주십시오.」
-            new InspectionItem("H-2", "식수대", SpaceId.Corridor, FearAxis.Illuminance, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 조도(붉은 물 — 보이는 색) */ "과학실 쪽 복도 식수대의 상태를 보고해주십시오."),
-            new InspectionItem("H-3", "알림종", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Sound, "경비실 문 옆 알림종이 조용한지 확인해주십시오."),   // 104차(사용자 결정): 옛 「경비실 쪽 복도 위 알림종이 꺼져 있는지 확인해주십시오.」
-            new InspectionItem("H-4", "복도 쓰레기통", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 청각(걷어차이는 소리) */ "도서관 문 옆 복도 쓰레기통이 제자리에 있는지 확인해주십시오."),   // 104차(사용자 결정): 옛 이름 「쓰레기통」(L-5와 같았음) · 옛 「복도 쓰레기통의 상태를 보고해주십시오.」 · 65차 민: 이상이면 다가갈 때 누가 걷어찬 듯 날아간다(L-3 반납 상자 대체 — 반납 상자는 [근무 지시] W15 「biology 책 습득」으로)
-            new InspectionItem("H-5", "스피커", SpaceId.Corridor, FearAxis.Auditory, AnomalyTemplate.Sound, "도서관 옆 복도 스피커가 조용한지 확인해주십시오."),   // 104차(사용자 결정): 옛 「도서관 옆 복도의 스피커가 꺼져 있는지 확인해주십시오.」 · 66차(민: 「점검은 안 겹칠수록 좋아」) — 화장실 앞 복도 벽 높이의 스피커, 이상이면 지직거림
-            new InspectionItem("H-6", "벤치", SpaceId.Corridor, FearAxis.Layout, AnomalyTemplate.Move, "화장실 쪽 복도 벤치가 벽에 붙어 있는지 확인해주십시오."),   // 66차 — 이상이면 한쪽 끝이 벽에서 떨어져 복도로 돌아 나와 있다
+            Dt("135001", "소화기"),   // 104차(사용자 결정): 옛 「화장실 쪽 복도 소화기의 상태를 보고해주십시오.」
+            Dt("135002", "식수대"),
+            Dt("135003", "알림종"),   // 104차(사용자 결정): 옛 「경비실 쪽 복도 위 알림종이 꺼져 있는지 확인해주십시오.」
+            Dt("135004", "복도 쓰레기통"),   // 104차(사용자 결정): 옛 이름 「쓰레기통」(L-5와 같았음) · 옛 「복도 쓰레기통의 상태를 보고해주십시오.」 · 65차 민: 이상이면 다가갈 때 누가 걷어찬 듯 날아간다(L-3 반납 상자 대체 — 반납 상자는 [근무 지시] W15 「biology 책 습득」으로)
+            Dt("135005", "스피커"),   // 104차(사용자 결정): 옛 「도서관 옆 복도의 스피커가 꺼져 있는지 확인해주십시오.」 · 66차(민: 「점검은 안 겹칠수록 좋아」) — 화장실 앞 복도 벽 높이의 스피커, 이상이면 지직거림
+            Dt("135006", "벤치"),   // 66차 — 이상이면 한쪽 끝이 벽에서 떨어져 복도로 돌아 나와 있다
 
-            new InspectionItem("C-1", "교실 화분", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교실 창가 화분이 제자리에 있는지 확인해주십시오."),   // 104차(사용자 결정): 옛 이름 「화분」(K-3과 같았음) · 옛 「교실 화분이 제자리에 있는지 확인해주십시오.」
-            new InspectionItem("C-2", "책상 램프", SpaceId.Classroom, FearAxis.Illuminance, AnomalyTemplate.Light, "교실 책상 램프가 꺼져 있는지 확인해주십시오."),
-            new InspectionItem("C-3", "사다리", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교실 안쪽에 작은 사다리가 있는지 확인해주십시오."),   // 52차 민 문구(이상 = 사다리 없음)
-            new InspectionItem("C-4", "시계", SpaceId.Classroom, FearAxis.Layout, AnomalyTemplate.Move, "교실 시계가 제자리에 있는지 확인해주십시오."),   // 66차 — 이상이면 벽 아래 바닥에 떨어져 있다
-            new InspectionItem("C-5", "교사 의자", SpaceId.Classroom, FearAxis.Auditory, AnomalyTemplate.Move, "교실 교사 의자가 교탁 쪽을 보는지 확인해주십시오."),   // 104차(사용자 결정): 옛 「교사 의자가 교탁 안에 들어가 있는지 확인해주십시오.」 · 66차 — 이상이면 교실 쪽으로 돌아앉음 · 103차(축 균형): 의자 끄는 소리 → 청각
+            Dt("135007", "교실 화분"),   // 104차(사용자 결정): 옛 이름 「화분」(K-3과 같았음) · 옛 「교실 화분이 제자리에 있는지 확인해주십시오.」
+            Dt("135008", "책상 램프"),
+            Dt("135009", "사다리"),   // 52차 민 문구(이상 = 사다리 없음)
+            Dt("135010", "시계"),   // 66차 — 이상이면 벽 아래 바닥에 떨어져 있다
+            Dt("135011", "교사 의자"),   // 104차(사용자 결정): 옛 「교사 의자가 교탁 안에 들어가 있는지 확인해주십시오.」 · 66차 — 이상이면 교실 쪽으로 돌아앉음 · 103차(축 균형): 의자 끄는 소리 → 청각
 
-            new InspectionItem("S-1", "인체 모형", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Move, "과학실 인체 모형이 정면을 향하는지 확인해주십시오."),   // 64차 민: 실제 이상은 90° 돌아감(회전)이라 그에 맞춘 문구
-            new InspectionItem("S-2", "현미경", SpaceId.ScienceRoom, FearAxis.Illuminance, AnomalyTemplate.Light, "과학실 현미경이 꺼져 있는지 확인해주십시오."),
-            new InspectionItem("S-3", "개수대", SpaceId.ScienceRoom, FearAxis.Auditory, AnomalyTemplate.Sound, "과학실 개수대 수도꼭지가 조용한지 확인해주십시오."),   // 104차(사용자 결정): 옛 「과학실 개수대가 잠겨 있는지 확인해주십시오.」
-            new InspectionItem("S-4", "지구본", SpaceId.ScienceRoom, FearAxis.Auditory, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 청각(혼자 도는 삐걱임) */ "과학실 지구본이 멈춰 있는지 확인해주십시오."),   // 104차(사용자 결정): 옛 「과학실 지구본의 상태를 보고해주십시오.」 · 66차 — 이상이면 혼자 천천히 돈다
-            new InspectionItem("S-5", "플라스크", SpaceId.ScienceRoom, FearAxis.Illuminance, AnomalyTemplate.Light, "과학실 선반의 플라스크의 상태를 보고해주십시오."),   // 66차 — 이상이면 유리가 붉게 빛난다(깜빡임)
-            new InspectionItem("S-6", "세계 지도", SpaceId.ScienceRoom, FearAxis.Layout, AnomalyTemplate.Move, "과학실 세계 지도가 반듯한지 확인해주십시오."),   // 104차(사용자 결정): 옛 이름 「지도」 · 66차 — 이상이면 기울거나 세로로·거꾸로
+            Dt("135012", "인체 모형"),   // 64차 민: 실제 이상은 90° 돌아감(회전)이라 그에 맞춘 문구
+            Dt("135013", "현미경"),
+            Dt("135014", "개수대"),   // 104차(사용자 결정): 옛 「과학실 개수대가 잠겨 있는지 확인해주십시오.」
+            Dt("135015", "지구본"),   // 104차(사용자 결정): 옛 「과학실 지구본의 상태를 보고해주십시오.」 · 66차 — 이상이면 혼자 천천히 돈다
+            Dt("135016", "플라스크"),   // 66차 — 이상이면 유리가 붉게 빛난다(깜빡임)
+            Dt("135017", "세계 지도"),   // 104차(사용자 결정): 옛 이름 「지도」 · 66차 — 이상이면 기울거나 세로로·거꾸로
 
-            new InspectionItem("T-1", "변기", SpaceId.Toilet, FearAxis.Auditory, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 청각(물소리) */ "화장실 3번 칸 변기의 상태를 보고해주십시오."),   // 104차(사용자 결정): 옛 「화장실 변기의 상태를 보고해주십시오.」 — 칸을 문장에 넣어 목격 지시의 「(3번 칸)」 꼬리를 뗐다
-            new InspectionItem("T-2", "칸 문", SpaceId.Toilet, FearAxis.Auditory, AnomalyTemplate.Sound, "화장실 빈 칸의 상태를 보고해주십시오."),   // 104차(사용자: 「T-2는 그냥 폐기해줘」): 폐기(Retired) — 정의는 되살릴 수 있게 남긴다
-            new InspectionItem("T-3", "거울", SpaceId.Toilet, FearAxis.Illuminance, AnomalyTemplate.Light, "화장실 거울 쪽 조명의 상태를 보고해주십시오."),
+            Dt("135018", "변기"),   // 104차(사용자 결정): 옛 「화장실 변기의 상태를 보고해주십시오.」 — 칸을 문장에 넣어 목격 지시의 「(3번 칸)」 꼬리를 뗐다
+            Dt("135019", "칸 문"),   // 104차(사용자: 「T-2는 그냥 폐기해줘」): 폐기(Retired) — 정의는 되살릴 수 있게 남긴다
+            Dt("135020", "거울"),
             // 81차(민: 「세면대 물 퀄리티 부족 — T-4는 항목 폐기」): T-4 화장실 세면대 폐기. ID T-4는 다시 쓰지 않는다.
-            new InspectionItem("T-5", "수건", SpaceId.Toilet, FearAxis.Layout, AnomalyTemplate.Move, "화장실 세면대 옆 칸막이에 수건이 걸려 있는지 확인해주십시오."),   // 104차(사용자 결정): 옛 「화장실 세면대 옆 수건이 칸에 걸려 있는지 확인해주십시오.」 · 66차 — 이상이면 바닥에 떨어져 있다
+            Dt("135021", "수건"),   // 104차(사용자 결정): 옛 「화장실 세면대 옆 수건이 칸에 걸려 있는지 확인해주십시오.」 · 66차 — 이상이면 바닥에 떨어져 있다
 
-            new InspectionItem("L-1", "도서관 의자", SpaceId.Library, FearAxis.Layout, AnomalyTemplate.Move, "도서관 입구에서 가장 가까운 의자가 책상 안에 들어가 있는지 확인해주십시오."),   // 104차(사용자 결정): 옛 이름 「열람석」 · 옛 「도서관 의자가 책상 안에 들어가 있는지 확인해주십시오.」
-            new InspectionItem("L-2", "블라인드", SpaceId.Library, FearAxis.Illuminance, AnomalyTemplate.Light, "도서관 입구 맞은편 창 블라인드 둘이 내려져 있는지 확인해주십시오."),   // 65차(민: 「어떤 블라인드를 지칭하는지 헷갈려」 — 도서관엔 창 블라인드 5개 + 바닥에 떨어진 조각들. 이상은 입구 맞은편 서쪽 벽 둘 중 하나가 올라감)
+            Dt("135022", "도서관 의자"),   // 104차(사용자 결정): 옛 이름 「열람석」 · 옛 「도서관 의자가 책상 안에 들어가 있는지 확인해주십시오.」
+            Dt("135023", "블라인드"),   // 65차(민: 「어떤 블라인드를 지칭하는지 헷갈려」 — 도서관엔 창 블라인드 5개 + 바닥에 떨어진 조각들. 이상은 입구 맞은편 서쪽 벽 둘 중 하나가 올라감)
             // 80차(민: 「이 보고하지마 칠판과 관련된 건 폐기해줘」): L-4 도서관 칠판(분필 글씨) 폐기 — ID L-3·L-4는 다시 쓰지 않는다.
-            new InspectionItem("L-5", "도서관 쓰레기통", SpaceId.Library, FearAxis.Layout, AnomalyTemplate.Move, "도서관 쓰레기통이 바닥에 누워 있는지 확인해주십시오."),   // 104차(사용자 결정): 옛 이름 「쓰레기통」(H-4와 같았음) · 옛 「도서관 쓰레기통이 세워져 있는지 확인해주십시오.」(정상·이상이 문장과 반대였다) · 66차 — 씬에서 원래 누워 있다. 이상이면 누가 세워 놓았다
+            Dt("135024", "도서관 쓰레기통"),   // 104차(사용자 결정): 옛 이름 「쓰레기통」(H-4와 같았음) · 옛 「도서관 쓰레기통이 세워져 있는지 확인해주십시오.」(정상·이상이 문장과 반대였다) · 66차 — 씬에서 원래 누워 있다. 이상이면 누가 세워 놓았다
 
-            new InspectionItem("K-1", "CCTV 전 채널", SpaceId.SecurityRoom, FearAxis.Illuminance, AnomalyTemplate.Switch,   /* 103차 축 균형: 배치 → 조도(화면) */ "CCTV 모든 채널이 정상인지 확인해주십시오."),
-            new InspectionItem("K-2", "접이식 의자", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Move, "경비실 접이식 의자 둘이 같은 쪽을 보는지 확인해주십시오."),   // 66차 — 이상이면 하나가 돌아앉음 · 103차(민): 경비실 명시
-            new InspectionItem("K-3", "경비실 화분", SpaceId.SecurityRoom, FearAxis.Layout, AnomalyTemplate.Move, "경비실 화분이 똑바로 서 있는지 확인해주십시오.")   // 104차(사용자 결정): 옛 이름 「화분」(C-1과 같았음) · 옛 「경비실 화분이 제자리인지 확인해주십시오.」 · 66차 — 이상이면 쓰러져 있다
+            Dt("135025", "CCTV 전 채널"),
+            Dt("135026", "접이식 의자"),   // 66차 — 이상이면 하나가 돌아앉음 · 103차(민): 경비실 명시
+            Dt("135027", "경비실 화분")   // 104차(사용자 결정): 옛 이름 「화분」(C-1과 같았음) · 옛 「경비실 화분이 제자리인지 확인해주십시오.」 · 66차 — 이상이면 쓰러져 있다
         };
 
         private static readonly Dictionary<string, InspectionItem> ById = BuildIndex();
@@ -161,11 +180,59 @@ namespace NightDuty
         /// </summary>
         public static string ReportWord(string itemId, bool anomaly)
         {
-            if (itemId == "C-3") return anomaly ? "없음" : "있음";
+            if (itemId == "135009") return anomaly ? "없음" : "있음";
             return anomaly ? "이상" : "정상";
         }
 
         /// <summary>ID로 찾는다. 없으면 null.</summary>
+        static Dictionary<string, string> s_targetOf, s_itemOf;
+        static object s_targetSource;
+
+        /// <summary>
+        /// 점검 항목의 표식 문자열(씬의 JudgeTarget ID — 「inspect.H-1」 꼴). DT Task_Table.Target_1_ID 표식의 표시 코드다(표식은 씬이 정본이라 옛 문자열 그대로).
+        /// DT 행이 없는 항목(폐기 번호 등)은 옛 규칙 <see cref="TargetPrefix"/> + 항목 키.
+        /// </summary>
+        public static string TargetOf(string itemId)
+        {
+            BuildTargets();
+            string t;
+            return itemId != null && s_targetOf.TryGetValue(itemId, out t) ? t : TargetPrefix + itemId;
+        }
+
+        /// <summary>항목의 표시 코드(옛 코드 「H-1」 — 로그·씬 오브젝트 이름용). 키가 아니다.</summary>
+        public static string CodeOf(string itemId)
+        {
+            uint id = global::NightDuty.DesignData.IdOf(itemId);
+            return id == 0 ? itemId : global::NightDuty.DesignData.Label(id);
+        }
+
+        /// <summary><see cref="TargetOf"/>의 반대 — 표식 문자열 → 항목 키. 모르는 표식은 접두어를 뗀 나머지.</summary>
+        public static string ItemOfTarget(string target)
+        {
+            if (string.IsNullOrEmpty(target)) return target;
+            BuildTargets();
+            string id;
+            if (s_itemOf.TryGetValue(target, out id)) return id;
+            return target.StartsWith(TargetPrefix, StringComparison.Ordinal) ? target.Substring(TargetPrefix.Length) : target;
+        }
+
+        static void BuildTargets()
+        {
+            global::NightDuty.DesignData.Ensure();
+            if (s_targetOf != null && ReferenceEquals(s_targetSource, InstructionDT.DT.Task)) return;
+            var to = new Dictionary<string, string>();
+            var back = new Dictionary<string, string>();
+            for (int i = 0; i < Items.Length; i++)
+            {
+                var r = InstructionDT.DT.Task.Get(global::NightDuty.DesignData.IdOf(Items[i].Id));
+                if (r == null || r.Target_1_ID == 0) continue;
+                string target = global::NightDuty.DesignData.Label(r.Target_1_ID);
+                to[Items[i].Id] = target;
+                back[target] = Items[i].Id;
+            }
+            s_targetOf = to; s_itemOf = back; s_targetSource = InstructionDT.DT.Task;
+        }
+
         public static InspectionItem Find(string id)
         {
             InspectionItem item;
@@ -181,7 +248,7 @@ namespace NightDuty
             }
 
             return targetOrId.StartsWith(TargetPrefix, StringComparison.Ordinal)
-                ? Find(targetOrId.Substring(TargetPrefix.Length))
+                ? Find(ItemOfTarget(targetOrId))
                 : Find(targetOrId);
         }
 

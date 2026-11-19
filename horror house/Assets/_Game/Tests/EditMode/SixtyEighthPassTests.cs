@@ -66,7 +66,7 @@ namespace NightDuty.Tests
         /// <summary>77차(W1·W7~W14 폐기 — 제한 있는 지시는 W3·W6뿐): W15는 책을 주워 끝내고, 나머지는 기한을 넘겨 끝낸다.</summary>
         private static void IssueAndFinish(DutyDispatcher d, string id, float minute)
         {
-            if (id != "W15")
+            if (id != "130009")
             {
                 IssueAndExpire(d, id, minute);
                 return;
@@ -86,24 +86,24 @@ namespace NightDuty.Tests
             Assert.IsTrue(d.Pending(30f), "아직 하나도 안 냈다 — 상한까지 나온다");
             Assert.IsTrue(d.Pending(NightClock.Call1 - 1f), "마디 상한에 막혀도 다음 마디에 나온다");
 
-            for (int i = 0; i < DutyCatalog.DailyCap(1); i++) IssueAndFinish(d, new[] { "W3", "W21", "W15" }[i], 30f);
+            for (int i = 0; i < DutyCatalog.DailyCap(1); i++) IssueAndFinish(d, new[] { "130002", "130008", "130009" }[i], 30f);
             Assert.AreEqual(DutyCatalog.DailyCap(1), d.IssuedToday);
             Assert.IsTrue(d.Pending(30f), "근무일지(W5)는 이완 구간에 나온다");
             Assert.IsFalse(d.Pending(NightClock.Call2 + 1f), "상한까지 냈고 근무일지 시간도 지났다");
 
             DutyEvent ev;
-            Assert.IsTrue(d.Force("W2", out ev));
+            Assert.IsTrue(d.Force("130001", out ev));
             Assert.IsTrue(d.Pending(NightClock.JudgingEnd + 1f), "제한 없는 지시도 끝내기 전까지는 남은 것");
         }
 
         [Test]
         public void 점검을_다_보고해도_근무_지시가_남으면_조기퇴근할_수_없다()
         {
-            UsePlan(Row("H-2", false), Row("C-1", true));
+            UsePlan(Row("135002", false), Row("135007", true));
             NightRun.DutiesEnabled = true;
             NightRun.BeginNight(1, () => _clock);
-            NightRun.ReportInspection("H-2", false);
-            NightRun.ReportInspection("C-1", true);
+            NightRun.ReportInspection("135002", false);
+            NightRun.ReportInspection("135007", true);
             Assert.AreEqual(0, NightRun.Inspections.RemainingCount);
 
             Assert.IsTrue(NightRun.DutiesPending);
@@ -111,7 +111,7 @@ namespace NightDuty.Tests
             Assert.IsFalse(NightRun.CanEndShiftEarly, "점검 완료 + 추가 지시 있음 → 불가");
 
             DutyDispatcher d = NightRun.Duties;
-            foreach (string id in new[] { "W3", "W21", "W15" }) IssueAndFinish(d, id, _clock);
+            foreach (string id in new[] { "130002", "130008", "130009" }) IssueAndFinish(d, id, _clock);
             Assert.IsFalse(NightRun.CanEndShiftEarly, "근무일지(W5)가 아직");
 
             _clock = (int)NightClock.Call2 + 1;
@@ -122,14 +122,14 @@ namespace NightDuty.Tests
         [Test]
         public void 퇴근할_수_있게_된_뒤_새_지시가_오면_끝낼_때까지_다시_막힌다()
         {
-            UsePlan(Row("H-2", false));
+            UsePlan(Row("135002", false));
             NightRun.DutiesEnabled = true;
             List<string> texts = new List<string>();
             EventBus.DutySent += m => texts.Add(m.Text);
             NightRun.BeginNight(1, () => _clock);
-            NightRun.ReportInspection("H-2", false);
+            NightRun.ReportInspection("135002", false);
             DutyDispatcher d = NightRun.Duties;
-            foreach (string id in new[] { "W3", "W21", "W15" }) IssueAndFinish(d, id, _clock);
+            foreach (string id in new[] { "130002", "130008", "130009" }) IssueAndFinish(d, id, _clock);
             _clock = (int)NightClock.Call2 + 1;
             Assert.IsTrue(NightRun.CanEndShiftEarly);
 
@@ -138,7 +138,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(1, texts.FindAll(t => t == NightRun.ShiftReadyText).Count, "모든 지시를 마쳤다는 문자는 한 번");
 
             DutyEvent ev;
-            Assert.IsTrue(d.Force("W2", out ev), "점검을 끝낸 뒤 새로 생긴 지시");   // 77차: W7 폐기
+            Assert.IsTrue(d.Force("130001", out ev), "점검을 끝낸 뒤 새로 생긴 지시");   // 77차: W7 폐기
             Assert.IsFalse(NightRun.CanEndShiftEarly, "그 지시가 끝나기 전에는 퇴근할 수 없다");
             NightRun.Tick(0.1f);
 
@@ -152,7 +152,7 @@ namespace NightDuty.Tests
         [Test]
         public void 근무_지시가_남았으면_점검의_마지막_지시_안내를_붙이지_않는다()
         {
-            UsePlan(Row("H-2", false));
+            UsePlan(Row("135002", false));
             NightRun.DutiesEnabled = true;
             NightRun.InspectionDripEnabled = true;
             try

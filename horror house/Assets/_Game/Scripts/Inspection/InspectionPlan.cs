@@ -195,7 +195,7 @@ namespace NightDuty
         private static readonly SpaceId[] Day1Spaces = { SpaceId.Corridor, SpaceId.Classroom, SpaceId.ScienceRoom, SpaceId.SecurityRoom };
 
         /// <summary>1일차 마지막 점검 공간(호출 2). 50차: 교실 → 과학실. 51차: 과학실 → 복도 정상 1항목(민: 「이후 2개가 너무 늦다」 — 과학실은 01:00 전후에).</summary>
-        public const SpaceId Day1LateSpace = SpaceId.Corridor;
+        public static SpaceId Day1LateSpace => global::NightDuty.DesignData.SpaceOf(global::NightDuty.DesignData.Day(1).Late_Space_ID);   // DT Day_Table 1일차 Late_Space_ID
 
         /// <summary>2일차부터 늦은 공간(호출 2)에 묶는 항목 수 상한. 나머지는 먼저 열린다.</summary>
         public static int LateItemsMax => global::NightDuty.DesignData.SettingInt(390195);   // DT 390195

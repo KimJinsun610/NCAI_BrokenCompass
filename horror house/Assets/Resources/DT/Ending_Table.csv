@@ -1,4 +1,4 @@
-﻿ID,Name,Priority,Cond_1_Type_ID,Cond_1_Axis_ID,Cond_1_Value,Cond_2_Type_ID,Cond_2_Axis_ID,Cond_2_Value,Cond_3_Type_ID,Cond_3_Axis_ID,Cond_3_Value,Final_Text,Fx_ID,Desc
-uint,string,uint,uint,uint,float,uint,uint,float,uint,uint,float,string,uint,string
-230001,봤다 — 인수인계(엔딩 1),1,580101,,1.5,,,,,,,"근무 종료, 철거가 예정대로 진행됩니다.",421601,창밖 남자가 화면에 보인 시간 합 ≥ 1.5초(끊겨도 합산) / 조건 칸끼리는 모두 만족(AND)
-230002,안 봤다 — 퇴근(엔딩 2),2,,,,,,,,,,,421602,1순위 조건이 아니면. 경비실 전화 [E] 두 번으로 퇴근 / 조건이 모두 비면 기본 엔딩(앞 순서 엔딩에 안 걸리면)
+﻿ID,Name,Priority,Cond_1_Type_ID,Cond_1_Axis_ID,Cond_1_Value,Cond_2_Type_ID,Cond_2_Axis_ID,Cond_2_Value,Cond_3_Type_ID,Cond_3_Axis_ID,Cond_3_Value,Final_Text,Fx_ID,Desc,Code
+uint,string,uint,uint,uint,float,uint,uint,float,uint,uint,float,string,uint,string,string
+230001,봤다 — 인수인계(엔딩 1),1,580101,,1.5,,,,,,,"근무 종료, 철거가 예정대로 진행됩니다.",421601,창밖 남자가 화면에 보인 시간 합 ≥ 1.5초(끊겨도 합산) / 조건 칸끼리는 모두 만족(AND),ShiftChange
+230002,안 봤다 — 퇴근(엔딩 2),2,,,,,,,,,,,421602,1순위 조건이 아니면. 경비실 전화 [E] 두 번으로 퇴근 / 조건이 모두 비면 기본 엔딩(앞 순서 엔딩에 안 걸리면),ShiftOver

@@ -137,11 +137,11 @@ namespace NightDuty.Tests
             for (int seed = 0; seed < 50; seed++)
             {
                 DutyDispatcher d = new DutyDispatcher(3, null, 5, null, new System.Random(seed));
-                d.RecentlyIssued = id => id == "W17" || id == "W2";
+                d.RecentlyIssued = id => id == "130007" || id == "130001";
                 DutyDef pick = d.Pick();
                 Assert.IsNotNull(pick);
-                Assert.AreNotEqual("W17", pick.Id);
-                Assert.AreNotEqual("W2", pick.Id);
+                Assert.AreNotEqual("130007", pick.Id);
+                Assert.AreNotEqual("130001", pick.Id);
             }
 
             DutyDispatcher all = new DutyDispatcher(3, null, 5, null, new System.Random(1));
@@ -402,8 +402,8 @@ namespace NightDuty.Tests
             InspectionBoard b = new InspectionBoard();
             b.Begin(new InspectionPlan(2, new[]
             {
-                new InspectionAssignment(InspectionCatalog.Find("K-1"), false, Band.Band0, false),
-                new InspectionAssignment(InspectionCatalog.Find("S-1"), false, Band.Band0, false),
+                new InspectionAssignment(InspectionCatalog.Find("135025"), false, Band.Band0, false),
+                new InspectionAssignment(InspectionCatalog.Find("135012"), false, Band.Band0, false),
             }, SpaceId.None, string.Empty), true);
             Assert.AreEqual(2, b.RemainingCount);
             Assert.AreEqual(1, b.RemainingCountExcept(SpaceId.ScienceRoom));
@@ -454,32 +454,32 @@ namespace NightDuty.Tests
         {
             DutyDispatcher d = new DutyDispatcher(3, s => 0f, 5);
             DutyEvent ev;
-            Assert.IsTrue(d.Force("W4", out ev));
+            Assert.IsTrue(d.Force("130003", out ev));
             Assert.IsTrue(d.Tick(new DutyInput { Minute = NightClock.RelaxStart + 1f, Dt = 0.1f, SinceInspection = 100f }, out ev), "옛: W4가 열려 있으면 W5가 아예 안 나갔다");
-            Assert.AreEqual(DutyCatalog.Find("W5"), ev.Def);
+            Assert.AreEqual(DutyCatalog.Find("130004"), ev.Def);
             Assert.AreEqual(DutyOutcome.Issued, ev.Outcome);
-            Assert.AreEqual("W4", d.Active.Id, "진행 중이던 지시는 그대로");
+            Assert.AreEqual("130003", d.Active.Id, "진행 중이던 지시는 그대로");
             Assert.IsTrue(d.LogOpen);
             Assert.IsFalse(d.Tick(new DutyInput { Minute = NightClock.RelaxStart + 2f, Dt = 0.1f, SinceInspection = 100f }, out ev), "한 번만");
             Assert.IsTrue(d.NoteSigned(out ev));
             Assert.AreEqual(DutyOutcome.Done, ev.Outcome);
-            Assert.AreEqual("W5", ev.Def.Id);
-            Assert.AreEqual("W4", d.Active.Id);
+            Assert.AreEqual("130004", ev.Def.Id);
+            Assert.AreEqual("130003", d.Active.Id);
 
             DutyDispatcher ended = new DutyDispatcher(3, s => 0f, 5);
-            Assert.IsTrue(ended.Force("W15", out ev));
+            Assert.IsTrue(ended.Force("130009", out ev));
             Assert.IsTrue(ended.Tick(new DutyInput { Minute = NightClock.RelaxStart + 1f, Dt = 0.1f, SinceInspection = 100f }, out ev), "따로 연 W5");
             Assert.IsTrue(ended.NotePicked(DutyCatalog.LibraryBookTarget, out ev), "진행 중이던 줍기 지시를 이완 구간에 끝냄");
             Assert.IsNull(ended.Active);
             Assert.IsFalse(ended.Tick(new DutyInput { Minute = NightClock.RelaxStart + 2f, Dt = 0.1f, SinceInspection = 100f }, out ev), "103차 QA 4회: 서명 안내를 두 번 내지 않는다");
 
             DutyDispatcher late = new DutyDispatcher(3, s => 0f, 5);
-            Assert.IsTrue(late.Force("W4", out ev));
+            Assert.IsTrue(late.Force("130003", out ev));
             late.Tick(new DutyInput { Minute = NightClock.RelaxStart + 1f, Dt = 0.1f, SinceInspection = 100f }, out ev);
             Assert.IsFalse(late.Tick(new DutyInput { Minute = NightClock.Call2, Dt = 0.1f, SinceInspection = 100f }, out ev), "서명 못 하면 호출 2에 조용히 닫힌다");
-            Assert.IsTrue(late.Finished("W5"));
+            Assert.IsTrue(late.Finished("130004"));
             Assert.IsFalse(late.LogOpen);
-            Assert.AreEqual("W4", late.Active.Id);
+            Assert.AreEqual("130003", late.Active.Id);
         }
 
         [Test]

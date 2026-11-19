@@ -42,9 +42,9 @@ namespace NightDuty.Tests
         {
             InspectionPlan plan = new InspectionPlan(3, new[]
             {
-                new InspectionAssignment(InspectionCatalog.Find("K-2"), false, Band.Band0, false),
-                new InspectionAssignment(InspectionCatalog.Find("C-1"), true, Band.Band1, false),
-            }, SpaceId.Corridor, "C-1");
+                new InspectionAssignment(InspectionCatalog.Find("135026"), false, Band.Band0, false),
+                new InspectionAssignment(InspectionCatalog.Find("135007"), true, Band.Band1, false),
+            }, SpaceId.Corridor, "135007");
             NightProgram cctv = new NightProgram(3, new List<SlotEncounter>(), new[] { ProgramCatalog.Rule("K1") }, "test", new[] { ProgramCatalog.Encounter(ProgramCatalog.CctvPerson) });
             Assert.IsTrue(cctv.HasEncounter(ProgramCatalog.CctvPerson), "겹침 조우도 편성된 조우");
 

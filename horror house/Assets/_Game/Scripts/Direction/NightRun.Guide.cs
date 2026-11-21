@@ -243,21 +243,21 @@ namespace NightDuty
         {
             switch (encounterId)
             {
-                case ProgramCatalog.CeilingLegs: return "교실 안쪽 사다리를 다시 확인해주십시오.";
-                case ProgramCatalog.ScienceBlackout: return "과학실을 순찰해주십시오.";
-                case ProgramCatalog.ToiletBlackout: return "화장실을 순찰해주십시오.";
-                case ProgramCatalog.ToiletGirl: return "화장실을 순찰해주십시오.";
-                case ProgramCatalog.SuitMan: return "도서관 입구 맞은편 창의 블라인드를 확인해주십시오.";
-                case ProgramCatalog.Footsteps: return "복도를 한 바퀴 순찰해주십시오.";
-                case ProgramCatalog.FollowSteps: return "복도를 한 바퀴 순찰해주십시오.";
-                case ProgramCatalog.CallingVoice: return "복도를 순찰해주십시오.";
-                case ProgramCatalog.PeopleTree: return "복도를 순찰해주십시오.";
-                case ProgramCatalog.CctvPerson: return "경비실 CCTV 화면을 확인해주십시오.";
-                case ProgramCatalog.BoyBang: return "1-3 교실을 순찰해주십시오.";
-                case ProgramCatalog.HallEndFigure: return "복도 끝 비상구 쪽을 확인해주십시오.";
-                case ProgramCatalog.ModelRush: return "복도 끝 비상구 쪽을 확인해주십시오.";
-                case ProgramCatalog.YellowFace: return "도서관을 순찰해주십시오.";
-                default: return "순찰을 계속해주십시오.";
+                case ProgramCatalog.CeilingLegs: return DesignData.Msg(140006);
+                case ProgramCatalog.ScienceBlackout: return DesignData.Msg(140007);
+                case ProgramCatalog.ToiletBlackout: return DesignData.Msg(140008);
+                case ProgramCatalog.ToiletGirl: return DesignData.Msg(140009);
+                case ProgramCatalog.SuitMan: return DesignData.Msg(140010);
+                case ProgramCatalog.Footsteps: return DesignData.Msg(140011);
+                case ProgramCatalog.FollowSteps: return DesignData.Msg(140011);   // DT에 따로 행 없음 — Footsteps와 같은 문구
+                case ProgramCatalog.CallingVoice: return DesignData.Msg(140012);
+                case ProgramCatalog.PeopleTree: return DesignData.Msg(140013);
+                case ProgramCatalog.CctvPerson: return DesignData.Msg(140014);
+                case ProgramCatalog.BoyBang: return DesignData.Msg(140015);
+                case ProgramCatalog.HallEndFigure: return DesignData.Msg(140016);
+                case ProgramCatalog.ModelRush: return DesignData.Msg(140017);
+                case ProgramCatalog.YellowFace: return DesignData.Msg(140018);
+                default: return DesignData.Msg(140019);
             }
         }
 

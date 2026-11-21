@@ -27,55 +27,56 @@ using UnityEngine.UI;
 [DisallowMultipleComponent]
 public sealed class FinaleDirector : MonoBehaviour
 {
+    // 문구·시간 중 DT Message_Table(140021~140034)에 있는 것은 OnEnable(ApplyDesignData)에서 채운다 — 정본은 xlsx.
     [Header("문구")]
-    [SerializeField] private string shiftOverNotice = "근무 시간이 종료되었습니다.";
+    private string shiftOverNotice;
     [Tooltip("강제 복귀 뒤 태블릿에 오는 첫 문자(창밖 남자가 나타나기 3초 전).")]
-    [SerializeField] private string openingNotice = "창밖에..?..?//..ㅁ....ㅜ/ㅅ../??......";
+    private string openingNotice;
     [Tooltip("괴이문자가 바뀌어 가는 끝 문구.")]
-    [SerializeField] private string letInLine = "들여보내줘";
+    private string letInLine;
     [Tooltip("괴이문자 한 통의 처음 글자 수(끝으로 갈수록 「들여보내줘」 길이로 줄어든다).")]
     [SerializeField, Min(4)] private int weirdLength = 14;
-    [SerializeField] private string checkoutNotice = "근무가 종료 되었습니다. 전화를 통해 퇴근하십시오";
-    [SerializeField] private string cameIn = "들어왔다";
+    private string checkoutNotice;
+    private string cameIn;
     [SerializeField] private string cameInColor = "#D11F27";
-    [SerializeField] private string[] seenLines = { "내가 보여?", "이제 보이는 구나" };
-    [SerializeField] private string incidentLine = "현 폐교 내 확인되지 않는 이상현상 확인 됨";
-    [SerializeField] private string confirmedLine = "확인됨";
-    [SerializeField] private string actionLine = "조치 예정";
-    [SerializeField] private string terminatedLine = "계약 해지";
-    [SerializeField] private string handoverLine = "인수인계가 진행됩니다.";
-    [SerializeField] private string[] chaosLines = { "인수인계", "진행", "인수인계가 진행됩니다.", "진행됩니다", "근무지 이탈 불가" };
-    [SerializeField] private string finalLine = "근무 종료, 철거가 예정대로 진행됩니다.";
+    private string[] seenLines;
+    private string incidentLine;
+    private string confirmedLine;
+    private string actionLine;
+    private string terminatedLine;
+    private string handoverLine;
+    private string[] chaosLines;
+    private string finalLine;
 
     [Header("시간(초)")]
-    [SerializeField, Min(0f)] private float fadeSeconds = 0.8f;
-    [SerializeField, Min(0f)] private float noticeSeconds = 2.5f;
+    [SerializeField, Min(0f)] private float fadeSeconds;
+    [SerializeField, Min(0f)] private float noticeSeconds;
     [SerializeField, Min(0f)] private float k4Lead = 3f;
     [Tooltip("괴이문자가 「들여보내줘」로 바뀌어 가는 시간.")]
     [SerializeField, Min(0.5f)] private float letInMorphSeconds = 2f;
     [Tooltip("바뀐 뒤 온전한 「들여보내줘」만 계속 받는 시간. 응시 판정 창 = 바뀌는 시간 + 이 시간(4.5초 — 2026-10-10 김진선님 3.5 → 4.5).")]
-    [SerializeField, Min(0f)] private float letInHoldSeconds = 2.5f;
+    [SerializeField, Min(0f)] private float letInHoldSeconds;
     [Tooltip("괴이문자·「들여보내줘」 문자 사이 간격.")]
-    [SerializeField, Min(0.02f)] private float letInInterval = 0.2f;
+    [SerializeField, Min(0.02f)] private float letInInterval;
     [Tooltip("「봤다」: 문자를 지운 뒤 창밖 남자가 사라지고 태블릿이 메시지란·확대로 고정되기까지.")]
-    [SerializeField, Min(0f)] private float seenClearDelay = 0.5f;
+    [SerializeField, Min(0f)] private float seenClearDelay;
     [Tooltip("「봤다」: 고정 뒤 「들어왔다」 · 「내가 보여?」 · 「이제 보이는 구나」를 한 줄씩 받는 간격(고정 → 첫 줄도 이 간격).")]
-    [SerializeField, Min(0f)] private float cameInLineGap = 0.5f;
+    [SerializeField, Min(0f)] private float cameInLineGap;
     [Tooltip("「봤다」: 마지막 줄(이제 보이는 구나) 뒤 몰아치기가 시작되기까지.")]
-    [SerializeField, Min(0f)] private float beforeBurstSeconds = 1f;
+    [SerializeField, Min(0f)] private float beforeBurstSeconds;
     [Tooltip("「봤다」 몰아치기: 묶음(번호) 사이 간격.")]
-    [SerializeField, Min(0f)] private float seenLineGap = 0.4f;
+    [SerializeField, Min(0f)] private float seenLineGap;
     [Tooltip("한 묶음 안에서 「연달아」 받는 간격(확인됨·조치 예정).")]
-    [SerializeField, Min(0.02f)] private float burstInterval = 0.06f;
+    [SerializeField, Min(0.02f)] private float burstInterval;
     [Tooltip("마지막 몰아치기(인수인계·진행·… 무작위)의 문자 간격.")]
-    [SerializeField, Min(0.02f)] private float chaosInterval = 0.2f;
-    [SerializeField, Min(0f)] private float confirmedSeconds = 1f;
-    [SerializeField, Min(0f)] private float actionSeconds = 1f;
-    [SerializeField, Min(0f)] private float chaosSeconds = 2f;
+    [SerializeField, Min(0.02f)] private float chaosInterval;
+    [SerializeField, Min(0f)] private float confirmedSeconds;
+    [SerializeField, Min(0f)] private float actionSeconds;
+    [SerializeField, Min(0f)] private float chaosSeconds;
     [Tooltip("소리·화면이 멈춘 뒤 검은 화면까지.")]
     [SerializeField, Min(0f)] private float freezeSeconds = 0.2f;
-    [SerializeField, Min(0f)] private float blackSilenceSeconds = 2f;
-    [SerializeField, Min(0f)] private float finalLineSeconds = 4f;
+    [SerializeField, Min(0f)] private float blackSilenceSeconds;
+    [SerializeField, Min(0f)] private float finalLineSeconds;
     [Tooltip("마지막 문구가 사라진 뒤 메인으로 가기까지의 암전.")]
     [SerializeField, Min(0f)] private float finalBlackSeconds = 0.5f;
 
@@ -167,7 +168,28 @@ public sealed class FinaleDirector : MonoBehaviour
     private void OnEnable()
     {
         Active = this;
+        ApplyDesignData();
         Phase = "대기";
+    }
+
+    /// <summary>DT Message_Table에서 문구·시간을 읽는다. 표에 칸이 없는 값(바뀌는 시간 2초·정지 0.2초·K4 3초·글자 색)은 코드 값.</summary>
+    private void ApplyDesignData()
+    {
+        var ret = DesignData.MessageRow(140021); shiftOverNotice = ret.Text; fadeSeconds = ret.Delay_Sec; noticeSeconds = ret.Show_Sec;
+        openingNotice = DesignData.Msg(140022);
+        var letIn = DesignData.MessageRow(140023); letInLine = letIn.Text; letInInterval = letIn.Repeat_Interval_Sec;
+        letInHoldSeconds = Mathf.Max(0f, letIn.Repeat_Duration_Sec - letInMorphSeconds);   // 응시 창 4.5초 = 바뀌는 시간 + 온전한 시간
+        var came = DesignData.MessageRow(140024); cameIn = came.Text; seenClearDelay = came.Delay_Sec;
+        var s2 = DesignData.MessageRow(140025); seenLines = new[] { s2.Text, DesignData.Msg(140026) }; cameInLineGap = s2.Delay_Sec;
+        var b1 = DesignData.MessageRow(140027); incidentLine = b1.Text; beforeBurstSeconds = b1.Delay_Sec;
+        var b2 = DesignData.MessageRow(140028); confirmedLine = b2.Text; seenLineGap = b2.Delay_Sec; burstInterval = b2.Repeat_Interval_Sec; confirmedSeconds = b2.Repeat_Duration_Sec;
+        var b3 = DesignData.MessageRow(140029); actionLine = b3.Text; actionSeconds = b3.Repeat_Duration_Sec;
+        terminatedLine = DesignData.Msg(140030);
+        handoverLine = DesignData.Msg(140031);
+        var b6 = DesignData.MessageRow(140032); chaosLines = DesignData.MsgParts(140032); chaosInterval = b6.Repeat_Interval_Sec; chaosSeconds = b6.Repeat_Duration_Sec;
+        var fin = DesignData.MessageRow(140033); finalLine = fin.Text; finalLineSeconds = fin.Show_Sec;
+        blackSilenceSeconds = Mathf.Max(0f, fin.Delay_Sec - freezeSeconds);   // 정지 0.2초 + 검은 화면 2초 = 2.2초
+        checkoutNotice = DesignData.Msg(140034);
     }
 
     private void OnDisable()

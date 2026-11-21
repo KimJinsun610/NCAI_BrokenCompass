@@ -225,6 +225,21 @@ namespace NightDuty
             return uint.TryParse(codeOrId, out var n) && n >= 100000 && n <= 999999 ? n : IdOfCode(codeOrId);
         }
 
+        /// <summary>Message_Table 행. 없거나 꺼져 있으면(Is_Active) 예외.</summary>
+        public static MessageRow MessageRow(uint id)
+        {
+            Ensure();
+            var row = DT.Message.Get(id);
+            if (row == null) throw new System.InvalidOperationException("DT Message " + id + " 없음");
+            return row;
+        }
+
+        /// <summary>Message_Table 문구(Text). 문구의 정본은 xlsx — 코드에 같은 문장을 다시 적지 마십시오.</summary>
+        public static string Msg(uint id) => MessageRow(id).Text;
+
+        /// <summary>여러 문구 칸(「a | b | c」)을 나눈다.</summary>
+        public static string[] MsgParts(uint id) => Msg(id).Split(new[] { " | " }, System.StringSplitOptions.None);
+
         /// <summary>Task_Table 행(표시 코드 또는 ID 문자열로). 없으면 예외.</summary>
         public static TaskRow TaskRow(string codeOrId)
         {

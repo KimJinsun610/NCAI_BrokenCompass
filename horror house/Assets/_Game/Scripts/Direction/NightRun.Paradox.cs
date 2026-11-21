@@ -143,7 +143,7 @@ namespace NightDuty
         }
 
         /// <summary>역설 문자를 따라 그 수칙을 어겼을 때 오는 답장(51차).</summary>
-        public const string ParadoxAck = "확인되었습니다.";
+        public static string ParadoxAck => DesignData.Msg(140020);
 
         private static bool _paradoxAcked;
         private static bool _paradoxEnded;

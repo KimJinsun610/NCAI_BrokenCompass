@@ -28,7 +28,7 @@ namespace NightDuty
         }
 
         /// <summary>68차: 모든 지시를 마쳐 조기 퇴근할 수 있게 된 순간 한 번 보내는 문자.</summary>
-        public const string ShiftReadyText = "[근무] 모든 지시를 마쳤습니다. 경비실 전화로 퇴근하십시오.";
+        public static string ShiftReadyText => DesignData.Msg(140004);
 
         /// <summary>68차: <see cref="ShiftReadyText"/> 문자의 카드 ID(재시작이 되돌리면 태블릿에서 지운다 — 끝난 지시가 아니므로).</summary>
         public const string ShiftReadyId = "shift.ready";
@@ -258,7 +258,7 @@ namespace NightDuty
         public const float StallNagRepeatSeconds = 120f;
 
         /// <summary>103차 후속: 독촉 문자 본문({0} = 보고하지 않은 점검 수).</summary>
-        public const string StallNagText = "지시한 점검 {0}건의 보고가 늦어지고 있습니다. 확인 후 보고 바랍니다.";
+        public static string StallNagText => DesignData.Msg(140005);
 
         private static float _sinceStallNag = float.PositiveInfinity;
         private static int _stallNagSerial;

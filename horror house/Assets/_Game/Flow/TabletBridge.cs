@@ -523,7 +523,7 @@ public sealed class TabletBridge : MonoBehaviour
         int left = NightClock.ShiftEnd / 60 - hour;
         _messageSerial++;
         // 92차: 받은 시각이 앞에 찍히므로 본문에서 시각은 뺀다(「02:00  [정시] 근무 종료까지 2시간」).
-        string text = "[정시] " + (left > 0 ? "근무 종료까지 " + left + "시간" : "근무 종료");
+        string text = left >= 1 && left <= 3 ? DesignData.Msg(140004u - (uint)left) : "[정시] 근무 종료";   // DT 140001~140003(남은 3·2·1시간). 0시간 분기는 HourMarks에 04:00이 없어 나오지 않음
         // 103차 후속: 00:00 재시작이면 같은 정시가 다시 울려 두 통이 됐다 — 그 정시의 옛 알림을 지우고 새로 넣는다.
         string old;
         if (_hourMessages.TryGetValue(hour, out old) && Contains(old)) messages.Remove(old);

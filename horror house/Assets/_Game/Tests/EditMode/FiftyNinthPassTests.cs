@@ -129,7 +129,7 @@ namespace NightDuty.Tests
         {
             System.Type phone = System.Type.GetType("ShiftEndPhone, Assembly-CSharp");   // Flow는 시험 어셈블리가 참조하지 않는다
             Assert.IsNotNull(phone);
-            Assert.AreEqual("지시가 아직 끝나지 않았습니다.", phone.GetField("LockedLine").GetValue(null));
+            Assert.AreEqual("지시가 아직 끝나지 않았습니다.", phone.GetProperty("LockedLine").GetValue(null));
             Assert.IsNull(typeof(NightRun).GetField("FinalOrderNotice"), "77차(민): 「마지막 지시입니다…」 안내 폐기");
             Assert.IsFalse(NightRun.IsFinalOrder(null));
         }

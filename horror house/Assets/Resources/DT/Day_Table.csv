@@ -1,6 +1,6 @@
 ﻿ID,Day_No,Rule_Count,Fake_Rule_Count,Inspection_Count,Anomaly_Count,Duty_Cap,Fake_Scare_Cap,Surprise_Cap3,Surprise_Cap4,Surprise_Cap5,Cap5_Cross_Only,Relax_Min_Sec,Order_Quiet_Sec,Floor_Band_ID,Battery_Placed,Desk_Flashlight,Desk_Battery,Late_Space_ID,Wildcard,Paradox_First_Day,Is_Finale,Tutorial_Normal_1_ID,Tutorial_Anomaly_1_ID,Tutorial_Anomaly_2_ID,Desc
 uint,uint,uint,uint,uint,uint,uint,uint,uint,uint,uint,bool,float,float,uint,uint,uint,uint,uint,bool,bool,bool,uint,uint,uint,string
-210001,1,4,2,4,2,3,3,3,1,0,FALSE,40,10,330000,4,1,1,320001,FALSE,FALSE,FALSE,135025,135007,135013,시작 충전 0%. 복도 정상 1항목은 02:16 뒤 추가
+210001,1,4,2,5,2,3,3,3,1,0,FALSE,40,10,330000,4,1,2,320001,FALSE,FALSE,FALSE,135025,135007,135013,"시작 충전 0%. 복도 정상 1항목은 02:16 뒤 추가 · K-3 튜토리얼 점검은 코드에만(10-30 추가, 표 칸 없음)"
 210002,2,6,0,5,2,3,5,3,1,0,FALSE,33,8,330001,4,,,,TRUE,FALSE,FALSE,,,,
 210003,3,6,0,5,3,4,6,4,2,1,TRUE,28,6,330001,4,,,,TRUE,FALSE,FALSE,,,,미세 변조가 신뢰 구간 1에서도 열림
 210004,4,6,0,6,3,4,7,4,2,1,TRUE,25,6,330002,3,,,,TRUE,TRUE,FALSE,,,,4일차 경비실이 뽑히면 K-1 정상 재점검

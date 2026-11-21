@@ -11,7 +11,7 @@ namespace NightDuty
     public static class DesignData
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ReloadOnPlay() { DT.LoadAll(); lock (_layoutCounts) _layoutCounts.Clear(); lock (_fx) _fx.Clear(); lock (_fxSeries) _fxSeries.Clear(); }   // 플레이마다 새로 읽음(에디터에서 CSV를 다시 내보낸 뒤 바로 반영)
+        static void ReloadOnPlay() { DT.LoadAll(); lock (_layoutCounts) _layoutCounts.Clear(); lock (_fx) _fx.Clear(); lock (_fxSeries) _fxSeries.Clear(); lock (_judge) _judge.Clear(); lock (_enc) _enc.Clear(); }   // 플레이마다 새로 읽음(에디터에서 CSV를 다시 내보낸 뒤 바로 반영)
 
         static readonly object Gate = new object();
 
@@ -380,6 +380,74 @@ namespace NightDuty
                 default: return 0f;
             }
         }
+
+        static readonly System.Collections.Generic.Dictionary<(uint, string), float> _judge = new System.Collections.Generic.Dictionary<(uint, string), float>();
+
+        /// <summary>
+        /// Rule_Table 판정 수치 — 칸 이름(Judge_Time·Judge_Time2·Judge_Dist·Judge_Dist2·Judge_Angle·Judge_Angle2·Judge_Angle3·Judge_Count)으로.
+        /// 행이 없거나 값이 비면 예외(빈칸이 0으로 조용히 읽히지 않게). 캐시 — 플레이 시작 때 비운다.
+        /// </summary>
+        public static float Judge(uint id, string column)
+        {
+            lock (_judge)
+            {
+                if (_judge.TryGetValue((id, column), out var v)) return v;
+                Ensure();
+                var r = DT.Rule.Get(id);
+                if (r == null) throw new System.InvalidOperationException("DT Rule " + id + " 없음");
+                if (r.IsBlank(column)) throw new System.InvalidOperationException("DT Rule " + id + " 「" + column + "」 값이 비어 있음");
+                switch (column)
+                {
+                    case "Judge_Time": v = r.Judge_Time; break;
+                    case "Judge_Time2": v = r.Judge_Time2; break;
+                    case "Judge_Dist": v = r.Judge_Dist; break;
+                    case "Judge_Dist2": v = r.Judge_Dist2; break;
+                    case "Judge_Angle": v = r.Judge_Angle; break;
+                    case "Judge_Angle2": v = r.Judge_Angle2; break;
+                    case "Judge_Angle3": v = r.Judge_Angle3; break;
+                    case "Judge_Count": v = r.Judge_Count; break;
+                    default: throw new System.InvalidOperationException("Rule 판정 칸 「" + column + "」 없음");
+                }
+
+                _judge[(id, column)] = v;
+                return v;
+            }
+        }
+
+        static readonly System.Collections.Generic.Dictionary<(uint, string), float> _enc = new System.Collections.Generic.Dictionary<(uint, string), float>();
+
+        /// <summary>
+        /// Encounter_Table 방아쇠·자리 수치 — 칸 이름(Trigger_Value·Window_Sec·Ahead_M·Behind_M·After_Sec·Presence_Sec·Foreshadow_Fixed_Sec)으로.
+        /// 행이 없거나 값이 비면 예외. 캐시 — 플레이 시작 때 비운다.
+        /// </summary>
+        public static float EncounterValue(uint id, string column)
+        {
+            lock (_enc)
+            {
+                if (_enc.TryGetValue((id, column), out var v)) return v;
+                Ensure();
+                var r = DT.Encounter.Get(id);
+                if (r == null) throw new System.InvalidOperationException("DT Encounter " + id + " 없음");
+                if (r.IsBlank(column)) throw new System.InvalidOperationException("DT Encounter " + id + " 「" + column + "」 값이 비어 있음");
+                switch (column)
+                {
+                    case "Trigger_Value": v = r.Trigger_Value; break;
+                    case "Window_Sec": v = r.Window_Sec; break;
+                    case "Ahead_M": v = r.Ahead_M; break;
+                    case "Behind_M": v = r.Behind_M; break;
+                    case "After_Sec": v = r.After_Sec; break;
+                    case "Presence_Sec": v = r.Presence_Sec; break;
+                    case "Foreshadow_Fixed_Sec": v = r.Foreshadow_Fixed_Sec; break;
+                    default: throw new System.InvalidOperationException("Encounter 칸 「" + column + "」 없음");
+                }
+
+                _enc[(id, column)] = v;
+                return v;
+            }
+        }
+
+        /// <summary>판정 수치(정수로 반올림).</summary>
+        public static int JudgeInt(uint id, string column) => Mathf.RoundToInt(Judge(id, column));
 
         /// <summary>Task_Table 행(표시 코드 또는 ID 문자열로). 없으면 예외.</summary>
         public static TaskRow TaskRow(string codeOrId)

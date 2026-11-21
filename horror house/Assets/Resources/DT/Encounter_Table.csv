@@ -1,7 +1,7 @@
 ﻿ID,Name,State_ID,Day_1_ID,Day_2_ID,Day_Slot_ID,Is_Shuffled,Main_Axis_ID,Intensity,Is_Cross,Is_Overlay,Rule_Space_ID,Trigger_Space_ID,Trigger_Type_ID,Trigger_Value,Window_Sec,Ahead_M,Behind_M,After_Sec,Presence_Sec,Foreshadow_Fixed_Sec,Anchor_ID,Target_ID,Move_Space_ID,Move_Marker_ID,Rule_1_ID,Rule_2_ID,Lead_Task_ID,Guide_Message_ID,Fx_ID,Desc,Code
 uint,string,uint,uint,uint,uint,bool,uint,uint,bool,bool,uint,uint,uint,float,float,float,float,float,float,float,uint,uint,uint,uint,uint,uint,uint,uint,uint,string,string
 120001,소년 착석,510203,,,,,510101,1,FALSE,FALSE,320006,320006,540102,3,15,3,,,,,310045,,,,110007,,,,421501,E.BoyBang에 병합(103차). 안쪽 2m 이상 들어와야 함,E.BoySeated
-120002,소년 머리 박기,510201,210004,,540202,FALSE,510101,4,TRUE,FALSE,320006,320006,540104,2,18,3,,,,,310045,310007,,,110006,110007,135007,140015,421501,C-1 보고 뒤 2초 안. 그 밖엔 교실 진입,E.BoyBang
+120002,소년 머리 박기,510201,210004,,540202,FALSE,510101,4,TRUE,FALSE,320006,320006,540104,,18,3,,,,,310045,310007,,,110006,110007,135007,140015,421501,C-1 보고 뒤 2초 안. 그 밖엔 교실 진입,E.BoyBang
 120003,화장실 여자아이,510201,210004,,540201,TRUE,510101,2,FALSE,FALSE,320002,320002,540105,,6,3,,,,,310049,310026,,,110019,,135018,140009,421503,T-1 지시 순간. 그 밖엔 화장실 진입,E.ToiletGirl
 120004,달려오는 발소리,510201,210003,,540202,FALSE,510101,3,FALSE,FALSE,320001,320001,540103,10,8,,12,2.2,,,,,,,110003,,,140011,,대역 없음(소리). 달리기 연출은 mob.blackman.glimpse,E.Footsteps
 120005,부르는 목소리,510201,210005,,540201,TRUE,510101,2,FALSE,FALSE,320001,320001,540102,5,6,,6,,,,,,,,110004,,,140012,,대역 없음(소리),E.CallingVoice
@@ -15,4 +15,4 @@ uint,string,uint,uint,uint,uint,bool,uint,uint,bool,bool,uint,uint,uint,float,fl
 120013,없던 문,510202,,,,,510103,2,FALSE,FALSE,320006,320006,540102,3,,3,,,,,,310013,,,110009,,,,421519,104차 C5 폐기로 함께 제외,E.PhantomDoor
 120014,창밖 노란 얼굴,510201,210003,,540201,TRUE,510102,3,FALSE,FALSE,320004,320004,540107,6,10,5,,,,,310047,310036,,,,,135023,140010,421506,대응 수칙 없음(L5 폐기),E.SuitMan
 120015,CCTV에만 보이는 사람,510201,210003,,540201,TRUE,510103,2,FALSE,TRUE,320005,320005,540108,2,10,,,,,,,,,,110029,,135025,140014,421515,화면 속에만 등장,E.CctvPerson
-120016,따라오는 발소리,510201,210002,,540201,TRUE,510101,2,FALSE,FALSE,320001,320001,,,,,,,,,,,,,110037,,,140011,,2일차 청각 조우(104차). 방아쇠 칸은 판정 수치 단계에서 채움,E.FollowSteps
+120016,따라오는 발소리,510201,210002,,540201,TRUE,510101,2,FALSE,FALSE,320001,320001,540103,6,45,,3,0,,,,,,,110037,,,140011,,2일차 청각 조우(104차). 방아쇠 칸은 판정 수치 단계에서 채움,E.FollowSteps

@@ -201,7 +201,7 @@ namespace NightDuty
         public static float SeqLenientSeconds => global::NightDuty.DesignData.Setting(390167);   // DT 390167 유도 지시 뒤 방아쇠 완화
 
         /// <summary>104차 순서대로 여는 밤: 존재형 조우(사람 나무)가 머무는 실제 초 — 옛: 슬롯 끝까지(순서를 막지 않게 따로 센다).</summary>
-        public const float SeqPresenceSeconds = 90f;
+        public static float SeqPresenceSeconds => global::NightDuty.DesignData.EncounterValue(120011, "Presence_Sec");   // DT Encounter 120011 사람 나무 존재 시간
 
         /// <summary>가짜 놀람 목록.</summary>
         public static readonly string[] FakeScares = { "fake.locker.rattle", "fake.locker.row", "fake.flashlight.flicker", FakeBugs, FakeGlimpse };

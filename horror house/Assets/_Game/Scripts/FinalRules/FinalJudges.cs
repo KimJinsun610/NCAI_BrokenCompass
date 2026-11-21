@@ -77,11 +77,14 @@ namespace NightDuty
     /// <summary>수칙 ID → 판정기. 판정 조건이 없는 수칙(G3·K4)은 기록만 하는 판정기를 받는다.</summary>
     public static class FinalJudges
     {
+        /// <summary>DT Rule_Table 판정 수치(칸 이름으로).</summary>
+        private static float J(uint id, string column) => global::NightDuty.DesignData.Judge(id, column);
+
         /// <summary>
         /// 104차: L3(도서관 노란 얼굴)의 「비추기 시작」·「끊김」 허용(초) — 사실상 끝까지 본다. 3초 비춤·사망은 노란 얼굴 쪽(LibraryDuck)이 정하고,
         /// 판정은 창이 닫힐 때 한 번이라도 비췄는지만 본다(옛 2초·0.5초 — 3초를 채워 살아도 위반이 남았다).
         /// </summary>
-        public const float L3PatienceSeconds = 600f;
+        public static float L3PatienceSeconds => J(110024, "Judge_Time");   // DT Rule 110024 L3
 
         /// <summary>그 수칙의 새 판정기. 모르는 ID면 null.</summary>
         public static FinalJudge Create(RuleDef def, int day = 3)
@@ -89,13 +92,13 @@ namespace NightDuty
             if (def == null) return null;
             switch (def.Id)
             {
-                case "110001": return new ProximityAvoidJudge(FinalCues.H1Object, 1.2f);
+                case "110001": return new ProximityAvoidJudge(FinalCues.H1Object, J(110001, "Judge_Dist"), J(110001, "Judge_Dist2"));
                 case "110002": return new DoorKeepOpenJudge();
-                case "110003": return new TakeShelterJudge(FinalCues.Footsteps, 6f, 2f);
+                case "110003": return new TakeShelterJudge(FinalCues.Footsteps, J(110003, "Judge_Time"), J(110003, "Judge_Time2"));
                 case "110004": return new DontAnswerJudge(FinalCues.Voice);
                 case "110037": return new FollowTurnJudge();   // H5
-                case "110005": return new NoEntryDuringCueJudge(FinalCues.Chalk, SpaceId.Classroom, 1f);
-                case "110006": return new DontStareJudge(FinalCues.BoySeated, FinalCues.BoyTarget, 3f);   // 52차: 앉은 소년을 3초 바라보면 위반 → 머리 박기
+                case "110005": return new NoEntryDuringCueJudge(FinalCues.Chalk, SpaceId.Classroom, J(110005, "Judge_Time"));
+                case "110006": return new DontStareJudge(FinalCues.BoySeated, FinalCues.BoyTarget, J(110006, "Judge_Time"));   // 52차: 앉은 소년을 3초 바라보면 위반 → 머리 박기
                 case "110007": return new StayStillJudge(FinalCues.BellStart, FinalCues.Bell);   // 103차: 소년 단서 → 종(끝)이 아니라 수업 종이 울리는 동안
                 case "110008": return new LightOffJudge(FinalCues.RedLight, LightOffJudge.GraceSeconds);   // 52차: 붉은 불빛 아래에서는 손전등을 끈다
                 case "110009": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
@@ -104,25 +107,25 @@ namespace NightDuty
                 case "110012": return new LeaveAfterCueJudge(FinalCues.Glass, ScienceLeaveSeconds);   // 79차 민: 「5초로 하자」   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
                 case "110013": return new BeamAvoidJudge(FinalCues.ModelTarget, BeamAvoidJudge.LimitSeconds, ProgramCatalog.ModelRush);   // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」(미션처럼 읽히던 50차 문구 폐기)
                 case "110014": return new BlackoutLightOffJudge(BlackoutLightOffJudge.GraceSeconds);   // 79차: T3 합침 — 정전 중 손전등 금지
-                case "110015": return new WaitInDarkJudge(FinalCues.HallEnd, 3f, SpaceId.Corridor);   // 70차: 복도 끝에서 달려오는 급습은 복도에서 마주친다
-                case "110016": return new ExitWithinJudge(FinalCues.Flush, 8f, false);
+                case "110015": return new WaitInDarkJudge(FinalCues.HallEnd, J(110015, "Judge_Time"), SpaceId.Corridor);   // 70차: 복도 끝에서 달려오는 급습은 복도에서 마주친다
+                case "110016": return new ExitWithinJudge(FinalCues.Flush, J(110016, "Judge_Time"), false);
                 case "110017": return new ZoneForbiddenJudge(FinalCues.StallOccupied, null);
-                case "110018": return new WaitInDarkJudge(FinalCues.ToiletBlackout, 3f);
+                case "110018": return new WaitInDarkJudge(FinalCues.ToiletBlackout, J(110018, "Judge_Time"));
                 case "110019": return new ReverseReportJudge();
-                case "110020": return new LightKeepJudge(FinalCues.StallLit, null, 3f, true);
-                case "110021": return new DontStareJudge(null, FinalCues.MirrorTarget, 3f);   // 79차
-                case "110022": return new DwellNearJudge(FinalCues.L1Shelf, 1.5f, 3f);
+                case "110020": return new LightKeepJudge(FinalCues.StallLit, null, J(110020, "Judge_Time"), true);
+                case "110021": return new DontStareJudge(null, FinalCues.MirrorTarget, J(110021, "Judge_Time"));   // 79차
+                case "110022": return new DwellNearJudge(FinalCues.L1Shelf, J(110022, "Judge_Dist"), J(110022, "Judge_Dist2"), J(110022, "Judge_Time"));
                 case "110023": return new LeaveAfterCueJudge(FinalCues.Pages, LeaveAfterCueJudge.GraceSeconds);
                 case "110024": return new KeepBeamJudge(FinalCues.YellowFace, FinalCues.FaceTarget, L3PatienceSeconds, L3PatienceSeconds, null);   // 84차: 빛을 떼도 예약하지 않는다 · 104차: 벌은 노란 얼굴(LibraryDuck)이 직접 — 3초 못 비추고 잡히면 사망. 판정은 끝까지 한 번이라도 비췄는지만
-                case "110025": return new ProximityAvoidJudge(FinalCues.L4Box, 1.5f);
-                case "110026": return new DontGreetJudge(FinalCues.WindowKnock, FinalCues.ManTarget, 2f);
+                case "110025": return new ProximityAvoidJudge(FinalCues.L4Box, J(110025, "Judge_Dist"), J(110025, "Judge_Dist2"));
+                case "110026": return new DontGreetJudge(FinalCues.WindowKnock, FinalCues.ManTarget, J(110026, "Judge_Time"));
                 case "110027": return new BeamUpwardJudge();   // 79차
                 case "110028": return new NoBackwardWalkJudge();   // 80차
                 case "110029": return new KeepWatchingJudge(FinalCues.CctvPerson);   // 2026-11-09 김진선님: 채널 넘김 → 사람이 지나가기 전 CCTV를 그만보면 위반
-                case "110030": return new DontWatchJudge(FinalCues.EmptyRoom, 3f);
-                case "110031": return new DwellSpaceJudge(SpaceId.SecurityRoom, 45f);
+                case "110030": return new DontWatchJudge(FinalCues.EmptyRoom, J(110030, "Judge_Time"));
+                case "110031": return new DwellSpaceJudge(SpaceId.SecurityRoom, J(110031, "Judge_Time"));
                 case "110033": return new AnswerAfterRingsJudge();   // 79차
-                case "110034": return new NoRunningJudge(1f);
+                case "110034": return new NoRunningJudge(J(110034, "Judge_Time"));
                 case "110035": return new NoWalkingWithTabletJudge();   // 79차
                 case "110036": return new RecordOnlyJudge();
                 case "110032": return new RecordOnlyJudge();
@@ -132,7 +135,7 @@ namespace NightDuty
         }
 
         /// <summary>79차(민: 「S2 … 과학실에 계속 남아있어도 수칙 어기게됨」 · 「5초로 하자」): 깨지는 소리 뒤 과학실을 나갈 유예(초). L2는 그대로 10초.</summary>
-        public const float ScienceLeaveSeconds = 5f;
+        public static float ScienceLeaveSeconds => J(110012, "Judge_Time");   // DT Rule 110012 S2
     }
 
     // ── 공통 도구 ──────────────────────────────────────────
@@ -278,11 +281,15 @@ namespace NightDuty
         private readonly string _anchor;
         private readonly float _radius;
 
-        /// <summary>만든다.</summary>
-        public ProximityAvoidJudge(string anchor, float radius)
+        /// <summary>방아쇠 반경(m) — DT Rule Judge_Dist2.</summary>
+        private readonly float _trigger;
+
+/// <summary>만든다.</summary>
+        public ProximityAvoidJudge(string anchor, float radius, float triggerRadius)
         {
             _anchor = anchor;
             _radius = radius;
+            _trigger = triggerRadius;
         }
 
         internal override void Observe(in JudgeSignal s, FinalWorld w)
@@ -292,7 +299,7 @@ namespace NightDuty
             if (!a.HasValue) return;
             float d = SensingRules.HorizontalDistance(s.Point, a.Value);
 
-            if (d < _radius * 3f) Trigger();
+            if (d < _trigger) Trigger();
             if (d < _radius) Violate(_anchor + " 반경 " + _radius + "m 진입");
         }
     }
@@ -306,11 +313,15 @@ namespace NightDuty
         private bool _inside;
         private float _dwell;
 
-        /// <summary>만든다.</summary>
-        public DwellNearJudge(string anchor, float radius, float limitSeconds)
+        /// <summary>방아쇠 반경(m) — DT Rule Judge_Dist2.</summary>
+        private readonly float _trigger;
+
+/// <summary>만든다.</summary>
+        public DwellNearJudge(string anchor, float radius, float triggerRadius, float limitSeconds)
         {
             _anchor = anchor;
             _radius = radius;
+            _trigger = triggerRadius;
             _limit = limitSeconds;
         }
 
@@ -322,7 +333,7 @@ namespace NightDuty
                 if (!a.HasValue) return;
                 float d = SensingRules.HorizontalDistance(s.Point, a.Value);
 
-                if (d < _radius * 2f) Trigger();
+                if (d < _trigger) Trigger();
                 _inside = d < _radius;
                 if (!_inside) _dwell = 0f;
                 return;
@@ -496,19 +507,19 @@ namespace NightDuty
             }
 
             float angle = AngleTo(w);
-            if (_startAngle - angle >= 90f)
+            if (_startAngle - angle >= global::NightDuty.DesignData.Judge(110004, "Judge_Angle"))
             {
                 Fail("목소리 쪽으로 돌아봄");
                 return;
             }
 
-            if (_startAngle > 60f && angle <= 30f)
+            if (_startAngle > global::NightDuty.DesignData.Judge(110004, "Judge_Angle3") && angle <= global::NightDuty.DesignData.Judge(110004, "Judge_Angle2"))
             {
                 Fail("목소리를 정면에 둠");
                 return;
             }
 
-            if (_startDistance - SensingRules.HorizontalDistance(w.Feet, _source) > 2f)
+            if (_startDistance - SensingRules.HorizontalDistance(w.Feet, _source) > global::NightDuty.DesignData.Judge(110004, "Judge_Dist"))
             {
                 Fail("목소리 쪽으로 다가감");
             }
@@ -870,7 +881,7 @@ namespace NightDuty
     public sealed class LeaveAfterCueJudge : CueEpisodeJudge
     {
         /// <summary>유예(초).</summary>
-        public const float GraceSeconds = 10f;
+        public static float GraceSeconds => global::NightDuty.DesignData.Judge(110023, "Judge_Time");   // DT Rule 110023 L2
 
         private readonly float _grace;
         private bool _inside;
@@ -940,7 +951,7 @@ namespace NightDuty
     public sealed class BeamAvoidJudge : FinalJudge
     {
         /// <summary>연속 비춤 한도(초).</summary>
-        public const float LimitSeconds = 1.5f;
+        public static float LimitSeconds => global::NightDuty.DesignData.Judge(110013, "Judge_Time");   // DT Rule 110013 S3
 
         private readonly string _target;
         private readonly float _limit;
@@ -1218,7 +1229,7 @@ namespace NightDuty
     public sealed class LightOffJudge : CueEpisodeJudge
     {
         /// <summary>들어선 뒤 끌 여유(초).</summary>
-        public const float GraceSeconds = 1.5f;
+        public static float GraceSeconds => global::NightDuty.DesignData.Judge(110008, "Judge_Time");   // DT Rule 110008 C4
 
         private readonly float _grace;
         private float _onFor;
@@ -1397,7 +1408,7 @@ namespace NightDuty
     public sealed class ReverseReportJudge : FinalJudge
     {
         /// <summary>목격으로 치는 응시(초).</summary>
-        public const float WitnessSeconds = 0.1f;
+        public static float WitnessSeconds => global::NightDuty.DesignData.Judge(110019, "Judge_Time");   // DT Rule 110019 T4
 
         private bool _watching;
         private bool _armed;
@@ -1447,7 +1458,7 @@ namespace NightDuty
     public sealed class BlackoutLightOffJudge : FinalJudge
     {
         /// <summary>정전 뒤 손전등을 끌 유예(초).</summary>
-        public const float GraceSeconds = 3f;
+        public static float GraceSeconds => global::NightDuty.DesignData.Judge(110014, "Judge_Time");   // DT Rule 110014 S4
 
         private readonly float _grace;
         private string _cue = string.Empty;
@@ -1522,10 +1533,10 @@ namespace NightDuty
     public sealed class BeamUpwardJudge : FinalJudge
     {
         /// <summary>천장을 향한 것으로 보는 올려다본 각도(도).</summary>
-        public const float PitchDegrees = 35f;
+        public static float PitchDegrees => global::NightDuty.DesignData.Judge(110027, "Judge_Angle");   // DT Rule 110027 L6
 
         /// <summary>연속 한도(초) — 둘러보다 스친 것은 봐준다.</summary>
-        public const float LimitSeconds = 2f;
+        public static float LimitSeconds => global::NightDuty.DesignData.Judge(110027, "Judge_Time");   // DT Rule 110027 L6
 
         private float _up;
 
@@ -1566,13 +1577,13 @@ namespace NightDuty
     public sealed class NoBackwardWalkJudge : FinalJudge
     {
         /// <summary>연속 한도(초) — 문을 닫으며 한두 걸음 물러나는 것은 봐준다.</summary>
-        public const float LimitSeconds = 1f;
+        public static float LimitSeconds => global::NightDuty.DesignData.Judge(110028, "Judge_Time");   // DT Rule 110028 L7
 
         /// <summary>샘플 사이 걸었다고 보는 거리(m).</summary>
-        public const float StepMeters = 0.04f;
+        public static float StepMeters => global::NightDuty.DesignData.Judge(110028, "Judge_Dist");   // DT Rule 110028 L7
 
         /// <summary>뒤로 걸었다고 보는 각도(바로 뒤에서 좌우로, 도). 옆걸음은 세지 않는다.</summary>
-        public const float BackAngleDegrees = 55f;
+        public static float BackAngleDegrees => global::NightDuty.DesignData.Judge(110028, "Judge_Angle");   // DT Rule 110028 L7
 
         private Vector3 _last;
         private bool _hasLast;
@@ -1636,10 +1647,10 @@ namespace NightDuty
     public sealed class NoWalkingWithTabletJudge : FinalJudge
     {
         /// <summary>연속 한도(초).</summary>
-        public const float LimitSeconds = 1.5f;
+        public static float LimitSeconds => global::NightDuty.DesignData.Judge(110035, "Judge_Time");   // DT Rule 110035 G4
 
         /// <summary>샘플 사이 걸었다고 보는 거리(m) — 초속 0.4m.</summary>
-        public const float StepMeters = 0.04f;
+        public static float StepMeters => global::NightDuty.DesignData.Judge(110035, "Judge_Dist");   // DT Rule 110035 G4
 
         private Vector3 _last;
         private bool _hasLast;
@@ -1693,13 +1704,13 @@ namespace NightDuty
     public sealed class AnswerAfterRingsJudge : CueEpisodeJudge
     {
         /// <summary>벨 한 번의 주기(초) — 벨소리 2.1초 + 쉼.</summary>
-        public const float RingPeriod = 3f;
+        public static float RingPeriod => global::NightDuty.DesignData.Judge(110033, "Judge_Time");   // DT Rule 110033 K5
 
         /// <summary>벨소리 길이(초, <c>phone.ring</c>).</summary>
-        public const float RingSeconds = 2.1f;
+        public static float RingSeconds => global::NightDuty.DesignData.Judge(110033, "Judge_Time2");   // DT Rule 110033 K5
 
         /// <summary>받기 전에 울려야 하는 횟수.</summary>
-        public const int RingsBeforeAnswer = 3;
+        public static int RingsBeforeAnswer => global::NightDuty.DesignData.JudgeInt(110033, "Judge_Count");   // DT Rule 110033 K5
 
         /// <summary>받아도 되는 가장 이른 때(초) — 세 번째 벨이 끝난 뒤.</summary>
         public static float EarliestAnswerSeconds
@@ -1744,7 +1755,7 @@ namespace NightDuty
     public sealed class FollowTurnJudge : CueEpisodeJudge
     {
         /// <summary>위반이 되는 뒤돌아봄 횟수.</summary>
-        public const int TurnLimit = 3;
+        public static int TurnLimit => global::NightDuty.DesignData.JudgeInt(110037, "Judge_Count");   // DT Rule 110037 H5
 
         private int _turns;
 

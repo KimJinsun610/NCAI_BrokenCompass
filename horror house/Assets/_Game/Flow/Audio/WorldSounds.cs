@@ -253,7 +253,7 @@ public sealed class WorldSounds : MonoBehaviour
             _points[e.SourceId] = e.Point;
         }
 
-        if (e.Kind != DirectionEventKind.Encounter || e.SourceId != "E.ToiletBlackout") return;
+        if (e.Kind != DirectionEventKind.Encounter || e.SourceId != "120010") return;
         if (e.Phase == DirectionPhase.Confront)
         {
             bool cross = (int)NightRun.ShownBand(SpaceId.Toilet, FearAxis.Auditory) >= 2 && (int)NightRun.ShownBand(SpaceId.Toilet, FearAxis.Illuminance) >= 2;
@@ -303,7 +303,7 @@ public sealed class WorldSounds : MonoBehaviour
                 at = TargetOr("rule.L1.shelf", Place.Around);
                 break;
             case "110026":
-                at = PointOr("E.SuitMan", Place.Ahead);
+                at = PointOr("120014", Place.Ahead);
                 break;
             case "110012":
                 at = Feet();

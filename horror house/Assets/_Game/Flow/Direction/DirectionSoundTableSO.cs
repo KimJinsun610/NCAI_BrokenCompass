@@ -137,7 +137,31 @@ public sealed class DirectionSoundTableSO : ScriptableObject
             if (e != null && !string.IsNullOrEmpty(e.key)) _map[e.key] = e;
         }
 
+        AddDesignDataAliases(_map);
         return _map;
+    }
+
+    /// <summary>
+    /// DT 3단계: 표의 키는 옛 코드 그대로(「E.BoySeated.confront」 — 에셋이 정본). 코드는 조우 ID로 키를 만들므로(「120001.confront」)
+    /// 앞부분이 DT 표시 코드인 키를 ID 키로도 등록한다.
+    /// </summary>
+    private static void AddDesignDataAliases(Dictionary<string, Entry> map)
+    {
+        List<KeyValuePair<string, Entry>> add = new List<KeyValuePair<string, Entry>>();
+        foreach (KeyValuePair<string, Entry> kv in map)
+        {
+            string key = kv.Key;
+            for (int dot = key.IndexOf('.', 1); dot > 0; dot = key.IndexOf('.', dot + 1))
+            {
+                uint id = NightDuty.DesignData.IdOfCode(key.Substring(0, dot));
+                if (id == 0) continue;
+                add.Add(new KeyValuePair<string, Entry>(id + key.Substring(dot), kv.Value));
+                break;
+            }
+        }
+
+        foreach (KeyValuePair<string, Entry> kv in add)
+            if (!map.ContainsKey(kv.Key)) map[kv.Key] = kv.Value;
     }
 
     private void OnValidate()

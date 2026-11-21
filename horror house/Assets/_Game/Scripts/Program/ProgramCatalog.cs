@@ -141,24 +141,24 @@ namespace NightDuty
     public static class ProgramCatalog
     {
         // ── 조우 ID ─────────────────────────────────────────────
-        public const string BoySeated = "E.BoySeated";
-        public const string BoyBang = "E.BoyBang";
-        public const string ToiletGirl = "E.ToiletGirl";
-        public const string Footsteps = "E.Footsteps";
+        public const string BoySeated = "120001";
+        public const string BoyBang = "120002";
+        public const string ToiletGirl = "120003";
+        public const string Footsteps = "120004";
 
         /// <summary>104차(사용자): 뒤에서 따라오는 발소리(2일차 청각 조우) — 수칙 H5. 뒤돌아봄 2번이면 위반, 10초 무시하거나 멈추면 소리가 사라진다.</summary>
-        public const string FollowSteps = "E.FollowSteps";
-        public const string CallingVoice = "E.CallingVoice";
-        public const string YellowFace = "E.YellowFace";
-        public const string HallEndFigure = "E.HallEndFigure";
-        public const string ModelRush = "E.ModelRush";
-        public const string ScienceBlackout = "E.ScienceBlackout";
-        public const string ToiletBlackout = "E.ToiletBlackout";
-        public const string PeopleTree = "E.PeopleTree";
-        public const string CeilingLegs = "E.CeilingLegs";
-        public const string PhantomDoor = "E.PhantomDoor";
-        public const string SuitMan = "E.SuitMan";
-        public const string CctvPerson = "E.CctvPerson";
+        public const string FollowSteps = "120016";
+        public const string CallingVoice = "120005";
+        public const string YellowFace = "120006";
+        public const string HallEndFigure = "120007";
+        public const string ModelRush = "120008";
+        public const string ScienceBlackout = "120009";
+        public const string ToiletBlackout = "120010";
+        public const string PeopleTree = "120011";
+        public const string CeilingLegs = "120012";
+        public const string PhantomDoor = "120013";
+        public const string SuitMan = "120014";
+        public const string CctvPerson = "120015";
 
         /// <summary>2일차 첫 역설이 겨누는 수칙(C2 — 소년이 앉은 뒤 「교실에 남은 학생이 있습니다. 지금 확인하십시오.」, 눈으로만).</summary>
         public const string FirstParadoxRule = "110006";
@@ -314,25 +314,67 @@ namespace NightDuty
             return ids.ToArray();
         }
 
-        private static readonly EncounterDef[] Encounters =
+        /// <summary>조우의 몹(대역) 이름과 편성 조건 띠 — 표에 칸이 없어 코드에 둔다.</summary>
+        private static readonly Dictionary<string, KeyValuePair<string, KeyValuePair<FearAxis, Band>[]>> CastOf = new Dictionary<string, KeyValuePair<string, KeyValuePair<FearAxis, Band>[]>>(StringComparer.Ordinal)
         {
-            new EncounterDef(BoySeated, "소년 착석", A, SpaceId.Classroom, "110007", 1, "boy", new[] { Need(A, Band.Band0) }),
-            new EncounterDef(BoyBang, "소년 머리 박기", A, SpaceId.Classroom, "110006", 4, "boy", new[] { Need(A, Band.Band2), Need(L, Band.Band2) }, true, "110007"),
-            new EncounterDef(ToiletGirl, "화장실 여자아이", A, SpaceId.Toilet, "110019", 2, "girl", new[] { Need(A, Band.Band1) }),
-            new EncounterDef(Footsteps, "달려오는 발소리", A, SpaceId.Corridor, "110003", 3, "footsteps", new[] { Need(A, Band.Band1) }),   // 103차(모든 조우 목격): 청각 2 → 1 — 3일차 위협 수칙 0장이던 것
-            new EncounterDef(FollowSteps, "따라오는 발소리", A, SpaceId.Corridor, "110037", 2, "footsteps", new[] { Need(A, Band.Band0) }),
-            new EncounterDef(CallingVoice, "부르는 목소리", A, SpaceId.Corridor, "110004", 2, "voice", new[] { Need(A, Band.Band3) }),
-            new EncounterDef(YellowFace, "노란 얼굴", I, SpaceId.Library, "110024", 3, "duck", new[] { Need(I, Band.Band1) }),
-            new EncounterDef(HallEndFigure, "복도 끝에 선 자", I, SpaceId.ScienceRoom, "110015", 3, "dummy", new[] { Need(I, Band.Band2) }),   // 70차: 인체 모형, 모형 급습 전날(ProgramDirector 날짜 사슬)
-            new EncounterDef(ModelRush, "모형 급습", I, SpaceId.ScienceRoom, "110015", 5, "dummy", new[] { Need(I, Band.Band3), Need(L, Band.Band2) }, true),
-            new EncounterDef(ScienceBlackout, "과학실 소등", I, SpaceId.ScienceRoom, "110014", 3, "science.dark", new[] { Need(I, Band.Band1) }),   // 103차(민: 「모든 조우 연출을 목격」): 조도 2 → 1 — 4·5일차는 과학실 칸을 S5가 차지해 회차에 한 번도 안 나오던 것
-            new EncounterDef(ToiletBlackout, "화장실 소등", I, SpaceId.Toilet, "110014", 3, "toilet.dark", new[] { Need(I, Band.Band1) }),
-            new EncounterDef(PeopleTree, "사람 나무", L, SpaceId.Corridor, "110001", 3, "tree", new[] { Need(L, Band.Band2) }),
-            new EncounterDef(CeilingLegs, "시체 낙하", L, SpaceId.Classroom, string.Empty, 2, "boy", new[] { Need(L, Band.Band1) }),   // 103차(사용자): 강도 3 → 2 · 배치 2 → 1 — 늘 2일차(ProgramDirector.CorpseDayTo)   // 52차: 대응 수칙 없음(사다리 점검 중 놀람만 — 예고하는 수칙을 두지 않는다)
-            new EncounterDef(PhantomDoor, "없던 문", L, SpaceId.Classroom, "110009", 2, "door", new[] { Need(L, Band.Band2) }),
-            new EncounterDef(SuitMan, "창밖 노란 얼굴", I, SpaceId.Library, "", 3, "duck", new[] { Need(I, Band.Band1) }),   // 84차(민: 「창밖의 노란 얼굴 조우가 도서관 노란 얼굴 조우의 빌드업」): 노란 얼굴 전날(날짜 사슬) · 85차(민: 「L3는 문쪽 조우일 때만」): 대응 수칙 없음
-            new EncounterDef(CctvPerson, "CCTV에만 보이는 사람", L, SpaceId.SecurityRoom, "110029", 2, "blackman", new KeyValuePair<FearAxis, Band>[0])
+            { BoySeated, Cast("boy", Need(A, Band.Band0)) },
+            { BoyBang, Cast("boy", Need(A, Band.Band2), Need(L, Band.Band2)) },
+            { ToiletGirl, Cast("girl", Need(A, Band.Band1)) },
+            { Footsteps, Cast("footsteps", Need(A, Band.Band1)) },   // 103차: 청각 2 → 1
+            { FollowSteps, Cast("footsteps", Need(A, Band.Band0)) },
+            { CallingVoice, Cast("voice", Need(A, Band.Band3)) },
+            { YellowFace, Cast("duck", Need(I, Band.Band1)) },
+            { HallEndFigure, Cast("dummy", Need(I, Band.Band2)) },
+            { ModelRush, Cast("dummy", Need(I, Band.Band3), Need(L, Band.Band2)) },
+            { ScienceBlackout, Cast("science.dark", Need(I, Band.Band1)) },
+            { ToiletBlackout, Cast("toilet.dark", Need(I, Band.Band1)) },
+            { PeopleTree, Cast("tree", Need(L, Band.Band2)) },
+            { CeilingLegs, Cast("boy", Need(L, Band.Band1)) },
+            { PhantomDoor, Cast("door", Need(L, Band.Band2)) },
+            { SuitMan, Cast("duck", Need(I, Band.Band1)) },
+            { CctvPerson, Cast("blackman") },
         };
+
+        private static KeyValuePair<string, KeyValuePair<FearAxis, Band>[]> Cast(string mob, params KeyValuePair<FearAxis, Band>[] needs)
+        {
+            return new KeyValuePair<string, KeyValuePair<FearAxis, Band>[]>(mob, needs);
+        }
+
+        /// <summary>DT 3단계: 조우는 Encounter_Table에서 읽는다 — 이름·축·수칙 공간·대응 수칙 1·2·강도·겹침. 정본은 xlsx.</summary>
+        private static readonly EncounterDef[] Encounters = BuildEncounters();
+
+        private static EncounterDef[] BuildEncounters()
+        {
+            List<InstructionDT.EncounterRow> rows = EncounterRows();
+            EncounterDef[] list = new EncounterDef[rows.Count];
+            for (int i = 0; i < rows.Count; i++)
+            {
+                InstructionDT.EncounterRow r = rows[i];
+                string id = r.ID.ToString();
+                KeyValuePair<string, KeyValuePair<FearAxis, Band>[]> cast;
+                if (!CastOf.TryGetValue(id, out cast)) throw new InvalidOperationException("DT Encounter " + id + " 몹·조건 띠가 코드(CastOf)에 없음");
+                list[i] = new EncounterDef(id, r.Name, global::NightDuty.DesignData.AxisOf(r.Main_Axis_ID), global::NightDuty.DesignData.SpaceOf(r.Rule_Space_ID),
+                    r.Rule_1_ID == 0 ? string.Empty : r.Rule_1_ID.ToString(), (int)r.Intensity, cast.Key, cast.Value, r.Is_Cross, r.Rule_2_ID == 0 ? string.Empty : r.Rule_2_ID.ToString());
+            }
+
+            return list;
+        }
+
+        /// <summary>조우 행(표 순서). 따라오는 발소리(120016, 표 끝에 추가)는 옛 순서대로 달려오는 발소리 뒤.</summary>
+        internal static List<InstructionDT.EncounterRow> EncounterRows()
+        {
+            global::NightDuty.DesignData.Ensure();
+            List<InstructionDT.EncounterRow> rows = new List<InstructionDT.EncounterRow>(InstructionDT.DT.Encounter.All);
+            int f = rows.FindIndex(r => r.ID == 120016);
+            if (f >= 0)
+            {
+                InstructionDT.EncounterRow t = rows[f];
+                rows.RemoveAt(f);
+                rows.Insert(rows.FindIndex(r => r.ID == 120004) + 1, t);
+            }
+
+            return rows;
+        }
 
         private static readonly Dictionary<string, RuleDef> RuleIndex = IndexRules();
         private static readonly Dictionary<string, EncounterDef> EncounterIndex = IndexEncounters();

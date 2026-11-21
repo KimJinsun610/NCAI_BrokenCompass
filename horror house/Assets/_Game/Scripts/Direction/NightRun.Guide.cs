@@ -241,24 +241,16 @@ namespace NightDuty
         /// <summary>그 조우의 유도 문자(공간 이름만 — 무엇이 나오는지는 말하지 않는다).</summary>
         public static string GuideText(string encounterId)
         {
-            switch (encounterId)
+            // DT 3단계: Encounter_Table Guide_Message_ID(따라오는 발소리는 달려오는 발소리와 같은 140011). 칸이 비면 140019 「순찰을 계속해주십시오.」
+            uint id;
+            if (uint.TryParse(encounterId, out id))
             {
-                case ProgramCatalog.CeilingLegs: return DesignData.Msg(140006);
-                case ProgramCatalog.ScienceBlackout: return DesignData.Msg(140007);
-                case ProgramCatalog.ToiletBlackout: return DesignData.Msg(140008);
-                case ProgramCatalog.ToiletGirl: return DesignData.Msg(140009);
-                case ProgramCatalog.SuitMan: return DesignData.Msg(140010);
-                case ProgramCatalog.Footsteps: return DesignData.Msg(140011);
-                case ProgramCatalog.FollowSteps: return DesignData.Msg(140011);   // DT에 따로 행 없음 — Footsteps와 같은 문구
-                case ProgramCatalog.CallingVoice: return DesignData.Msg(140012);
-                case ProgramCatalog.PeopleTree: return DesignData.Msg(140013);
-                case ProgramCatalog.CctvPerson: return DesignData.Msg(140014);
-                case ProgramCatalog.BoyBang: return DesignData.Msg(140015);
-                case ProgramCatalog.HallEndFigure: return DesignData.Msg(140016);
-                case ProgramCatalog.ModelRush: return DesignData.Msg(140017);
-                case ProgramCatalog.YellowFace: return DesignData.Msg(140018);
-                default: return DesignData.Msg(140019);
+                DesignData.Ensure();
+                InstructionDT.EncounterRow row = InstructionDT.DT.Encounter.Get(id);
+                if (row != null && row.Guide_Message_ID != 0) return DesignData.Msg(row.Guide_Message_ID);
             }
+
+            return DesignData.Msg(140019);
         }
 
         /// <summary>그 조우에 앞선 지시(점검 항목·근무 지시)가 있는지 — 있으면 그것을 먼저 내고 유도 문자는 늦춘다.</summary>

@@ -416,33 +416,38 @@ namespace NightDuty
         /// <summary>104차: 그날 고정 편성의 조우(여는 순서). 1일차는 없다.</summary>
         public List<string> FixedEncounters(int day)
         {
+            // DT 3단계: Encounter_Table 일차(Day_1·Day_2) · 편성 칸(본 묶음 540201 · 클라이맥스 540202). 2일차 과학실 소등 자리는 이른 소등(SetBlackouts로 바꿀 수 있음).
             List<string> list = new List<string>();
-            switch (day)
+            foreach (InstructionDT.EncounterRow r in FixedRowsOn(day))
             {
-                case 2:
-                    list.Add(ProgramCatalog.CeilingLegs);
-                    list.Add(ProgramCatalog.FollowSteps);   // 104차(사용자): 2일차 청각 조우 — 따라오는 발소리
-                    list.Add(_earlyBlackout);
-                    break;
-                case 3:
-                    list.Add(ProgramCatalog.SuitMan);
-                    list.Add(ProgramCatalog.Footsteps);
-                    list.Add(ProgramCatalog.CctvPerson);
-                    list.Add(ProgramCatalog.ToiletBlackout);   // 104차(사용자: 「화장실 소등은 3일차로」)
-                    break;
-                case 4:
-                    list.Add(ProgramCatalog.BoyBang);
-                    list.Add(ProgramCatalog.ToiletGirl);
-                    list.Add(ProgramCatalog.PeopleTree);
-                    break;
-                case 5:
-                    list.Add(ProgramCatalog.PeopleTree);
-                    list.Add(ProgramCatalog.CallingVoice);
-                    list.Add(ProgramCatalog.YellowFace);
-                    break;
+                if (r.Day_Slot_ID != SlotMain && r.Day_Slot_ID != SlotClimax) continue;
+                string id = r.ID.ToString();
+                list.Add(id == ProgramCatalog.ScienceBlackout ? _earlyBlackout : id);
             }
 
             return list;
+        }
+
+        /// <summary>DT 조우 편성 칸.</summary>
+        private const uint SlotMain = 540201, SlotClimax = 540202, SlotStanding = 540203;
+
+        /// <summary>그날 고정 편성에 오르는 조우 행(사용 중, 표 순서).</summary>
+        private static List<InstructionDT.EncounterRow> FixedRowsOn(int day)
+        {
+            List<InstructionDT.EncounterRow> list = new List<InstructionDT.EncounterRow>();
+            foreach (InstructionDT.EncounterRow r in ProgramCatalog.EncounterRows())
+            {
+                if (r.State_ID != 510201) continue;   // 사용
+                if (DayNo(r.Day_1_ID) == day || DayNo(r.Day_2_ID) == day) list.Add(r);
+            }
+
+            return list;
+        }
+
+        private static int DayNo(uint dayId)
+        {
+            InstructionDT.DayRow d = dayId == 0 ? null : InstructionDT.DT.Day.Get(dayId);
+            return d == null ? 0 : (int)d.Day_No;
         }
 
         /// <summary>
@@ -452,8 +457,8 @@ namespace NightDuty
         public static List<string> FixedStanding(int day)
         {
             List<string> list = new List<string>();
-            if (day == 4) list.Add(ProgramCatalog.HallEndFigure);
-            if (day == 5) list.Add(ProgramCatalog.ModelRush);
+            foreach (InstructionDT.EncounterRow r in FixedRowsOn(day))
+                if (r.Day_Slot_ID == SlotStanding) list.Add(r.ID.ToString());   // DT 편성 칸 「밤새 대기」(4일차 복도 끝 · 5일차 모형 급습)
             return list;
         }
 
@@ -1009,14 +1014,9 @@ namespace NightDuty
         /// <summary>104차: 그날의 클라이맥스(맨 뒤에 고정) — 2일차 시체 낙하 · 3일차 발소리 · 4일차 소년 머리 박기 · 5일차 도서관 노란 얼굴.</summary>
         public static string ClimaxOf(int day)
         {
-            switch (day)
-            {
-                case 2: return ProgramCatalog.CeilingLegs;
-                case 3: return ProgramCatalog.Footsteps;
-                case 4: return ProgramCatalog.BoyBang;
-                case 5: return ProgramCatalog.YellowFace;   // 104차(사용자: 「5일차 클라이맥스는 도서관 노란 얼굴 조우로」)
-                default: return null;
-            }
+            foreach (InstructionDT.EncounterRow r in FixedRowsOn(day))
+                if (r.Day_Slot_ID == SlotClimax) return r.ID.ToString();   // DT 편성 칸 「클라이맥스」
+            return null;
         }
 
         // ── 1일차 ──────────────────────────────────────────────

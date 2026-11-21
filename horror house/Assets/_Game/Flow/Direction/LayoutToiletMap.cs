@@ -10,9 +10,9 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class LayoutToiletMap : LayoutRoomMap
 {
-    public static readonly int[] Mirrors = { 0, 1, 2, 3, 5 };
-    public static readonly int[] Toilets = { 0, 0, 1, 2, 3 };
-    public static readonly int[] Drips = { 0, 1, 2, 3, 4 };
+    public static int[] Mirrors => global::NightDuty.DesignData.LayoutCounts(410019);   // DT Layout_Prop 410019
+    public static int[] Toilets => global::NightDuty.DesignData.LayoutCounts(410020);   // DT Layout_Prop 410020
+    public static int[] Drips => global::NightDuty.DesignData.LayoutCounts(410021);   // DT Layout_Prop 410021
 
     public const string MirrorPath = "LayoutProps/wall_mirror";
     public const string ToiletPath = "LayoutProps/ceiling_toilet";

@@ -10,9 +10,9 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class LayoutScienceMap : LayoutRoomMap
 {
-    public static readonly int[] Drips = { 0, 1, 2, 3, 4 };
-    public static readonly int[] Clocks = { 0, 1, 2, 3, 4 };
-    public static readonly int[] Torsos = { 0, 0, 1, 2, 3 };
+    public static int[] Drips => global::NightDuty.DesignData.LayoutCounts(410011);   // DT Layout_Prop 410011
+    public static int[] Clocks => global::NightDuty.DesignData.LayoutCounts(410012);   // DT Layout_Prop 410012
+    public static int[] Torsos => global::NightDuty.DesignData.LayoutCounts(410013);   // DT Layout_Prop 410013
 
     protected override float CeilingSpacing
     {

@@ -10,11 +10,11 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class LayoutLibraryMap : LayoutRoomMap
 {
-    public static readonly int[] Drips = { 0, 1, 2, 3, 5 };
-    public static readonly int[] Books = { 0, 1, 3, 5, 8 };
-    public static readonly int[] Chairs = { 0, 1, 2, 3, 4 };
-    public static readonly int[] Tables = { 0, 0, 1, 2, 3 };
-    public static readonly int[] Shelves = { 0, 0, 1, 1, 2 };
+    public static int[] Drips => global::NightDuty.DesignData.LayoutCounts(410014);   // DT Layout_Prop 410014
+    public static int[] Books => global::NightDuty.DesignData.LayoutCounts(410015);   // DT Layout_Prop 410015
+    public static int[] Chairs => global::NightDuty.DesignData.LayoutCounts(410016);   // DT Layout_Prop 410016
+    public static int[] Tables => global::NightDuty.DesignData.LayoutCounts(410017);   // DT Layout_Prop 410017
+    public static int[] Shelves => global::NightDuty.DesignData.LayoutCounts(410018);   // DT Layout_Prop 410018
 
     public const string TablePath = "LayoutProps/ceiling_libtable";
     public const string LibChairPath = "LayoutProps/ceiling_libchair";

@@ -24,7 +24,7 @@ namespace NightDuty
         public const string WindowTarget = "rule.K4.window";
 
         /// <summary>「봤다」 응시 시간(초, 응시 창 안에서 합친 시간).</summary>
-        public const float GazeSeconds = 1.5f;
+        public static float GazeSeconds => DesignData.EndingCond(FinaleEnding.ShiftChange, 580101);   // DT Ending 230001 조건 「창밖 응시 합 이상」(1.5초)
 
         private readonly HashSet<string> _channels = new HashSet<string>(StringComparer.Ordinal);
 

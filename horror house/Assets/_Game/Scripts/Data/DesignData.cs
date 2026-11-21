@@ -11,7 +11,7 @@ namespace NightDuty
     public static class DesignData
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ReloadOnPlay() => DT.LoadAll();   // 플레이마다 새로 읽음(에디터에서 CSV를 다시 내보낸 뒤 바로 반영)
+        static void ReloadOnPlay() { DT.LoadAll(); lock (_layoutCounts) _layoutCounts.Clear(); }   // 플레이마다 새로 읽음(에디터에서 CSV를 다시 내보낸 뒤 바로 반영)
 
         static readonly object Gate = new object();
 
@@ -239,6 +239,41 @@ namespace NightDuty
 
         /// <summary>여러 문구 칸(「a | b | c」)을 나눈다.</summary>
         public static string[] MsgParts(uint id) => Msg(id).Split(new[] { " | " }, System.StringSplitOptions.None);
+
+        /// <summary>엔딩 enum → Ending_Table ID(표시 코드 = enum 이름). None은 0.</summary>
+        public static uint EndingRowId(FinaleEnding ending) => RowIdByCode(DT.Ending.All, ending.ToString());
+
+        /// <summary>그 엔딩의 조건 값(조건 종류 ID — 580101 창밖 응시 합 등). 칸이 없으면 예외.</summary>
+        public static float EndingCond(FinaleEnding ending, uint condType)
+        {
+            Ensure();
+            var row = DT.Ending.Get(EndingRowId(ending));
+            if (row != null)
+            {
+                if (row.Cond_1_Type_ID == condType) return row.Cond_1_Value;
+                if (row.Cond_2_Type_ID == condType) return row.Cond_2_Value;
+                if (row.Cond_3_Type_ID == condType) return row.Cond_3_Value;
+            }
+
+            throw new System.InvalidOperationException("DT Ending " + ending + " 조건 " + condType + " 없음");
+        }
+
+        static readonly System.Collections.Generic.Dictionary<uint, int[]> _layoutCounts = new System.Collections.Generic.Dictionary<uint, int[]>();
+
+        /// <summary>Layout_Prop_Table 띠 0~4별 소품 수(길이 5, 캐시 — 고치지 마십시오). 없으면 예외.</summary>
+        public static int[] LayoutCounts(uint id)
+        {
+            Ensure();
+            lock (_layoutCounts)
+            {
+                if (_layoutCounts.TryGetValue(id, out var cached)) return cached;
+                var row = DT.LayoutProp.Get(id);
+                if (row == null) throw new System.InvalidOperationException("DT Layout_Prop " + id + " 없음");
+                var counts = new[] { (int)row.Band_0_Count, (int)row.Band_1_Count, (int)row.Band_2_Count, (int)row.Band_3_Count, (int)row.Band_4_Count };
+                _layoutCounts[id] = counts;
+                return counts;
+            }
+        }
 
         /// <summary>Task_Table 행(표시 코드 또는 ID 문자열로). 없으면 예외.</summary>
         public static TaskRow TaskRow(string codeOrId)

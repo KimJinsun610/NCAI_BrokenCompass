@@ -185,7 +185,7 @@ namespace NightDuty
         public const string ViolationStain = "#7A1E1E66";
 
         /// <summary>위반 얼룩을 보일지. 51차부터 끔(되살리려면 이 값만).</summary>
-        public static bool ShowViolationStain = false;
+        public static bool ShowViolationStain = DesignData.FxOn(421901, "표시(1=켬)");   // 기본값 DT Fx 421901 위반 얼룩
 
         /// <summary>표시 카드 글을 다시 쓴다 — 변조·검은 줄 + 오늘 어긴 수칙의 얼룩. 판정은 그대로.</summary>
         private static void RefreshRuleCards()

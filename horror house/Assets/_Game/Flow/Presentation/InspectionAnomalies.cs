@@ -26,7 +26,15 @@ public sealed class InspectionAnomalies : MonoBehaviour
     public static bool PhotosensitiveSafe;
 
     /// <summary>빛 이상의 후광 링(최종 기획서 접근성: 색과 함께 정적인 모양 단서).</summary>
-    public static bool HaloRing = false;   // 53차 민(C-2 램프 스크린샷): 「UI처럼 보인다」 — 빛 이상 후광 링을 모두 끈다(49차 S-2에 이어)
+    public static bool HaloRing
+    {
+        get { return s_haloRing ?? DesignData.FxOn(420606, "[빛] 이상 후광(1=켬)"); }   // 기본값 DT Fx 420606
+        set { s_haloRing = value; }
+    }
+
+    private static bool? s_haloRing;
+
+    // 53차 민(C-2 램프 스크린샷): 「UI처럼 보인다」 — 빛 이상 후광 링을 모두 끈다(49차 S-2에 이어)   // 53차 민(C-2 램프 스크린샷): 「UI처럼 보인다」 — 빛 이상 후광 링을 모두 끈다(49차 S-2에 이어)
 
     /// <summary>
     /// 66차 실시간 조작(민 피드백 6단계 「실시간 조작」 — 원문이 남아 있지 않아 이렇게 읽었다): 그날 늦게 열리는 공간(호출 2)의 이상은 밤 시작에 세우지 않고,
@@ -38,7 +46,13 @@ public sealed class InspectionAnomalies : MonoBehaviour
     public static float TamperMinDistance => global::NightDuty.DesignData.Setting(390219);   // DT 390219 안 보고 이만큼 떨어지면 이상을 세움
 
     /// <summary>[빛] 이상의 세기 배수(53차 민: 「빛과 관련된 점검 물품들은 빛이 아주 약하게」).</summary>
-    public static float LightAnomalyScale = 0.3f;
+    public static float LightAnomalyScale
+    {
+        get { return s_lightAnomalyScale ?? DesignData.Fx(420606, "[빛] 이상 세기(배)"); }   // 기본값 DT Fx 420606
+        set { s_lightAnomalyScale = value; }
+    }
+
+    private static float? s_lightAnomalyScale;
 
     private static readonly float[] SpreadWidthByBand = { 0f, 0.6f, 0.45f, 1.2f, 2.4f };
 

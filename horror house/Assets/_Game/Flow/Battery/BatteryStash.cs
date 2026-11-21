@@ -40,22 +40,22 @@ public sealed class BatteryStash : MonoBehaviour
     private const float AimSlack = 0.1f;
 
     /// <summary>104차: 손전등 없이도 반짝임이 보이는 거리(m).</summary>
-    public const float GlintSeeRange = 11f;
+    public static float GlintSeeRange => DesignData.Fx(421002, "반짝임 보이는 거리(m)");   // DT Fx 421002
 
     /// <summary>104차: 손전등 원뿔이 이 거리(m) 안에서 닿으면 늘 빛나고 더 크게 반짝인다.</summary>
-    public const float GlintLitRange = 6f;
+    public static float GlintLitRange => DesignData.Fx(421002, "손전등 비출 때 반짝임 거리(m)");   // DT Fx 421002
 
     /// <summary>104차: 손전등 없을 때 반짝이는 주기(초) — 배터리마다 어긋난다.</summary>
-    public const float TwinklePeriod = 2.4f;
+    public static float TwinklePeriod => DesignData.Fx(421002, "반짝임 주기(초)");   // DT Fx 421002
 
     /// <summary>104차: 한 번 반짝이는 길이(초).</summary>
-    public const float TwinkleSeconds = 0.28f;
+    public static float TwinkleSeconds => DesignData.Fx(421002, "반짝임 길이(초)");   // DT Fx 421002
 
     /// <summary>104차: 이 거리(m) 안에서 보이면 흐린 외곽선.</summary>
-    public const float NearOutlineRange = 2.5f;
+    public static float NearOutlineRange => DesignData.Fx(421002, "근접 외곽선 거리(m)");   // DT Fx 421002
 
     /// <summary>104차: 가까울 때 외곽선 진하기(겨누면 1).</summary>
-    public const float NearOutlineStrength = 0.35f;
+    public static float NearOutlineStrength => DesignData.Fx(421002, "근접 외곽선 진하기(0~1)");   // DT Fx 421002
 
     private Material _sparkMat;
     private MaterialPropertyBlock _sparkBlock;

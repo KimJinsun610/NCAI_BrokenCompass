@@ -39,16 +39,16 @@ namespace NightDuty
         public static float LowBelow => global::NightDuty.DesignData.Setting(390248);   // DT 390248 위험 구간
 
         /// <summary>0%에 가까울 때의 빛 세기 배율.</summary>
-        public const float DimIntensity = 0.45f;
+        public static float DimIntensity => DesignData.Fx(421001, "0% 근처 빛 세기 배율");   // DT Fx 421001
 
         /// <summary>0%에 가까울 때의 빛 거리 배율.</summary>
-        public const float DimRange = 0.60f;
+        public static float DimRange => DesignData.Fx(421001, "0% 근처 빛 거리 배율");   // DT Fx 421001
 
         /// <summary><see cref="LowBelow"/> 아래의 비춤 판정 거리(m).</summary>
         public static float LowBeamRange => global::NightDuty.DesignData.Setting(390016);   // DT 390016 배터리 10% 미만 비춤 판정 거리
 
         /// <summary>가짜 놀람 「손전등 끊김」은 이 충전량 이상일 때만 — 배터리 탓으로 읽히면 놀라지 않는다.</summary>
-        public const float FakeFlickerMinCharge = 0.5f;
+        public static float FakeFlickerMinCharge => DesignData.Fx(421001, "가짜 끊김 놀람 최소 충전량");   // DT Fx 421001
 
         /// <summary>밤마다 풀어 두는 복도 사물함 수(어느 것이 풀렸는지는 열어 봐야 안다).</summary>
         public static int UnlockedLockers => global::NightDuty.DesignData.SettingInt(390269);   // DT 390269 밤마다 푸는 잠긴 사물함
@@ -131,13 +131,13 @@ namespace NightDuty
             }
             else if (charge < LowBelow)
             {
-                min = 3f;
-                max = 6f;
+                min = DesignData.Fx(421001, "0~10% 깜빡임 간격 최소(초)");   // DT Fx 421001
+                max = DesignData.Fx(421001, "0~10% 깜빡임 간격 최대(초)");
             }
             else
             {
-                min = 10f;   // 59차: 15~30 → 10~20(완충 160초 — 30% 아래 구간이 48초라 그 안에 두세 번)
-                max = 20f;
+                min = DesignData.Fx(421001, "10~30% 깜빡임 간격 최소(초)");   // DT Fx 421001 — 59차: 15~30 → 10~20(완충 160초 — 30% 아래 구간이 48초라 그 안에 두세 번)
+                max = DesignData.Fx(421001, "10~30% 깜빡임 간격 최대(초)");
             }
         }
 
@@ -145,8 +145,9 @@ namespace NightDuty
         public static int Cells(float charge)
         {
             if (charge <= 0f) return 0;
-            int n = (int)Math.Ceiling(charge * 3f - 1e-4f);
-            return Math.Max(1, Math.Min(3, n));
+            int cells = DesignData.FxInt(421001, "태블릿 상태바 칸 수");   // DT Fx 421001
+            int n = (int)Math.Ceiling(charge * cells - 1e-4f);
+            return Math.Max(1, Math.Min(cells, n));
         }
 
         /// <summary>태블릿 상태바 문자열(신호 표시 뒤에 손전등 칸 + 예비 수).</summary>

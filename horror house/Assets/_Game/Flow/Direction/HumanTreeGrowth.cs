@@ -137,10 +137,10 @@ public sealed class HumanTreeGrowth : MonoBehaviour
     public static int AppearLayout => global::NightDuty.DesignData.SettingInt(390235);   // DT 390235
 
     /// <summary>나타날 때(배치 축 <see cref="AppearLayout"/>) 키(m). 103차: 0.5 → 1.5.</summary>
-    public const float MinLength = 1.5f;
+    public static float MinLength => DesignData.Fx(421801, "등장 시 키(m)");   // DT Fx 421801
 
     /// <summary>배치 축 100일 때 키(m) — 천장(현관 4m) 가까이까지.</summary>
-    public const float MaxLength = 3.5f;
+    public static float MaxLength => DesignData.Fx(421801, "배치 100일 때 키(m)");   // DT Fx 421801
 
     /// <summary>
     /// 104차 D(배치 연출 1단계 — 「돌아보니 커졌다」): 자라는 것은 <b>안 보는 사이 한 번에</b> — 보고 있는 동안은 자라지 않고, 시야에서 벗어나면 그 축 값의 키로 바로 맞춘다.

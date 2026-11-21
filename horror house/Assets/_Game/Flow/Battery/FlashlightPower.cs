@@ -26,9 +26,20 @@ public sealed class FlashlightPower : MonoBehaviour
     /// </summary>
     public static float SwapBlockCharge => global::NightDuty.DesignData.Setting(390246);   // DT 390246 이 이상이면 교체 거부
 
-    private const float DryFlashSeconds = 0.2f;
+    private static float DryFlashSeconds => DesignData.Fx(421001, "다 닳았을 때 켜기 시도 빛(초)");   // DT Fx 421001
     private const float DryFlashIntensity = 0.12f;
-    private static readonly Color Yellow = new Color(1f, 0.78f, 0.45f);
+
+    /// <summary>가짜 끊김 n번째(1~3) 꺼짐 구간 안인가(DT Fx 420902).</summary>
+    private static bool Off(float t, int n)
+    {
+        switch (n)
+        {
+            case 1: return t >= DesignData.Fx(420902, "꺼짐 1 시작(초)") && t < DesignData.Fx(420902, "꺼짐 1 끝(초)");
+            case 2: return t >= DesignData.Fx(420902, "꺼짐 2 시작(초)") && t < DesignData.Fx(420902, "꺼짐 2 끝(초)");
+            default: return t >= DesignData.Fx(420902, "꺼짐 3 시작(초)") && t < DesignData.Fx(420902, "꺼짐 3 끝(초)");
+        }
+    }
+    private static Color Yellow => DesignData.FxColor(421001, "누런빛 색");   // DT Fx 421001
 
     private Light _spot;
     private float _baseIntensity;
@@ -299,9 +310,9 @@ public sealed class FlashlightPower : MonoBehaviour
             if (_flickerAt >= 0f)
             {
                 float t = Time.time - _flickerAt;
-                // 끊김 세 번: 0~0.07 · 0.15~0.21 · 0.30~0.40
-                want = t < 0.07f || (t >= 0.15f && t < 0.21f) || (t >= 0.30f && t < 0.40f);
-                if (t >= 0.40f) _flickerAt = -1f;
+                // 끊김 세 번(DT Fx 420902 — 0~0.07 · 0.15~0.21 · 0.30~0.40)
+                want = Off(t, 1) || Off(t, 2) || Off(t, 3);
+                if (t >= DesignData.Fx(420902, "꺼짐 3 끝(초)")) _flickerAt = -1f;
             }
         }
         else

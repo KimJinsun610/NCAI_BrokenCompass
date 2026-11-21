@@ -219,7 +219,31 @@ namespace NightDuty
         /// 61차(민: 「1일차에 사다리 근무 지시와 함께 바퀴벌레가 등장 — 바퀴벌레는 교실에서, 시체 연출이 등장할 때만 시체와 함께」):
         /// 벌레 떼 가짜 놀람을 끈다. 바퀴벌레는 시체 낙하(<c>DirectionStage.CorpseRoaches</c>)에만 나온다. 디버그 강제는 그대로.
         /// </summary>
-        public static bool FakeBugsEnabled = false;
+        public static bool FakeBugsEnabled = FakeUsed(FakeBugs);   // 기본값 DT Fx 421205 「사용」
+
+        /// <summary>가짜 놀람 DT 행(Fx 4212xx, Asset_Name = 놀람 ID). 없으면 0.</summary>
+        private static uint FakeRowId(string id)
+        {
+            DesignData.Ensure();
+            foreach (var r in InstructionDT.DT.Fx.All)
+                if (r.ID >= 421201 && r.ID <= 421299 && r.Asset_Name == id) return r.ID;
+            return 0;
+        }
+
+        /// <summary>DT 「사용(1=예)」. 표에 없으면 켬.</summary>
+        private static bool FakeUsed(string id)
+        {
+            uint row = FakeRowId(id);
+            return row == 0 || DesignData.FxOn(row, "사용(1=예)");
+        }
+
+        /// <summary>DT 「시작 일차」. 표에 없거나 쓰지 않는 놀람(시작 일차 빈칸)이면 1.</summary>
+        public static int FakeStartDay(string id)
+        {
+            uint row = FakeRowId(id);
+            if (row == 0 || !FakeUsed(id)) return 1;
+            return DesignData.FxInt(row, "시작 일차");
+        }
 
         /// <summary>벌레 떼가 떨어질 수 있는 방(정규화 전): 1-3 교실(뒤 창고 포함) · 화장실 · 도서관.</summary>
         public static readonly SpaceId[] BugSpaces = { SpaceId.Classroom_1_3, SpaceId.Toilet, SpaceId.Library };
@@ -1462,7 +1486,8 @@ namespace NightDuty
         /// </summary>
         private bool FakeAllowedHere(string id)
         {
-            if (id == FakeGlimpse) return _day >= 2 && !Busy;
+            if (_day < FakeStartDay(id)) return false;   // DT Fx 4212xx 시작 일차(먼 몹 2일차)
+            if (id == FakeGlimpse) return !Busy;
             if (id != FakeBugs) return true;
             if (!FakeBugsEnabled) return false;   // 61차: 벌레 떼는 가짜 놀람으로 내지 않는다
             if (Array.IndexOf(BugSpaces, _exact) < 0 || Now - _spaceSince < BugDwellSeconds) return false;

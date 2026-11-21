@@ -99,3 +99,5 @@ uint,uint,uint,string,float,float,float,float,float,float,float,bool,string,stri
 310097,530106,320004,도서관 쓰레기통,,,,,,,,FALSE,런타임에 생기는 표식(씬 좌표 미추출),inspect.L-5
 310098,530106,320005,접이식 의자 둘,,,,,,,,FALSE,런타임에 생기는 표식(씬 좌표 미추출),inspect.K-2
 310099,530106,320005,경비실 화분,,,,,,,,FALSE,런타임에 생기는 표식(씬 좌표 미추출),inspect.K-3
+310100,530101,320001,따라오는 발소리,,,,,,,,FALSE,"104차 따라오는 발소리(E.FollowSteps, H5) — 조우 창 단서",cue.follow
+310101,530101,320001,따라오는 발소리 뒤돌아봄,,,,,,,,FALSE,104차 따라오는 발소리 — 뒤돌아봄 한 번마다 보내는 단서,cue.follow.turn

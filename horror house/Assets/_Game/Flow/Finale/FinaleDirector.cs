@@ -178,6 +178,7 @@ public sealed class FinaleDirector : MonoBehaviour
         var ret = DesignData.MessageRow(140021); shiftOverNotice = ret.Text; fadeSeconds = ret.Delay_Sec; noticeSeconds = ret.Show_Sec;
         openingNotice = DesignData.Msg(140022);
         var letIn = DesignData.MessageRow(140023); letInLine = letIn.Text; letInInterval = letIn.Repeat_Interval_Sec;
+        letInMorphSeconds = DesignData.Fx(421603, "괴이문자→「들여보내줘」 바뀜(초)");   // DT Fx 421603
         letInHoldSeconds = Mathf.Max(0f, letIn.Repeat_Duration_Sec - letInMorphSeconds);   // 응시 창 4.5초 = 바뀌는 시간 + 온전한 시간
         var came = DesignData.MessageRow(140024); cameIn = came.Text; seenClearDelay = came.Delay_Sec;
         var s2 = DesignData.MessageRow(140025); seenLines = new[] { s2.Text, DesignData.Msg(140026) }; cameInLineGap = s2.Delay_Sec;

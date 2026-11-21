@@ -71,13 +71,21 @@ namespace NightDuty
     {
         private static readonly CctvSpot[] Table =
         {
-            new CctvSpot("cctv.hall.far", 0, SpaceId.Corridor, new Vector3(31.4f, 1.5f, 41.9f), new Vector3(23.0f, 1.5f, 42.4f), "복도 끝에서 카메라 쪽으로 걸어옴"),
-            new CctvSpot("cctv.hall.away", 0, SpaceId.Corridor, new Vector3(20.0f, 1.5f, 42.6f), new Vector3(30.0f, 1.5f, 41.8f), "카메라 밑에서 복도 끝으로 멀어짐"),
-            new CctvSpot("cctv.class.front", 1, SpaceId.Classroom, new Vector3(40.9f, 1.5f, 33.4f), new Vector3(41.2f, 1.5f, 38.4f), "1-3 교실 칠판 앞을 가로지름"),
-            new CctvSpot("cctv.science.aisle", 2, SpaceId.ScienceRoom, new Vector3(52.2f, 1.5f, 42.0f), new Vector3(49.8f, 1.5f, 41.9f), "과학실 안쪽 통로에서 다가옴"),
-            new CctvSpot("cctv.toilet.stalls", 3, SpaceId.Toilet, new Vector3(0.6f, 1.5f, 33.0f), new Vector3(1.4f, 1.5f, 34.9f), "화장실 칸 앞을 지나감"),
-            new CctvSpot("cctv.library.stacks", 4, SpaceId.Library, new Vector3(5.0f, 1.5f, 49.6f), new Vector3(4.7f, 1.5f, 52.2f), "도서관 서가 사이에서 창가로"),
+            Spot("cctv.hall.far", 421401, "복도 끝에서 카메라 쪽으로 걸어옴"),
+            Spot("cctv.hall.away", 421402, "카메라 밑에서 복도 끝으로 멀어짐"),
+            Spot("cctv.class.front", 421403, "1-3 교실 칠판 앞을 가로지름"),
+            Spot("cctv.science.aisle", 421404, "과학실 안쪽 통로에서 다가옴"),
+            Spot("cctv.toilet.stalls", 421405, "화장실 칸 앞을 지나감"),
+            Spot("cctv.library.stacks", 421406, "도서관 서가 사이에서 창가로"),
         };
+
+        /// <summary>DT 3단계: 카메라 번호(1부터)·공간·시작점·끝점은 Fx_Table CCTV 인물 경로(4214xx). 자리 ID·설명은 코드.</summary>
+        private static CctvSpot Spot(string id, uint fx, string note)
+        {
+            Vector3 from = new Vector3(DesignData.Fx(fx, "시작 X"), DesignData.Fx(fx, "시작 Y"), DesignData.Fx(fx, "시작 Z"));
+            Vector3 to = new Vector3(DesignData.Fx(fx, "끝 X"), DesignData.Fx(fx, "끝 Y"), DesignData.Fx(fx, "끝 Z"));
+            return new CctvSpot(id, DesignData.FxInt(fx, "카메라 번호") - 1, DesignData.SpaceOf(DesignData.FxRow(fx).Space_ID), from, to, note);
+        }
 
         /// <summary>모든 자리.</summary>
         public static IReadOnlyList<CctvSpot> All

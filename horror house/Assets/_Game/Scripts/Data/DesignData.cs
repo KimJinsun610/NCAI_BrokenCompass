@@ -11,7 +11,7 @@ namespace NightDuty
     public static class DesignData
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ReloadOnPlay() { DT.LoadAll(); lock (_layoutCounts) _layoutCounts.Clear(); }   // 플레이마다 새로 읽음(에디터에서 CSV를 다시 내보낸 뒤 바로 반영)
+        static void ReloadOnPlay() { DT.LoadAll(); lock (_layoutCounts) _layoutCounts.Clear(); lock (_fx) _fx.Clear(); lock (_fxSeries) _fxSeries.Clear(); }   // 플레이마다 새로 읽음(에디터에서 CSV를 다시 내보낸 뒤 바로 반영)
 
         static readonly object Gate = new object();
 
@@ -272,6 +272,112 @@ namespace NightDuty
                 var counts = new[] { (int)row.Band_0_Count, (int)row.Band_1_Count, (int)row.Band_2_Count, (int)row.Band_3_Count, (int)row.Band_4_Count };
                 _layoutCounts[id] = counts;
                 return counts;
+            }
+        }
+
+        static readonly System.Collections.Generic.Dictionary<(uint, string), float> _fx = new System.Collections.Generic.Dictionary<(uint, string), float>();
+        static readonly System.Collections.Generic.Dictionary<(uint, string), float[]> _fxSeries = new System.Collections.Generic.Dictionary<(uint, string), float[]>();
+
+        /// <summary>Fx_Table 행. 없으면 예외.</summary>
+        public static FxRow FxRow(uint id)
+        {
+            Ensure();
+            var r = DT.Fx.Get(id);
+            if (r == null) throw new System.InvalidOperationException("DT Fx " + id + " 없음");
+            return r;
+        }
+
+        /// <summary>
+        /// Fx 값 — 칸 <b>이름</b>(Param_n_Name)으로 찾는다. 기획자가 칸 순서를 바꿔도 값이 엉뚱한 곳에 들어가지 않는다.
+        /// 이름이 없거나 값이 비면 예외(빈칸이 0으로 조용히 읽히지 않게). 캐시 — 플레이 시작 때 비운다.
+        /// </summary>
+        public static float Fx(uint id, string name)
+        {
+            lock (_fx)
+            {
+                if (_fx.TryGetValue((id, name), out var v)) return v;
+                var r = FxRow(id);
+                for (int i = 1; i <= 12; i++)
+                {
+                    if (FxParamName(r, i) != name) continue;
+                    if (r.IsBlank("Param_" + i + "_Value")) throw new System.InvalidOperationException("DT Fx " + id + " 「" + name + "」 값이 비어 있음");
+                    v = FxParamValue(r, i);
+                    _fx[(id, name)] = v;
+                    return v;
+                }
+
+                throw new System.InvalidOperationException("DT Fx " + id + " 「" + name + "」 칸 없음");
+            }
+        }
+
+        /// <summary>Fx 값(정수로 반올림).</summary>
+        public static int FxInt(uint id, string name) => Mathf.RoundToInt(Fx(id, name));
+
+        /// <summary>Fx 켬/끔(0이 아니면 켬).</summary>
+        public static bool FxOn(uint id, string name) => Fx(id, name) != 0f;
+
+        /// <summary>Fx 색 — 「접두 R」「접두 G」「접두 B」 세 칸.</summary>
+        public static Color FxColor(uint id, string prefix) => new Color(Fx(id, prefix + " R"), Fx(id, prefix + " G"), Fx(id, prefix + " B"));
+
+        /// <summary>연속 행(firstId, firstId+1, …)의 같은 이름 칸 — 구간·층·일차별 줄. 캐시(고치지 마십시오).</summary>
+        public static float[] FxSeries(uint firstId, int count, string name)
+        {
+            lock (_fxSeries)
+            {
+                if (_fxSeries.TryGetValue((firstId, name), out var cached) && cached.Length == count) return cached;
+                var values = new float[count];
+                for (int i = 0; i < count; i++) values[i] = Fx(firstId + (uint)i, name);
+                _fxSeries[(firstId, name)] = values;
+                return values;
+            }
+        }
+
+        /// <summary>Fx 행에 그 이름 칸이 있는가(값이 비어도 참).</summary>
+        public static bool FxHas(uint id, string name)
+        {
+            var r = FxRow(id);
+            for (int i = 1; i <= 12; i++)
+                if (FxParamName(r, i) == name) return true;
+            return false;
+        }
+
+        static string FxParamName(FxRow r, int i)
+        {
+            switch (i)
+            {
+                case 1: return r.Param_1_Name;
+                case 2: return r.Param_2_Name;
+                case 3: return r.Param_3_Name;
+                case 4: return r.Param_4_Name;
+                case 5: return r.Param_5_Name;
+                case 6: return r.Param_6_Name;
+                case 7: return r.Param_7_Name;
+                case 8: return r.Param_8_Name;
+                case 9: return r.Param_9_Name;
+                case 10: return r.Param_10_Name;
+                case 11: return r.Param_11_Name;
+                case 12: return r.Param_12_Name;
+                default: return null;
+            }
+        }
+
+        static float FxParamValue(FxRow r, int i)
+        {
+            switch (i)
+            {
+                case 1: return r.Param_1_Value;
+                case 2: return r.Param_2_Value;
+                case 3: return r.Param_3_Value;
+                case 4: return r.Param_4_Value;
+                case 5: return r.Param_5_Value;
+                case 6: return r.Param_6_Value;
+                case 7: return r.Param_7_Value;
+                case 8: return r.Param_8_Value;
+                case 9: return r.Param_9_Value;
+                case 10: return r.Param_10_Value;
+                case 11: return r.Param_11_Value;
+                case 12: return r.Param_12_Value;
+                default: return 0f;
             }
         }
 

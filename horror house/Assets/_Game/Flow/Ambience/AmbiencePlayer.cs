@@ -87,7 +87,7 @@ public sealed class AmbiencePlayer : MonoBehaviour
     // 같은 소리를 8~12초 조각으로 잘라 「옆 공간 벽 너머」에서 밤당 0/2/3/4/5번만 낸다.
     // 조건: 긴장 조절기가 축적 상태(이완·출근·03:30 뒤는 저절로 빠짐)이고 긴장도 60 미만, 경비실 밖, 조우가 끝나고 20초 뒤, 직전 신음과 120~75초 간격.
     private const string PresenceClipPath = "Ambience/Dread/AMB_Dread_B1";
-    private static readonly int[] PresenceCaps = { 0, 2, 3, 4, 5 };
+    private static float[] PresenceCaps => DesignData.FxSeries(420501, 5, "밤당 횟수");   // DT Fx 420501~420505(1~5일차)
     private AudioSource _presence;
     private AudioClip _presenceClip;
     private InspectionPlan _presencePlan;
@@ -428,7 +428,7 @@ public sealed class AmbiencePlayer : MonoBehaviour
     /// <summary>밤당 「신음」 횟수(1~5일차 0/2/3/4/5).</summary>
     public static int PresenceCap(int day)
     {
-        return PresenceCaps[Mathf.Clamp(day - 1, 0, PresenceCaps.Length - 1)];
+        return Mathf.RoundToInt(PresenceCaps[Mathf.Clamp(day - 1, 0, PresenceCaps.Length - 1)]);
     }
 
     /// <summary>「신음」 사이 최소 간격(초): 2일차 120 → 5일차 75.</summary>

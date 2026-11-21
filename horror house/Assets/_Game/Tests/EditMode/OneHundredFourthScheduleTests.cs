@@ -47,28 +47,28 @@ namespace NightDuty.Tests
             Assert.AreEqual(ProgramCatalog.CeilingLegs, day2.Sequence[day2.Sequence.Count - 1], "2일차 클라이맥스는 맨 뒤");
             Assert.IsTrue(day2.Sequential);
             Assert.IsTrue(day2.HasEncounter(ProgramCatalog.CeilingLegs));
-            Assert.IsTrue(day2.Has("S4"));
-            Assert.IsTrue(day2.Has("H5"), "2일차 덱에 따라오는 발소리 수칙(H5)");
+            Assert.IsTrue(day2.Has("110014"));
+            Assert.IsTrue(day2.Has("110037"), "2일차 덱에 따라오는 발소리 수칙(H5)");
 
             NightProgram day3 = d.Build(Request(3, Band.Band0));
             CollectionAssert.AreEquivalent(new[] { ProgramCatalog.SuitMan, ProgramCatalog.Footsteps, ProgramCatalog.CctvPerson, ProgramCatalog.ToiletBlackout }, day3.Sequence, "창밖 노란 얼굴 · 화장실 소등 3일차");
             Assert.AreEqual(ProgramCatalog.Footsteps, day3.Sequence[3]);
-            Assert.IsTrue(day3.Has("H3"));
-            Assert.IsTrue(day3.Has("K1"));
+            Assert.IsTrue(day3.Has("110003"));
+            Assert.IsTrue(day3.Has("110029"));
 
             NightProgram day4 = d.Build(Request(4, Band.Band0));
             CollectionAssert.AreEquivalent(new[] { ProgramCatalog.BoyBang, ProgramCatalog.ToiletGirl, ProgramCatalog.PeopleTree }, day4.Sequence);
             Assert.AreEqual(ProgramCatalog.BoyBang, day4.Sequence[2]);
-            foreach (string id in new[] { "C2", "C3", "T4", "H1" }) Assert.IsTrue(day4.Has(id), id);
+            foreach (string id in new[] { "110006", "110007", "110019", "110001" }) Assert.IsTrue(day4.Has(id), id);
             Assert.IsTrue(day4.IsStanding(ProgramCatalog.HallEndFigure), "104차: 복도 끝 모형은 그냥 서 있다(조우 아님)");
             Assert.IsFalse(day4.HasEncounter(ProgramCatalog.HallEndFigure));
-            Assert.IsFalse(day4.Has("S5"), "서 있을 뿐 — 수칙 없음");
+            Assert.IsFalse(day4.Has("110015"), "서 있을 뿐 — 수칙 없음");
             Assert.LessOrEqual(day4.Deck.Count, System.Math.Max(ProgramDirector.RulesFor(4), 6), "장수는 그대로 — 조우 수칙 말고 나머지를 뺀다");
             for (int day = 2; day <= 5; day++)
             {
                 NightProgram p = new ProgramDirector(new System.Random(day)).Build(Request(day, Band.Band0));
                 int locked = 0;
-                foreach (RuleDef r in p.Deck) if (!r.IsStandalone || r.Id == "K4") locked++;
+                foreach (RuleDef r in p.Deck) if (!r.IsStandalone || r.Id == "110032") locked++;
                 Assert.LessOrEqual(p.Deck.Count, System.Math.Max(ProgramDirector.RulesFor(day), locked), day + "일차 장수");
             }
 
@@ -76,7 +76,7 @@ namespace NightDuty.Tests
             CollectionAssert.AreEquivalent(new[] { ProgramCatalog.PeopleTree, ProgramCatalog.CallingVoice, ProgramCatalog.YellowFace }, day5.Sequence);
             Assert.AreEqual(ProgramCatalog.YellowFace, day5.Sequence[2], "5일차 클라이맥스는 도서관 노란 얼굴");
             Assert.AreEqual(EncounterSlot.C, day5.WindowOf(ProgramCatalog.YellowFace), "클라이맥스는 가장 늦은 창");
-            foreach (string id in new[] { "K4", "H1", "H4", "L3", "S5" }) Assert.IsTrue(day5.Has(id), id);
+            foreach (string id in new[] { "110032", "110001", "110004", "110024", "110015" }) Assert.IsTrue(day5.Has(id), id);
             Assert.IsTrue(day5.IsStanding(ProgramCatalog.ModelRush), "104차: 모형 급습은 밤새 대기(빛을 받으면 곧바로)");
         }
 
@@ -107,14 +107,14 @@ namespace NightDuty.Tests
         public void 회피_불가_강제는_그날_조우의_수칙만()
         {
             ProgramDirector d = Director(ProgramCatalog.ScienceBlackout, 4);
-            Assert.IsFalse(d.CanForce("H3", 4), "발소리는 3일차뿐");
-            Assert.IsTrue(d.CanForce("H3", 3));
-            Assert.IsTrue(d.CanForce("K1", 3), "CCTV 날");
-            Assert.IsFalse(d.CanForce("K1", 4));
-            Assert.IsFalse(d.CanForce("K2", 3), "CCTV 날 경비실은 K1");
-            Assert.IsTrue(d.CanForce("C2", 4));
-            Assert.IsFalse(d.CanForce("C2", 2));
-            Assert.IsTrue(d.CanForce("T1", 2), "혼자 서는 수칙");
+            Assert.IsFalse(d.CanForce("110003", 4), "발소리는 3일차뿐");
+            Assert.IsTrue(d.CanForce("110003", 3));
+            Assert.IsTrue(d.CanForce("110029", 3), "CCTV 날");
+            Assert.IsFalse(d.CanForce("110029", 4));
+            Assert.IsFalse(d.CanForce("110030", 3), "CCTV 날 경비실은 K1");
+            Assert.IsTrue(d.CanForce("110006", 4));
+            Assert.IsFalse(d.CanForce("110006", 2));
+            Assert.IsTrue(d.CanForce("110016", 2), "혼자 서는 수칙");
         }
 
         private static DirectorFixture Sequential(params string[] ids)
@@ -169,7 +169,7 @@ namespace NightDuty.Tests
             CollectionAssert.AreEqual(new[] { EncounterSlot.A, EncounterSlot.A, EncounterSlot.B, EncounterSlot.B, EncounterSlot.C }, NightProgram.SplitWindows(5));
 
             List<SlotEncounter> slots = new List<SlotEncounter> { new SlotEncounter(EncounterSlot.A, ProgramCatalog.Encounter(ProgramCatalog.ToiletBlackout), false) };
-            NightProgram p = new NightProgram(2, slots, new[] { ProgramCatalog.Rule("S4") }, "test", null, new[] { ProgramCatalog.ToiletBlackout }, new[] { EncounterSlot.B });
+            NightProgram p = new NightProgram(2, slots, new[] { ProgramCatalog.Rule("110014") }, "test", null, new[] { ProgramCatalog.ToiletBlackout }, new[] { EncounterSlot.B });
             DirectorFixture f = new DirectorFixture(2, 0.5, new string[0]);
             TensionDirector t = new TensionDirector(p, 2, 0, new FixedRandom(0.5));
             typeof(DirectorFixture).GetField("Director").SetValue(f, t);
@@ -362,7 +362,7 @@ namespace NightDuty.Tests
         public void 빈칸_해독은_기본으로_꺼져_있다()
         {
             Assert.IsFalse(NightRun.BlankDecodingEnabled, "104차: 수칙의 _? 가림표는 끝까지 그대로");
-            Assert.AreEqual(ProgramCatalog.Rule("C2").Text, NightRun.ShownRuleText("C2", ProgramCatalog.Rule("C2").Text));
+            Assert.AreEqual(ProgramCatalog.Rule("110006").Text, NightRun.ShownRuleText("110006", ProgramCatalog.Rule("110006").Text));
         }
 
         [Test]

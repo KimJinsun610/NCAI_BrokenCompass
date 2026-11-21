@@ -89,7 +89,7 @@ namespace NightDuty.Tests
         {
             StringAssert.Contains("인체 모형", FixedMobStare.SourceName(FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget));
             StringAssert.Contains("사람 나무", FixedMobStare.SourceName(FixedMobStare.SourcePrefix + FinalCues.H1Object));
-            Assert.IsNull(FixedMobStare.SourceName("G1"));
+            Assert.IsNull(FixedMobStare.SourceName("110034"));
             Assert.IsNull(FixedMobStare.SourceName(null));
         }
 

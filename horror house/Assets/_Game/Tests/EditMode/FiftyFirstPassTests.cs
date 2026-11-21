@@ -27,9 +27,9 @@ namespace NightDuty.Tests
         public void 문구_C2_C4_K1_C3()
         {
             // 52차 민 문구.
-            Assert.AreEqual("교실의 _? 는 무시하십시오.", ProgramCatalog.Rule("C2").Text);
-            Assert.AreEqual("초록 불빛 아래에서는 손전등을 끄십시오.", ProgramCatalog.Rule("C4").Text, "66차: 붉은 → 초록");
-            Assert.AreEqual("화면 속 !_ 이 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.", ProgramCatalog.Rule("K1").Text, "2026-10-29 김진선님");
+            Assert.AreEqual("교실의 _? 는 무시하십시오.", ProgramCatalog.Rule("110006").Text);
+            Assert.AreEqual("초록 불빛 아래에서는 손전등을 끄십시오.", ProgramCatalog.Rule("110008").Text, "66차: 붉은 → 초록");
+            Assert.AreEqual("화면 속 !_ 이 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.", ProgramCatalog.Rule("110029").Text, "2026-10-29 김진선님");
             InspectionItem c3 = InspectionCatalog.Find("135009");
             Assert.AreEqual("교실 안쪽에 작은 사다리가 있는지 확인해주십시오.", c3.TabletLine);   // 76차 민 문구
             Assert.AreEqual(FearAxis.Layout, c3.Axis, "이상 = 사다리 없음(배치)");
@@ -43,15 +43,15 @@ namespace NightDuty.Tests
             {
                 if (!e.HasMessage) continue;
                 // 79차: 민이 직접 쓴 역설 문구(H3·C2·C4·T1·L1)는 「지금·즉시」 없이 그대로 둔다.
-                if (System.Array.IndexOf(new[] { "H3", "C2", "C4", "T1", "L1" }, e.RuleId) < 0) Assert.IsTrue(e.Message.Contains("지금") || e.Message.Contains("즉시"), e.RuleId + ": " + e.Message);
+                if (System.Array.IndexOf(new[] { "110003", "110006", "110008", "110016", "110022" }, e.RuleId) < 0) Assert.IsTrue(e.Message.Contains("지금") || e.Message.Contains("즉시"), e.RuleId + ": " + e.Message);
                 StringAssert.DoesNotStartWith("[", e.Message, "역설 문자는 머리(「[점검 지시]」 등)가 없다 — " + e.RuleId);
             }
 
-            ParadoxEntry c2 = ParadoxCatalog.Find("C2");
+            ParadoxEntry c2 = ParadoxCatalog.Find("110006");
             Assert.AreEqual("교실 소음의 원인을 응시해주십시오.", c2.Message);   // 79차 민
             Assert.AreEqual(FinalCues.BoySeated, c2.Cue, "소년이 앉은 뒤에 온다 — 몹을 예고하지 않는다");
             Assert.AreEqual(FinalCues.BoyTarget, c2.Target);
-            ParadoxEntry c4 = ParadoxCatalog.Find("C4");
+            ParadoxEntry c4 = ParadoxCatalog.Find("110008");
             Assert.AreEqual("조명에 이상이 있을 시 손전등으로 확인해주십시오.", c4.Message, "따르면(켜면) C4를 어긴다 · 79차 민 문구");
             Assert.AreEqual(SafeReadPattern.StandStill, c4.Pattern, "꺼진 채 붉은 등 아래를 지나가면 안전한 읽기");
             Assert.AreEqual("확인되었습니다.", NightRun.ParadoxAck);
@@ -99,16 +99,16 @@ namespace NightDuty.Tests
         public void C2_떨어진_시체는_판정하지_않는다()
         {
             // 52차: C2는 앉은 소년 — 시체(옛 rule.C2.legs)를 오래 봐도 위반이 아니다.
-            FinalFixture f = new FinalFixture("C2");
+            FinalFixture f = new FinalFixture("110006");
             f.Cue(FinalCues.Legs);
             f.Samples(() => JudgeSignal.Gaze(FinalCues.LegsTarget, 0.1f), 5f);
-            Assert.AreNotEqual(FinalOutcome.Violated, f.Last("C2"));
+            Assert.AreNotEqual(FinalOutcome.Violated, f.Last("110006"));
         }
 
         [Test]
         public void 소년_머리_박기는_2일차_첫_역설과_함께()
         {
-            Assert.AreEqual("C2", ProgramCatalog.FirstParadoxRule);
+            Assert.AreEqual("110006", ProgramCatalog.FirstParadoxRule);
             Assert.IsTrue(ProgramDirector.IsDayFocus(2, ProgramCatalog.BoyBang));
             Assert.IsFalse(ProgramDirector.IsDayFocus(4, ProgramCatalog.BoyBang));
             for (int seed = 0; seed < 20; seed++)
@@ -116,7 +116,7 @@ namespace NightDuty.Tests
                 ProgramDirector d = new ProgramDirector(new System.Random(seed));
                 NightProgram p = d.Build(new ProgramRequest { Day = 2, Shown = FixedBands.All(Band.Band1) });
                 Assert.IsTrue(p.HasEncounter(ProgramCatalog.BoyBang), "seed " + seed + ": " + p);
-                Assert.IsTrue(p.Has("C2") && p.Has("C3"), "C2·C3·소년 셋이 하나 — seed " + seed);
+                Assert.IsTrue(p.Has("110006") && p.Has("110007"), "C2·C3·소년 셋이 하나 — seed " + seed);
             }
         }
 
@@ -124,13 +124,13 @@ namespace NightDuty.Tests
         public void 시체_낙하_날에는_사다리_점검을_더한다()
         {
             InspectionPlan plan = new InspectionPlan(2, new[] { Row("135025"), Row("135007", true), Row("135012") }, SpaceId.ScienceRoom, "135007");
-            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "C2" }, ProgramCatalog.CeilingLegs));
+            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "110006" }, ProgramCatalog.CeilingLegs));
             Assert.AreNotSame(plan, patched);
             Assert.IsNotNull(patched.Find("135009"));
             Assert.IsFalse(patched.Find("135009").IsAnomaly);
             Assert.AreEqual(plan.AnomalyCount, patched.AnomalyCount);
 
-            InspectionPlan same = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "S1" }));
+            InspectionPlan same = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "110011" }));
             Assert.AreSame(plan, same, "고칠 것이 없으면 그대로");
         }
 
@@ -140,7 +140,7 @@ namespace NightDuty.Tests
         public void T4_날_변기는_정상_이른_항목이고_T2_점검은_빠진다()
         {
             InspectionPlan plan = new InspectionPlan(3, new[] { Row("135025"), Row("135018", true, true), Row("135019", false, true), Row("135022") }, SpaceId.Toilet, "135022");
-            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(3, new[] { "T4" }, ProgramCatalog.ToiletGirl));
+            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(3, new[] { "110019" }, ProgramCatalog.ToiletGirl));
             InspectionAssignment t1 = patched.Find("135018");
             Assert.IsNotNull(t1);
             Assert.IsFalse(t1.IsAnomaly, "「변기는 정상입니다」");
@@ -154,17 +154,17 @@ namespace NightDuty.Tests
             // 61차(민: 「변기 수칙 → 변기 지시 → 화장실 입장 → 소녀 목격 → 핏물·머리카락 → 정상 보고」): 변기(T-1)는 여자아이 슬롯이 열릴 때 단독 지시로 나간다.
             // 옛 53차의 거울(T-3) 더하기는 소녀보다 먼저 화장실로 불러 순서를 흐트러뜨려 뺐다.
             InspectionPlan plan = new InspectionPlan(2, new[] { Row("135025"), Row("135018", false, true), Row("135007") }, SpaceId.Toilet, "135025");
-            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "T4" }, ProgramCatalog.Footsteps, ProgramCatalog.ToiletGirl));   // 여자아이 = 슬롯 B
+            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "110019" }, ProgramCatalog.Footsteps, ProgramCatalog.ToiletGirl));   // 여자아이 = 슬롯 B
             Assert.IsNull(patched.Find("135020"));
             Assert.IsNotNull(patched.Find("135018"));
             Assert.IsFalse(patched.Find("135018").IsLate);
             Assert.AreEqual(plan.AnomalyCount, patched.AnomalyCount);
 
-            InspectionPlan early = NightRun.PatchPlanForProgram(new InspectionPlan(2, new[] { Row("135025"), Row("135018") }, SpaceId.ScienceRoom, "135025"), ProgramWith(2, new[] { "T4" }, ProgramCatalog.ToiletGirl));
+            InspectionPlan early = NightRun.PatchPlanForProgram(new InspectionPlan(2, new[] { Row("135025"), Row("135018") }, SpaceId.ScienceRoom, "135025"), ProgramWith(2, new[] { "110019" }, ProgramCatalog.ToiletGirl));
             Assert.IsNull(early.Find("135020"));
 
             InspectionPlan mirror = new InspectionPlan(2, new[] { Row("135025"), Row("135018"), Row("135020", true) }, SpaceId.None, "135025");
-            InspectionPlan kept = NightRun.PatchPlanForProgram(mirror, ProgramWith(2, new[] { "T4" }, ProgramCatalog.ToiletGirl));
+            InspectionPlan kept = NightRun.PatchPlanForProgram(mirror, ProgramWith(2, new[] { "110019" }, ProgramCatalog.ToiletGirl));
             Assert.IsTrue(kept.Find("135020").IsAnomaly, "이미 화장실 항목이 있으면 건드리지 않는다");
         }
 
@@ -173,14 +173,14 @@ namespace NightDuty.Tests
         {
             // 54차 QA: 3일차 화장실 여자아이가 슬롯 A(01:00~01:52)인데 화장실이 늦은 공간이라 화장실 점검이 02:16에야 나와 조우가 열리지 않았다.
             InspectionPlan t4 = new InspectionPlan(3, new[] { Row("135025"), Row("135018", false, true), Row("135007") }, SpaceId.Toilet, "135025");
-            InspectionPlan a = NightRun.PatchPlanForProgram(t4, ProgramWith(3, new[] { "T4" }, ProgramCatalog.ToiletGirl));
+            InspectionPlan a = NightRun.PatchPlanForProgram(t4, ProgramWith(3, new[] { "110019" }, ProgramCatalog.ToiletGirl));
             Assert.IsNull(a.Find("135020"), "61차: T4 날 화장실은 변기 지시가 부른다");
             Assert.IsFalse(a.Find("135018").IsLate);
             Assert.IsNull(a.Find("135019"));
             Assert.AreEqual(t4.AnomalyCount, a.AnomalyCount);
 
             InspectionPlan lib = new InspectionPlan(3, new[] { Row("135025"), Row("135022", true, true), Row("135012") }, SpaceId.Library, "135012");
-            InspectionPlan c = NightRun.PatchPlanForProgram(lib, ProgramWith(3, new[] { "S1" }, ProgramCatalog.Footsteps, ProgramCatalog.ToiletGirl, ProgramCatalog.YellowFace));
+            InspectionPlan c = NightRun.PatchPlanForProgram(lib, ProgramWith(3, new[] { "110011" }, ProgramCatalog.Footsteps, ProgramCatalog.ToiletGirl, ProgramCatalog.YellowFace));
             int early = 0, late = 0;
             foreach (InspectionAssignment row in c.Assignments)
             {
@@ -203,7 +203,7 @@ namespace NightDuty.Tests
             });
             Assert.AreEqual(NightClock.SlotCStart, d.ReleaseOf(SpaceId.Library), 0.01f, "슬롯 C까지 아껴 둔다");
 
-            InspectionPlan same = NightRun.PatchPlanForProgram(lib, ProgramWith(3, new[] { "S1" }, ProgramCatalog.Footsteps, ProgramCatalog.YellowFace));
+            InspectionPlan same = NightRun.PatchPlanForProgram(lib, ProgramWith(3, new[] { "110011" }, ProgramCatalog.Footsteps, ProgramCatalog.YellowFace));
             Assert.AreSame(lib, same, "슬롯 B 방은 늦은 항목으로 충분하다");
         }
 
@@ -219,7 +219,7 @@ namespace NightDuty.Tests
         {
             // 53차 플레이 점검: 2일차 소년(교실) 날 편성에 교실 점검이 없어 아무도 교실에 가지 않았다.
             InspectionPlan plan = new InspectionPlan(2, new[] { Row("135025"), Row("135012", true), Row("135022") }, SpaceId.None, "135022");
-            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "C2", "C3" }, ProgramCatalog.BoyBang));
+            InspectionPlan patched = NightRun.PatchPlanForProgram(plan, ProgramWith(2, new[] { "110006", "110007" }, ProgramCatalog.BoyBang));
             Assert.AreNotSame(plan, patched);
             int classroom = 0;
             foreach (InspectionAssignment a in patched.Assignments)

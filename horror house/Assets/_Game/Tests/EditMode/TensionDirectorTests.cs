@@ -160,7 +160,7 @@ namespace NightDuty.Tests
             {
                 RuleDef r = ProgramCatalog.Rule(s.RuleId);
                 Assert.IsNotNull(r, s.RuleId);
-                if (s.RuleId == "C3") continue;   // 103차: C3(소년 조우에 묶임)는 교실에 들어가면 울리는 수업 종이 단서 — 조우 대신 종으로 울린다
+                if (s.RuleId == "110007") continue;   // 103차: C3(소년 조우에 묶임)는 교실에 들어가면 울리는 수업 종이 단서 — 조우 대신 종으로 울린다
                 Assert.IsTrue(r.IsStandalone, s.RuleId + "는 조우에 묶인 수칙이라 디렉터가 조우로 울린다");
             }
         }
@@ -410,7 +410,7 @@ namespace NightDuty.Tests
         [Test]
         public void 물_내림은_화장실에_머물면_한_번_울리고_8초_뒤_끝난다()
         {
-            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "T1" });
+            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "110016" });
             f.Minute = 30f;
             f.Enter(SpaceId.Toilet).Wait(3.2f);
             Assert.AreEqual(1, f.CueCount(SignalKind.CueStarted, FinalCues.Flush));
@@ -423,7 +423,7 @@ namespace NightDuty.Tests
         [Test]
         public void 이완_구간에는_수칙_단서가_없다()
         {
-            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "T1" });
+            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "110016" });
             f.Minute = NightClock.RelaxStart + 8f;
             f.Enter(SpaceId.Toilet).Wait(10f);
             Assert.AreEqual(0, f.CueCount(SignalKind.CueStarted, FinalCues.Flush));
@@ -432,7 +432,7 @@ namespace NightDuty.Tests
         [Test]
         public void 불켜진_칸은_화장실을_나갈_때_끝난다()
         {
-            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "T5" });
+            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "110020" });
             f.Minute = 30f;
             f.Enter(SpaceId.Toilet).Wait(5f);
             Assert.AreEqual(1, f.CueCount(SignalKind.CueStarted, FinalCues.StallLit));
@@ -447,7 +447,7 @@ namespace NightDuty.Tests
         [Test]
         public void 분필은_교실_문_밖_구역에서()
         {
-            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "C1" });
+            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "110005" });
             f.Minute = 30f;
             f.Enter(SpaceId.Corridor).Wait(5f);
             Assert.AreEqual(0, f.CueCount(SignalKind.CueStarted, FinalCues.Chalk));
@@ -458,7 +458,7 @@ namespace NightDuty.Tests
         [Test]
         public void 빈_방은_지금_보는_채널이_아닌_다른_채널()
         {
-            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "K2" });
+            DirectorFixture f = new DirectorFixture(1, 0.0, new[] { "110030" });
             f.Minute = 30f;
             f.Enter(SpaceId.SecurityRoom);
             for (int i = 0; i < 30; i++)
@@ -474,7 +474,7 @@ namespace NightDuty.Tests
         [Test]
         public void 조우_중에는_수칙_단서를_쉰다()
         {
-            DirectorFixture f = new DirectorFixture(1, 0.99, new[] { "T1" }, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletBlackout));
+            DirectorFixture f = new DirectorFixture(1, 0.99, new[] { "110016" }, DirectorFixture.Slot(EncounterSlot.A, ProgramCatalog.ToiletBlackout));
             f.Minute = NightClock.Call1 + 10f;
             f.Enter(SpaceId.Toilet).Wait(4.2f);
             Assert.IsTrue(f.Director.Busy);
@@ -655,7 +655,7 @@ namespace NightDuty.Tests
             NightRun.BeginNight(1, () => _minute);
             Assert.IsNotNull(NightRun.Tension);
             Assert.IsFalse(NightRun.Program.HasEncounter(ProgramCatalog.BoySeated), "1일차엔 몹 없음");
-            Assert.IsTrue(NightRun.DebugAddFinalRule("C3"));
+            Assert.IsTrue(NightRun.DebugAddFinalRule("110007"));
 
             List<DirectionEvent> seen = new List<DirectionEvent>();
             EventBus.DirectionEmitted += seen.Add;
@@ -666,11 +666,11 @@ namespace NightDuty.Tests
             for (int i = 0; i < 35; i++) NightRun.Tick(0.1f);
 
             Assert.IsTrue(seen.Exists(e => e.SourceId == ProgramCatalog.BoySeated && e.Phase == DirectionPhase.Confront));
-            Assert.IsFalse(NightRun.FinalRules.Judge("C3").Triggered, "103차: 소년 대면만으로는 C3가 시작되지 않는다");
-            Assert.IsTrue(NightRun.DebugFireRuleCue("C3"), "C3 수업 종 대본");
+            Assert.IsFalse(NightRun.FinalRules.Judge("110007").Triggered, "103차: 소년 대면만으로는 C3가 시작되지 않는다");
+            Assert.IsTrue(NightRun.DebugFireRuleCue("110007"), "C3 수업 종 대본");
             for (int i = 0; i < 2; i++) NightRun.Tick(0.1f);
-            Assert.IsTrue(seen.Exists(e => e.Kind == DirectionEventKind.RuleCue && e.SourceId == "C3"));
-            Assert.IsTrue(NightRun.FinalRules.Judge("C3").Triggered, "수업 종 단서가 판정 책까지 갔다");
+            Assert.IsTrue(seen.Exists(e => e.Kind == DirectionEventKind.RuleCue && e.SourceId == "110007"));
+            Assert.IsTrue(NightRun.FinalRules.Judge("110007").Triggered, "수업 종 단서가 판정 책까지 갔다");
 
             NightRun.Send(JudgeSignal.Pose(new Vector3(45f, 1.5f, 36f), 0f));
             Assert.AreEqual(Deltas.ThreatFailure, NightRun.Axes.GetValue(FearAxis.Auditory));
@@ -684,10 +684,10 @@ namespace NightDuty.Tests
             _minute = 30;
             NightRun.BeginNight(1, () => _minute);
 
-            Assert.IsTrue(NightRun.DebugAddFinalRule("T1"));
-            Assert.IsTrue(NightRun.DebugFireRuleCue("T1"));
+            Assert.IsTrue(NightRun.DebugAddFinalRule("110016"));
+            Assert.IsTrue(NightRun.DebugFireRuleCue("110016"));
             NightRun.Send(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Toilet));
-            Assert.IsTrue(NightRun.DebugFireRuleCue("T1"));
+            Assert.IsTrue(NightRun.DebugFireRuleCue("110016"));
             for (int i = 0; i < 82; i++) NightRun.Tick(0.1f);
             Assert.AreEqual(Deltas.RuleViolation, NightRun.Axes.GetValue(FearAxis.Auditory), "8초 안에 나오지 않음");
 
@@ -701,7 +701,7 @@ namespace NightDuty.Tests
         [Test]
         public void 일차1_복도는_H2_문_자동열림_단서다()
         {
-            RuleTriggerScript h2 = RuleTriggers.Find("H2");
+            RuleTriggerScript h2 = RuleTriggers.Find("110002");
             Assert.IsNotNull(h2, "H2는 혼자 서는 수칙 — 단서 대본이 있어야 1일차 복도가 산다");
             Assert.AreEqual(SpaceId.Corridor, h2.Space);
             Assert.AreEqual("cue.door.autoopen", h2.Cue);
@@ -716,17 +716,17 @@ namespace NightDuty.Tests
             Assert.AreEqual(FinalCues.BoySeated, bang.Cue);
             Assert.AreEqual(FinalCues.BoyTarget, bang.AnchorId, "C2 응시 기준점 = 소년");
             Assert.IsTrue(string.IsNullOrEmpty(bang.ExtraStandIn));
-            Assert.AreEqual(ProgramCatalog.BoyBang, ProgramCatalog.Rule("C2").BoundEncounter);
+            Assert.AreEqual(ProgramCatalog.BoyBang, ProgramCatalog.Rule("110006").BoundEncounter);
             EncounterDef e = ProgramCatalog.Encounter(ProgramCatalog.BoyBang);
-            CollectionAssert.AreEquivalent(new[] { "C2", "C3" }, new[] { e.ResponseRule, e.SecondRule });
+            CollectionAssert.AreEquivalent(new[] { "110006", "110007" }, new[] { e.ResponseRule, e.SecondRule });
         }
 
         [Test]
         public void H1_C2는_조우에_묶여_있다()
         {
-            Assert.IsFalse(ProgramCatalog.Rule("H1").IsStandalone, "인체나무 없이 H1 금지");
-            Assert.IsFalse(ProgramCatalog.Rule("C2").IsStandalone, "천장 다리 없이 C2 금지");
-            Assert.IsTrue(ProgramCatalog.Rule("H2").IsStandalone);
+            Assert.IsFalse(ProgramCatalog.Rule("110001").IsStandalone, "인체나무 없이 H1 금지");
+            Assert.IsFalse(ProgramCatalog.Rule("110006").IsStandalone, "천장 다리 없이 C2 금지");
+            Assert.IsTrue(ProgramCatalog.Rule("110002").IsStandalone);
         }
     }
 

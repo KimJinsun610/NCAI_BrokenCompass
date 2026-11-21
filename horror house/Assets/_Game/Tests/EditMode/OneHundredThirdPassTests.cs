@@ -22,8 +22,8 @@ namespace NightDuty.Tests
         [Test]
         public void C3_문구와_수업_종_대본()
         {
-            Assert.AreEqual("수업 종이 울리면 정지하십시오.", ProgramCatalog.Rule("C3").Text);
-            RuleTriggerScript bell = RuleTriggers.Find("C3");
+            Assert.AreEqual("수업 종이 울리면 정지하십시오.", ProgramCatalog.Rule("110007").Text);
+            RuleTriggerScript bell = RuleTriggers.Find("110007");
             Assert.IsNotNull(bell, "C3는 교실에 들어가면 곧 울리는 수업 종이 단서");
             Assert.AreEqual(FinalCues.BellStart, bell.Cue);
             Assert.AreEqual(SpaceId.Classroom, bell.Space);
@@ -85,7 +85,7 @@ namespace NightDuty.Tests
         [Test]
         public void 맞춤법_띄어쓰기_정리()
         {
-            Assert.AreEqual("정전 중에는 손전등을 켜지 마십시오.", ProgramCatalog.Rule("S4").Text);
+            Assert.AreEqual("정전 중에는 손전등을 켜지 마십시오.", ProgramCatalog.Rule("110014").Text);
             Assert.AreEqual("열어 둔 문들을 정리해주십시오.", DutyCatalog.Find("130003").Order);
             Assert.AreEqual("경비실 접이식 의자 둘이 같은 쪽을 보는지 확인해주십시오.", InspectionCatalog.Find("135026").TabletLine);
             foreach (RuleDef r in ProgramCatalog.AllRules) StringAssert.DoesNotContain("키지", r.Text, r.Id);
@@ -132,7 +132,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(3, ParadoxPlanner.CollapseMinBand);
             Assert.AreEqual(90, ParadoxPlanner.SendPercentAnomaly);
             Assert.AreEqual(50, ParadoxPlanner.SendPercentClear);
-            foreach (string id in new[] { "T1", "K2", "K3" }) Assert.IsTrue(ParadoxCatalog.Find(id).HasVariant, id + " 변조 후보(103차 초안)");
+            foreach (string id in new[] { "110016", "110030", "110031" }) Assert.IsTrue(ParadoxCatalog.Find(id).HasVariant, id + " 변조 후보(103차 초안)");
         }
 
         [Test]

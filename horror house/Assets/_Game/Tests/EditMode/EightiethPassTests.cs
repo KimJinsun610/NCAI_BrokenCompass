@@ -12,21 +12,21 @@ namespace NightDuty.Tests
         [Test]
         public void 빈칸_해독_문구()
         {
-            Assert.AreEqual("교실의 소녀는 무시하십시오.", BlankDecoding.Decode("C2", ProgramCatalog.Rule("C2").Text));
-            Assert.AreEqual("복도 끝에 선임이 서 있으면 빛을 끄고 기다리십시오.", BlankDecoding.Decode("S5", ProgramCatalog.Rule("S5").Text));
-            Assert.AreEqual("도서관 담당자를 계속 비추십시오.", BlankDecoding.Decode("L3", ProgramCatalog.Rule("L3").Text));
-            Assert.AreEqual("화면 속 사망자가 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.",BlankDecoding.Decode("K1", ProgramCatalog.Rule("K1").Text));
+            Assert.AreEqual("교실의 소녀는 무시하십시오.", BlankDecoding.Decode("110006", ProgramCatalog.Rule("110006").Text));
+            Assert.AreEqual("복도 끝에 선임이 서 있으면 빛을 끄고 기다리십시오.", BlankDecoding.Decode("110015", ProgramCatalog.Rule("110015").Text));
+            Assert.AreEqual("도서관 담당자를 계속 비추십시오.", BlankDecoding.Decode("110024", ProgramCatalog.Rule("110024").Text));
+            Assert.AreEqual("화면 속 사망자가 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.",BlankDecoding.Decode("110029", ProgramCatalog.Rule("110029").Text));
 
             // 변조본에도 같이 적용된다.
-            Assert.AreEqual("교실 의 소녀는 무시 대상 입니 다.", BlankDecoding.Decode("C2", ParadoxCatalog.Find("C2").Variant));
-            Assert.AreEqual("도서관 담당자를 계속 비추 십니까? 예.", BlankDecoding.Decode("L3", ParadoxCatalog.Find("L3").Variant));
-            StringAssert.Contains("선임이", BlankDecoding.Decode("S5", ParadoxCatalog.Find("S5").Variant));
+            Assert.AreEqual("교실 의 소녀는 무시 대상 입니 다.", BlankDecoding.Decode("110006", ParadoxCatalog.Find("110006").Variant));
+            Assert.AreEqual("도서관 담당자를 계속 비추 십니까? 예.", BlankDecoding.Decode("110024", ParadoxCatalog.Find("110024").Variant));
+            StringAssert.Contains("선임이", BlankDecoding.Decode("110015", ParadoxCatalog.Find("110015").Variant));
 
-            Assert.IsFalse(BlankDecoding.HasBlank("G1"));
-            Assert.AreEqual("그대로", BlankDecoding.Decode("G1", "그대로"));
-            CollectionAssert.AreEqual(new[] { "C2", "S5", "L3", "K1" }, new System.Collections.Generic.List<string>(BlankDecoding.RuleIds));
-            Assert.IsFalse(NightRun.IsBlankDecoded("C2"), "해독 전에는 원문");
-            Assert.AreEqual(ProgramCatalog.Rule("C2").Text, NightRun.ShownRuleText("C2", ProgramCatalog.Rule("C2").Text));
+            Assert.IsFalse(BlankDecoding.HasBlank("110034"));
+            Assert.AreEqual("그대로", BlankDecoding.Decode("110034", "그대로"));
+            CollectionAssert.AreEqual(new[] { "110006", "110015", "110024", "110029" }, new System.Collections.Generic.List<string>(BlankDecoding.RuleIds));
+            Assert.IsFalse(NightRun.IsBlankDecoded("110006"), "해독 전에는 원문");
+            Assert.AreEqual(ProgramCatalog.Rule("110006").Text, NightRun.ShownRuleText("110006", ProgramCatalog.Rule("110006").Text));
         }
 
         [Test]
@@ -64,12 +64,12 @@ namespace NightDuty.Tests
         [Test]
         public void L7_도서관에서_1초_넘게_뒷걸음질하면_위반()
         {
-            Assert.AreEqual("도서관에서는 뒷걸음질하지 마십시오.", ProgramCatalog.Rule("L7").Text);
-            Assert.AreEqual(SpaceId.Library, ProgramCatalog.Rule("L7").Space);
-            Assert.IsFalse(ParadoxCatalog.Find("L7") != null && ParadoxCatalog.Find("L7").HasMessage, "역설은 채택하지 않음");
+            Assert.AreEqual("도서관에서는 뒷걸음질하지 마십시오.", ProgramCatalog.Rule("110028").Text);
+            Assert.AreEqual(SpaceId.Library, ProgramCatalog.Rule("110028").Space);
+            Assert.IsFalse(ParadoxCatalog.Find("110028") != null && ParadoxCatalog.Find("110028").HasMessage, "역설은 채택하지 않음");
 
             // 바라보는 쪽 = +z(방향각 0). 뒤 = −z.
-            FinalFixture f = new FinalFixture("L7");
+            FinalFixture f = new FinalFixture("110028");
             float z = 0f;
             float x = 0f;
             f.Enter(SpaceId.Library).Samples(() => JudgeSignal.Pose(new Vector3(0f, 0f, z -= 0.15f), 0f), 0.8f);
@@ -80,7 +80,7 @@ namespace NightDuty.Tests
             f.Samples(() => JudgeSignal.Pose(new Vector3(x, 0f, z -= 0.15f), 0f), 1.3f);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Layout));
 
-            FinalFixture g = new FinalFixture("L7");
+            FinalFixture g = new FinalFixture("110028");
             g.Enter(SpaceId.Corridor).Samples(() => JudgeSignal.Pose(new Vector3(0f, 0f, z -= 0.15f), 0f), 3f);
             Assert.AreEqual(0, g.Value(FearAxis.Layout), "도서관 밖");
 

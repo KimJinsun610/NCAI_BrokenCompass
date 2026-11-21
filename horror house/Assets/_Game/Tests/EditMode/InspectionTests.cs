@@ -645,14 +645,14 @@ namespace NightDuty.Tests
 
             NightRun.RestartAfterCapture();
 
-            CollectionAssert.AreEqual(new[] { "G1" }, NightRun.LastCaptureSources, "붙잡힌 축(청각)을 올린 것만 — 배치를 올린 H-2는 빠진다");
+            CollectionAssert.AreEqual(new[] { "110034" }, NightRun.LastCaptureSources, "붙잡힌 축(청각)을 올린 것만 — 배치를 올린 H-2는 빠진다");
             Assert.AreEqual(0, NightRun.RaisedSources(FearAxis.Auditory).Count, "새 시도는 비어서 시작한다");
         }
 
-        [TestCase("T4:T-1[정상]", "T4")]
+        [TestCase("110019:135018[정상]", "110019")]
         [TestCase("135002[이상]", "135002")]
         [TestCase("135001(가까이)", "135001")]
-        [TestCase("C3", "C3")]
+        [TestCase("110007", "110007")]
         public void 출처_이름을_줄인다(string source, string expected)
         {
             Assert.AreEqual(expected, NightRun.DisplaySource(source));

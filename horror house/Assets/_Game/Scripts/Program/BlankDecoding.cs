@@ -20,19 +20,28 @@ namespace NightDuty
             public Entry(string ruleId, string word, params string[] pairs)
             {
                 RuleId = ruleId;
-                Word = word;
+                Word = WordOf(ruleId, word);
                 Swaps = new KeyValuePair<string, string>[pairs.Length / 2];
                 for (int i = 0; i < Swaps.Length; i++) Swaps[i] = new KeyValuePair<string, string>(pairs[i * 2], pairs[i * 2 + 1]);
             }
         }
 
+        /// <summary>DT 3단계: 해독 낱말은 Rule_Table Blank_Answer(정본 xlsx). 조사 바꿈(가림표 + 조사 → 낱말 + 조사)은 코드 — 낱말을 바꾸면 조사도 함께 확인.</summary>
+        private static string WordOf(string ruleId, string fallbackForCheck)
+        {
+            global::NightDuty.DesignData.Ensure();
+            InstructionDT.RuleRow r = InstructionDT.DT.Rule.Get(uint.Parse(ruleId));
+            if (r == null || string.IsNullOrEmpty(r.Blank_Answer)) throw new InvalidOperationException("DT Rule " + ruleId + " 빈칸 해독 낱말 없음");
+            return r.Blank_Answer;
+        }
+
         // 순서 = 같은 공간 후보가 없을 때 고르는 순서(덱 순서가 먼저다 — NightRun.DecodeBlank).
         private static readonly Entry[] Entries =
         {
-            new Entry("C2", "소녀", "_? 는", "소녀는", "_?", "소녀"),
-            new Entry("S5", "선임", "_?이", "선임이", "_?", "선임"),
-            new Entry("L3", "담당자", "?_? 을", "담당자를", "?_?", "담당자"),
-            new Entry("K1", "사망자", "!_ 이", "사망자가", "!_", "사망자"),
+            new Entry("110006", "소녀", "_? 는", "소녀는", "_?", "소녀"),
+            new Entry("110015", "선임", "_?이", "선임이", "_?", "선임"),
+            new Entry("110024", "담당자", "?_? 을", "담당자를", "?_?", "담당자"),
+            new Entry("110029", "사망자", "!_ 이", "사망자가", "!_", "사망자"),
         };
 
         /// <summary>빈칸이 있는 수칙 ID(정해진 순서).</summary>

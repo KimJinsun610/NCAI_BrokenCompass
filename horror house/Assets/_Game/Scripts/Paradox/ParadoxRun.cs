@@ -140,7 +140,7 @@ namespace NightDuty
             get
             {
                 if (_entry == null) return string.Empty;
-                if (_entry.RuleId == "K2") return string.Format(_entry.Message, (_plan.EmptyRoomChannel + 1).ToString("00"));
+                if (_entry.RuleId == "110030") return string.Format(_entry.Message, (_plan.EmptyRoomChannel + 1).ToString("00"));
                 return _entry.Message;
             }
         }
@@ -160,7 +160,7 @@ namespace NightDuty
                 return ParadoxStep.Sent;
             }
 
-            if (_entry.RuleId == "K2") return ObserveEmptyRoom(s);
+            if (_entry.RuleId == "110030") return ObserveEmptyRoom(s);
 
             switch (Pattern)
             {
@@ -257,7 +257,7 @@ namespace NightDuty
         /// <summary>그 수칙의 역설이 드러내는 공간(「CCTV로」는 채널 공간, K2는 그날 빈 방 채널의 공간).</summary>
         public static SpaceId SpaceOf(string ruleId, int emptyRoomChannel = -1)
         {
-            if (ruleId == "K2") return SpaceOfChannel(emptyRoomChannel);
+            if (ruleId == "110030") return SpaceOfChannel(emptyRoomChannel);
             ParadoxEntry e = ParadoxCatalog.Find(ruleId);
             if (e != null && e.Pattern == SafeReadPattern.Cctv) return SpaceIds.Canonical(e.CctvSpace);
             RuleDef def = ProgramCatalog.Rule(ruleId);

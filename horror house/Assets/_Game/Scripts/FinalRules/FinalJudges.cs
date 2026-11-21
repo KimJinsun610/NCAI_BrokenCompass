@@ -89,43 +89,43 @@ namespace NightDuty
             if (def == null) return null;
             switch (def.Id)
             {
-                case "H1": return new ProximityAvoidJudge(FinalCues.H1Object, 1.2f);
-                case "H2": return new DoorKeepOpenJudge();
-                case "H3": return new TakeShelterJudge(FinalCues.Footsteps, 6f, 2f);
-                case "H4": return new DontAnswerJudge(FinalCues.Voice);
-                case "H5": return new FollowTurnJudge();
-                case "C1": return new NoEntryDuringCueJudge(FinalCues.Chalk, SpaceId.Classroom, 1f);
-                case "C2": return new DontStareJudge(FinalCues.BoySeated, FinalCues.BoyTarget, 3f);   // 52차: 앉은 소년을 3초 바라보면 위반 → 머리 박기
-                case "C3": return new StayStillJudge(FinalCues.BellStart, FinalCues.Bell);   // 103차: 소년 단서 → 종(끝)이 아니라 수업 종이 울리는 동안
-                case "C4": return new LightOffJudge(FinalCues.RedLight, LightOffJudge.GraceSeconds);   // 52차: 붉은 불빛 아래에서는 손전등을 끈다
-                case "C5": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
-                case "C6": return new DwellSpaceJudge(SpaceId.Classroom, ProgramCatalog.ClassroomDwellRealSecondsFor(day));   // 103차: 교실에 게임 24분(3일차부터 실제 1분) 이어 머물면 위반 · 2026-11-06: 1·2일차 배속에 맞춤
-                case "S1": return new NoPassageJudge(FinalCues.S1Center);
-                case "S2": return new LeaveAfterCueJudge(FinalCues.Glass, ScienceLeaveSeconds);   // 79차 민: 「5초로 하자」   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
-                case "S3": return new BeamAvoidJudge(FinalCues.ModelTarget, BeamAvoidJudge.LimitSeconds, ProgramCatalog.ModelRush);   // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」(미션처럼 읽히던 50차 문구 폐기)
-                case "S4": return new BlackoutLightOffJudge(BlackoutLightOffJudge.GraceSeconds);   // 79차: T3 합침 — 정전 중 손전등 금지
-                case "S5": return new WaitInDarkJudge(FinalCues.HallEnd, 3f, SpaceId.Corridor);   // 70차: 복도 끝에서 달려오는 급습은 복도에서 마주친다
-                case "T1": return new ExitWithinJudge(FinalCues.Flush, 8f, false);
-                case "T2": return new ZoneForbiddenJudge(FinalCues.StallOccupied, null);
-                case "T3": return new WaitInDarkJudge(FinalCues.ToiletBlackout, 3f);
-                case "T4": return new ReverseReportJudge();
-                case "T5": return new LightKeepJudge(FinalCues.StallLit, null, 3f, true);
-                case "T7": return new DontStareJudge(null, FinalCues.MirrorTarget, 3f);   // 79차
-                case "L1": return new DwellNearJudge(FinalCues.L1Shelf, 1.5f, 3f);
-                case "L2": return new LeaveAfterCueJudge(FinalCues.Pages, LeaveAfterCueJudge.GraceSeconds);
-                case "L3": return new KeepBeamJudge(FinalCues.YellowFace, FinalCues.FaceTarget, L3PatienceSeconds, L3PatienceSeconds, null);   // 84차: 빛을 떼도 예약하지 않는다 · 104차: 벌은 노란 얼굴(LibraryDuck)이 직접 — 3초 못 비추고 잡히면 사망. 판정은 끝까지 한 번이라도 비췄는지만
-                case "L4": return new ProximityAvoidJudge(FinalCues.L4Box, 1.5f);
-                case "L5": return new DontGreetJudge(FinalCues.WindowKnock, FinalCues.ManTarget, 2f);
-                case "L6": return new BeamUpwardJudge();   // 79차
-                case "L7": return new NoBackwardWalkJudge();   // 80차
-                case "K1": return new KeepWatchingJudge(FinalCues.CctvPerson);   // 2026-11-09 김진선님: 채널 넘김 → 사람이 지나가기 전 CCTV를 그만보면 위반
-                case "K2": return new DontWatchJudge(FinalCues.EmptyRoom, 3f);
-                case "K3": return new DwellSpaceJudge(SpaceId.SecurityRoom, 45f);
-                case "K5": return new AnswerAfterRingsJudge();   // 79차
-                case "G1": return new NoRunningJudge(1f);
-                case "G4": return new NoWalkingWithTabletJudge();   // 79차
-                case "G3": return new RecordOnlyJudge();
-                case "K4": return new RecordOnlyJudge();
+                case "110001": return new ProximityAvoidJudge(FinalCues.H1Object, 1.2f);
+                case "110002": return new DoorKeepOpenJudge();
+                case "110003": return new TakeShelterJudge(FinalCues.Footsteps, 6f, 2f);
+                case "110004": return new DontAnswerJudge(FinalCues.Voice);
+                case "110037": return new FollowTurnJudge();   // H5
+                case "110005": return new NoEntryDuringCueJudge(FinalCues.Chalk, SpaceId.Classroom, 1f);
+                case "110006": return new DontStareJudge(FinalCues.BoySeated, FinalCues.BoyTarget, 3f);   // 52차: 앉은 소년을 3초 바라보면 위반 → 머리 박기
+                case "110007": return new StayStillJudge(FinalCues.BellStart, FinalCues.Bell);   // 103차: 소년 단서 → 종(끝)이 아니라 수업 종이 울리는 동안
+                case "110008": return new LightOffJudge(FinalCues.RedLight, LightOffJudge.GraceSeconds);   // 52차: 붉은 불빛 아래에서는 손전등을 끈다
+                case "110009": return new ZoneForbiddenJudge(FinalCues.PhantomDoor, FinalCues.PhantomDoorZone);
+                case "110010": return new DwellSpaceJudge(SpaceId.Classroom, ProgramCatalog.ClassroomDwellRealSecondsFor(day));   // 103차: 교실에 게임 24분(3일차부터 실제 1분) 이어 머물면 위반 · 2026-11-06: 1·2일차 배속에 맞춤
+                case "110011": return new NoPassageJudge(FinalCues.S1Center);
+                case "110012": return new LeaveAfterCueJudge(FinalCues.Glass, ScienceLeaveSeconds);   // 79차 민: 「5초로 하자」   // 51차: 10초 유예, 그 뒤 안에 있거나 다시 들어오면 위반
+                case "110013": return new BeamAvoidJudge(FinalCues.ModelTarget, BeamAvoidJudge.LimitSeconds, ProgramCatalog.ModelRush);   // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」(미션처럼 읽히던 50차 문구 폐기)
+                case "110014": return new BlackoutLightOffJudge(BlackoutLightOffJudge.GraceSeconds);   // 79차: T3 합침 — 정전 중 손전등 금지
+                case "110015": return new WaitInDarkJudge(FinalCues.HallEnd, 3f, SpaceId.Corridor);   // 70차: 복도 끝에서 달려오는 급습은 복도에서 마주친다
+                case "110016": return new ExitWithinJudge(FinalCues.Flush, 8f, false);
+                case "110017": return new ZoneForbiddenJudge(FinalCues.StallOccupied, null);
+                case "110018": return new WaitInDarkJudge(FinalCues.ToiletBlackout, 3f);
+                case "110019": return new ReverseReportJudge();
+                case "110020": return new LightKeepJudge(FinalCues.StallLit, null, 3f, true);
+                case "110021": return new DontStareJudge(null, FinalCues.MirrorTarget, 3f);   // 79차
+                case "110022": return new DwellNearJudge(FinalCues.L1Shelf, 1.5f, 3f);
+                case "110023": return new LeaveAfterCueJudge(FinalCues.Pages, LeaveAfterCueJudge.GraceSeconds);
+                case "110024": return new KeepBeamJudge(FinalCues.YellowFace, FinalCues.FaceTarget, L3PatienceSeconds, L3PatienceSeconds, null);   // 84차: 빛을 떼도 예약하지 않는다 · 104차: 벌은 노란 얼굴(LibraryDuck)이 직접 — 3초 못 비추고 잡히면 사망. 판정은 끝까지 한 번이라도 비췄는지만
+                case "110025": return new ProximityAvoidJudge(FinalCues.L4Box, 1.5f);
+                case "110026": return new DontGreetJudge(FinalCues.WindowKnock, FinalCues.ManTarget, 2f);
+                case "110027": return new BeamUpwardJudge();   // 79차
+                case "110028": return new NoBackwardWalkJudge();   // 80차
+                case "110029": return new KeepWatchingJudge(FinalCues.CctvPerson);   // 2026-11-09 김진선님: 채널 넘김 → 사람이 지나가기 전 CCTV를 그만보면 위반
+                case "110030": return new DontWatchJudge(FinalCues.EmptyRoom, 3f);
+                case "110031": return new DwellSpaceJudge(SpaceId.SecurityRoom, 45f);
+                case "110033": return new AnswerAfterRingsJudge();   // 79차
+                case "110034": return new NoRunningJudge(1f);
+                case "110035": return new NoWalkingWithTabletJudge();   // 79차
+                case "110036": return new RecordOnlyJudge();
+                case "110032": return new RecordOnlyJudge();
             }
 
             return null;

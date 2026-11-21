@@ -10,7 +10,7 @@
     public static class FakeRuleCatalog
     {
         /// <summary>표시 카드 ID 접두어(판정 수칙 ID와 겹치지 않게).</summary>
-        public const string IdPrefix = "F";
+        public const string IdPrefix = "115";   // DT 장식 문구 ID 대(115001~). 판정 수칙(110xxx)과 겹치지 않는다
 
         /// <summary>처음 나오는 날(103차: 2 → 1).</summary>
         public const int FirstDay = 1;
@@ -22,14 +22,19 @@
         public const int PerDay = 2;
 
         /// <summary>채택한 문구(민 2026-10-10: 후보 1·9, 80차 추가 3·7·4).</summary>
-        public static readonly string[] Lines =
+        public static readonly string[] Lines = LinesFromDesignData();
+
+        /// <summary>DT 3단계: Rule_Table 장식 문구(115001~, 표 순서). 정본은 xlsx.</summary>
+        private static string[] LinesFromDesignData()
         {
-            "근무는 개인입니다. 변수는 없습니다.",
-            "퇴근 후 이 수칙서를 기억할 필요는 없습니다.",
-            "어제의 근무자와 오늘의 근무자는 같은 사람입니다.",   // 80차 민 추가 채택(후보 3)
-            "오늘 밤은 평소와 같습니다.",   // 80차 민 추가 채택(후보 7)
-            "당신의 이름은 출근부에 이미 적혀 있습니다."   // 80차 민 추가 채택(후보 4)
-        };
+            var rows = ProgramCatalog.DecorRows();
+            var lines = new string[rows.Count];
+            _ids = new string[rows.Count];
+            for (int i = 0; i < rows.Count; i++) { lines[i] = rows[i].Text; _ids[i] = rows[i].ID.ToString(); }
+            return lines;
+        }
+
+        private static string[] _ids;
 
         /// <summary>80차: 이번 회차의 시작 줄(0 ≤ 값 &lt; 줄 수). 새 회차마다 <c>NightRun.StartNewRun</c>이 고른다.</summary>
         public static int RunOffset { get; set; }
@@ -63,7 +68,7 @@
         public static string IdForDay(int day, int k = 0)
         {
             int i = IndexFor(day, k);
-            return i >= 0 ? IdPrefix + (i + 1) : null;   // 80차: 줄마다 고정 ID(F1~F5)
+            return i >= 0 ? _ids[i] : null;   // 80차: 줄마다 고정 ID — DT 3단계: 표 ID(115001~, 옛 F1~F5)
         }
 
         /// <summary>

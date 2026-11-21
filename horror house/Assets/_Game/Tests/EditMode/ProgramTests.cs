@@ -33,27 +33,27 @@ namespace NightDuty.Tests
         [Test]
         public void 위협_손전등_대기형_목록이_기획서와_같다()
         {
-            CollectionAssert.AreEquivalent(new[] { "H3", "H4", "C3", "S5", "T3", "L3", "L5" }, Ids(r => r.IsThreat));
-            CollectionAssert.AreEquivalent(new[] { "C4", "S3", "S4", "S5", "T3", "T5", "L3", "L6" }, Ids(r => r.UsesFlashlight));
-            CollectionAssert.AreEquivalent(new[] { "C1", "C3", "T3", "H3", "S5", "L2" }, Ids(r => r.IsWaitType));
+            CollectionAssert.AreEquivalent(new[] { "110003", "110004", "110007", "110015", "110018", "110024", "110026" }, Ids(r => r.IsThreat));
+            CollectionAssert.AreEquivalent(new[] { "110008", "110013", "110014", "110015", "110018", "110020", "110024", "110027" }, Ids(r => r.UsesFlashlight));
+            CollectionAssert.AreEquivalent(new[] { "110005", "110007", "110018", "110003", "110015", "110023" }, Ids(r => r.IsWaitType));
         }
 
         [Test]
         public void 축_분류_규칙()
         {
             // 방아쇠나 금지 행동이 소리면 청각, 손전등·조명이면 조도(기획서 「축 분류 규칙」).
-            foreach (string id in new[] { "C1", "S2", "T1", "L2", "L5", "H3", "H4", "G1", "C3", "K3" })
+            foreach (string id in new[] { "110005", "110012", "110016", "110023", "110026", "110003", "110004", "110034", "110007", "110031" })
             {
                 Assert.AreEqual(FearAxis.Auditory, ProgramCatalog.Rule(id).Axis, id);
             }
 
-            foreach (string id in new[] { "C4", "S3", "S4", "S5", "T3", "T5", "L3" })
+            foreach (string id in new[] { "110008", "110013", "110014", "110015", "110018", "110020", "110024" })
             {
                 Assert.AreEqual(FearAxis.Illuminance, ProgramCatalog.Rule(id).Axis, id);
             }
 
-            Assert.IsFalse(ProgramCatalog.Rule("K4").HasAxis);
-            Assert.IsFalse(ProgramCatalog.Rule("G3").HasAxis);
+            Assert.IsFalse(ProgramCatalog.Rule("110032").HasAxis);
+            Assert.IsFalse(ProgramCatalog.Rule("110036").HasAxis);
         }
 
         [Test]
@@ -75,7 +75,7 @@ namespace NightDuty.Tests
 
                 RuleDef r = ProgramCatalog.Rule(e.ResponseRule);
                 Assert.IsNotNull(r, e.Id);
-                if (e.Id == ProgramCatalog.ToiletBlackout) Assert.AreEqual("S4", r.Id, "79차: 화장실 소등도 S4(정전 중 손전등 금지)");
+                if (e.Id == ProgramCatalog.ToiletBlackout) Assert.AreEqual("110014", r.Id, "79차: 화장실 소등도 S4(정전 중 손전등 금지)");
                 else Assert.AreEqual(e.Space, r.Space, e.Id);
                 if (e.SecondRule.Length > 0) Assert.AreEqual(e.Space, ProgramCatalog.Rule(e.SecondRule).Space, e.Id);
             }
@@ -143,16 +143,16 @@ namespace NightDuty.Tests
 
                 Assert.AreEqual(4, ProgramDirector.RulesFor(1));
                 Assert.AreEqual(ProgramDirector.RulesFor(1), p.Deck.Count, why);
-                Assert.IsTrue(p.Has("S1"), "1일차는 모형 위치를 익히는 날 — " + why);
-                Assert.IsFalse(p.Has("S3"), why);
-                Assert.AreEqual("G1", p.Deck[p.Deck.Count - 1].Id, why);
-                Assert.IsFalse(p.Has("H1") || p.Has("C2") || p.Has("C3"), "조우 묶인 수칙 없음 — " + why);
+                Assert.IsTrue(p.Has("110011"), "1일차는 모형 위치를 익히는 날 — " + why);
+                Assert.IsFalse(p.Has("110013"), why);
+                Assert.AreEqual("110034", p.Deck[p.Deck.Count - 1].Id, why);
+                Assert.IsFalse(p.Has("110001") || p.Has("110006") || p.Has("110007"), "조우 묶인 수칙 없음 — " + why);
                 Assert.AreEqual(0, p.Slots.Count, "1일차는 몹 없음(2일차부터)");
 
                 int flash = 0;
                 foreach (RuleDef r in p.Deck)
                 {
-                    Assert.IsTrue(r.Id == "S1" || r.Id == "G1" || System.Array.IndexOf(ProgramDirector.Day1Pool, r.Id) >= 0, r.Id + " — " + why);
+                    Assert.IsTrue(r.Id == "110011" || r.Id == "110034" || System.Array.IndexOf(ProgramDirector.Day1Pool, r.Id) >= 0, r.Id + " — " + why);
                     Assert.IsTrue(r.IsStandalone, r.Id + "는 혼자 서는 수칙 — " + why);
                     if (r.UsesFlashlight) flash++;
                 }
@@ -165,7 +165,7 @@ namespace NightDuty.Tests
 
             // 104차(사용자: 「K3 수칙을 고정으로 모든 밤에」): 1일차 네 장 중 S1·G1·K3가 고정이고 감각 세 축 보장으로 조도 C4가 들어가 1일차 덱은 하나로 정해진다(옛: K2/K3만 갈렸다).
             Assert.AreEqual(1, decks.Count, "1일차 덱은 S1·C4·K3·G1 — " + string.Join(" / ", decks));
-            Assert.IsTrue(decks.Count == 1 && new List<string>(decks)[0].Contains("K3"));
+            Assert.IsTrue(decks.Count == 1 && new List<string>(decks)[0].Contains("110031"));
         }
 
         [Test]
@@ -196,11 +196,11 @@ namespace NightDuty.Tests
                     // 104차: 경비실 버티기 수칙 K3는 매일 — 경비실이 조우·피날레 수칙(K1·K4)으로 차 있으면 한 장 더.
                     Assert.IsTrue(p.Has(ProgramDirector.CampRule), "K3 매일 — " + why);
                     Assert.LessOrEqual(CountIn(p, SpaceId.SecurityRoom), 2, why);
-                    Assert.IsFalse(day != 5 && p.Has("K4"), "K4는 5일차만 — " + why);
-                    Assert.AreEqual(p.HasEncounter(ProgramCatalog.CctvPerson), p.Has("K1"), why);
-                    Assert.IsTrue(p.Has("G1"), why);
-                    Assert.AreEqual(p.Has("G4") ? "G4" : "G1", p.Deck[p.Deck.Count - 1].Id, why);   // 79차: G4는 짝수 날 맨 끝(자리가 있을 때)
-                    Assert.IsTrue(!p.Has("G4") || ProgramDirector.HasTabletRule(day), "G4는 짝수 날만 — " + why);
+                    Assert.IsFalse(day != 5 && p.Has("110032"), "K4는 5일차만 — " + why);
+                    Assert.AreEqual(p.HasEncounter(ProgramCatalog.CctvPerson), p.Has("110029"), why);
+                    Assert.IsTrue(p.Has("110034"), why);
+                    Assert.AreEqual(p.Has("110035") ? "110035" : "110034", p.Deck[p.Deck.Count - 1].Id, why);   // 79차: G4는 짝수 날 맨 끝(자리가 있을 때)
+                    Assert.IsTrue(!p.Has("110035") || ProgramDirector.HasTabletRule(day), "G4는 짝수 날만 — " + why);
                     foreach (string retired in ProgramCatalog.Retired) Assert.IsFalse(p.Has(retired), retired + " 폐기 — " + why);
                     if (day == 2) Assert.IsTrue(p.Has(ProgramCatalog.FirstParadoxRule), "2일차 첫 역설 C2 — " + why);
 
@@ -301,7 +301,7 @@ namespace NightDuty.Tests
             Assert.IsTrue(day3.HasEncounter(ProgramCatalog.ModelRush), day3.Report);
             Assert.AreEqual(d.IsWindowFaceDay(3), day3.HasEncounter(ProgramCatalog.SuitMan), "84·103차: 창밖 노란 얼굴은 날짜 사슬(2·3일차 중 하루)로만 — 예약은 무시한다. " + day3.Report);
             Assert.AreEqual(ProgramCatalog.ModelRush, day3.At(EncounterSlot.A).Encounter.Id, day3.Report);
-            Assert.IsTrue(day3.Has("S5") && !day3.Has("L5"), day3.Report);
+            Assert.IsTrue(day3.Has("110015") && !day3.Has("110026"), day3.Report);
             Assert.IsTrue(day3.At(EncounterSlot.A).Reserved, "예약이 앞 슬롯을 먼저 차지한다");
         }
 
@@ -311,11 +311,11 @@ namespace NightDuty.Tests
             ProgramDirector d = new ProgramDirector(new System.Random(3));
             d.Build(Request(1, FixedBands.All(Band.Band0), FixedBands.All(Band.Band0), null));
             ProgramRequest req = Request(4, FixedBands.All(Band.Band1), FixedBands.All(Band.Band1), null);   // 103차: 노란 얼굴 사슬(창밖 2·3일차 중 하루 · 문간 4·5일차 중 하루)이 도서관을 쓸 수 있다 — 도서관 밖 수칙으로
-            req.ForcedRules = new[] { "T7", "C4" };   // 79차: T5 폐기
+            req.ForcedRules = new[] { "110021", "110008" };   // 79차: T5 폐기
 
             NightProgram p = d.Build(req);
 
-            Assert.IsTrue(p.Has("T7") && p.Has("C4"), p.Report);
+            Assert.IsTrue(p.Has("110021") && p.Has("110008"), p.Report);
         }
 
         [Test]
@@ -330,7 +330,7 @@ namespace NightDuty.Tests
                 if (!p.HasEncounter(ProgramCatalog.BoyBang)) continue;
 
                 seen = true;
-                Assert.IsTrue(p.Has("C2") && p.Has("C3"), p.Report);
+                Assert.IsTrue(p.Has("110006") && p.Has("110007"), p.Report);
                 Assert.AreEqual(2, CountIn(p, SpaceId.Classroom));
             }
 
@@ -387,7 +387,7 @@ namespace NightDuty.Tests
             NightRun.BeginNight(1, () => 30);
             NightProgram first = NightRun.Program;
             Assert.AreEqual(1, first.Day);
-            Assert.IsTrue(first.Has("S1") && first.Has("G1"), "1일차 고정 S1·G1(H2는 57차부터 후보에서 무작위 — 옛 단언은 우연히 통과했다)");
+            Assert.IsTrue(first.Has("110011") && first.Has("110034"), "1일차 고정 S1·G1(H2는 57차부터 후보에서 무작위 — 옛 단언은 우연히 통과했다)");
             Assert.AreEqual(0, first.Slots.Count);
 
             NightRun.DebugForceCapture(FearAxis.Layout);

@@ -72,7 +72,7 @@ public sealed class FootstepsDash : MonoBehaviour
 
     private void OnSettled(FinalRuleResult result)
     {
-        if (result.Outcome != FinalOutcome.Violated || result.RuleId != "H3") return;
+        if (result.Outcome != FinalOutcome.Violated || result.RuleId != "110003") return;
         if (!NightRun.IsNightActive || NightRun.IsCaptured) return;
         Dash();
     }

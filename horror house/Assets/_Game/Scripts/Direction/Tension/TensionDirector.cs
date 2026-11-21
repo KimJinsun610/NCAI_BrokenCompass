@@ -579,7 +579,7 @@ namespace NightDuty
         // ── 10단계: 점검과 맞물린 단서 · 회피 불가 역설 ──────────────────
 
         /// <summary>「나가라」 신호형 수칙(S2·L2·T1) — 평소에는 그 공간 점검을 끝냈거나 그날 그 공간 점검이 없을 때만 울린다(최종 기획서 「밤중 발동」).</summary>
-        public static readonly string[] ExitSignalRules = { "S2", "L2", "T1" };
+        public static readonly string[] ExitSignalRules = { "110012", "110023", "110016" };
 
         /// <summary>그 공간에 아직 보고하지 않은 점검이 있는지(NightRun이 넣는다). null이면 「나가라」 문을 걸지 않는다(옛 동작·시험).</summary>
         public Func<SpaceId, bool> InspectionPendingIn { get; set; }

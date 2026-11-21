@@ -12,12 +12,12 @@ namespace NightDuty.Tests
         [Test]
         public void S5는_복도에서_마주쳐도_판정한다()
         {
-            FinalFixture f = new FinalFixture("S5");
+            FinalFixture f = new FinalFixture("110015");
             f.Enter(SpaceId.Corridor).Light(true).Pose(40f, 46f).Cue(FinalCues.HallEnd).Wait(1f).Light(false).Wait(4f);
             f.End(FinalCues.HallEnd);
-            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("S5"));
+            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("110015"));
 
-            FinalFixture g = new FinalFixture("S5");
+            FinalFixture g = new FinalFixture("110015");
             g.Enter(SpaceId.Corridor).Light(true).Pose(40f, 46f).Cue(FinalCues.HallEnd).Wait(3.1f);
             Assert.AreEqual(Deltas.ThreatFailure, g.Value(FearAxis.Illuminance));
         }
@@ -25,7 +25,7 @@ namespace NightDuty.Tests
         [Test]
         public void S5는_과학실과_복도_밖에서는_해당하지_않는다()
         {
-            FinalFixture f = new FinalFixture("S5");
+            FinalFixture f = new FinalFixture("110015");
             f.Enter(SpaceId.Toilet).Light(true).Pose(0f, 34f).Cue(FinalCues.HallEnd).Wait(4f);
             Assert.AreEqual(0, f.Value(FearAxis.Illuminance));
         }

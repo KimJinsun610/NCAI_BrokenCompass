@@ -1725,11 +1725,11 @@ public sealed class DirectionStage : MonoBehaviour
         Vector3 doorAt = Vector3.zero;
         switch (e.SourceId)
         {
-            case "H2":
+            case "110002":
                 OpenDoorAhead(out doorAt);
                 if (doorAt == Vector3.zero) return;   // 103차 QA 3회: 열 문이 없으면 문 삐걱도 없다(옛: 플레이어 앞 3.5m 벽 너머에서 거짓 단서)
                 break;
-            case "C4":
+            case "110008":
             {
                 // 44차: 정규화 공간(Classroom)의 묶음은 1-1 교실 상자였다 — 1-3 교실에 있어도 1-1 등이 붉어졌다. 플레이어가 선 교실의 등.
                 SpaceId here = ClassroomHere();
@@ -1739,23 +1739,23 @@ public sealed class DirectionStage : MonoBehaviour
                 st.Undo.Add(g.Untint);
                 break;
             }
-            case "K5":
+            case "110033":
                 PhoneRinger.Ring(RuleTriggers.PhoneRingSeconds);   // 79차: 경비실 전화가 울린다
                 break;
-            case "C3":
+            case "110007":
                 // 103차(민: 「교실에 들어가면 수업종이 곧 울리는걸로」): 수업 종 — 교실 전체에 들리게 가깝고 크게. 소리 표에 C3.cue가 없으면 옛 소년 끝 종을 쓴다.
                 if (!PlaySound("C3.cue", PlayerFeet() + Vector3.up * 2.4f, ConfrontMinDistance, 0.3f)) PlaySound(ClassBellSound, PlayerFeet() + Vector3.up * 2.4f, ConfrontMinDistance, 0.3f);
                 return;
-            case "T1":
+            case "110016":
             {
                 // 79차: 가까운 변기가 실제로 내려간다(소용돌이) — 소리도 그 변기에서. 역설 날이면 「점검」 미끼.
-                RuleTriggerScript t1 = RuleTriggers.Find("T1");
+                RuleTriggerScript t1 = RuleTriggers.Find("110016");
                 bool played;
                 Vector3 at = ToiletFlushCue.Begin(this, PlayerFeet(), t1 != null && t1.Duration > 0f ? t1.Duration : 8f, PointOr(e.Point, 3f), out played);
                 if (!played) PlaySound(e.SourceId + ".cue", at);   // 물 내림 프리팹이 제 소리를 낸다
                 return;
             }
-            case "T5":
+            case "110020":
             {
                 Bounds stall;
                 if (Zones() != null && Zones().TryGetSignalZone("toilet.stall.inner.inside", out stall))
@@ -1787,7 +1787,7 @@ public sealed class DirectionStage : MonoBehaviour
     {
         float ear = PlayerGroundY() + 1.4f;   // 귀 높이(루트는 캡슐 가운데라 바닥 + 0.85m)
         if (doorAt != Vector3.zero) return doorAt + Vector3.up * 1.2f;
-        if (e.SourceId == "K2" && CctvSystem.Active != null && CctvSystem.Active.ScreenCenter != Vector3.zero) return CctvSystem.Active.ScreenCenter;   // 103차 QA: CCTV 잡음은 모니터에서
+        if (e.SourceId == "110030" && CctvSystem.Active != null && CctvSystem.Active.ScreenCenter != Vector3.zero) return CctvSystem.Active.ScreenCenter;   // 103차 QA: CCTV 잡음은 모니터에서
         RuleTriggerScript script = RuleTriggers.Find(e.SourceId);
         Bounds b;
         if (script != null && !string.IsNullOrEmpty(script.Target) && Zones() != null && Zones().TryGetSignalZone(script.Target, out b))
@@ -1795,7 +1795,7 @@ public sealed class DirectionStage : MonoBehaviour
             return new Vector3(b.center.x, ear, b.center.z);
         }
 
-        SpaceId space = e.SourceId == "C1" ? SpaceId.Classroom_1_3 : e.Space;
+        SpaceId space = e.SourceId == "110005" ? SpaceId.Classroom_1_3 : e.Space;
         if (space == SpaceId.Classroom)
         {
             SpaceId here = ClassroomHere();
@@ -2029,7 +2029,7 @@ public sealed class DirectionStage : MonoBehaviour
     {
         // 52차: 앉은 소년을 3초 바라보면(C2 위반) 책상에 머리를 세 번 박고 엎드린다(소리는 복도까지).
         Staged boy;
-        if (r.RuleId == "C2" && r.Outcome == FinalOutcome.Violated && _staged.TryGetValue(ProgramCatalog.BoyBang, out boy))
+        if (r.RuleId == "110006" && r.Outcome == FinalOutcome.Violated && _staged.TryGetValue(ProgramCatalog.BoyBang, out boy))
         {
             for (int i = 0; i < boy.Objects.Count; i++)
             {

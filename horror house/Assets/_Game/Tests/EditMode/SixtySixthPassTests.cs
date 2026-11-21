@@ -59,9 +59,9 @@ namespace NightDuty.Tests
         [Test]
         public void C4_수칙_불빛은_초록()
         {
-            Assert.AreEqual("초록 불빛 아래에서는 손전등을 끄십시오.", ProgramCatalog.Rule("C4").Text);
-            Assert.AreEqual("조명에 이상이 있을 시 손전등으로 확인해주십시오.", ParadoxCatalog.Find("C4").Message);   // 79차 민 문구
-            StringAssert.DoesNotContain("붉은", ParadoxCatalog.Find("C4").Message);
+            Assert.AreEqual("초록 불빛 아래에서는 손전등을 끄십시오.", ProgramCatalog.Rule("110008").Text);
+            Assert.AreEqual("조명에 이상이 있을 시 손전등으로 확인해주십시오.", ParadoxCatalog.Find("110008").Message);   // 79차 민 문구
+            StringAssert.DoesNotContain("붉은", ParadoxCatalog.Find("110008").Message);
         }
 
         [Test]

@@ -423,19 +423,19 @@ namespace NightDuty
         {
             List<RuleTriggerScript> list = new List<RuleTriggerScript>
             {
-                new RuleTriggerScript { RuleId = "H2", Cue = "cue.door.autoopen", Space = SpaceId.Corridor, DwellMin = 8f, DwellMax = 20f },
-                new RuleTriggerScript { RuleId = "C1", Cue = FinalCues.Chalk, Space = SpaceId.Corridor, Zone = "cls13.door.outside",   // 2026-10-01 1-1 미사용 → 1-3 출입구 앞에서
+                new RuleTriggerScript { RuleId = "110002", Cue = "cue.door.autoopen", Space = SpaceId.Corridor, DwellMin = 8f, DwellMax = 20f },
+                new RuleTriggerScript { RuleId = "110005", Cue = FinalCues.Chalk, Space = SpaceId.Corridor, Zone = "cls13.door.outside",   // 2026-10-01 1-1 미사용 → 1-3 출입구 앞에서
                  DwellMin = 0.5f, DwellMax = 1.5f, Duration = 5f },
-                new RuleTriggerScript { RuleId = "S2", Cue = FinalCues.Glass, Space = SpaceId.ScienceRoom, DwellMin = 5f, DwellMax = 12f },
-                new RuleTriggerScript { RuleId = "T1", Cue = FinalCues.Flush, Space = SpaceId.Toilet, DwellMin = 3f, DwellMax = 8f, Duration = 8f },
-                new RuleTriggerScript { RuleId = "T2", Cue = FinalCues.StallOccupied, Target = "toilet.stall.inner.inside", Space = SpaceId.Toilet, DwellMin = 1f, DwellMax = 4f, Duration = 20f },
-                new RuleTriggerScript { RuleId = "T5", Cue = FinalCues.StallLit, Space = SpaceId.Toilet, DwellMin = 4f, DwellMax = 9f, EndOnExit = true },
+                new RuleTriggerScript { RuleId = "110012", Cue = FinalCues.Glass, Space = SpaceId.ScienceRoom, DwellMin = 5f, DwellMax = 12f },
+                new RuleTriggerScript { RuleId = "110016", Cue = FinalCues.Flush, Space = SpaceId.Toilet, DwellMin = 3f, DwellMax = 8f, Duration = 8f },
+                new RuleTriggerScript { RuleId = "110017", Cue = FinalCues.StallOccupied, Target = "toilet.stall.inner.inside", Space = SpaceId.Toilet, DwellMin = 1f, DwellMax = 4f, Duration = 20f },
+                new RuleTriggerScript { RuleId = "110020", Cue = FinalCues.StallLit, Space = SpaceId.Toilet, DwellMin = 4f, DwellMax = 9f, EndOnExit = true },
                 // 103차(민: 「수업 중에 움직이지 마십시오 → 수업 종이 울리면 정지하십시오, 교실에 들어가면 수업종이 곧 울리게」): 1-3 교실에 1.5~3초 있으면 수업 종 — 울리는 8초 동안 제자리.
-                new RuleTriggerScript { RuleId = "C3", Cue = FinalCues.BellStart, Space = SpaceId.Classroom, DwellMin = 1.5f, DwellMax = 3f, Duration = ClassBellSeconds, IgnoreGap = true },
-                new RuleTriggerScript { RuleId = "L2", Cue = FinalCues.Pages, Space = SpaceId.Library, DwellMin = 6f, DwellMax = 14f, Duration = 3f },
+                new RuleTriggerScript { RuleId = "110007", Cue = FinalCues.BellStart, Space = SpaceId.Classroom, DwellMin = 1.5f, DwellMax = 3f, Duration = ClassBellSeconds, IgnoreGap = true },
+                new RuleTriggerScript { RuleId = "110023", Cue = FinalCues.Pages, Space = SpaceId.Library, DwellMin = 6f, DwellMax = 14f, Duration = 3f },
                 // 79차 K5: 경비실에 머물면 전화가 울린다 — 벨 8번(3초 간격) 동안. 받으면 연출(PhoneRinger)이 벨을 그친다.
-                new RuleTriggerScript { RuleId = "K5", Cue = FinalCues.PhoneRing, Space = SpaceId.SecurityRoom, DwellMin = 4f, DwellMax = 10f, Duration = PhoneRingSeconds },
-                new RuleTriggerScript { RuleId = "K2", Cue = FinalCues.EmptyRoom, Target = "cctv", Space = SpaceId.SecurityRoom, WhileViewingCctv = true, DwellMin = 2f, DwellMax = 5f, Duration = 15f }
+                new RuleTriggerScript { RuleId = "110033", Cue = FinalCues.PhoneRing, Space = SpaceId.SecurityRoom, DwellMin = 4f, DwellMax = 10f, Duration = PhoneRingSeconds },
+                new RuleTriggerScript { RuleId = "110030", Cue = FinalCues.EmptyRoom, Target = "cctv", Space = SpaceId.SecurityRoom, WhileViewingCctv = true, DwellMin = 2f, DwellMax = 5f, Duration = 15f }
             };
 
             Dictionary<string, RuleTriggerScript> map = new Dictionary<string, RuleTriggerScript>(StringComparer.Ordinal);

@@ -13,15 +13,15 @@ namespace NightDuty.Tests
         [Test]
         public void C1_판서는_어느_날에도_편성하지_않는다()
         {
-            Assert.IsTrue(ProgramCatalog.IsRetired("C1"));
-            CollectionAssert.DoesNotContain(ProgramDirector.Day1Pool, "C1");
+            Assert.IsTrue(ProgramCatalog.IsRetired("110005"));
+            CollectionAssert.DoesNotContain(ProgramDirector.Day1Pool, "110005");
             for (int seed = 0; seed < 30; seed++)
             {
                 ProgramDirector d = new ProgramDirector(new System.Random(seed));
                 for (int day = 1; day <= 5; day++)
                 {
                     NightProgram p = d.Build(new ProgramRequest { Day = day, Shown = FixedBands.All(Band.Band2), Survival = FixedBands.All(Band.Band2) });
-                    Assert.IsFalse(p.Has("C1"), "seed " + seed + " day " + day + " — " + p);
+                    Assert.IsFalse(p.Has("110005"), "seed " + seed + " day " + day + " — " + p);
                 }
             }
         }

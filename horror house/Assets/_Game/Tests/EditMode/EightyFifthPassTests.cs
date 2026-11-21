@@ -56,7 +56,7 @@ namespace NightDuty.Tests
             EncounterScript door = EncounterScripts.Find(ProgramCatalog.YellowFace);
             CollectionAssert.AreEquivalent(new[] { "130009" }, door.AfterDuty);   // 104차: biology 책만
             Assert.AreEqual(DutyCatalog.LibraryBookTarget, door.ReportTriggerItem, "104차: 책을 집는 순간");
-            Assert.AreEqual("L3", ProgramCatalog.Encounter(ProgramCatalog.YellowFace).ResponseRule);
+            Assert.AreEqual("110024", ProgramCatalog.Encounter(ProgramCatalog.YellowFace).ResponseRule);
             Assert.AreEqual(string.Empty, ProgramCatalog.Encounter(ProgramCatalog.SuitMan).ResponseRule);
         }
 
@@ -86,7 +86,7 @@ namespace NightDuty.Tests
             NightRun.Programs.SetFaceDays(ProgramDirector.WindowFaceFrom, ProgramDirector.DefaultFaceDay);   // 103차 후속: 창밖 노란 얼굴은 3일차
             NightRun.BeginNight(ProgramDirector.WindowFaceFrom, () => _clock);
             Assert.IsTrue(NightRun.Program.HasEncounter(ProgramCatalog.SuitMan), NightRun.Program.Report);
-            Assert.IsFalse(NightRun.Program.Has("L3"), "창밖 밤에는 L3 없음");
+            Assert.IsFalse(NightRun.Program.Has("110024"), "창밖 밤에는 L3 없음");
 
             InspectionAssignment l2 = NightRun.Inspections.Plan.Find("135023");
             Assert.IsNotNull(l2, "편성에 블라인드");
@@ -119,7 +119,7 @@ namespace NightDuty.Tests
             NightRun.Programs.SetFaceDays(ProgramDirector.WindowFaceFrom, 4);   // 103차: 도서관 노란 얼굴은 4·5일차 중 하루 — 시험은 4일차로 고정
             NightRun.BeginNight(4, () => _clock);
             Assert.IsTrue(NightRun.Program.HasEncounter(ProgramCatalog.YellowFace), NightRun.Program.Report);
-            Assert.IsTrue(NightRun.Program.Has("L3"), "문간 밤 L3");
+            Assert.IsTrue(NightRun.Program.Has("110024"), "문간 밤 L3");
 
             string lead = NightRun.LeadDuty;
             CollectionAssert.Contains(new[] { "130009", "130001" }, lead);

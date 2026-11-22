@@ -12,37 +12,37 @@ namespace NightDuty.Tests
         [Test]
         public void 수칙_문구와_폐기()
         {
-            Assert.AreEqual("정전 중에는 손전등을 켜지 마십시오.", ProgramCatalog.Rule("S4").Text);   // 103차 맞춤법
-            Assert.AreEqual("화장실에서 물이 다 내려가기 전에 나오십시오.", ProgramCatalog.Rule("T1").Text);
-            Assert.AreEqual("화장실 거울을 3초 이상 보지 마십시오.", ProgramCatalog.Rule("T7").Text);
-            Assert.AreEqual("도서관에서는 손전등을 천장으로 향하지 마십시오.", ProgramCatalog.Rule("L6").Text);
-            Assert.AreEqual("태블릿을 보면서 걷지 마십시오.", ProgramCatalog.Rule("G4").Text);
-            Assert.AreEqual("경비실 전화는 세 번 울린 뒤에 받으십시오.", ProgramCatalog.Rule("K5").Text);
-            foreach (string id in new[] { "T3", "T5", "L5" }) Assert.IsTrue(ProgramCatalog.IsRetired(id), id);
-            Assert.AreEqual("S4", ProgramCatalog.Encounter(ProgramCatalog.ToiletBlackout).ResponseRule, "화장실 소등도 S4");
+            Assert.AreEqual("정전 중에는 손전등을 켜지 마십시오.", ProgramCatalog.Rule("110014").Text);   // 103차 맞춤법
+            Assert.AreEqual("화장실에서 물이 다 내려가기 전에 나오십시오.", ProgramCatalog.Rule("110016").Text);
+            Assert.AreEqual("화장실 거울을 3초 이상 보지 마십시오.", ProgramCatalog.Rule("110021").Text);
+            Assert.AreEqual("도서관에서는 손전등을 천장으로 향하지 마십시오.", ProgramCatalog.Rule("110027").Text);
+            Assert.AreEqual("태블릿을 보면서 걷지 마십시오.", ProgramCatalog.Rule("110035").Text);
+            Assert.AreEqual("경비실 전화는 세 번 울린 뒤에 받으십시오.", ProgramCatalog.Rule("110033").Text);
+            foreach (string id in new[] { "110018", "110020", "110026" }) Assert.IsTrue(ProgramCatalog.IsRetired(id), id);
+            Assert.AreEqual("110014", ProgramCatalog.Encounter(ProgramCatalog.ToiletBlackout).ResponseRule, "화장실 소등도 S4");
             Assert.IsFalse(ProgramCatalog.IsEncounterRetired(ProgramCatalog.SuitMan), "84차: 창밖 노란 얼굴(대응 수칙 L3)로 되살림 — 노란 얼굴 전날 날짜 사슬");
             Assert.IsFalse(ProgramCatalog.IsEncounterRetired(ProgramCatalog.CeilingLegs), "수칙 없는 조우는 해당 없음");
-            CollectionAssert.Contains(ProgramDirector.SecurityPool, "K5");
+            CollectionAssert.Contains(ProgramDirector.SecurityPool, "110033");
         }
 
         [Test]
         public void 역설_문구와_폐기()
         {
-            Assert.AreEqual("인원이 확인되면, 대기하십시오.", ParadoxCatalog.Find("H3").Message);
-            Assert.AreEqual("교실 소음의 원인을 응시해주십시오.", ParadoxCatalog.Find("C2").Message);
-            Assert.AreEqual("조명에 이상이 있을 시 손전등으로 확인해주십시오.", ParadoxCatalog.Find("C4").Message);
-            Assert.AreEqual("변기 수압을 점검해주십시오.", ParadoxCatalog.Find("T1").Message);
-            Assert.AreEqual("도서관 무너진 가구들을 점검해주십시오.", ParadoxCatalog.Find("L1").Message);
-            Assert.IsFalse(ParadoxCatalog.Find("T3").HasMessage);
-            Assert.IsFalse(ParadoxCatalog.Find("T5").HasMessage);
-            Assert.AreEqual(FinalCues.MirrorTarget, ParadoxCatalog.Find("T7").Target, "T7 눈으로만 = 거울을 1초(3초면 위반)");
+            Assert.AreEqual("인원이 확인되면, 대기하십시오.", ParadoxCatalog.Find("110003").Message);
+            Assert.AreEqual("교실 소음의 원인을 응시해주십시오.", ParadoxCatalog.Find("110006").Message);
+            Assert.AreEqual("조명에 이상이 있을 시 손전등으로 확인해주십시오.", ParadoxCatalog.Find("110008").Message);
+            Assert.AreEqual("변기 수압을 점검해주십시오.", ParadoxCatalog.Find("110016").Message);
+            Assert.AreEqual("도서관 무너진 가구들을 점검해주십시오.", ParadoxCatalog.Find("110022").Message);
+            Assert.IsFalse(ParadoxCatalog.Find("110018").HasMessage);
+            Assert.IsFalse(ParadoxCatalog.Find("110020").HasMessage);
+            Assert.AreEqual(FinalCues.MirrorTarget, ParadoxCatalog.Find("110021").Target, "T7 눈으로만 = 거울을 1초(3초면 위반)");
             Assert.AreEqual(5f, FinalJudges.ScienceLeaveSeconds, "민: S2 5초");
         }
 
         [Test]
         public void T7_거울을_3초_보면_위반()
         {
-            FinalFixture f = new FinalFixture("T7");
+            FinalFixture f = new FinalFixture("110021");
             f.Enter(SpaceId.Toilet).Samples(() => JudgeSignal.Gaze(FinalCues.MirrorTarget, 0.1f), 2.5f).Samples(() => JudgeSignal.Gaze(string.Empty, 0.1f), 1f);
             Assert.AreEqual(0, f.Value(FearAxis.Layout), "2.5초에 눈을 떼면 괜찮다");
             f.Samples(() => JudgeSignal.Gaze(FinalCues.MirrorTarget, 0.1f), 3.1f);
@@ -52,7 +52,7 @@ namespace NightDuty.Tests
         [Test]
         public void L6_도서관에서_손전등을_켜고_2초_올려다보면_위반()
         {
-            FinalFixture f = new FinalFixture("L6");
+            FinalFixture f = new FinalFixture("110027");
             f.Enter(SpaceId.Library).Light(true).Samples(() => JudgeSignal.Pitch(50f), 1.5f).Samples(() => JudgeSignal.Pitch(0f), 0.5f);
             Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "1.5초는 둘러본 것");
             f.Light(false).Samples(() => JudgeSignal.Pitch(60f), 3f);
@@ -60,7 +60,7 @@ namespace NightDuty.Tests
             f.Light(true).Samples(() => JudgeSignal.Pitch(60f), 2.1f);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance));
 
-            FinalFixture g = new FinalFixture("L6");
+            FinalFixture g = new FinalFixture("110027");
             g.Enter(SpaceId.Corridor).Light(true).Samples(() => JudgeSignal.Pitch(60f), 3f);
             Assert.AreEqual(0, g.Value(FearAxis.Illuminance), "도서관 밖");
         }
@@ -68,7 +68,7 @@ namespace NightDuty.Tests
         [Test]
         public void G4_태블릿을_올린_채_1_5초_걸으면_위반()
         {
-            FinalFixture f = new FinalFixture("G4");   // 103차: 배치(조도로 옮겼다가 되돌림)
+            FinalFixture f = new FinalFixture("110035");   // 103차: 배치(조도로 옮겼다가 되돌림)
             float x = 0f;
             f.Send(JudgeSignal.Tab(true)).Samples(() => JudgeSignal.Pose(new Vector3(0f, 0f, 0f), 0f), 3f);
             Assert.AreEqual(0, f.Value(FearAxis.Layout), "서서 보는 건 괜찮다");
@@ -83,15 +83,15 @@ namespace NightDuty.Tests
         {
             Assert.AreEqual(8.1f, AnswerAfterRingsJudge.EarliestAnswerSeconds, 1e-3f);
 
-            FinalFixture early = new FinalFixture("K5");
+            FinalFixture early = new FinalFixture("110033");
             early.Enter(SpaceId.SecurityRoom).Cue(FinalCues.PhoneRing).Wait(5f).Send(JudgeSignal.PhoneAnswer());
             Assert.AreEqual(Deltas.RuleViolation, early.Value(FearAxis.Auditory), "두 번째 벨에 받음");
 
-            FinalFixture ok = new FinalFixture("K5");
+            FinalFixture ok = new FinalFixture("110033");
             ok.Enter(SpaceId.SecurityRoom).Cue(FinalCues.PhoneRing).Wait(8.5f).Send(JudgeSignal.PhoneAnswer()).Wait(20f).End(FinalCues.PhoneRing);
             Assert.AreEqual(0, ok.Value(FearAxis.Auditory), "세 번 울린 뒤 받음");
 
-            FinalFixture never = new FinalFixture("K5");
+            FinalFixture never = new FinalFixture("110033");
             never.Enter(SpaceId.SecurityRoom).Cue(FinalCues.PhoneRing).Wait(24f).End(FinalCues.PhoneRing);
             Assert.AreEqual(Deltas.RuleViolation, never.Value(FearAxis.Auditory), "받지 않음");
         }
@@ -124,8 +124,8 @@ namespace NightDuty.Tests
             }
 
             Assert.IsNull(FakeRuleCatalog.ForDay(1, 2), "하루 두 줄");
-            Assert.AreEqual("F1", FakeRuleCatalog.IdForDay(1, 0));
-            Assert.AreEqual("F2", FakeRuleCatalog.IdForDay(1, 1));
+            Assert.AreEqual("115001", FakeRuleCatalog.IdForDay(1, 0));
+            Assert.AreEqual("115002", FakeRuleCatalog.IdForDay(1, 1));
             Assert.IsNull(ProgramCatalog.Rule(FakeRuleCatalog.IdForDay(1)), "판정 수칙이 아니다");
             for (int n = 1; n < 8; n++) for (int k = 0; k < 2; k++) Assert.That(FakeRuleCatalog.SlotFor(1, n, k), Is.InRange(0, n - 1));
             Assert.AreNotEqual(FakeRuleCatalog.SlotFor(1, 4, 0), FakeRuleCatalog.SlotFor(1, 5, 1), "두 줄이 붙지 않게 다른 자리");
@@ -134,7 +134,7 @@ namespace NightDuty.Tests
             FakeRuleCatalog.RunOffset = 4;
             Assert.AreEqual("당신의 이름은 출근부에 이미 적혀 있습니다.", FakeRuleCatalog.ForDay(1, 0));
             Assert.AreEqual(FakeRuleCatalog.Lines[0], FakeRuleCatalog.ForDay(1, 1));
-            Assert.AreEqual("F5", FakeRuleCatalog.IdForDay(1, 0));
+            Assert.AreEqual("115005", FakeRuleCatalog.IdForDay(1, 0));
 
             // 2~5일차의 그 자리는 진짜 수칙 한 장.
             Assert.AreEqual(4, ProgramDirector.RulesFor(1));

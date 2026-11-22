@@ -51,7 +51,7 @@ public sealed class WorldSounds : MonoBehaviour
         Item(SpaceId.Corridor, FearAxis.Auditory, 1, "map.hall.1b", Place.Far),
         Item(SpaceId.Corridor, FearAxis.Auditory, 2, "map.hall.2", Place.Behind),
         Item(SpaceId.Corridor, FearAxis.Auditory, 3, "map.hall.3", Place.Behind, 0.9f),
-        Item(SpaceId.Corridor, FearAxis.Auditory, 4, "map.hall.4", Place.Behind, 0f, () => NightRun.Program == null || !NightRun.Program.Has("H3")),
+        Item(SpaceId.Corridor, FearAxis.Auditory, 4, "map.hall.4", Place.Behind, 0f, () => NightRun.Program == null || !NightRun.Program.Has("110003")),
         Item(SpaceId.Classroom_1_3, FearAxis.Auditory, 1, "map.class.1", Place.Around),
         Item(SpaceId.Classroom_1_3, FearAxis.Auditory, 3, "map.class.3", Place.Around),
         Item(SpaceId.Classroom_1_3, FearAxis.Auditory, 4, "map.class.4", Place.Around),
@@ -253,7 +253,7 @@ public sealed class WorldSounds : MonoBehaviour
             _points[e.SourceId] = e.Point;
         }
 
-        if (e.Kind != DirectionEventKind.Encounter || e.SourceId != "E.ToiletBlackout") return;
+        if (e.Kind != DirectionEventKind.Encounter || e.SourceId != "120010") return;
         if (e.Phase == DirectionPhase.Confront)
         {
             bool cross = (int)NightRun.ShownBand(SpaceId.Toilet, FearAxis.Auditory) >= 2 && (int)NightRun.ShownBand(SpaceId.Toilet, FearAxis.Illuminance) >= 2;
@@ -295,23 +295,23 @@ public sealed class WorldSounds : MonoBehaviour
         Vector3 at;
         switch (r.RuleId)
         {
-            case "C1":
-            case "L2":
+            case "110005":
+            case "110023":
                 at = PointOr(r.RuleId, Place.Around);
                 break;
-            case "L1":
+            case "110022":
                 at = TargetOr("rule.L1.shelf", Place.Around);
                 break;
-            case "L5":
-                at = PointOr("E.SuitMan", Place.Ahead);
+            case "110026":
+                at = PointOr("120014", Place.Ahead);
                 break;
-            case "S2":
+            case "110012":
                 at = Feet();
                 break;
-            case "K2":
+            case "110030":
                 at = CctvSystem.Active != null ? CctvSystem.Active.ScreenCenter : PlaceFor(Place.Ahead);
                 break;
-            case "G1":
+            case "110034":
                 StartCoroutine(FollowWhenStopped(key));
                 return;
             default:

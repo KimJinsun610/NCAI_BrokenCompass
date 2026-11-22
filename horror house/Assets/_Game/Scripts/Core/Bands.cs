@@ -20,10 +20,10 @@ namespace NightDuty
     public static class Bands
     {
         /// <summary>축 값의 하한(포함).</summary>
-        public const int Min = 0;
+        public static int Min => global::NightDuty.DesignData.SettingInt(390312);   // DT 390312 축 최소
 
         /// <summary>축 값의 상한(포함). 이 값에 도달하면 붙잡힘이다.</summary>
-        public const int Max = 100;
+        public static int Max => global::NightDuty.DesignData.SettingInt(390313);   // DT 390313 축 최대 (390315 붙잡힘 값과 같음 — 판정은 Max 하나로)
 
         /// <summary>구간 개수.</summary>
         public const int Count = 5;
@@ -39,7 +39,7 @@ namespace NightDuty
         /// 붙잡히기 직전 구간이 길면 긴장이 풀린다.
         /// </para>
         /// </summary>
-        private static readonly int[] LowerBounds = { 0, 25, 50, 75, 90, Max };
+        private static int[] LowerBounds { get { Refresh(); return _lower; } }   // DT Band_Table.Sense_Lower(330000~330004) + Max
 
         /// <summary>
         /// 신뢰 전용 구간 하한(포함)과 <see cref="Max"/> 센티널. 옛 2026-09-30 최종 기획서 「15/30/45/65」.
@@ -51,7 +51,26 @@ namespace NightDuty
         /// 감각 축의 25/50/75를 그대로 쓰면 누구나 0/1/1/2/3이 되어 「잘하는 사람은 문서가 무섭다」가 사라진다.
         /// </para>
         /// </summary>
-        private static readonly int[] TrustLowerBounds = { 0, 10, 18, 26, 42, Max };
+        private static int[] TrustLowerBounds { get { Refresh(); return _trustLower; } }   // DT Band_Table.Trust_Lower + Max
+
+        private static int[] _lower, _trustLower;
+        private static object _source;
+
+        /// <summary>DT를 다시 읽으면(플레이 시작마다) 경계 표도 다시 만든다. 평소에는 캐시만 돌려준다(할당 없음).</summary>
+        private static void Refresh()
+        {
+            DesignData.Ensure();
+            var table = InstructionDT.DT.Band;
+            if (ReferenceEquals(_source, table)) return;
+            var rows = new System.Collections.Generic.List<InstructionDT.BandRow>(table.All);
+            rows.Sort((a, b) => a.ID.CompareTo(b.ID));
+            var lower = new int[rows.Count + 1];
+            var trust = new int[rows.Count + 1];
+            for (int i = 0; i < rows.Count; i++) { lower[i] = (int)rows[i].Sense_Lower; trust[i] = (int)rows[i].Trust_Lower; }
+            lower[rows.Count] = Max;
+            trust[rows.Count] = Max;
+            _lower = lower; _trustLower = trust; _source = table;
+        }
 
         /// <summary>
         /// 감각 축 값이 속한 구간을 돌려준다. 래칫·하한 없음.

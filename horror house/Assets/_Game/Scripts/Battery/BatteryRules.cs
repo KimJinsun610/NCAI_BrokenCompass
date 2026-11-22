@@ -24,34 +24,34 @@ namespace NightDuty
         /// 완충으로 켜 둘 수 있는 실제 초. 59차(밤 15분 → 10분, 민: 「손전등 밸런스 조절도」): 240 → 160 — 밤 길이와 같은 2/3로 줄여
         /// 104차 재검증(밤 600초 · 수요 480초=3칸 · 날 넘김 이월 · 4·4·4·3·3): 75% 찾으면 1.35 · 1.37 · 1.41 · 1.19 · 1.04배, 다 찾으면 1.7~2.3배(이월 상한 3칸 탓), 절반만 찾으면 1.0 · 0.8 · 0.8 · 0.6 · 0.5배.
         /// </summary>
-        public const float FullSeconds = 160f;   // 67차(밤 10분 → 12분 30초): 160 → 200 — 밤과 같은 ×1.25(56차 설계 비율 유지) · 88차(밤 10분): 200 → 160
+        public static float FullSeconds => global::NightDuty.DesignData.Setting(390243);   // DT 390243 완충으로 켜 둘 수 있는 실제 시간 — 67차(밤 10분 → 12분 30초): 160 → 200 — 밤과 같은 ×1.25(56차 설계 비율 유지) · 88차(밤 10분): 200 → 160
 
         /// <summary>주머니에 들 수 있는 예비 수.</summary>
-        public const int PocketMax = 2;
+        public static int PocketMax => global::NightDuty.DesignData.SettingInt(390244);   // DT 390244 예비 배터리 최대 보유
 
         /// <summary>갈아 끼우는 동안 꺼져 있는 초.</summary>
-        public const float SwapSeconds = 1.2f;
+        public static float SwapSeconds => global::NightDuty.DesignData.Setting(390245);   // DT 390245 갈아 끼우는 시간
 
         /// <summary>이 충전량 아래면 빛이 약해지고 가끔 깜빡인다.</summary>
-        public const float DimBelow = 0.30f;
+        public static float DimBelow => global::NightDuty.DesignData.Setting(390247);   // DT 390247 희미해지기 시작
 
         /// <summary>이 충전량 아래면 깜빡임이 잦고 비춤 판정 거리가 짧다.</summary>
-        public const float LowBelow = 0.10f;
+        public static float LowBelow => global::NightDuty.DesignData.Setting(390248);   // DT 390248 위험 구간
 
         /// <summary>0%에 가까울 때의 빛 세기 배율.</summary>
-        public const float DimIntensity = 0.45f;
+        public static float DimIntensity => DesignData.Fx(421001, "0% 근처 빛 세기 배율");   // DT Fx 421001
 
         /// <summary>0%에 가까울 때의 빛 거리 배율.</summary>
-        public const float DimRange = 0.60f;
+        public static float DimRange => DesignData.Fx(421001, "0% 근처 빛 거리 배율");   // DT Fx 421001
 
         /// <summary><see cref="LowBelow"/> 아래의 비춤 판정 거리(m).</summary>
-        public const float LowBeamRange = 5f;
+        public static float LowBeamRange => global::NightDuty.DesignData.Setting(390016);   // DT 390016 배터리 10% 미만 비춤 판정 거리
 
         /// <summary>가짜 놀람 「손전등 끊김」은 이 충전량 이상일 때만 — 배터리 탓으로 읽히면 놀라지 않는다.</summary>
-        public const float FakeFlickerMinCharge = 0.5f;
+        public static float FakeFlickerMinCharge => DesignData.Fx(421001, "가짜 끊김 놀람 최소 충전량");   // DT Fx 421001
 
         /// <summary>밤마다 풀어 두는 복도 사물함 수(어느 것이 풀렸는지는 열어 봐야 안다).</summary>
-        public const int UnlockedLockers = 3;
+        public static int UnlockedLockers => global::NightDuty.DesignData.SettingInt(390269);   // DT 390269 밤마다 푸는 잠긴 사물함
 
         /// <summary>
         /// 칸으로 쓰려면 몸통이 이만큼 서 있어야 한다(위 방향의 y 성분, cos 약 16°). 56차 QA: 복도의 「Bookcase」 중 다섯은 눕혀 문에 박은 판자,
@@ -71,27 +71,29 @@ namespace NightDuty
             // 67차(민: 「배터리가 나오는 빈도 수와 위치를 늘려야 해 — 책장·선반에도, 1~5일차가 될수록 빈도 수 살짝 떨어지게」): 3·3·2·2·1 → 6·6·5·5·4.
             // 74차(민: 「초반에 나오는 배터리 갯수를 2개로」): 1일차만 6 → 2(책상 위 예비 배터리는 따로).
             // 104차(사용자: 「1일~5일 배터리 배치 갯수를 4 4 4 3 3으로」): 1일차가 가장 빠듯하던 것(3칸 = 수요 1.0배)을 풀고 2일차 넘침을 줄인다.
-            return day <= 3 ? 4 : 3;
+            return (int)global::NightDuty.DesignData.Day(day).Battery_Placed;   // DT Day_Table.Battery_Placed
         }
 
         /// <summary>104차: 공간 고르기 무게 — 도서관은 경비실에서 가장 멀어(칸 무게가 커) 몰리던 곳이라 절반, 1일차는 순찰 밖이라 0.</summary>
         public static float SpaceShare(SpaceId space, int day)
         {
-            if (space == SpaceId.Library) return day <= 1 ? 0f : LibraryShare;
-            return 1f;
+            if (space == SpaceId.Library && day <= 1) return 0f;   // 1일차 도서관은 순찰 밖(표 설명)
+            var row = global::NightDuty.DesignData.SpaceRowOf(space);   // DT Space_Table.Battery_Share(빈칸·표에 없는 공간은 1)
+            return row != null && !row.IsBlank("Battery_Share") ? row.Battery_Share : 1f;
         }
 
         /// <summary>104차: 도서관 공간 몫(다른 공간 1).</summary>
-        public const float LibraryShare = 0.5f;
+        public static float LibraryShare => global::NightDuty.DesignData.SpaceRowOf(SpaceId.Library).Battery_Share;   // DT Space_Table 320004.Battery_Share
 
         /// <summary>104차: 그 밤 이미 놓인 공간은 하나마다 몫에 이것을 곱한다(먼저 다른 공간으로 퍼진다).</summary>
-        public const float RepeatShare = 0.25f;
+        public static float RepeatShare => global::NightDuty.DesignData.Setting(390265);   // DT 390265 같은 공간 반복 배율
 
         /// <summary>104차: 한 밤 한 공간에 놓는 상한(도서관 1 · 그 밖 2 · 공간 모름은 제한 없음).</summary>
         public static int MaxPerSpace(SpaceId space)
         {
             if (space == SpaceId.None) return int.MaxValue;
-            return space == SpaceId.Library ? 1 : 2;
+            var row = global::NightDuty.DesignData.SpaceRowOf(space);   // DT Space_Table.Battery_Max(빈칸·표에 없는 공간은 2)
+            return row != null && !row.IsBlank("Battery_Max") ? (int)row.Battery_Max : 2;
         }
 
         /// <summary>충전량(0~1)의 빛 세기 배율.</summary>
@@ -129,13 +131,13 @@ namespace NightDuty
             }
             else if (charge < LowBelow)
             {
-                min = 3f;
-                max = 6f;
+                min = DesignData.Fx(421001, "0~10% 깜빡임 간격 최소(초)");   // DT Fx 421001
+                max = DesignData.Fx(421001, "0~10% 깜빡임 간격 최대(초)");
             }
             else
             {
-                min = 10f;   // 59차: 15~30 → 10~20(완충 160초 — 30% 아래 구간이 48초라 그 안에 두세 번)
-                max = 20f;
+                min = DesignData.Fx(421001, "10~30% 깜빡임 간격 최소(초)");   // DT Fx 421001 — 59차: 15~30 → 10~20(완충 160초 — 30% 아래 구간이 48초라 그 안에 두세 번)
+                max = DesignData.Fx(421001, "10~30% 깜빡임 간격 최대(초)");
             }
         }
 
@@ -143,8 +145,9 @@ namespace NightDuty
         public static int Cells(float charge)
         {
             if (charge <= 0f) return 0;
-            int n = (int)Math.Ceiling(charge * 3f - 1e-4f);
-            return Math.Max(1, Math.Min(3, n));
+            int cells = DesignData.FxInt(421001, "태블릿 상태바 칸 수");   // DT Fx 421001
+            int n = (int)Math.Ceiling(charge * cells - 1e-4f);
+            return Math.Max(1, Math.Min(cells, n));
         }
 
         /// <summary>태블릿 상태바 문자열(신호 표시 뒤에 손전등 칸 + 예비 수).</summary>

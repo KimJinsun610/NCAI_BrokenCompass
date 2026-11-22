@@ -1,0 +1,21 @@
+﻿ID,Category,Name,Desc
+uint,string,string,string
+490101,연출 종류,조도 화면,구간별 화면 색(구 Band_Illuminance 앞부분 · Unity IlluminanceTone 에셋과 같은 값)
+490102,연출 종류,조도 조명,구간별 조명 소등·붉은 등(구 Band_Illuminance 뒷부분)
+490103,연출 종류,청각 바탕,구간별 불안 레이어·룸톤·원샷 간격(구 Band_Auditory · AmbienceConfig 에셋과 같은 값)
+490104,연출 종류,맵 소리,구간별로 켜지는 맵 소리 키(구 Band_Auditory.Map_Sound_Keys를 키마다 한 행으로)
+490105,연출 종류,앰비언트 신음,일차별 밤당 「신음」 횟수(구 Day.Moan_Count)
+490106,연출 종류,점검 이상 세기,구간별 점검 이상 외형 세기(구 AnomalyLook.* 배열을 구간마다 한 행으로) + 공통 행
+490107,연출 종류,점검 이상 모습,점검 항목별 이상 외형 설명(구 Inspection.Anomaly_Look). Task_Table.Fx_ID가 가리킴
+490108,연출 종류,신체 신호,몸 계기 층별 심박·숨·깜빡임·에코(구 BodyRules.* 배열을 층마다 한 행으로) + 공통 행
+490109,연출 종류,손전등 빛,손전등 라이트 값과 깜빡임 1회 패턴(구 Flashlight.* + 원본 25·30)
+490110,연출 종류,배터리 연출,"저전력 빛·깜빡임 간격, 배터리 반짝임·외곽선(구 BatteryRules·BatteryStash·DeskStarterKit 연출 값)"
+490111,연출 종류,발소리,플레이어 발소리 걸음 폭·볼륨·메아리(구 PlayerFootsteps.*)
+490112,연출 종류,가짜 놀람,가짜 놀람 종류(구 TensionDirector.FakeScares · FakeBugsEnabled · 원본 12)
+490113,연출 종류,CCTV 카메라,CCTV 채널 카메라(구 Cctv_Channel · CctvConfig 에셋과 같은 값)
+490114,연출 종류,CCTV 인물 경로,CCTV 화면 속 사람이 걷는 경로(구 Cctv_Walker)
+490115,연출 종류,대역 모델,조우·놀람·컷신에 쓰는 몹·소품 대역(구 Mob_Table). Encounter_Table.Fx_ID가 가리킴
+490116,연출 종류,엔딩 연출,엔딩 결과 연출(구 Ending.Result)과 피날레 연출 시간(구 FinaleDirector.*). Ending_Table.Fx_ID가 가리킴
+490117,연출 종류,처형 컷신,붙잡힘(축 100) 처형 컷신 설명(원본 08 「붙잡힘 연출」)
+490118,연출 종류,배치 연출,배치 축에 따른 소품 크기 등(구 HumanTree 키). 구간별 소품 개수는 Layout_Prop_Table
+490119,연출 종류,화면 표시,화면 표시 스위치(구 ShowViolationStain)

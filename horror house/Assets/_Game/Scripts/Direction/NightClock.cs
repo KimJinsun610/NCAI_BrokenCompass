@@ -44,13 +44,13 @@ namespace NightDuty
     public static class NightClock
     {
         /// <summary>하룻밤의 실시간 길이(초). 10분(88차 — 67차 12분 30초 · 59차 10분 · 그 전 15분).</summary>
-        public const float RealSecondsPerNight = 600f;
+        public static float RealSecondsPerNight => global::NightDuty.DesignData.Setting(390026);   // DT 390026 하룻밤 실제 길이
 
         /// <summary>하룻밤의 게임 길이(분). 00:00~04:00(88차 — 67차 05:00).</summary>
-        public const int NightMinutes = 240;
+        public static int NightMinutes => global::NightDuty.DesignData.SettingInt(390027);   // DT 390027 00:00~04:00
 
         /// <summary>실시간 1초에 흐르는 게임 초. 240분 × 60 / 600초 = 24. 3일차부터의 값 — 1·2일차는 <see cref="GameSecondsPerRealSecondFor"/>.</summary>
-        public const float GameSecondsPerRealSecond = NightMinutes * 60f / RealSecondsPerNight;
+        public static float GameSecondsPerRealSecond => NightMinutes * 60f / RealSecondsPerNight;
 
         /// <summary>
         /// 2026-11-06(김진선님: 「초반부에 익숙해지기 전 상황이 너무 급함」 — A안): 일차별 하룻밤의 실시간 길이(초).
@@ -70,28 +70,28 @@ namespace NightDuty
         }
 
         /// <summary>출근이 끝나고 수칙 판정이 시작되는 시각(00:16, 88차 — 67차 00:20).</summary>
-        public const int JudgingStart = 16;
+        public static int JudgingStart => DesignData.SegmentMinute(340002u, end: false);   // DT Night_Segment_Table 340002.Start_Min
 
         /// <summary>호출 1 · 조우 슬롯 A 시작(01:00, 88차 — 67차 01:15).</summary>
-        public const int Call1 = 60;
+        public static int Call1 => DesignData.SegmentMinute(340003u, end: false);   // DT Night_Segment_Table 340003.Start_Min
 
         /// <summary>이완 구간 시작(01:52, 88차 — 67차 02:20). 판정 정지.</summary>
-        public const int RelaxStart = 112;
+        public static int RelaxStart => DesignData.SegmentMinute(340004u, end: false);   // DT Night_Segment_Table 340004.Start_Min
 
         /// <summary>호출 2 · 이완 끝 · 체크포인트 시각(02:16, 88차 — 67차 02:50). 그날 마지막 점검 공간이 열린다.</summary>
-        public const int Call2 = 136;
+        public static int Call2 => DesignData.SegmentMinute(340005u, end: false);   // DT Night_Segment_Table 340005.Start_Min
 
         /// <summary>보너스 슬롯 C 시작(03:08, 88차 — 67차 03:55).</summary>
-        public const int SlotCStart = 188;
+        public static int SlotCStart => DesignData.SegmentMinute(340006u, end: false);   // DT Night_Segment_Table 340006.Start_Min
 
         /// <summary>잔여 점검 알림 · 수칙 판정 종료(03:32, 88차 — 67차 04:25).</summary>
-        public const int JudgingEnd = 212;
+        public static int JudgingEnd => DesignData.SegmentMinute(340007u, end: false);   // DT Night_Segment_Table 340007.Start_Min
 
         /// <summary>근무 종료(04:00, 88차 — 67차 05:00).</summary>
-        public const int ShiftEnd = 240;
+        public static int ShiftEnd => DesignData.SegmentMinute(340007u, end: true);   // DT Night_Segment_Table 340007.End_Min
 
         /// <summary>67차(민: 「1시간마다 알림」): 정시 알림을 보내는 시각(01:00 · 02:00 · 03:00). 04:00은 근무 종료라 따로 없다(88차).</summary>
-        public static readonly int[] HourMarks = { 60, 120, 180 };
+        public static readonly int[] HourMarks = { global::NightDuty.DesignData.SettingInt(390029), global::NightDuty.DesignData.SettingInt(390326), global::NightDuty.DesignData.SettingInt(390327) };   // DT 390029·390326·390327 정시 알림 1~3
 
         /// <summary>그 게임 분의 「HH:MM」(근무 시작 00:00 기준).</summary>
         public static string Clock(float minute)

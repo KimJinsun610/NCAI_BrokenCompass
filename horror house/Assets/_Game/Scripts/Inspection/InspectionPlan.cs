@@ -154,10 +154,10 @@ namespace NightDuty
     public static class InspectionQuota
     {
         /// <summary>점검 공간 상한(경비실 포함).</summary>
-        public const int MaxSpaces = 4;
+        public static int MaxSpaces => global::NightDuty.DesignData.SettingInt(390194);   // DT 390194
 
         private static readonly int[] ItemsByDay = { 5, 5, 5, 6, 6 };   // 2026-10-30: 1일차 4 → 5(경비실 화분 K-3을 맨 앞에).   // 67차(민: 「물품 점검이 비중이 더 높은데, 지시 사항과 비중이 균일했으면」): 5·6·6·7·7 → 4·5·5·6·6(근무 지시 3·3·4·4·4와 번갈아).   // 57차(민: 「점검도 빨리빨리 안 나와서 지겨웠다 — 맵이 좁으니 스피디하게」): 5·5·6·6·7 → 5·6·7·7·8. 66차(민: 「점검은 안 겹칠수록 좋아, 필요하면 하루 점검을 줄여도 돼」): 항목 29개와 맞춰 5·6·6·7·7
-        private static readonly int[] AnomaliesByDay = { 2, 2, 3, 3, 3 };
+        private static int[] AnomaliesByDay => DesignData.DayInts("Anomaly_Count", r => r.Anomaly_Count);   // DT Day_Table.Anomaly_Count
 
         /// <summary>그날 점검 항목 수.</summary>
         public static int Items(int day)
@@ -195,16 +195,16 @@ namespace NightDuty
         private static readonly SpaceId[] Day1Spaces = { SpaceId.Corridor, SpaceId.Classroom, SpaceId.ScienceRoom, SpaceId.SecurityRoom };
 
         /// <summary>1일차 마지막 점검 공간(호출 2). 50차: 교실 → 과학실. 51차: 과학실 → 복도 정상 1항목(민: 「이후 2개가 너무 늦다」 — 과학실은 01:00 전후에).</summary>
-        public const SpaceId Day1LateSpace = SpaceId.Corridor;
+        public static SpaceId Day1LateSpace => global::NightDuty.DesignData.SpaceOf(global::NightDuty.DesignData.Day(1).Late_Space_ID);   // DT Day_Table 1일차 Late_Space_ID
 
         /// <summary>2일차부터 늦은 공간(호출 2)에 묶는 항목 수 상한. 나머지는 먼저 열린다.</summary>
-        public const int LateItemsMax = 2;
+        public static int LateItemsMax => global::NightDuty.DesignData.SettingInt(390195);   // DT 390195
 
         /// <summary>
         /// 103차(사용자: 「진짜 회피 불가가 0번 — 2번(K-1을 4일차에도)으로」): 이날 경비실을 점검하면 CCTV 전 채널(K-1)을 다시 낸다.
         /// 가짜 회피 불가 K1·K2×K-1을 걸 수 있는 날 — 회차의 첫 회피 불가(가짜)가 4일차에 나와야 5일차에 진짜가 나온다(옛: K-1은 1일차 뒤 덜 나온 K-2·K-3에 밀려 4일차 0%).
         /// </summary>
-        public const int CctvRecheckDay = 4;
+        public static int CctvRecheckDay => global::NightDuty.DesignData.SettingInt(390196);   // DT 390196
 
         private readonly Random _rng;
         private readonly HashSet<SpaceId> _seen = new HashSet<SpaceId>();

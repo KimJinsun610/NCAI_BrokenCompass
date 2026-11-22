@@ -35,8 +35,8 @@ namespace NightDuty.Tests
                     Assert.AreEqual(face, d.IsFaceDay(day));
                     Assert.AreEqual(window, p.HasEncounter(ProgramCatalog.SuitMan), "시드 " + seed + " · " + day + "일차 창밖\n" + p.Report);
                     Assert.AreEqual(face, p.HasEncounter(ProgramCatalog.YellowFace), "시드 " + seed + " · " + day + "일차 문간\n" + p.Report);
-                    if (face) Assert.IsTrue(p.Has("L3"), "문간 노란 얼굴 밤 L3 — " + p.Report);
-                    if (window) Assert.IsFalse(p.Has("L3"), "85차: 창밖 노란 얼굴 밤에는 L3 없음 — " + p.Report);
+                    if (face) Assert.IsTrue(p.Has("110024"), "문간 노란 얼굴 밤 L3 — " + p.Report);
+                    if (window) Assert.IsFalse(p.Has("110024"), "85차: 창밖 노란 얼굴 밤에는 L3 없음 — " + p.Report);
                 }
             }
 

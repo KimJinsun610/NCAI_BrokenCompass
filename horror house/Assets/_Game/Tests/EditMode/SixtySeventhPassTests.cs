@@ -29,17 +29,17 @@ namespace NightDuty.Tests
             // 67차 ②(민: 「120초로 고정 · 『몇 시 몇 분까지』로 표시 · W2·W4·W5·W15는 제한 없음」). 게임 시계 24배 — 120초 = 48분.
             Assert.AreEqual(48f, DutyCatalog.LimitGameMinutes, 0.001f);
             Assert.AreEqual("02:08까지", DutyCatalog.DeadlineText(80f));
-            DutyDef w3 = DutyCatalog.Find("W3");   // 77차: W1 폐기 · 민 문구
+            DutyDef w3 = DutyCatalog.Find("130002");   // 77차: W1 폐기 · 민 문구
             // 88차(민: 「그냥 지시 문구만 나오게」): 머리글 「[근무 지시] 」도 마감 줄도 붙이지 않는다.
             Assert.AreEqual("교실을 순찰해주십시오.", DutyCatalog.MessageText(w3, 1, 80f));   // 104차(사용자 결정): 옛 「교실의 상태를 확인해주십시오.」
-            Assert.AreEqual("경비실 근무일지에 서명해주십시오.", DutyCatalog.MessageText(DutyCatalog.Find("W5"), 1, 145f));
+            Assert.AreEqual("경비실 근무일지에 서명해주십시오.", DutyCatalog.MessageText(DutyCatalog.Find("130004"), 1, 145f));
             Assert.IsNull(DutyCatalog.Find("W6"), "92차 W6 폐지");
             foreach (DutyDef d in DutyCatalog.All)
             {
-                bool free = d.Id == "W2" || d.Id == "W4" || d.Id == "W5" || d.Id == "W15";
-                Assert.AreEqual(free ? 0f : d.Id == "W21" ? DutyCatalog.ExitFlashSeconds : DutyCatalog.LimitSeconds, d.Seconds, d.Id);   // 103차: W21 90초
+                bool free = d.Id == "130001" || d.Id == "130003" || d.Id == "130004" || d.Id == "130009";
+                Assert.AreEqual(free ? 0f : d.Id == "130008" ? DutyCatalog.ExitFlashSeconds : DutyCatalog.LimitSeconds, d.Seconds, d.Id);   // 103차: W21 90초
                 Assert.AreEqual(d.Order, DutyCatalog.MessageText(d, 1, 30f), d.Id);
-                Assert.LessOrEqual(d.Order.Length, d.Id == "W16" ? 33 : 32, d.Id + " 문장은 짧게: " + d.Order);   // 80차: W16은 민 문구 그대로(33자)
+                Assert.LessOrEqual(d.Order.Length, d.Id == "130006" ? 33 : 32, d.Id + " 문장은 짧게: " + d.Order);   // 80차: W16은 민 문구 그대로(33자)
             }
         }
 
@@ -84,11 +84,11 @@ namespace NightDuty.Tests
         [Test]
         public void 점검_지시_제한시간은_120초_목격_지시는_없음()
         {
-            InspectionOrder one = new InspectionOrder(1, OrderKind.Regular, 30, new List<string> { "H-1" }, SpaceId.Corridor);
+            InspectionOrder one = new InspectionOrder(1, OrderKind.Regular, 30, new List<string> { "135001" }, SpaceId.Corridor);
             Assert.AreEqual(DutyCatalog.LimitSeconds, NightRun.OrderLimitSeconds(one));
-            InspectionOrder many = new InspectionOrder(3, OrderKind.CatchUp, 200, new List<string> { "H-1", "H-2", "C-1", "C-2", "S-1", "T-1" }, SpaceId.None);
+            InspectionOrder many = new InspectionOrder(3, OrderKind.CatchUp, 200, new List<string> { "135001", "135002", "135007", "135008", "135012", "135018" }, SpaceId.None);
             Assert.AreEqual(DutyCatalog.LimitSeconds, NightRun.OrderLimitSeconds(many));
-            InspectionOrder witness = new InspectionOrder(4, OrderKind.Witness, 200, new List<string> { "T-1" }, SpaceId.Toilet);
+            InspectionOrder witness = new InspectionOrder(4, OrderKind.Witness, 200, new List<string> { "135018" }, SpaceId.Toilet);
             Assert.AreEqual(0f, NightRun.OrderLimitSeconds(witness));
         }
 

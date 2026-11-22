@@ -10,16 +10,16 @@ namespace NightDuty
     public sealed class SurpriseBudget
     {
         /// <summary>강도 3↑ 시작 사이 최소 간격(초).</summary>
-        public const float GapAfter3 = 60f;   // 59차(밤 15분 → 10분): 90 → 60
+        public static float GapAfter3 => global::NightDuty.DesignData.Setting(390138);   // DT 390138 강도 3↑ 시작 사이 최소 간격 — 59차(밤 15분 → 10분): 90 → 60
 
         /// <summary>강도 4↑ 시작 뒤 최소 간격(초).</summary>
-        public const float GapAfter4 = 80f;   // 59차: 120 → 80
+        public static float GapAfter4 => global::NightDuty.DesignData.Setting(390139);   // DT 390139 강도 4↑ 시작 뒤 최소 간격 — 59차: 120 → 80
 
         /// <summary>조우가 끝난 뒤 위협을 걸지 않는 시간(초) 최소.</summary>
-        public const float QuietMin = 40f;   // 59차: 60~90 → 40~60
+        public static float QuietMin => global::NightDuty.DesignData.Setting(390140);   // DT 390140 조우 뒤 휴지 최소 — 59차: 60~90 → 40~60
 
         /// <summary>최대.</summary>
-        public const float QuietMax = 60f;
+        public static float QuietMax => global::NightDuty.DesignData.Setting(390141);   // DT 390141 조우 뒤 휴지 최대
 
         private readonly int _day;
         private int _used3;
@@ -38,21 +38,20 @@ namespace NightDuty
         /// <summary>강도 3 이상 상한.</summary>
         public int Cap3
         {
-            get { return _day <= 2 ? 3 : 4; }
+            get { return (int)global::NightDuty.DesignData.Day(_day).Surprise_Cap3; }   // DT Day_Table.Surprise_Cap3
         }
 
         /// <summary>강도 4 이상 상한.</summary>
         public int Cap4
         {
-            get { return _day <= 2 ? 1 : 2; }
+            get { return (int)global::NightDuty.DesignData.Day(_day).Surprise_Cap4; }   // DT Day_Table.Surprise_Cap4
         }
 
         /// <summary>강도 5 상한(3~4일차는 교차 조건을 채운 경우만 1).</summary>
         public int Cap5(bool isCross)
         {
-            if (_day <= 2) return 0;
-            if (_day <= 4) return isCross ? 1 : 0;
-            return 1;
+            var d = global::NightDuty.DesignData.Day(_day);   // DT Day_Table.Surprise_Cap5 · Cap5_Cross_Only
+            return d.Cap5_Cross_Only && !isCross ? 0 : (int)d.Surprise_Cap5;
         }
 
         /// <summary>쓴 횟수(강도 3↑, 4↑, 5).</summary>
@@ -168,32 +167,37 @@ namespace NightDuty
         /// <summary>최고 감각 생존 수치와 재시작 횟수로 단계를 정한다.</summary>
         public static DirectorMood Of(int highestSensory, int restarts)
         {
-            if (highestSensory >= 75 || restarts >= RestartPolicy.CalmFrom) return DirectorMood.Danger;
-            return highestSensory >= 50 ? DirectorMood.Normal : DirectorMood.Easy;
+            if (highestSensory >= global::NightDuty.DesignData.SettingInt(390143) || restarts >= RestartPolicy.CalmFrom) return DirectorMood.Danger;   // DT 390143 위험 단계 시작
+            return highestSensory >= global::NightDuty.DesignData.SettingInt(390142) ? DirectorMood.Normal : DirectorMood.Easy;   // DT 390142 보통 단계 시작
         }
 
         /// <summary>대응 창 배율.</summary>
         public static float WindowScale(DirectorMood m)
         {
-            return m == DirectorMood.Easy ? 0.8f : m == DirectorMood.Danger ? 1.3f : 1f;
+            return global::NightDuty.DesignData.Setting(ByMood(m, 390144, 390328, 390329));   // DT 대응 창 배율 쉬움·보통·위험
         }
 
         /// <summary>전조 길이 배율.</summary>
         public static float ForeshadowScale(DirectorMood m)
         {
-            return m == DirectorMood.Danger ? 1.5f : 1f;
+            return global::NightDuty.DesignData.Setting(ByMood(m, 390145, 390330, 390331));   // DT 전조 길이 배율 쉬움·보통·위험
         }
 
         /// <summary>헛예고 확률 배율.</summary>
         public static float FalseScale(DirectorMood m)
         {
-            return m == DirectorMood.Danger ? 0.5f : 1f;
+            return global::NightDuty.DesignData.Setting(ByMood(m, 390146, 390332, 390333));   // DT 헛예고 확률 배율 쉬움·보통·위험
         }
 
         /// <summary>가짜 놀람 추가 횟수.</summary>
         public static int ExtraFakes(DirectorMood m)
         {
-            return m == DirectorMood.Easy ? 1 : 0;
+            return global::NightDuty.DesignData.SettingInt(ByMood(m, 390147, 390334, 390335));   // DT 가짜 놀람 추가 쉬움·보통·위험
+        }
+
+        static uint ByMood(DirectorMood m, uint easy, uint normal, uint danger)
+        {
+            return m == DirectorMood.Easy ? easy : m == DirectorMood.Danger ? danger : normal;
         }
     }
 }

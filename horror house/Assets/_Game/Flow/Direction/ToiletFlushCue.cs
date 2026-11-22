@@ -34,7 +34,7 @@ public static class ToiletFlushCue
         Transform toilet = bowls != null ? bowls.Nearest(player) : null;
         if (toilet == null) return fallback;
 
-        ParadoxLure.Attach(toilet.gameObject, "T1", seconds);
+        ParadoxLure.Attach(toilet.gameObject, "110016", seconds);
         Vector3 at = toilet.position + Vector3.up * 0.4f;
         GameObject prefab = Resources.Load<GameObject>("StandIns/" + FlushId);
         if (prefab == null || host == null) return at;

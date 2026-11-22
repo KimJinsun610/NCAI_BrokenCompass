@@ -10,19 +10,19 @@ namespace NightDuty
     public static class AnomalyLook
     {
         /// <summary>[옮김]의 최소 회전(도).</summary>
-        public const float MinMoveDegrees = 15f;
+        public static float MinMoveDegrees => DesignData.Fx(420606, "[옮김] 최소 회전(°)");   // DT Fx 420606
 
         /// <summary>광과민 옵션의 점멸 상한(Hz). 점멸이 단서인 T-3은 이 아래의 느린 맥동으로 바뀐다.</summary>
         public const float SlowFlickerMaxHz = 2f;
 
-        private static readonly float[] DoorDegreesByBand = { 0f, 20f, 35f, 55f, 85f };
-        private static readonly float[] TurnDegreesByBand = { 0f, 20f, 45f, 100f, 180f };
-        private static readonly float[] PullMetersByBand = { 0f, 0.35f, 0.45f, 0.55f, 0.7f };
-        private static readonly float[] SpreadMetersByBand = { 0f, 0.6f, 1.4f, 2.2f, 3.4f };
-        private static readonly float[] GlowByBand = { 0f, 0.8f, 1.2f, 1.7f, 2.4f };
-        private static readonly float[] FlickerHzByBand = { 0f, 1.5f, 2.5f, 4f, 6f };
-        private static readonly float[] SlowFlickerHzByBand = { 0f, 0.5f, 0.8f, 1.1f, 1.5f };
-        private static readonly float[] FarPickByBand = { 0f, 0.4f, 0.6f, 0.8f, 1f };
+        private static float[] DoorDegreesByBand => DesignData.FxSeries(420601, 5, "문 각도(°)");   // DT Fx 420601~420605
+        private static float[] TurnDegreesByBand => DesignData.FxSeries(420601, 5, "회전(°)");   // DT Fx 420601~420605
+        private static float[] PullMetersByBand => DesignData.FxSeries(420601, 5, "의자 빠짐(m)");   // DT Fx 420601~420605
+        private static float[] SpreadMetersByBand => DesignData.FxSeries(420601, 5, "번짐(m)");   // DT Fx 420601~420605
+        private static float[] GlowByBand => DesignData.FxSeries(420601, 5, "빛 세기(배)");   // DT Fx 420601~420605
+        private static float[] FlickerHzByBand => DesignData.FxSeries(420601, 5, "깜빡임(Hz)");   // DT Fx 420601~420605
+        private static float[] SlowFlickerHzByBand => DesignData.FxSeries(420601, 5, "광과민 모드 깜빡임(Hz)");   // DT Fx 420601~420605
+        private static float[] FarPickByBand => DesignData.FxSeries(420601, 5, "먼 책상(비율)");   // DT Fx 420601~420605
 
         /// <summary>구간 → 0~1(구간 0은 0).</summary>
         public static float Strength(Band band)

@@ -1,0 +1,2 @@
+﻿ID,Name,Day_ID,Space_ID,State_Kind_ID,Value,Option_ID,Probability,Desc
+uint,string,uint,uint,uint,float,uint,float,string

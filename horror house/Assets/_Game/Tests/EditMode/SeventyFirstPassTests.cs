@@ -62,8 +62,8 @@ namespace NightDuty.Tests
             NightRun.InspectionDripEnabled = true;
             List<InspectionAssignment> rows = new List<InspectionAssignment>
             {
-                new InspectionAssignment(InspectionCatalog.Find("K-1"), false, Band.Band0, false),
-                new InspectionAssignment(InspectionCatalog.Find("H-1"), false, Band.Band0, false)
+                new InspectionAssignment(InspectionCatalog.Find("135025"), false, Band.Band0, false),
+                new InspectionAssignment(InspectionCatalog.Find("135001"), false, Band.Band0, false)
             };
             NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day, rows, SpaceId.None, string.Empty);
             List<InspectionOrder> sent = new List<InspectionOrder>();

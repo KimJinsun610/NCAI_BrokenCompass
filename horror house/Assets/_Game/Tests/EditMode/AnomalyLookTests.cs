@@ -118,14 +118,14 @@ namespace NightDuty.Tests
                 string id = e.FindPropertyRelative("itemId").stringValue;
                 InspectionItem item = InspectionCatalog.Find(id);
                 Assert.IsNotNull(item, id);
-                Assert.IsTrue(item.Template == AnomalyTemplate.Move || id == "S-4", id + "는 [옮김]이 아니다(66차: S-4 지구본만 예외 — 정적 배칭이라 대역이 돈다)");
+                Assert.IsTrue(item.Template == AnomalyTemplate.Move || id == "135015", id + "는 [옮김]이 아니다(66차: S-4 지구본만 예외 — 정적 배칭이라 대역이 돈다)");
                 Assert.IsNotNull(e.FindPropertyRelative("prefab").objectReferenceValue, id + " 프리팹 없음");
                 ids.Add(id);
             }
 
             // 정적 배칭으로 묶여 원본을 옮길 수 없는 둘은 반드시 있어야 한다.
-            Assert.IsTrue(ids.Contains("C-1"), "C-1 화분");
-            Assert.IsTrue(ids.Contains("L-1"), "L-1 의자");
+            Assert.IsTrue(ids.Contains("135007"), "C-1 화분");
+            Assert.IsTrue(ids.Contains("135022"), "L-1 의자");
         }
     }
 }

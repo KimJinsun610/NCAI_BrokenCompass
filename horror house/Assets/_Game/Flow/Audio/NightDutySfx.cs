@@ -146,7 +146,7 @@ public sealed class NightDutySfx : MonoBehaviour
     {
         Vector3 at;
         if (!ItemPosition(itemId, out at)) at = Ear() + Vector3.forward * 0.6f;
-        string key = "inspect." + itemId + ".near";
+        string key = InspectionCatalog.TargetOf(itemId) + ".near";   // 소리 키는 표식 문자열(inspect.H-1) 기준
         PlayAt(key, at, 0f);
         PlayAt(key + "+", at, FollowUpSeconds);
         if (NightRun.Day >= StartleImpactFromDay) PlayFar("inspect.near", StartleImpactDistance);
@@ -248,7 +248,7 @@ public sealed class NightDutySfx : MonoBehaviour
     private void StartLoop(InspectionAssignment row)
     {
         float volume;
-        AudioClip clip = DirectionSoundTableSO.FindExact("inspect." + row.Id + ".loop", out volume);
+        AudioClip clip = DirectionSoundTableSO.FindExact(InspectionCatalog.TargetOf(row.Id) + ".loop", out volume);
         Vector3 at;
         if (clip == null || !ItemPosition(row.Id, out at))
         {

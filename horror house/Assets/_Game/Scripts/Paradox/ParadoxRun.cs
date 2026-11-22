@@ -56,10 +56,10 @@ namespace NightDuty
     public sealed class ParadoxRun
     {
         /// <summary>「눈으로만」 — 대상을 시야에 두는 시간(초).</summary>
-        public const float EyesOnlySeconds = 1f;
+        public static float EyesOnlySeconds => global::NightDuty.DesignData.Setting(390085);   // DT 390085 안전한 읽기 — 눈으로만
 
         /// <summary>「CCTV로」 — 채널을 보는 시간(초).</summary>
-        public const float CctvSeconds = 2f;
+        public static float CctvSeconds => global::NightDuty.DesignData.Setting(390086);   // DT 390086 안전한 읽기 — CCTV로
 
         /// <summary>점검표에 붙는 말 — 이상 있음.</summary>
         public const string RevealAnomaly = "확인 필요";
@@ -140,7 +140,7 @@ namespace NightDuty
             get
             {
                 if (_entry == null) return string.Empty;
-                if (_entry.RuleId == "K2") return string.Format(_entry.Message, (_plan.EmptyRoomChannel + 1).ToString("00"));
+                if (_entry.RuleId == "110030") return string.Format(_entry.Message, (_plan.EmptyRoomChannel + 1).ToString("00"));
                 return _entry.Message;
             }
         }
@@ -160,7 +160,7 @@ namespace NightDuty
                 return ParadoxStep.Sent;
             }
 
-            if (_entry.RuleId == "K2") return ObserveEmptyRoom(s);
+            if (_entry.RuleId == "110030") return ObserveEmptyRoom(s);
 
             switch (Pattern)
             {
@@ -189,7 +189,7 @@ namespace NightDuty
         }
 
         /// <summary>K2 「눈으로만」 — 빈 방 채널을 잠깐(0.5초) 본 뒤 다른 채널로 넘긴다(3초 넘게 보면 K2 위반이라 거기서 끝난다).</summary>
-        public const float EmptyRoomGlanceSeconds = 0.5f;
+        public static float EmptyRoomGlanceSeconds => global::NightDuty.DesignData.Setting(390087);   // DT 390087 안전한 읽기 — K2 빈 방 채널 특례
 
         private ParadoxStep ObserveEmptyRoom(in JudgeSignal s)
         {
@@ -257,7 +257,7 @@ namespace NightDuty
         /// <summary>그 수칙의 역설이 드러내는 공간(「CCTV로」는 채널 공간, K2는 그날 빈 방 채널의 공간).</summary>
         public static SpaceId SpaceOf(string ruleId, int emptyRoomChannel = -1)
         {
-            if (ruleId == "K2") return SpaceOfChannel(emptyRoomChannel);
+            if (ruleId == "110030") return SpaceOfChannel(emptyRoomChannel);
             ParadoxEntry e = ParadoxCatalog.Find(ruleId);
             if (e != null && e.Pattern == SafeReadPattern.Cctv) return SpaceIds.Canonical(e.CctvSpace);
             RuleDef def = ProgramCatalog.Rule(ruleId);

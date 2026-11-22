@@ -47,7 +47,7 @@
             {
                 for (int i = 0; i < plan.Assignments.Count; i++)
                 {
-                    if (plan.Assignments[i].Id != "K-1" || !plan.Assignments[i].IsAnomaly) continue;
+                    if (plan.Assignments[i].Id != "135025" || !plan.Assignments[i].IsAnomaly) continue;
                     _cctvAnomalySpot = CctvSpots.Pick(s_cctvRoll, -1, vacant, _cctvPersonSpot != null ? _cctvPersonSpot.Id : _lastCctvSpot);
                     if (_cctvPersonSpot == null && _cctvAnomalySpot != null) _lastCctvSpot = _cctvAnomalySpot.Id;
                     break;

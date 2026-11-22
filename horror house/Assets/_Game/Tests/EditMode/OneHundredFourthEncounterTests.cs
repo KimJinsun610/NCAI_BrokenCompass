@@ -19,7 +19,7 @@ namespace NightDuty.Tests
         [Test]
         public void 기다리는_조우가_있으면_남은_것으로_보고_놓치면_풀린다()
         {
-            DirectorFixture f = new DirectorFixture(3, 0.99, new[] { "T4" }, DirectorFixture.Slot(EncounterSlot.C, ProgramCatalog.ToiletGirl));
+            DirectorFixture f = new DirectorFixture(3, 0.99, new[] { "110019" }, DirectorFixture.Slot(EncounterSlot.C, ProgramCatalog.ToiletGirl));
             f.Wait(0.2f);
             Assert.IsTrue(f.Director.EncountersPending, "슬롯 C를 기다리는 동안은 남은 조우");
 
@@ -42,10 +42,10 @@ namespace NightDuty.Tests
         {
             InspectionPlan plan = new InspectionPlan(3, new[]
             {
-                new InspectionAssignment(InspectionCatalog.Find("K-2"), false, Band.Band0, false),
-                new InspectionAssignment(InspectionCatalog.Find("C-1"), true, Band.Band1, false),
-            }, SpaceId.Corridor, "C-1");
-            NightProgram cctv = new NightProgram(3, new List<SlotEncounter>(), new[] { ProgramCatalog.Rule("K1") }, "test", new[] { ProgramCatalog.Encounter(ProgramCatalog.CctvPerson) });
+                new InspectionAssignment(InspectionCatalog.Find("135026"), false, Band.Band0, false),
+                new InspectionAssignment(InspectionCatalog.Find("135007"), true, Band.Band1, false),
+            }, SpaceId.Corridor, "135007");
+            NightProgram cctv = new NightProgram(3, new List<SlotEncounter>(), new[] { ProgramCatalog.Rule("110029") }, "test", new[] { ProgramCatalog.Encounter(ProgramCatalog.CctvPerson) });
             Assert.IsTrue(cctv.HasEncounter(ProgramCatalog.CctvPerson), "겹침 조우도 편성된 조우");
 
             InspectionPlan patched = NightRun.PatchPlanForProgram(plan, cctv);
@@ -53,7 +53,7 @@ namespace NightDuty.Tests
             Assert.IsNotNull(k1, "CCTV를 보러 올 지시(K-1)");
             Assert.IsFalse(k1.IsAnomaly);
 
-            NightProgram none = new NightProgram(3, new List<SlotEncounter>(), new[] { ProgramCatalog.Rule("K2") }, "test");
+            NightProgram none = new NightProgram(3, new List<SlotEncounter>(), new[] { ProgramCatalog.Rule("110030") }, "test");
             Assert.IsNull(NightRun.PatchPlanForProgram(plan, none).Find(InspectionCatalog.FirstInspection), "CCTV 사람이 없는 날은 그대로");
         }
     }

@@ -28,7 +28,7 @@ namespace NightDuty
         }
 
         /// <summary>68차: 모든 지시를 마쳐 조기 퇴근할 수 있게 된 순간 한 번 보내는 문자.</summary>
-        public const string ShiftReadyText = "[근무] 모든 지시를 마쳤습니다. 경비실 전화로 퇴근하십시오.";
+        public static string ShiftReadyText => DesignData.Msg(140004);
 
         /// <summary>68차: <see cref="ShiftReadyText"/> 문자의 카드 ID(재시작이 되돌리면 태블릿에서 지운다 — 끝난 지시가 아니므로).</summary>
         public const string ShiftReadyId = "shift.ready";
@@ -236,10 +236,10 @@ namespace NightDuty
         private static readonly NightTallies s_tallies = new NightTallies();
 
         /// <summary>103차 후속(사용자: 「근무 평가 반영 메시지는 매번 뜨면 정신없다 — 중간에 한번씩, 한 2회 정도」): 회차에 「근무 평가에 반영되었습니다.」 줄을 보이는 횟수.</summary>
-        public const int TrustLinesPerRun = 2;
+        public static int TrustLinesPerRun => global::NightDuty.DesignData.SettingInt(390187);   // DT 390187 「근무 평가에 반영되었습니다.」 줄
 
         /// <summary>103차 후속: 둘째 줄은 이 날부터(첫 줄은 회차의 첫 신뢰 보상 — 그 뒤로는 한동안 조용히).</summary>
-        public const int TrustLineSecondDay = 3;
+        public static int TrustLineSecondDay => global::NightDuty.DesignData.SettingInt(390188);   // DT 390188 둘째 줄 시작 일차
 
         private static int _trustLinesShown;
 
@@ -252,13 +252,13 @@ namespace NightDuty
         }
 
         /// <summary>103차 후속(사용자 7번: 「너무 미루면 독촉 문자와 함께 다음 지시가 진행되도록」): 지시받은 점검을 이만큼(실제 초) 보고하지 않으면 독촉한다.</summary>
-        public const float InspectionStallSeconds = 90f;
+        public static float InspectionStallSeconds => global::NightDuty.DesignData.Setting(390184);   // DT 390184 미룬 점검 판정
 
         /// <summary>103차 후속: 독촉 문자를 다시 보내는 간격(실제 초).</summary>
         public const float StallNagRepeatSeconds = 120f;
 
         /// <summary>103차 후속: 독촉 문자 본문({0} = 보고하지 않은 점검 수).</summary>
-        public const string StallNagText = "지시한 점검 {0}건의 보고가 늦어지고 있습니다. 확인 후 보고 바랍니다.";
+        public static string StallNagText => DesignData.Msg(140005);
 
         private static float _sinceStallNag = float.PositiveInfinity;
         private static int _stallNagSerial;
@@ -273,7 +273,7 @@ namespace NightDuty
         /// 104차(사용자: 「재촉 제거 필요 — 원래 유도 문자와 겹침. 재촉하는 걸 다 없애줘」): 점검 독촉 문자를 보내는지 — 기본 끔.
         /// 미룬 점검을 더 기다리지 않고 근무 지시를 내는 것(<see cref="InspectionsStalled"/>)은 그대로다.
         /// </summary>
-        public static bool StallNagEnabled { get; set; }
+        public static bool StallNagEnabled { get; set; } = global::NightDuty.DesignData.SettingBool(390006);   // DT 390006 점검 독촉 문자 — 기본값만 DT
 
         private static void NagStalledInspections(float realSeconds, bool stalled, int backlog)
         {

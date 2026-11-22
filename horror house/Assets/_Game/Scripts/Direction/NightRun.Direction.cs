@@ -76,11 +76,11 @@ namespace NightDuty
         /// </summary>
         private static void PlanWildcard()
         {
-            if (_tension == null || !_tension.Sequential || Day < 2) return;
+            if (_tension == null || !_tension.Sequential || !global::NightDuty.DesignData.Day(Day).Wildcard) return;   // DT Day_Table.Wildcard(2일차부터)
             FearAxis axis = HighestSensory();
             string[] pool = WildcardPool(axis);
             string pick = pool[s_wildcardRoll.Next(pool.Length)];
-            float at = NightClock.Call1 + (float)s_wildcardRoll.NextDouble() * 120f;
+            float at = NightClock.Call1 + (float)s_wildcardRoll.NextDouble() * global::NightDuty.DesignData.Setting(390174);   // DT 390174 그날의 빈 칸 시간창
             _tension.SetWildcard(pick, at);
             Debug.Log("[NightRun] 그날의 빈 칸 — " + pick + " (가장 높은 축 " + axis + ", " + NightClock.Clock(at) + " 뒤)");
         }
@@ -148,7 +148,7 @@ namespace NightDuty
         {
             if (_tension == null || string.IsNullOrEmpty(itemId)) return;
             InspectionItem item = InspectionCatalog.FindByTarget(itemId);
-            _tension.NoteReportHold(InspectionCatalog.TargetPrefix + (item != null ? item.Id : itemId));
+            _tension.NoteReportHold(InspectionCatalog.TargetOf(item != null ? item.Id : itemId));
         }
 
         /// <summary>104차: 보고 도중 시체가 떨어져 보고를 잠깐 멈춰야 하는지(InspectionSensor가 읽는다).</summary>
@@ -167,7 +167,7 @@ namespace NightDuty
         }
 
         /// <summary>가짜 놀람을 미룰 거리(m) — 지시받은 점검 대상에서 이만큼 안이면(57차).</summary>
-        public const float FakeQuietRadius = 2.5f;
+        public static float FakeQuietRadius => global::NightDuty.DesignData.Setting(390173);   // DT 390173 지시받은 점검 대상 근처면 가짜 놀람 미룸
 
         private static readonly System.Collections.Generic.HashSet<string> _voidRules = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
 
@@ -216,7 +216,7 @@ namespace NightDuty
             {
                 if (!IssuedItemPending(a.Id)) continue;
                 JudgeTarget t;
-                if (!JudgeTargetRegistry.TryGet(InspectionCatalog.TargetPrefix + a.Id, out t) || t == null) continue;
+                if (!JudgeTargetRegistry.TryGet(InspectionCatalog.TargetOf(a.Id), out t) || t == null) continue;
                 if (SensingRules.HorizontalDistance(feet, t.AnchorPosition) <= FakeQuietRadius) return true;
             }
 
@@ -227,7 +227,7 @@ namespace NightDuty
         private static bool GazeTargetReady(string targetId)
         {
             if (string.IsNullOrEmpty(targetId)) return false;
-            string item = targetId.StartsWith(InspectionCatalog.TargetPrefix, System.StringComparison.Ordinal) ? targetId.Substring(InspectionCatalog.TargetPrefix.Length) : targetId;
+            string item = InspectionCatalog.ItemOfTarget(targetId);
             return IssuedItemPending(item);
         }
 

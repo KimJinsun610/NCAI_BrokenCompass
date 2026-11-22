@@ -18,12 +18,13 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class PlayerFootsteps : MonoBehaviour
 {
-    [SerializeField, Min(0.2f)] private float walkStride = 0.95f;
-    [SerializeField, Min(0.2f)] private float runStride = 1.55f;
-    [SerializeField, Range(0f, 1f)] private float walkVolume = 0.4f;
-    [SerializeField, Range(0f, 1f)] private float runVolume = 0.6f;
+    // DT Fx 421101 플레이어 발소리 — Awake에서 채운다(씬에 저장된 인스턴스 없음, 자동 설치).
+    private float walkStride;
+    private float runStride;
+    private float walkVolume;
+    private float runVolume;
 
-    private const float EchoGap = 0.21f;
+    private static float EchoGap => DesignData.Fx(421101, "메아리 지연(초)");   // DT Fx 421101
 
     private FPController _fp;
     private AudioSource _source;
@@ -82,6 +83,10 @@ public sealed class PlayerFootsteps : MonoBehaviour
 
     private void Awake()
     {
+        walkStride = DesignData.Fx(421101, "걸음 폭 걷기(m)");
+        runStride = DesignData.Fx(421101, "걸음 폭 뛰기(m)");
+        walkVolume = DesignData.Fx(421101, "볼륨 걷기(0~1)");
+        runVolume = DesignData.Fx(421101, "볼륨 뛰기(0~1)");
         _fp = GetComponent<FPController>();
         _source = gameObject.AddComponent<AudioSource>();
         _source.playOnAwake = false;

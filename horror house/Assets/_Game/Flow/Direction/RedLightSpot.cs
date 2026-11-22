@@ -97,7 +97,7 @@ public sealed class RedLightSpot : MonoBehaviour
 
     private void Update()
     {
-        bool want = NightRun.ProgramEnabled && NightRun.IsNightActive && NightRun.Program != null && NightRun.Program.Has("C4");
+        bool want = NightRun.ProgramEnabled && NightRun.IsNightActive && NightRun.Program != null && NightRun.Program.Has("110008");
         if (!want)
         {
             if (_root != null) Clear();

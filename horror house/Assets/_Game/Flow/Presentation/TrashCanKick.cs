@@ -21,7 +21,7 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class TrashCanKick : MonoBehaviour
 {
-    public const string ItemId = "H-4";
+    public const string ItemId = "135004";
     public const string PropPath = "Interior/Corridors/TrashCanBig_A (1)";
     public const string StandInId = "prop.trashcan";
     public const string SoundKey = "inspect.H-4.kick";
@@ -139,7 +139,7 @@ public sealed class TrashCanKick : MonoBehaviour
 
         _prop = host.transform;
         JudgeTarget jt;
-        string id = InspectionCatalog.TargetPrefix + ItemId;
+        string id = InspectionCatalog.TargetOf(ItemId);
         if (JudgeTargetRegistry.TryGet(id, out jt) && jt != null)
         {
             _target = jt.transform;
@@ -175,7 +175,7 @@ public sealed class TrashCanKick : MonoBehaviour
             IReadOnlyList<string> ids = t.Ids;
             for (int i = 0; i < ids.Count; i++)
             {
-                if (ids[i] == null || ids[i].Trim() != InspectionCatalog.TargetPrefix + "L-3") continue;
+                if (ids[i] == null || ids[i].Trim() != InspectionCatalog.TargetOf("L-3")) continue;
                 t.gameObject.SetActive(false);
                 _staleTargets.Add(t.gameObject);
                 break;

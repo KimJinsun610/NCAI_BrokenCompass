@@ -22,6 +22,9 @@ using UnityEngine.SceneManagement;
 [DefaultExecutionOrder(40)]   // PlayerInteractor(50)보다 먼저 — 배터리를 겨눈 프레임에 문 조작을 막는다
 public sealed class BatteryStash : MonoBehaviour
 {
+    /// <summary>칸 무게 = 1 + 경비실까지 거리 / 이 값(m).</summary>
+    public static float DistanceWeightDivisor => global::NightDuty.DesignData.Setting(390268);   // DT 390268
+
     /// <summary>
     /// 손이 닿는 거리(m, 눈에서 배터리까지 조준선 방향). 61차(민 스크린샷: 열린 관물대 바닥의 배터리가 주워지지 않음):
     /// 키를 1.95m(눈 1.70m)로 올리자 관물대 바닥(바닥 위 12cm)까지 세로만 1.58m — 문짝을 피해 1m 떨어져 서면 1.87m라 1.7에 걸렸다. 1.7 → 2.1.
@@ -37,22 +40,22 @@ public sealed class BatteryStash : MonoBehaviour
     private const float AimSlack = 0.1f;
 
     /// <summary>104차: 손전등 없이도 반짝임이 보이는 거리(m).</summary>
-    public const float GlintSeeRange = 11f;
+    public static float GlintSeeRange => DesignData.Fx(421002, "반짝임 보이는 거리(m)");   // DT Fx 421002
 
     /// <summary>104차: 손전등 원뿔이 이 거리(m) 안에서 닿으면 늘 빛나고 더 크게 반짝인다.</summary>
-    public const float GlintLitRange = 6f;
+    public static float GlintLitRange => DesignData.Fx(421002, "손전등 비출 때 반짝임 거리(m)");   // DT Fx 421002
 
     /// <summary>104차: 손전등 없을 때 반짝이는 주기(초) — 배터리마다 어긋난다.</summary>
-    public const float TwinklePeriod = 2.4f;
+    public static float TwinklePeriod => DesignData.Fx(421002, "반짝임 주기(초)");   // DT Fx 421002
 
     /// <summary>104차: 한 번 반짝이는 길이(초).</summary>
-    public const float TwinkleSeconds = 0.28f;
+    public static float TwinkleSeconds => DesignData.Fx(421002, "반짝임 길이(초)");   // DT Fx 421002
 
     /// <summary>104차: 이 거리(m) 안에서 보이면 흐린 외곽선.</summary>
-    public const float NearOutlineRange = 2.5f;
+    public static float NearOutlineRange => DesignData.Fx(421002, "근접 외곽선 거리(m)");   // DT Fx 421002
 
     /// <summary>104차: 가까울 때 외곽선 진하기(겨누면 1).</summary>
-    public const float NearOutlineStrength = 0.35f;
+    public static float NearOutlineStrength => DesignData.Fx(421002, "근접 외곽선 진하기(0~1)");   // DT Fx 421002
 
     private Material _sparkMat;
     private MaterialPropertyBlock _sparkBlock;
@@ -348,7 +351,7 @@ public sealed class BatteryStash : MonoBehaviour
             _doors[id] = d;
             Vector3 p = d.Owner.transform.position;
             p.y = 0f;
-            float weight = 1f + Vector3.Distance(p, GuardRoom) / 15f;
+            float weight = 1f + Vector3.Distance(p, GuardRoom) / DistanceWeightDivisor;
             bool locker = d.Owner.name.StartsWith("Locker") && !PlayerInteractor.IsCorridorLocker(d.Owner);   // 60차: 복도 관물대는 늘 열린 칸(라커룸 사물함만 밤마다 몇 개 풀림)
             bool starter = id.Contains("/Classroom02/") || id.Contains("/science classroom/");   // 67차: 1-1(Classroom01 묶음)은 쓰지 않는다 — 1-3 교실 · 과학실
             list.Add(new BatteryCache(id, weight, locker, starter, SpaceOf(zones, d.Owner.transform.position)));
@@ -386,7 +389,7 @@ public sealed class BatteryStash : MonoBehaviour
             _shelves[id] = spot;
             Vector3 p = spot.At;
             p.y = 0f;
-            float weight = 1f + Vector3.Distance(p, GuardRoom) / 15f;
+            float weight = 1f + Vector3.Distance(p, GuardRoom) / DistanceWeightDivisor;
             bool starter = id.Contains("/Classroom02/") || id.Contains("/science classroom/");   // 1일차 순찰 공간(1-3 교실 · 과학실)
             list.Add(new BatteryCache(id, weight, false, starter, SpaceOf(zones, spot.At)));
         }

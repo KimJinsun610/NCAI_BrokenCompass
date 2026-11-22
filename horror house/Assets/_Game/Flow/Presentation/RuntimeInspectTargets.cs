@@ -20,17 +20,17 @@ public sealed class RuntimeInspectTargets : MonoBehaviour
     /// <summary>항목 ID → 씬 경로(첫 번째가 대표 소품). 소품을 옮기거나 이름을 바꾸면 여기를 고친다.</summary>
     public static readonly KeyValuePair<string, string[]>[] Paths =
     {
-        P("H-5", "Interior/Corridors/Speaker (2)"),
-        P("H-6", "Interior/Corridors/Bench (6)"),
-        P("C-4", "Interior/Classroom02/ClockC (2)"),
-        P("C-5", "Interior/Classroom02/TeacherChair (3)"),
-        P("S-4", "Interior/science classroom/Globe (2)"),
-        P("S-5", "Interior/science classroom/Aged Erlenmeyer Flask (2)", "Interior/science classroom/Aged Erlenmeyer Flask (4)"),
-        P("S-6", "Interior/science classroom/Map"),
-        P("T-5", "Interior/Toilet02/TowelB (2)"),
-        P("L-5", "Interior/Classroom01/TrashCanSmall (1)"),
-        P("K-2", "Interior/janitor's room/Distressed Metal Folding Chair", "Interior/janitor's room/Distressed Metal Folding Chair (2)"),
-        P("K-3", "Interior/janitor's room/Plant01 (1)")
+        P("135005", "Interior/Corridors/Speaker (2)"),
+        P("135006", "Interior/Corridors/Bench (6)"),
+        P("135010", "Interior/Classroom02/ClockC (2)"),
+        P("135011", "Interior/Classroom02/TeacherChair (3)"),
+        P("135015", "Interior/science classroom/Globe (2)"),
+        P("135016", "Interior/science classroom/Aged Erlenmeyer Flask (2)", "Interior/science classroom/Aged Erlenmeyer Flask (4)"),
+        P("135017", "Interior/science classroom/Map"),
+        P("135021", "Interior/Toilet02/TowelB (2)"),
+        P("135024", "Interior/Classroom01/TrashCanSmall (1)"),
+        P("135026", "Interior/janitor's room/Distressed Metal Folding Chair", "Interior/janitor's room/Distressed Metal Folding Chair (2)"),
+        P("135027", "Interior/janitor's room/Plant01 (1)")
     };
 
     /// <summary>S-6 지도와 같은 자리에 겹쳐 놓인 두 번째 지도(이상이면 숨긴다).</summary>
@@ -126,7 +126,7 @@ public sealed class RuntimeInspectTargets : MonoBehaviour
 
     private void Ensure(string itemId, string[] paths)
     {
-        string id = InspectionCatalog.TargetPrefix + itemId;
+        string id = InspectionCatalog.TargetOf(itemId);
         JudgeTarget existing;
         if (JudgeTargetRegistry.TryGet(id, out existing) && existing != null) return;
         if (InspectionCatalog.Find(itemId) == null) return;
@@ -162,7 +162,7 @@ public sealed class RuntimeInspectTargets : MonoBehaviour
             _created.Add(holder);
         }
 
-        GameObject child = new GameObject("Inspect " + itemId);
+        GameObject child = new GameObject("Inspect " + InspectionCatalog.CodeOf(itemId));   // 씬 이름은 표시 코드(Inspect H-1)
         child.layer = parent.gameObject.layer;
         child.transform.SetParent(parent, false);
         child.transform.SetPositionAndRotation(b.center, Quaternion.identity);

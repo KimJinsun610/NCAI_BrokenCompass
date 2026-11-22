@@ -35,13 +35,13 @@ public sealed class LayoutCabinets : MonoBehaviour
     public const string DrawerPreset = "HorrorEvent_DrawerRampage";
 
     /// <summary>복도 배치 이 구간부터 열려 있던 사물함 하나가 닫혀 있다.</summary>
-    public const int ShutBand = 2;
+    public static int ShutBand => global::NightDuty.DesignData.BandLevel(390230);   // DT 390230 (구간 ID)
 
     /// <summary>복도 배치 이 구간부터 등 뒤 사물함이 흔들린다.</summary>
-    public const int RampageBand = 3;
+    public static int RampageBand => global::NightDuty.DesignData.BandLevel(390232);   // DT 390232 (구간 ID)
 
     /// <summary>서랍장 공간 배치 이 구간부터 서랍이 덜컹거린다.</summary>
-    public const int DrawerBand = 3;
+    public static int DrawerBand => global::NightDuty.DesignData.BandLevel(390233);   // DT 390233 (구간 ID)
 
     /// <summary>흔들림을 거는 거리(m, 수평) — 가까운 쪽.</summary>
     public const float RampageNear = 3.5f;

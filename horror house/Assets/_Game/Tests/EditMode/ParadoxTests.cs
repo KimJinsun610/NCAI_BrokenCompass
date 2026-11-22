@@ -44,7 +44,7 @@ namespace NightDuty.Tests
         [Test]
         public void 신뢰_구간_0이면_역설이_없다()
         {
-            ParadoxPlan plan = new ParadoxPlanner(new Random(1)).Plan(3, Band.Band0, Deck("H2", "C1", "G1"));
+            ParadoxPlan plan = new ParadoxPlanner(new Random(1)).Plan(3, Band.Band0, Deck("110002", "110005", "110034"));
             Assert.IsNull(plan.Ambiguous);
             Assert.IsNull(plan.Tampered);
             Assert.IsNull(plan.Blacked);
@@ -53,8 +53,8 @@ namespace NightDuty.Tests
         [Test]
         public void 이일차_회차_첫_역설은_C2이고_반드시_보낸다()
         {
-            ParadoxPlan plan = new ParadoxPlanner(new Random(1)).Plan(2, Band.Band0, Deck("H2", "C2", "G1"));
-            Assert.AreEqual("C2", plan.Ambiguous);
+            ParadoxPlan plan = new ParadoxPlanner(new Random(1)).Plan(2, Band.Band0, Deck("110002", "110006", "110034"));
+            Assert.AreEqual("110006", plan.Ambiguous);
             Assert.IsTrue(plan.FirstOfRun);
             Assert.IsTrue(plan.WillSend);
             Assert.AreEqual(SafeReadPattern.EyesOnly, plan.AmbiguousEntry.Pattern);
@@ -65,8 +65,8 @@ namespace NightDuty.Tests
         {
             for (int seed = 0; seed < 30; seed++)
             {
-                ParadoxPlan plan = new ParadoxPlanner(new Random(seed)).Plan(3, Band.Band1, Deck("C1", "C3", "H2", "K3"));
-                Assert.AreEqual("H2", plan.Ambiguous, "씨앗 " + seed);
+                ParadoxPlan plan = new ParadoxPlanner(new Random(seed)).Plan(3, Band.Band1, Deck("110005", "110007", "110002", "110031"));
+                Assert.AreEqual("110002", plan.Ambiguous, "씨앗 " + seed);
                 Assert.IsTrue(plan.WillSend, "첫 역설은 굴리지 않는다");
             }
         }
@@ -76,10 +76,10 @@ namespace NightDuty.Tests
         {
             for (int seed = 0; seed < 30; seed++)
             {
-                ParadoxPlan plan = Sent(seed).Plan(3, Band.Band3, Deck("K3", "C1"));
-                Assert.AreNotEqual("K3", plan.Ambiguous, "씨앗 " + seed);
+                ParadoxPlan plan = Sent(seed).Plan(3, Band.Band3, Deck("110031", "110005"));
+                Assert.AreNotEqual("110031", plan.Ambiguous, "씨앗 " + seed);
                 // 103차 후속: 구간 3부터는 처음 보는 수칙도 변조한다 — C1이 변조되면 같은 수칙에 역설을 걸지 않는다.
-                if (plan.Tampered != "C1") Assert.AreEqual("C1", plan.Ambiguous, "씨앗 " + seed);
+                if (plan.Tampered != "110005") Assert.AreEqual("110005", plan.Ambiguous, "씨앗 " + seed);
             }
         }
 
@@ -88,16 +88,16 @@ namespace NightDuty.Tests
         {
             Assert.IsTrue(ParadoxPlanner.Excluded(ProgramCatalog.ReverseReportRule));
             Assert.IsTrue(ParadoxPlanner.Excluded(ProgramCatalog.FinaleRule));
-            Assert.IsFalse(ParadoxPlanner.Excluded("K2"), "K2는 그날 빈 방 채널로 겨눈다");
+            Assert.IsFalse(ParadoxPlanner.Excluded("110030"), "K2는 그날 빈 방 채널로 겨눈다");
             for (int seed = 0; seed < 20; seed++)
             {
                 ParadoxPlanner p = Sent(seed);
-                List<RuleDef> deck = Deck("T4", "G1");
+                List<RuleDef> deck = Deck("110019", "110034");
                 p.Plan(2, Band.Band4, deck);
                 ParadoxPlan plan = p.Plan(3, Band.Band4, deck);
                 Assert.IsNull(plan.Ambiguous);
                 Assert.IsNull(plan.Tampered);
-                Assert.AreNotEqual("T4", plan.Blacked);
+                Assert.AreNotEqual("110019", plan.Blacked);
             }
         }
 
@@ -105,10 +105,10 @@ namespace NightDuty.Tests
         public void 변조는_이전_밤에_본_수칙만_고른다()
         {
             ParadoxPlanner p = Sent(3);
-            ParadoxPlan first = p.Plan(2, Band.Band2, Deck("H2", "C1", "G1"));   // 103차: 미세 변조는 구간 2부터(TamperMinBand)
+            ParadoxPlan first = p.Plan(2, Band.Band2, Deck("110002", "110005", "110034"));   // 103차: 미세 변조는 구간 2부터(TamperMinBand)
             Assert.IsNull(first.Tampered, "처음 보는 수칙은 변조하지 않는다");
 
-            ParadoxPlan second = p.Plan(3, Band.Band2, Deck("H2", "C1", "G1"));
+            ParadoxPlan second = p.Plan(3, Band.Band2, Deck("110002", "110005", "110034"));
             Assert.IsNotNull(second.Tampered);
             Assert.AreNotEqual(second.Ambiguous, second.Tampered, "같은 수칙에 역설과 변조를 함께 걸지 않는다");
             Assert.AreEqual(ParadoxCatalog.Subtle(ProgramCatalog.Rule(second.Tampered).Text), second.TamperText, "구간 2는 미세 변조(103차, 옛 3)");
@@ -121,7 +121,7 @@ namespace NightDuty.Tests
         {
             // 103차 후속(사용자: 「변조는 수칙이 처음 등장해도 신뢰가 높다면 변조돼서 처음 등장할 수 있는 게 원래 의도」)
             ParadoxPlanner p = Sent(3);
-            ParadoxPlan plan = p.Plan(3, Band.Band3, Deck("H2", "C1", "G1"));
+            ParadoxPlan plan = p.Plan(3, Band.Band3, Deck("110002", "110005", "110034"));
             Assert.IsNotNull(plan.Tampered, "구간 3(붕괴형)부터는 처음 보는 수칙도");
             Assert.AreEqual(ParadoxCatalog.Find(plan.Tampered).Variant, plan.TamperText);
             Assert.AreEqual(ParadoxPlanner.CollapseMinBand, ParadoxPlanner.UnseenTamperMinBand);
@@ -131,8 +131,8 @@ namespace NightDuty.Tests
         public void 신뢰_구간_4는_붕괴형_변조와_검은_줄()
         {
             ParadoxPlanner p = Sent(5);
-            p.Plan(2, Band.Band4, Deck("H2", "C1", "L4", "G1"));
-            ParadoxPlan plan = p.Plan(3, Band.Band4, Deck("H2", "C1", "L4", "G1"));
+            p.Plan(2, Band.Band4, Deck("110002", "110005", "110025", "110034"));
+            ParadoxPlan plan = p.Plan(3, Band.Band4, Deck("110002", "110005", "110025", "110034"));
             Assert.IsNotNull(plan.Tampered);
             Assert.AreEqual(ParadoxCatalog.Find(plan.Tampered).Variant, plan.TamperText);
             Assert.IsNotNull(plan.Blacked);
@@ -150,8 +150,8 @@ namespace NightDuty.Tests
             int withAnomaly = 0, without = 0;
             for (int seed = 0; seed < 400; seed++)
             {
-                if (Sent(seed).Plan(3, Band.Band1, Deck("H2"), s => true).WillSend) withAnomaly++;
-                if (Sent(seed).Plan(3, Band.Band1, Deck("H2"), s => false).WillSend) without++;
+                if (Sent(seed).Plan(3, Band.Band1, Deck("110002"), s => true).WillSend) withAnomaly++;
+                if (Sent(seed).Plan(3, Band.Band1, Deck("110002"), s => false).WillSend) without++;
             }
 
             Assert.That(withAnomaly, Is.InRange(330, 390), "90%(103차, 옛 75%)");
@@ -168,7 +168,7 @@ namespace NightDuty.Tests
         [Test]
         public void 눈으로만_대상을_1초_보면_안전한_읽기()
         {
-            ParadoxRun r = Run("H1");
+            ParadoxRun r = Run("110001");
             Assert.AreEqual(ParadoxStep.None, r.Observe(JudgeSignal.Gaze(FinalCues.H1Object, 0.5f), SpaceId.Corridor, false), "문자 전에는 세지 않는다");
             Assert.AreEqual(ParadoxStep.Sent, r.Observe(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor), SpaceId.Corridor, false));
             for (int i = 0; i < 9; i++) Assert.AreEqual(ParadoxStep.None, r.Observe(JudgeSignal.Gaze(FinalCues.H1Object, 0.1f), SpaceId.Corridor, false));
@@ -179,7 +179,7 @@ namespace NightDuty.Tests
         [Test]
         public void 대상이_없는_눈으로만은_그_공간에_1초_머물면_된다()
         {
-            ParadoxRun r = Run("H2");
+            ParadoxRun r = Run("110002");
             r.Observe(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor), SpaceId.Corridor, false);
             Assert.IsTrue(r.Sent);
             r.Observe(JudgeSignal.Tick(0.5f), SpaceId.Classroom, false);
@@ -191,7 +191,7 @@ namespace NightDuty.Tests
         [Test]
         public void 멈춰서는_단서가_끝날_때까지_지키면_된다()
         {
-            ParadoxRun r = Run("C1");
+            ParadoxRun r = Run("110005");
             Assert.AreEqual(ParadoxStep.None, r.Observe(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Classroom), SpaceId.Classroom, false), "단서가 있는 수칙은 단서에 보낸다");
             Assert.AreEqual(ParadoxStep.Sent, r.Observe(JudgeSignal.Cue(FinalCues.Chalk + "@x", default), SpaceId.Corridor, false));
             Assert.AreEqual(ParadoxStep.None, r.Observe(JudgeSignal.CueEnd(FinalCues.Chalk), SpaceId.Corridor, true), "어겼으면 아니다");
@@ -201,16 +201,16 @@ namespace NightDuty.Tests
         [Test]
         public void 멈춰서는_위협_대응_성공으로도_된다()
         {
-            ParadoxRun r = Run("H3");
+            ParadoxRun r = Run("110003");
             r.Observe(JudgeSignal.Cue(FinalCues.Footsteps, default), SpaceId.Corridor, false);
-            Assert.AreEqual(ParadoxStep.None, r.NoteThreatKept("C3"));
-            Assert.AreEqual(ParadoxStep.SafeRead, r.NoteThreatKept("H3"));
+            Assert.AreEqual(ParadoxStep.None, r.NoteThreatKept("110007"));
+            Assert.AreEqual(ParadoxStep.SafeRead, r.NoteThreatKept("110003"));
         }
 
         [Test]
         public void CCTV로는_그_공간_채널을_2초_보면_된다()
         {
-            ParadoxRun r = Run("K3");
+            ParadoxRun r = Run("110031");
             Assert.AreEqual(SpaceId.Corridor, r.Space);
             Assert.AreEqual(ParadoxStep.Sent, r.Observe(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.SecurityRoom), SpaceId.SecurityRoom, false));
             for (int i = 0; i < 30; i++) r.Observe(JudgeSignal.CctvView("cctv.ch1", 0.1f), SpaceId.SecurityRoom, false);
@@ -223,7 +223,7 @@ namespace NightDuty.Tests
         [Test]
         public void 보류된_역설은_보내지_않는다()
         {
-            ParadoxRun r = new ParadoxRun(new ParadoxPlan(Band.Band1, "H2", false, false, null, null, null, null, "보류"));
+            ParadoxRun r = new ParadoxRun(new ParadoxPlan(Band.Band1, "110002", false, false, null, null, null, null, "보류"));
             Assert.AreEqual(ParadoxStep.None, r.Observe(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor), SpaceId.Corridor, false));
             Assert.IsFalse(r.Sent);
         }
@@ -231,7 +231,7 @@ namespace NightDuty.Tests
         [Test]
         public void 이미_어긴_수칙에는_문자를_보내지_않는다()
         {
-            ParadoxRun r = Run("H2");
+            ParadoxRun r = Run("110002");
             Assert.AreEqual(ParadoxStep.None, r.Observe(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor), SpaceId.Corridor, true));
             Assert.IsFalse(r.Sent);
         }
@@ -281,7 +281,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(1, messages);
             Assert.AreEqual(id, got.CardId);
             // 103차 QA 3회: K2 문구는 그날 빈 방 채널을 채운다(「CAM{0}」) — 덱 뽑기에 따라 K2가 걸리면 원문과 다르다(무작위 실패).
-            if (id == "K2") StringAssert.StartsWith("공실 CAM", got.Text);
+            if (id == "110030") StringAssert.StartsWith("공실 CAM", got.Text);
             else Assert.AreEqual(ParadoxCatalog.Find(id).Message, got.Text);
             Assert.IsTrue(NightRun.FinalRules.Judge(id).Triggered);
             Assert.IsTrue(NightRun.Paradoxes.SentInRun);
@@ -453,7 +453,7 @@ namespace NightDuty.Tests
         [Test]
         public void K2_역설은_그날_빈_방_채널을_부르고_잠깐_보고_넘기면_안전한_읽기()
         {
-            ParadoxRun r = new ParadoxRun(new ParadoxPlan(Band.Band1, "K2", false, true, null, null, null, null, "시험", null, 2));
+            ParadoxRun r = new ParadoxRun(new ParadoxPlan(Band.Band1, "110030", false, true, null, null, null, null, "시험", null, 2));
             Assert.AreEqual("공실 CAM03에 움직임이 있습니다. 즉시 확인하십시오.", r.Message);
             Assert.AreEqual(SpaceId.ScienceRoom, r.Space, "채널 2 = 과학실");
             Assert.AreEqual(ParadoxStep.Sent, r.Observe(JudgeSignal.Cue(FinalCues.EmptyRoom + "@cctv.ch2", default), SpaceId.SecurityRoom, false));
@@ -468,8 +468,8 @@ namespace NightDuty.Tests
         {
             for (int seed = 0; seed < 30; seed++)
             {
-                ParadoxPlan plan = Sent(seed).Plan(3, Band.Band1, Deck("K3", "C1"), null, null, 0);   // K3은 복도 채널(0)을 본다
-                Assert.AreEqual("C1", plan.Ambiguous, "씨앗 " + seed);
+                ParadoxPlan plan = Sent(seed).Plan(3, Band.Band1, Deck("110031", "110005"), null, null, 0);   // K3은 복도 채널(0)을 본다
+                Assert.AreEqual("110005", plan.Ambiguous, "씨앗 " + seed);
             }
         }
 
@@ -480,8 +480,8 @@ namespace NightDuty.Tests
             bool k3WithoutK1 = false;
             for (int seed = 0; seed < 30; seed++)
             {
-                Assert.AreEqual("C1", Sent(seed).Plan(3, Band.Band1, Deck("K3", "K1", "C1")).Ambiguous, "씨앗 " + seed);
-                if (Sent(seed).Plan(3, Band.Band1, Deck("K3", "C1")).Ambiguous == "K3") k3WithoutK1 = true;
+                Assert.AreEqual("110005", Sent(seed).Plan(3, Band.Band1, Deck("110031", "110029", "110005")).Ambiguous, "씨앗 " + seed);
+                if (Sent(seed).Plan(3, Band.Band1, Deck("110031", "110005")).Ambiguous == "110031") k3WithoutK1 = true;
             }
 
             Assert.IsTrue(k3WithoutK1, "K1이 없는 밤에는 K3 역설이 나올 수 있다");
@@ -526,11 +526,11 @@ namespace NightDuty.Tests
             for (int seed = 0; seed < 30; seed++)
             {
                 ParadoxPlanner p = Sent(seed);
-                p.Plan(2, Band.Band4, Deck("T1", "H2", "G1", "L4"));
-                ParadoxPlan plan = p.Plan(3, Band.Band4, Deck("T1", "H2", "G1", "L4"), null, def);
-                Assert.AreNotEqual("T1", plan.Ambiguous);
-                Assert.AreNotEqual("T1", plan.Tampered);
-                Assert.AreNotEqual("T1", plan.Blacked);
+                p.Plan(2, Band.Band4, Deck("110016", "110002", "110034", "110025"));
+                ParadoxPlan plan = p.Plan(3, Band.Band4, Deck("110016", "110002", "110034", "110025"), null, def);
+                Assert.AreNotEqual("110016", plan.Ambiguous);
+                Assert.AreNotEqual("110016", plan.Tampered);
+                Assert.AreNotEqual("110016", plan.Blacked);
                 Assert.AreSame(def, plan.Unavoidable);
             }
         }
@@ -569,7 +569,7 @@ namespace NightDuty.Tests
         {
             UnavoidableRun r = new UnavoidableRun(UnavoidableCatalog.Find("K1xK-1"));
             Assert.AreEqual(UnavoidableStep.None, r.Observe(JudgeSignal.Cue(FinalCues.CctvPerson, default), SpaceId.SecurityRoom, null, id => false));
-            Assert.AreEqual(UnavoidableStep.Staged, r.Observe(JudgeSignal.Cue(FinalCues.CctvPerson, default), SpaceId.SecurityRoom, null, id => id == "K-1"));
+            Assert.AreEqual(UnavoidableStep.Staged, r.Observe(JudgeSignal.Cue(FinalCues.CctvPerson, default), SpaceId.SecurityRoom, null, id => id == "135025"));
             Assert.IsFalse(r.Def.Real);
         }
 
@@ -618,7 +618,7 @@ namespace NightDuty.Tests
         [Test]
         public void 나가라_신호는_평소_그_공간_점검이_남았으면_울리지_않는다()
         {
-            NightProgram program = new NightProgram(3, null, Deck("S2"), string.Empty);
+            NightProgram program = new NightProgram(3, null, Deck("110012"), string.Empty);
             TensionDirector d = new TensionDirector(program, 3, 0, new Random(1));
             d.InspectionPendingIn = s => true;
             Dwell(d, SpaceId.ScienceRoom, 20f);
@@ -634,7 +634,7 @@ namespace NightDuty.Tests
         [Test]
         public void 둘째_조우는_제_슬롯에서_걸지_않고_겹칠_때_곧장_대면한다()
         {
-            NightProgram program = new NightProgram(3, new[] { new SlotEncounter(EncounterSlot.A, ProgramCatalog.Encounter(ProgramCatalog.Footsteps), false) }, Deck("H3"), string.Empty);
+            NightProgram program = new NightProgram(3, new[] { new SlotEncounter(EncounterSlot.A, ProgramCatalog.Encounter(ProgramCatalog.Footsteps), false) }, Deck("110003"), string.Empty);
             TensionDirector d = new TensionDirector(program, 3, 0, new Random(1));
             d.SetUnavoidable(UnavoidableCatalog.Find("S5xH3"));
             d.Observe(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
@@ -652,7 +652,7 @@ namespace NightDuty.Tests
         [Test]
         public void K2_단서는_그날_빈_방_채널을_가리킨다()
         {
-            NightProgram program = new NightProgram(3, null, Deck("K2"), string.Empty);
+            NightProgram program = new NightProgram(3, null, Deck("110030"), string.Empty);
             TensionDirector d = new TensionDirector(program, 3, 0, new Random(1));
             d.EmptyRoomChannel = "cctv.ch4";
             d.Observe(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.SecurityRoom));
@@ -725,11 +725,11 @@ namespace NightDuty.Tests
             TestKit.BeginProgramNight(2, () => _clock);
             TestKit.ViolateRunning();
             RuleSO g1 = null;
-            foreach (RuleSO card in NightRun.TodayDeck) if (card.CardId == "G1") g1 = card;
+            foreach (RuleSO card in NightRun.TodayDeck) if (card.CardId == "110034") g1 = card;
             Assert.IsNotNull(g1);
             // 51차 민: 「태블릿에 수칙 어긴 것을 표시하지 말 것」 — 기본은 얼룩 없음(스위치를 켜면 옛 표시).
             Assert.IsFalse(NightRun.ShowViolationStain);
-            Assert.AreEqual(ProgramCatalog.Rule("G1").Text, g1.PlayerText, "위반해도 수칙 줄은 그대로");
+            Assert.AreEqual(ProgramCatalog.Rule("110034").Text, g1.PlayerText, "위반해도 수칙 줄은 그대로");
         }
 
         [Test]
@@ -779,22 +779,22 @@ namespace NightDuty.Tests
         [Test]
         public void 근무일지_표시는_불가피가_지시를_따름보다_앞선다()
         {
-            DutyLogEntry e = new DutyLogEntry(1, "S2", SpaceId.ScienceRoom, "x", RuleVerdict.Violated, true, string.Empty, true);
+            DutyLogEntry e = new DutyLogEntry(1, "110012", SpaceId.ScienceRoom, "x", RuleVerdict.Violated, true, string.Empty, true);
             Assert.AreEqual(DutyMark.Unavoidable, e.Mark);
-            Assert.AreEqual(DutyMark.Instructed, new DutyLogEntry(1, "S2", SpaceId.ScienceRoom, "x", RuleVerdict.Violated, true).Mark);
-            Assert.AreEqual(DutyMark.None, new DutyLogEntry(1, "S2", SpaceId.ScienceRoom, "x", RuleVerdict.Complied, true, string.Empty, true).Mark);
+            Assert.AreEqual(DutyMark.Instructed, new DutyLogEntry(1, "110012", SpaceId.ScienceRoom, "x", RuleVerdict.Violated, true).Mark);
+            Assert.AreEqual(DutyMark.None, new DutyLogEntry(1, "110012", SpaceId.ScienceRoom, "x", RuleVerdict.Complied, true, string.Empty, true).Mark);
         }
 
         [Test]
         public void 민_수정_몹을_예고하던_역설은_폐기되고_S2는_눈으로만()
         {
-            foreach (string id in new[] { "C3", "C5", "L2", "L5", "K1" }) Assert.IsFalse(ParadoxCatalog.Find(id).HasMessage, id);
-            Assert.AreEqual(SafeReadPattern.EyesOnly, ParadoxCatalog.Find("S2").Pattern);
-            Assert.IsFalse(ParadoxCatalog.Find("S3").HasVariant);
-            Assert.IsFalse(ParadoxCatalog.Find("L4").HasMessage, "2026-11-13: 늘 있는 상자라 「쏟아져 있습니다」 문자 폐기");
-            Assert.IsTrue(ParadoxCatalog.Find("L4").HasVariant, "변조본은 그대로");
-            Assert.AreEqual("인체 모형에는 빛을 비추지 마십시오.", ProgramCatalog.Rule("S3").Text, "51차 민: 미션처럼 읽히던 「3초간 비추라」 폐기");
-            Assert.AreEqual("근무 종료 후에는 경비실을 나가지 마십시오.", ProgramCatalog.Rule("K4").Text);
+            foreach (string id in new[] { "110007", "110009", "110023", "110026", "110029" }) Assert.IsFalse(ParadoxCatalog.Find(id).HasMessage, id);
+            Assert.AreEqual(SafeReadPattern.EyesOnly, ParadoxCatalog.Find("110012").Pattern);
+            Assert.IsFalse(ParadoxCatalog.Find("110013").HasVariant);
+            Assert.IsFalse(ParadoxCatalog.Find("110025").HasMessage, "2026-11-13: 늘 있는 상자라 「쏟아져 있습니다」 문자 폐기");
+            Assert.IsTrue(ParadoxCatalog.Find("110025").HasVariant, "변조본은 그대로");
+            Assert.AreEqual("인체 모형에는 빛을 비추지 마십시오.", ProgramCatalog.Rule("110013").Text, "51차 민: 미션처럼 읽히던 「3초간 비추라」 폐기");
+            Assert.AreEqual("근무 종료 후에는 경비실을 나가지 마십시오.", ProgramCatalog.Rule("110032").Text);
         }
     }
 }

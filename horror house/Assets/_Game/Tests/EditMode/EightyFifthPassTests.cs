@@ -49,14 +49,14 @@ namespace NightDuty.Tests
         public void 대본_창밖은_블라인드_지시_뒤_문간은_책이나_순찰_지시_뒤()
         {
             EncounterScript window = EncounterScripts.Find(ProgramCatalog.SuitMan);
-            Assert.AreEqual("L-2", window.AfterOrder);
+            Assert.AreEqual("135023", window.AfterOrder);
             Assert.AreEqual(0f, window.NearAnchor, "블라인드 앞에서도 — 창 거리 조건 없음");
-            Assert.AreEqual("블라인드", InspectionCatalog.Find("L-2").Name);
+            Assert.AreEqual("블라인드", InspectionCatalog.Find("135023").Name);
 
             EncounterScript door = EncounterScripts.Find(ProgramCatalog.YellowFace);
-            CollectionAssert.AreEquivalent(new[] { "W15" }, door.AfterDuty);   // 104차: biology 책만
+            CollectionAssert.AreEquivalent(new[] { "130009" }, door.AfterDuty);   // 104차: biology 책만
             Assert.AreEqual(DutyCatalog.LibraryBookTarget, door.ReportTriggerItem, "104차: 책을 집는 순간");
-            Assert.AreEqual("L3", ProgramCatalog.Encounter(ProgramCatalog.YellowFace).ResponseRule);
+            Assert.AreEqual("110024", ProgramCatalog.Encounter(ProgramCatalog.YellowFace).ResponseRule);
             Assert.AreEqual(string.Empty, ProgramCatalog.Encounter(ProgramCatalog.SuitMan).ResponseRule);
         }
 
@@ -86,29 +86,29 @@ namespace NightDuty.Tests
             NightRun.Programs.SetFaceDays(ProgramDirector.WindowFaceFrom, ProgramDirector.DefaultFaceDay);   // 103차 후속: 창밖 노란 얼굴은 3일차
             NightRun.BeginNight(ProgramDirector.WindowFaceFrom, () => _clock);
             Assert.IsTrue(NightRun.Program.HasEncounter(ProgramCatalog.SuitMan), NightRun.Program.Report);
-            Assert.IsFalse(NightRun.Program.Has("L3"), "창밖 밤에는 L3 없음");
+            Assert.IsFalse(NightRun.Program.Has("110024"), "창밖 밤에는 L3 없음");
 
-            InspectionAssignment l2 = NightRun.Inspections.Plan.Find("L-2");
+            InspectionAssignment l2 = NightRun.Inspections.Plan.Find("135023");
             Assert.IsNotNull(l2, "편성에 블라인드");
             Assert.IsFalse(l2.IsLate);
-            Assert.IsTrue(NightRun.Inspections.IsHeld("L-2"), "슬롯 전까지 묶음");
+            Assert.IsTrue(NightRun.Inspections.IsHeld("135023"), "슬롯 전까지 묶음");
 
             EncounterRun run = RunOf(ProgramCatalog.SuitMan);
             float from, to;
             TensionDirector.SlotWindow(run.Slot, out from, out to);
             _clock = (int)(from - NightRun.LeadMinutes) - 1;
             Ticks(30);
-            Assert.IsTrue(NightRun.Inspections.IsHeld("L-2"), "아직");
-            Assert.IsFalse(sent.Exists(o => o.ItemIds.Contains("L-2")));
+            Assert.IsTrue(NightRun.Inspections.IsHeld("135023"), "아직");
+            Assert.IsFalse(sent.Exists(o => o.ItemIds.Contains("135023")));
 
             _clock = (int)(from - NightRun.LeadMinutes);
             Ticks(80);
-            InspectionOrder order = sent.Find(o => o.ItemIds.Contains("L-2"));
+            InspectionOrder order = sent.Find(o => o.ItemIds.Contains("135023"));
             Assert.IsNotNull(order, "슬롯 5분 앞 — 블라인드 단독 지시");
             Assert.AreEqual(1, order.ItemIds.Count);
             StringAssert.Contains("도서관 입구 맞은편 창 블라인드", NightRun.OrderMessage(order));
             StringAssert.DoesNotContain(NightRun.WitnessStallLabel, NightRun.OrderMessage(order), "칸 표시는 변기만");
-            Assert.IsTrue(NightRun.Inspections.IsIssued("L-2"));
+            Assert.IsTrue(NightRun.Inspections.IsIssued("135023"));
         }
 
         [Test]
@@ -119,15 +119,15 @@ namespace NightDuty.Tests
             NightRun.Programs.SetFaceDays(ProgramDirector.WindowFaceFrom, 4);   // 103차: 도서관 노란 얼굴은 4·5일차 중 하루 — 시험은 4일차로 고정
             NightRun.BeginNight(4, () => _clock);
             Assert.IsTrue(NightRun.Program.HasEncounter(ProgramCatalog.YellowFace), NightRun.Program.Report);
-            Assert.IsTrue(NightRun.Program.Has("L3"), "문간 밤 L3");
+            Assert.IsTrue(NightRun.Program.Has("110024"), "문간 밤 L3");
 
             string lead = NightRun.LeadDuty;
-            CollectionAssert.Contains(new[] { "W15", "W2" }, lead);
-            Assert.IsTrue(NightRun.Duties.IsReserved("W15"), "평소 지시에서 뺀다");
+            CollectionAssert.Contains(new[] { "130009", "130001" }, lead);
+            Assert.IsTrue(NightRun.Duties.IsReserved("130009"), "평소 지시에서 뺀다");
             for (int i = 0; i < 20; i++)
             {
                 DutyDef p = NightRun.Duties.Pick();
-                Assert.IsTrue(p == null || p.Id != "W15", p != null ? p.Id : "-");
+                Assert.IsTrue(p == null || p.Id != "130009", p != null ? p.Id : "-");
             }
 
             EncounterRun run = RunOf(ProgramCatalog.YellowFace);
@@ -136,7 +136,7 @@ namespace NightDuty.Tests
             _clock = (int)(from - NightRun.LeadMinutes) - 1;
             DutyEvent ev;
             if (NightRun.Duties.Active != null) Assert.Pass("다른 지시 진행 중 — 이 시험은 빈 지시기에서만");
-            NightRun.Duties.Force("W21", out ev);   // 진행 중인 다른 지시가 있으면 기다린다
+            NightRun.Duties.Force("130008", out ev);   // 진행 중인 다른 지시가 있으면 기다린다
             Ticks(5);
             Assert.IsFalse(NightRun.Duties.WasIssued(lead), "슬롯 앞이 아님");
             Assert.IsTrue(NightRun.DutiesPending, "조우 앞 지시가 남았다");

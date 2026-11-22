@@ -32,27 +32,27 @@ namespace NightDuty
     /// </summary>
     public sealed class GuardRoomLoiter
     {
-        public const float FlickerSeconds = 30f;
-        public const float FaceSeconds = 60f;
-        public const float BlackoutSeconds = 90f;
+        public static float FlickerSeconds => global::NightDuty.DesignData.Setting(390090);   // DT 390090 1단계 깜빡임
+        public static float FaceSeconds => global::NightDuty.DesignData.Setting(390091);   // DT 390091 2단계 CCTV 얼굴
+        public static float BlackoutSeconds => global::NightDuty.DesignData.Setting(390092);   // DT 390092 3단계 정전
 
         /// <summary>정전 뒤 붙잡히기까지(초).</summary>
-        public const float CaptureGraceSeconds = 15f;
+        public static float CaptureGraceSeconds => global::NightDuty.DesignData.Setting(390093);   // DT 390093 정전 뒤 붙잡히기까지
 
         /// <summary>붙잡힘은 이 날부터(1일차는 정전까지만).</summary>
-        public const int CaptureFromDay = 2;
+        public static int CaptureFromDay => global::NightDuty.DesignData.SettingInt(390094);   // DT 390094 버티기 붙잡힘 시작 일차
 
         /// <summary>문에서 떨어진 밖에 이만큼(초) 있어야 나간 것.</summary>
-        public const float OutsideSettleSeconds = 3f;
+        public static float OutsideSettleSeconds => global::NightDuty.DesignData.Setting(390095);   // DT 390095 문 밖에 이만큼 있어야 나간 것
 
         /// <summary>정전 단계 기억(초) — 이 안에 0이 되면 다시 60초 단계부터.</summary>
-        public const float MemorySeconds = 120f;
+        public static float MemorySeconds => global::NightDuty.DesignData.Setting(390096);   // DT 390096 정전 단계 기억
 
         /// <summary>
         /// 면제(경비실에서 할 일) 한도(초) — 한 번 머무는 동안. 경비실 점검·지시를 일부러 남겨 두고 버티는 것을 막는다(다 쓰면 그냥 센다).
         /// 0이 될 때(다른 공간·지시 끝) 다시 찬다.
         /// </summary>
-        public const float ExemptBudgetSeconds = 60f;
+        public static float ExemptBudgetSeconds => global::NightDuty.DesignData.Setting(390097);   // DT 390097 경비실 할 일 면제 한도(1회 체류당)
 
         private float _seconds;
         private float _outside;

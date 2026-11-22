@@ -126,30 +126,30 @@ namespace NightDuty.Tests
         [Test]
         public void 일반수칙은_첫_위반에서_한번만_12()
         {
-            FinalFixture f = new FinalFixture("H1");
+            FinalFixture f = new FinalFixture("110001");
             f.Anchors[FinalCues.H1Object] = Vector3.zero;
             f.Pose(3f, 0f).Pose(1f, 0f).Pose(0.5f, 0f).Pose(3f, 0f).Pose(1f, 0f);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Layout));
-            Assert.AreEqual(1, f.Count("H1"));
+            Assert.AreEqual(1, f.Count("110001"));
         }
 
         [Test]
         public void 방아쇠가_왔고_지켰으면_밤종료에_신뢰_2()
         {
-            FinalFixture f = new FinalFixture("H1", "L4");
+            FinalFixture f = new FinalFixture("110001", "110025");
             f.Anchors[FinalCues.H1Object] = Vector3.zero;
             f.Pose(3f, 0f);   // 반경 3배 안 — 방아쇠.
             int trust = f.Value(FearAxis.Trust);
             f.Book.EndNight();
             Assert.AreEqual(trust + Deltas.TrustComply, f.Value(FearAxis.Trust));
-            Assert.AreEqual(FinalOutcome.Complied, f.Last("H1"));
-            Assert.IsNull(f.Last("L4"), "방아쇠가 오지 않은 수칙은 준수로 치지 않는다");
+            Assert.AreEqual(FinalOutcome.Complied, f.Last("110001"));
+            Assert.IsNull(f.Last("110025"), "방아쇠가 오지 않은 수칙은 준수로 치지 않는다");
         }
 
         [Test]
         public void 위반한_수칙은_밤종료_준수가_없다()
         {
-            FinalFixture f = new FinalFixture("H1");
+            FinalFixture f = new FinalFixture("110001");
             f.Anchors[FinalCues.H1Object] = Vector3.zero;
             f.Pose(0.5f, 0f);
             int trust = f.Value(FearAxis.Trust);
@@ -160,7 +160,7 @@ namespace NightDuty.Tests
         [Test]
         public void 판정정지_중에는_상태만_갱신한다()
         {
-            FinalFixture f = new FinalFixture("G1");
+            FinalFixture f = new FinalFixture("110034");
             f.Book.Dispatch(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor), false);
             f.Book.Dispatch(JudgeSignal.Run(true), false);
             for (int i = 0; i < 20; i++) f.Book.Dispatch(JudgeSignal.Tick(0.1f), false);
@@ -175,18 +175,18 @@ namespace NightDuty.Tests
         [Test]
         public void 스냅샷으로_되돌리면_그뒤_위반이_사라진다()
         {
-            FinalFixture f = new FinalFixture("G1", "H1");
+            FinalFixture f = new FinalFixture("110034", "110001");
             f.Anchors[FinalCues.H1Object] = Vector3.zero;
             f.Pose(0.5f, 0f);   // H1 위반(스냅샷 전).
             object state = f.Book.CaptureState();
 
             f.Enter(SpaceId.Corridor).Send(JudgeSignal.Run(true)).Wait(1.2f);
-            Assert.IsTrue(f.Book.Judge("G1").Violated);
+            Assert.IsTrue(f.Book.Judge("110034").Violated);
             Assert.AreEqual(2, f.Book.Results.Count);
 
             f.Book.RestoreState(state);
-            Assert.IsFalse(f.Book.Judge("G1").Violated);
-            Assert.IsTrue(f.Book.Judge("H1").Violated);
+            Assert.IsFalse(f.Book.Judge("110034").Violated);
+            Assert.IsTrue(f.Book.Judge("110001").Violated);
             Assert.AreEqual(1, f.Book.Results.Count);
             Assert.IsFalse(f.Book.World.Running, "재시작하면 달리기 상태를 버린다");
         }
@@ -194,7 +194,7 @@ namespace NightDuty.Tests
         [Test]
         public void 붙잡히면_더_판정하지_않는다()
         {
-            FinalFixture f = new FinalFixture("G1");
+            FinalFixture f = new FinalFixture("110034");
             f.Axes.Apply(FearAxis.Auditory, 100, "test", SpaceId.None);
             Assert.IsTrue(f.Axes.IsLocked);
             int before = f.Book.Results.Count;
@@ -209,7 +209,7 @@ namespace NightDuty.Tests
         [Test]
         public void H2_연출이_연_문을_닫으면_위반()
         {
-            FinalFixture f = new FinalFixture("H2");
+            FinalFixture f = new FinalFixture("110002");
             f.Send(JudgeSignal.DoorCommand("door.a", true, ActionSource.Player));
             Assert.AreEqual(0, f.Value(FearAxis.Layout), "연출이 연 문이 아니면 묻지 않는다");
             f.Send(JudgeSignal.Target(SignalKind.DoorAutoOpenObserved, "door.a"));
@@ -222,18 +222,18 @@ namespace NightDuty.Tests
         [Test]
         public void H3_6초_안에_방으로_대피해_끝나고_2초_머물면_신뢰_3()
         {
-            FinalFixture f = new FinalFixture("H3");
+            FinalFixture f = new FinalFixture("110003");
             f.Enter(SpaceId.Corridor).Cue(FinalCues.Footsteps).Wait(3f);
             f.Exit(SpaceId.Corridor).Enter(SpaceId.Classroom_1_1).Wait(4f);
             f.End(FinalCues.Footsteps).Wait(2.1f);
-            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("H3"));
+            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("110003"));
             Assert.AreEqual(Deltas.TrustThreatSuccess, f.Value(FearAxis.Trust));
         }
 
         [Test]
         public void H3_복도에_6초_남으면_20()
         {
-            FinalFixture f = new FinalFixture("H3");
+            FinalFixture f = new FinalFixture("110003");
             f.Enter(SpaceId.Corridor).Cue(FinalCues.Footsteps).Wait(6.1f);
             Assert.AreEqual(Deltas.ThreatFailure, f.Value(FearAxis.Auditory));
         }
@@ -241,16 +241,16 @@ namespace NightDuty.Tests
         [Test]
         public void H3_끝나기_전에_복도로_나오면_20()
         {
-            FinalFixture f = new FinalFixture("H3");
+            FinalFixture f = new FinalFixture("110003");
             f.Enter(SpaceId.Library).Cue(FinalCues.Footsteps).Wait(2f);
             f.Exit(SpaceId.Library).Enter(SpaceId.Corridor);
-            Assert.AreEqual(FinalOutcome.Violated, f.Last("H3"));
+            Assert.AreEqual(FinalOutcome.Violated, f.Last("110003"));
         }
 
         [Test]
         public void H3_위협은_조우마다_정산한다()
         {
-            FinalFixture f = new FinalFixture("H3");
+            FinalFixture f = new FinalFixture("110003");
             f.Enter(SpaceId.Corridor).Cue(FinalCues.Footsteps).Wait(6.1f);
             f.End(FinalCues.Footsteps);
             f.Cue(FinalCues.Footsteps).Wait(6.1f);
@@ -260,32 +260,32 @@ namespace NightDuty.Tests
         [Test]
         public void H4_등뒤_목소리로_돌아보면_20()
         {
-            FinalFixture f = new FinalFixture("H4");
+            FinalFixture f = new FinalFixture("110004");
             f.Pose(0f, 0f, 0f).Cue(FinalCues.Voice, new Vector3(0f, 0f, -5f));
             f.Pose(0f, 0f, 60f);
-            Assert.IsNull(f.Last("H4"), "60°는 아직 응답이 아니다");
+            Assert.IsNull(f.Last("110004"), "60°는 아직 응답이 아니다");
             f.Pose(0f, 0f, 170f);
-            Assert.AreEqual(FinalOutcome.Violated, f.Last("H4"));
+            Assert.AreEqual(FinalOutcome.Violated, f.Last("110004"));
         }
 
         [Test]
         public void H4_돌아보지_않고_끝나면_신뢰_3()
         {
-            FinalFixture f = new FinalFixture("H4");
+            FinalFixture f = new FinalFixture("110004");
             f.Pose(0f, 0f, 0f).Cue(FinalCues.Voice, new Vector3(0f, 0f, -5f));
             f.Pose(0f, 1f, 20f).Wait(3f).End(FinalCues.Voice);
-            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("H4"));
+            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("110004"));
         }
 
         [Test]
         public void C1_판서_중과_끝난_직후_1초는_입실_금지()
         {
-            FinalFixture f = new FinalFixture("C1");
+            FinalFixture f = new FinalFixture("110005");
             f.Enter(SpaceId.Corridor).Cue(FinalCues.Chalk).Wait(2f).End(FinalCues.Chalk).Wait(0.5f);
             f.Enter(SpaceId.Classroom_1_3);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Auditory));
 
-            FinalFixture g = new FinalFixture("C1");
+            FinalFixture g = new FinalFixture("110005");
             g.Enter(SpaceId.Corridor).Cue(FinalCues.Chalk).Wait(2f).End(FinalCues.Chalk).Wait(1.2f);
             g.Enter(SpaceId.Classroom_1_3);
             Assert.AreEqual(0, g.Value(FearAxis.Auditory));
@@ -295,7 +295,7 @@ namespace NightDuty.Tests
         public void C2_앉은_소년을_3초_바라보면_위반()
         {
             // 52차 민: 「교실의 _? 는 무시하십시오.」 — 앉은 소년(C2·C3과 한 묶음)을 3초 바라보면 위반(→ 머리 박기).
-            FinalFixture f = new FinalFixture("C2");
+            FinalFixture f = new FinalFixture("110006");
             f.Cue(FinalCues.BoySeated);
             f.Samples(() => JudgeSignal.Gaze(FinalCues.BoyTarget, 0.1f), 2.9f);
             Assert.AreEqual(0, f.Value(FearAxis.Auditory));
@@ -307,36 +307,36 @@ namespace NightDuty.Tests
         public void C3_수업_종이_울리는_동안_움직이면_20_종이_그칠_때까지_버티면_3()
         {
             // 103차(민: 「수업 종이 울리면 정지하십시오」): 단서 = 수업 종(교실에 들어가면 곧), 끝 = 종이 그침.
-            FinalFixture f = new FinalFixture("C3");
+            FinalFixture f = new FinalFixture("110007");
             f.Enter(SpaceId.Classroom_1_1).Pose(0f, 0f).Cue(FinalCues.BellStart);
             f.Pose(0.1f, 0f).Wait(5f);
-            Assert.IsNull(f.Last("C3"), "0.2m 안은 정지");
+            Assert.IsNull(f.Last("110007"), "0.2m 안은 정지");
             f.End(FinalCues.BellStart);
-            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("C3"));
+            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("110007"));
 
-            FinalFixture g = new FinalFixture("C3");
+            FinalFixture g = new FinalFixture("110007");
             g.Enter(SpaceId.Classroom_1_1).Pose(0f, 0f).Cue(FinalCues.BellStart).Pose(0.5f, 0f);
             Assert.AreEqual(Deltas.ThreatFailure, g.Value(FearAxis.Auditory));
 
-            FinalFixture h = new FinalFixture("C3");
+            FinalFixture h = new FinalFixture("110007");
             h.Enter(SpaceId.Classroom_1_1).Pose(0f, 0f).Cue(FinalCues.BoySeated).Pose(0.5f, 0f);
-            Assert.IsFalse(h.Book.Judge("C3").Triggered, "103차: 소년이 나타나는 것만으로는 C3가 시작되지 않는다(종이어야)");
+            Assert.IsFalse(h.Book.Judge("110007").Triggered, "103차: 소년이 나타나는 것만으로는 C3가 시작되지 않는다(종이어야)");
         }
 
         [Test]
         public void C3_교실_밖이면_해당없음()
         {
-            FinalFixture f = new FinalFixture("C3");
+            FinalFixture f = new FinalFixture("110007");
             f.Enter(SpaceId.Corridor).Pose(0f, 0f).Cue(FinalCues.BellStart).Pose(3f, 0f).End(FinalCues.BellStart);
             Assert.AreEqual(0, f.Book.Results.Count);
-            Assert.IsFalse(f.Book.Judge("C3").Triggered);
+            Assert.IsFalse(f.Book.Judge("110007").Triggered);
         }
 
         [Test]
         public void C4_붉은빛_아래서_손전등을_켜_두면_위반()
         {
             // 52차 민: 「붉은 불빛 아래에서는 손전등을 끄십시오.」 — 들어선 뒤 1.5초 안에 끄면 괜찮다.
-            FinalFixture f = new FinalFixture("C4");
+            FinalFixture f = new FinalFixture("110008");
             f.Light(true).Cue(FinalCues.RedLight).Wait(1.2f).Light(false).Wait(3f);
             Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "1.5초 안에 끔");
             f.End(FinalCues.RedLight).Light(true).Wait(3f);
@@ -348,7 +348,7 @@ namespace NightDuty.Tests
         [Test]
         public void C5_없던_문_구역에_들어가면_위반()
         {
-            FinalFixture f = new FinalFixture("C5");
+            FinalFixture f = new FinalFixture("110009");
             f.Send(JudgeSignal.Target(SignalKind.ZoneEntered, FinalCues.PhantomDoorZone));
             Assert.AreEqual(0, f.Value(FearAxis.Layout), "단서 전에는 문이 없다");
             f.Cue(FinalCues.PhantomDoor).Send(JudgeSignal.Target(SignalKind.ZoneEntered, FinalCues.PhantomDoorZone));
@@ -358,7 +358,7 @@ namespace NightDuty.Tests
         [Test]
         public void G1_복도에서_1초_뛰면_위반_교실은_괜찮다()
         {
-            FinalFixture f = new FinalFixture("G1");
+            FinalFixture f = new FinalFixture("110034");
             f.Enter(SpaceId.Classroom_1_1).Send(JudgeSignal.Run(true)).Wait(3f);
             Assert.AreEqual(0, f.Value(FearAxis.Auditory));
             f.Exit(SpaceId.Classroom_1_1).Enter(SpaceId.Corridor).Wait(0.5f);
@@ -375,7 +375,7 @@ namespace NightDuty.Tests
         [Test]
         public void S1_반대편으로_나가면_통로로_쓴_것()
         {
-            FinalFixture f = new FinalFixture("S1");
+            FinalFixture f = new FinalFixture("110011");
             f.Anchors[FinalCues.S1Center] = new Vector3(48f, 0f, 42f);
             f.Pose(43f, 42f).Enter(SpaceId.ScienceRoom).Pose(47f, 42f).Pose(43f, 42f).Exit(SpaceId.ScienceRoom);
             Assert.AreEqual(0, f.Value(FearAxis.Layout));
@@ -386,13 +386,13 @@ namespace NightDuty.Tests
         [Test]
         public void S2_깨지는_소리_5초_안에_나오고_다시_들어가면_위반()
         {
-            FinalFixture f = new FinalFixture("S2");
+            FinalFixture f = new FinalFixture("110012");
             f.Enter(SpaceId.ScienceRoom).Cue(FinalCues.Glass).Wait(3f).Exit(SpaceId.ScienceRoom);   // 79차: 유예 10 → 5초
             Assert.AreEqual(0, f.Value(FearAxis.Auditory));
             f.Wait(10f).Enter(SpaceId.ScienceRoom);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Auditory));
 
-            FinalFixture g = new FinalFixture("S2");
+            FinalFixture g = new FinalFixture("110012");
             g.Enter(SpaceId.ScienceRoom).Cue(FinalCues.Glass).Wait(5.1f);
             Assert.AreEqual(Deltas.RuleViolation, g.Value(FearAxis.Auditory), "79차 민: 과학실에 계속 남아 있어도 어김");
         }
@@ -401,7 +401,7 @@ namespace NightDuty.Tests
         public void S3_빛_없이_모형을_3초_보면_위반하고_모형급습_예약()
         {
             // 51차 민: 「인체 모형에는 빛을 비추지 마십시오.」 — 연속 1.5초 비추면 위반(빛 없이 보는 것은 괜찮다).
-            FinalFixture f = new FinalFixture("S3");
+            FinalFixture f = new FinalFixture("110013");
             f.Enter(SpaceId.ScienceRoom);
             f.Samples(() => JudgeSignal.Gaze(FinalCues.ModelTarget, 0.1f), 5f);
             Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "빛 없이 보는 것은 괜찮다");
@@ -418,23 +418,23 @@ namespace NightDuty.Tests
         public void S4_정전_3초_뒤에도_손전등이_켜져_있으면_위반_과학실과_화장실()
         {
             // 79차(민: 「S4 T3 합침 — 정전 중에는 손전등을 키지 마십시오. 3초 유예」)
-            FinalFixture f = new FinalFixture("S4");
+            FinalFixture f = new FinalFixture("110014");
             f.Enter(SpaceId.ScienceRoom).Light(true).Cue(FinalCues.ScienceBlackout).Wait(2.8f);
             Assert.AreEqual(0, f.Value(FearAxis.Illuminance), "3초 유예");
             f.Wait(0.4f);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance));
 
-            FinalFixture g = new FinalFixture("S4");
+            FinalFixture g = new FinalFixture("110014");
             g.Enter(SpaceId.Toilet).Light(true).Cue(FinalCues.ToiletBlackout).Wait(1f).Light(false).Wait(5f);
             Assert.AreEqual(0, g.Value(FearAxis.Illuminance), "유예 안에 끄면 지킴");
             g.Light(true).Wait(0.2f);
             Assert.AreEqual(Deltas.RuleViolation, g.Value(FearAxis.Illuminance), "정전 중 다시 켜도 어김");
 
-            FinalFixture h = new FinalFixture("S4");
+            FinalFixture h = new FinalFixture("110014");
             h.Enter(SpaceId.Corridor).Light(true).Cue(FinalCues.ToiletBlackout).Wait(5f);
             Assert.AreEqual(0, h.Value(FearAxis.Illuminance), "겪지 않은 정전으로는 벌하지 않는다");
 
-            FinalFixture k = new FinalFixture("S4");
+            FinalFixture k = new FinalFixture("110014");
             k.Enter(SpaceId.ScienceRoom).Light(true).Cue(FinalCues.ScienceBlackout).Wait(1f).Exit(SpaceId.ScienceRoom).Wait(5f);
             Assert.AreEqual(0, k.Value(FearAxis.Illuminance), "유예 안에 나가면 끝");
         }
@@ -442,20 +442,20 @@ namespace NightDuty.Tests
         [Test]
         public void S5_3초_안에_불을_끄고_가만히_기다리면_신뢰_3()
         {
-            FinalFixture f = new FinalFixture("S5");
+            FinalFixture f = new FinalFixture("110015");
             f.Enter(SpaceId.ScienceRoom).Light(true).Pose(45f, 42f).Cue(FinalCues.HallEnd).Wait(1f).Light(false).Wait(4f);
             f.Pose(45.1f, 42f).Wait(2f).End(FinalCues.HallEnd);
-            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("S5"));
+            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("110015"));
         }
 
         [Test]
         public void S5_불을_켜둔_채면_20_기다리다_켜도_20()
         {
-            FinalFixture f = new FinalFixture("S5");
+            FinalFixture f = new FinalFixture("110015");
             f.Enter(SpaceId.ScienceRoom).Light(true).Pose(45f, 42f).Cue(FinalCues.HallEnd).Wait(3.1f);
             Assert.AreEqual(Deltas.ThreatFailure, f.Value(FearAxis.Illuminance));
 
-            FinalFixture g = new FinalFixture("S5");
+            FinalFixture g = new FinalFixture("110015");
             g.Enter(SpaceId.ScienceRoom).Light(false).Pose(45f, 42f).Cue(FinalCues.HallEnd).Wait(3.1f).Light(true);
             Assert.AreEqual(Deltas.ThreatFailure, g.Value(FearAxis.Illuminance));
         }
@@ -463,7 +463,7 @@ namespace NightDuty.Tests
         [Test]
         public void T3_정전에_움직이면_20()
         {
-            FinalFixture f = new FinalFixture("T3");
+            FinalFixture f = new FinalFixture("110018");
             f.Enter(SpaceId.Toilet).Light(false).Pose(0f, 34f).Cue(FinalCues.ToiletBlackout).Wait(3.1f).Pose(1f, 34f);
             Assert.AreEqual(Deltas.ThreatFailure, f.Value(FearAxis.Illuminance));
         }
@@ -471,20 +471,20 @@ namespace NightDuty.Tests
         [Test]
         public void T1_물_내려가기_8초_안에_나온다()
         {
-            FinalFixture f = new FinalFixture("T1");
+            FinalFixture f = new FinalFixture("110016");
             f.Enter(SpaceId.Toilet).Cue(FinalCues.Flush).Wait(8.1f);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Auditory));
 
-            FinalFixture g = new FinalFixture("T1");
+            FinalFixture g = new FinalFixture("110016");
             g.Enter(SpaceId.Toilet).Cue(FinalCues.Flush).Wait(4f).Exit(SpaceId.Toilet).Wait(8f);
             Assert.AreEqual(0, g.Value(FearAxis.Auditory));
-            Assert.IsTrue(g.Book.Judge("T1").Triggered);
+            Assert.IsTrue(g.Book.Judge("110016").Triggered);
         }
 
         [Test]
         public void T2_사용중_칸_구역에_들어가면_위반()
         {
-            FinalFixture f = new FinalFixture("T2");
+            FinalFixture f = new FinalFixture("110017");
             f.Cue(FinalCues.StallOccupied + "@toilet.stall2");
             f.Send(JudgeSignal.Target(SignalKind.ZoneEntered, "toilet.stall1"));
             Assert.AreEqual(0, f.Value(FearAxis.Layout));
@@ -495,13 +495,13 @@ namespace NightDuty.Tests
         [Test]
         public void T4_여자아이_단서가_역보고를_건다()
         {
-            FinalFixture f = new FinalFixture("T4");
+            FinalFixture f = new FinalFixture("110019");
             f.Cue(FinalCues.GirlStall);
             Assert.AreEqual(0, f.Armed.Count, "51차: 단서만으로는 걸지 않는다 — 봐야 한다");
             f.Samples(() => JudgeSignal.Gaze(FinalCues.GirlTarget, 0.1f), 0.5f);
             CollectionAssert.AreEqual(new[] { InspectionCatalog.ReverseReportItem }, f.Armed);
-            f.Book.NoteExternal("T4", false, "역보고 준수");
-            Assert.AreEqual(FinalOutcome.Noted, f.Last("T4"));
+            f.Book.NoteExternal("110019", false, "역보고 준수");
+            Assert.AreEqual(FinalOutcome.Noted, f.Last("110019"));
             f.Book.EndNight();
             Assert.AreEqual(0, f.Value(FearAxis.Trust), "T4의 신뢰는 점검판이 준다");
         }
@@ -509,12 +509,12 @@ namespace NightDuty.Tests
         [Test]
         public void T5_불켜진_칸이_있으면_3초_안에_켜고_나갈때까지_유지()
         {
-            FinalFixture f = new FinalFixture("T5");
+            FinalFixture f = new FinalFixture("110020");
             f.Enter(SpaceId.Toilet).Light(false).Cue(FinalCues.StallLit).Wait(1f).Light(true).Wait(5f);
             f.End(FinalCues.StallLit).Light(false).Wait(4f);
             Assert.AreEqual(Deltas.RuleViolation, f.Value(FearAxis.Illuminance), "단서가 끝나도 화장실을 나갈 때까지");
 
-            FinalFixture g = new FinalFixture("T5");
+            FinalFixture g = new FinalFixture("110020");
             g.Enter(SpaceId.Toilet).Light(true).Cue(FinalCues.StallLit).Wait(2f).Exit(SpaceId.Toilet).Light(false).Wait(5f);
             Assert.AreEqual(0, g.Value(FearAxis.Illuminance));
         }
@@ -522,7 +522,7 @@ namespace NightDuty.Tests
         [Test]
         public void L1_쓰러진_책장_곁_3초()
         {
-            FinalFixture f = new FinalFixture("L1");
+            FinalFixture f = new FinalFixture("110022");
             f.Anchors[FinalCues.L1Shelf] = new Vector3(10f, 0f, 50f);
             f.Pose(10f, 51f).Wait(2f).Pose(10f, 53f).Pose(10f, 51f).Wait(2f);
             Assert.AreEqual(0, f.Value(FearAxis.Auditory), "나갔다 오면 다시 잰다");
@@ -534,12 +534,12 @@ namespace NightDuty.Tests
         public void L3_노란얼굴을_끝까지_한번도_비추지_못하면_위반_예약은_없음()
         {
             // 104차: 빛을 떼는 벌(사망)은 노란 얼굴(LibraryDuck)이 직접 — 판정은 창이 닫힐 때 한 번이라도 비췄는지만.
-            FinalFixture f = new FinalFixture("L3");
+            FinalFixture f = new FinalFixture("110024");
             f.Cue(FinalCues.YellowFace).Wait(1f);
             f.Samples(() => JudgeSignal.Beam(string.Empty, 0.1f), 5f);
-            Assert.IsNull(f.Last("L3"), "아직 창이 열려 있다");
+            Assert.IsNull(f.Last("110024"), "아직 창이 열려 있다");
             f.End(FinalCues.YellowFace);
-            Assert.AreEqual(FinalOutcome.Violated, f.Last("L3"));
+            Assert.AreEqual(FinalOutcome.Violated, f.Last("110024"));
             CollectionAssert.IsEmpty(f.Requested, "84차: 빛을 떼도 예약하지 않는다");
         }
 
@@ -547,12 +547,12 @@ namespace NightDuty.Tests
         public void L3_한번_비췄어도_붙잡히면_위반()
         {
             // 104차 QA: 붙잡힘이 넘어짐(밤이 이어짐)이 되며 창을 닫아도 「끝까지 비춤」으로 통과·신뢰를 주던 것.
-            FinalFixture f = new FinalFixture("L3");
+            FinalFixture f = new FinalFixture("110024");
             f.Cue(FinalCues.YellowFace).Wait(1f);
             f.Samples(() => JudgeSignal.Beam(FinalCues.FaceTarget, 0.1f), 1f);
             f.Send(new JudgeSignal(SignalKind.EncounterCaught, SpaceId.Library, FinalCues.FaceTarget, ActionSource.Direction, true, 0f));
             f.End(FinalCues.YellowFace);
-            Assert.AreEqual(FinalOutcome.Violated, f.Last("L3"));
+            Assert.AreEqual(FinalOutcome.Violated, f.Last("110024"));
             Assert.AreEqual(Deltas.ThreatFailure, f.Value(FearAxis.Illuminance));
             Assert.AreEqual(0, f.Value(FearAxis.Trust), "신뢰 보상 없음");
         }
@@ -560,20 +560,20 @@ namespace NightDuty.Tests
         [Test]
         public void L3_끝까지_비추면_신뢰_3()
         {
-            FinalFixture f = new FinalFixture("L3");
+            FinalFixture f = new FinalFixture("110024");
             f.Cue(FinalCues.YellowFace).Wait(1f);
             f.Samples(() => JudgeSignal.Beam(FinalCues.FaceTarget, 0.1f), 5f);
             f.End(FinalCues.YellowFace);
-            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("L3"));
+            Assert.AreEqual(FinalOutcome.ThreatKept, f.Last("110024"));
             Assert.AreEqual(0, f.Requested.Count);
         }
 
         [Test]
         public void L5_창밖_남자를_비추면_20()
         {
-            FinalFixture f = new FinalFixture("L5");
+            FinalFixture f = new FinalFixture("110026");
             f.Cue(FinalCues.WindowKnock).Samples(() => JudgeSignal.Gaze(FinalCues.ManTarget, 0.1f), 1.5f);
-            Assert.IsNull(f.Last("L5"), "잠깐 보는 건 인사가 아니다");
+            Assert.IsNull(f.Last("110026"), "잠깐 보는 건 인사가 아니다");
             f.Send(JudgeSignal.Beam(FinalCues.ManTarget, 0.1f));
             Assert.AreEqual(Deltas.ThreatFailure, f.Value(FearAxis.Auditory));
         }
@@ -582,7 +582,7 @@ namespace NightDuty.Tests
         public void K1_사람이_지나가기_전_CCTV를_그만보면_위반()
         {
             // 2026-11-09 김진선님: 「제대로 보기 전에 화면을 내리면(E로 그만보기) 어긴 걸로」 — 채널 넘김은 더 보지 않는다.
-            FinalFixture f = new FinalFixture("K1");
+            FinalFixture f = new FinalFixture("110029");
             f.Send(JudgeSignal.CctvLeft());
             Assert.AreEqual(0, f.Value(FearAxis.Layout), "단서 전에는 그만봐도 된다");
             f.Cue(FinalCues.CctvPerson + "@cctv.ch1").Wait(2f).Send(JudgeSignal.Channel("cctv.ch2"));
@@ -594,7 +594,7 @@ namespace NightDuty.Tests
         [Test]
         public void K1_사람이_지나간_뒤에는_그만봐도_된다()
         {
-            FinalFixture f = new FinalFixture("K1");
+            FinalFixture f = new FinalFixture("110029");
             f.Cue(FinalCues.CctvPerson + "@cctv.ch1").Wait(2f).End(FinalCues.CctvPerson + "@cctv.ch1");
             f.Send(JudgeSignal.CctvLeft());
             Assert.AreEqual(0, f.Value(FearAxis.Layout));
@@ -603,7 +603,7 @@ namespace NightDuty.Tests
         [Test]
         public void T4_여자아이를_보지_못하면_역보고가_걸리지_않는다()
         {
-            FinalFixture f = new FinalFixture("T4");
+            FinalFixture f = new FinalFixture("110019");
             f.Cue(FinalCues.GirlStall);
             f.Samples(() => JudgeSignal.Gaze("other", 0.1f), 3f);
             f.End(FinalCues.GirlStall);
@@ -614,7 +614,7 @@ namespace NightDuty.Tests
         [Test]
         public void K2_빈방_채널을_3초_보면_위반()
         {
-            FinalFixture f = new FinalFixture("K2");
+            FinalFixture f = new FinalFixture("110030");
             f.Cue(FinalCues.EmptyRoom + "@cctv.ch3");
             f.Samples(() => JudgeSignal.CctvView("cctv.ch1", 0.1f), 5f);
             Assert.AreEqual(0, f.Value(FearAxis.Illuminance));
@@ -625,7 +625,7 @@ namespace NightDuty.Tests
         [Test]
         public void K3_경비실_45초()
         {
-            FinalFixture f = new FinalFixture("K3");
+            FinalFixture f = new FinalFixture("110031");
             f.Enter(SpaceId.SecurityRoom).Wait(44f).Exit(SpaceId.SecurityRoom).Enter(SpaceId.SecurityRoom).Wait(44f);
             Assert.AreEqual(0, f.Value(FearAxis.Auditory));
             f.Wait(1.1f);
@@ -636,7 +636,7 @@ namespace NightDuty.Tests
         public void K3_경비실에서_할_일을_하는_동안은_쉬고_0으로_돌리지_않는다()
         {
             // 104차 QA: 밤 진행이 DwellPaused로 서명·경비실 지시·점검·CCTV 조우·CCTV 역설 동안 K3를 쉬게 한다.
-            FinalFixture f = new FinalFixture("K3");
+            FinalFixture f = new FinalFixture("110031");
             bool busy = false;
             f.Book.World.DwellPaused = s => busy && s == SpaceId.SecurityRoom;
             f.Enter(SpaceId.SecurityRoom).Wait(40f);
@@ -680,7 +680,7 @@ namespace NightDuty.Tests
                 Assert.IsTrue(NightRun.Program.Has(card.CardId) || card.CardId.StartsWith(InspectionCatalog.TargetPrefix) || fake, "태블릿 표시 카드: " + card.CardId);
             }
             Assert.AreEqual(FakeRuleCatalog.CountFor(1), fakes, "1일차 가짜 수칙 두 줄");
-            Assert.IsNotNull(NightRun.FinalRules.Judge("G1"), "1일차 공통 G1");
+            Assert.IsNotNull(NightRun.FinalRules.Judge("110034"), "1일차 공통 G1");
 
             List<FinalRuleResult> raised = new List<FinalRuleResult>();
             EventBus.FinalRuleSettled += raised.Add;
@@ -690,7 +690,7 @@ namespace NightDuty.Tests
             for (int i = 0; i < 12; i++) NightRun.Tick(0.1f);
 
             Assert.AreEqual(1, raised.Count);
-            Assert.AreEqual("G1", raised[0].RuleId);
+            Assert.AreEqual("110034", raised[0].RuleId);
             Assert.AreEqual(Deltas.RuleViolation, NightRun.Axes.GetValue(FearAxis.Auditory));
         }
 
@@ -711,7 +711,7 @@ namespace NightDuty.Tests
             NightRun.RestartAfterCapture();
             Assert.AreSame(book, NightRun.FinalRules);
             Assert.AreEqual(0, NightRun.FinalResults.Count);
-            Assert.IsFalse(book.Judge("G1").Violated);
+            Assert.IsFalse(book.Judge("110034").Violated);
         }
 
         [Test]

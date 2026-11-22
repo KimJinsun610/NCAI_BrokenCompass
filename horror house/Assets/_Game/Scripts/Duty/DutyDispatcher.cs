@@ -91,7 +91,7 @@ namespace NightDuty
         public const string Key = "duty.orders";
 
         /// <summary>점검 공백이 이만큼 이어지면 지시(실제 초 — 제안서 「게임 8분」).</summary>
-        public const float GapSeconds = 10f;   // 57차: 30 → 40(지시가 점검을 덮지 않게) · 67차(민: 「점검과 지시 비중을 균일하게」): 40 → 10 — 점검 지시와 번갈아 낸다
+        public static float GapSeconds => global::NightDuty.DesignData.Setting(390180);   // DT 390180 마지막 점검 지시·보고 뒤 근무 지시까지 — 57차: 30 → 40(지시가 점검을 덮지 않게) · 67차(민: 「점검과 지시 비중을 균일하게」): 40 → 10 — 점검 지시와 번갈아 낸다
 
         /// <summary>
         /// 2026-11-06(김진선님: 「초반 1·2일차에 메시지가 오는 간격이 너무 짧다」 — C안): 일차별 점검 공백(실제 초).
@@ -105,10 +105,10 @@ namespace NightDuty
         }
 
         /// <summary>역설 문자 뒤 쉬는 초.</summary>
-        public const float AfterMessage = 12f;
+        public static float AfterMessage => global::NightDuty.DesignData.Setting(390181);   // DT 390181 역설·회피 불가 문자 뒤 쉼
 
         /// <summary>지시가 끝난 뒤 다음 지시까지 최소 초.</summary>
-        public const float AfterDuty = 12f;   // 67차: 20 → 12
+        public static float AfterDuty => global::NightDuty.DesignData.Setting(390182);   // DT 390182 지시 사이 최소 간격 — 67차: 20 → 12
 
         private readonly int _day;
         private readonly Func<SpaceId, float> _cost;
@@ -488,7 +488,7 @@ namespace NightDuty
             bool relax = minute >= NightClock.RelaxStart && minute < NightClock.Call2;
             if (relax)
             {
-                DutyDef log = DutyCatalog.Find("W5");
+                DutyDef log = DutyCatalog.Find("130004");
                 if (log == null || _signed || _logOpen || _finished.Contains(log.Id) || !log.OnDay(_day)) return false;   // 103차 QA 4회: 따로 연 W5가 있으면 다시 내지 않는다(옛 리뷰: 진행 중 지시가 이완 구간에 끝나면 서명 안내가 두 통)
                 ev = Issue(log);
                 return true;
@@ -511,7 +511,7 @@ namespace NightDuty
         /// </summary>
         public int Allowed(float minute)
         {
-            int n = minute < NightClock.Call1 ? 2 : minute < NightClock.Call2 ? 3 : 5;   // 57차: 2·3·4 → 1·2·상한 · 67차: 2·3·상한(점검 지시와 번갈아)
+            int n = minute < NightClock.Call1 ? global::NightDuty.DesignData.SettingInt(390179) : minute < NightClock.Call2 ? global::NightDuty.DesignData.SettingInt(390336) : global::NightDuty.DesignData.SettingInt(390337);   // DT 390179·390336·390337 마디 상한 — 57차: 2·3·4 → 1·2·상한 · 67차: 2·3·상한(점검 지시와 번갈아)
             return Math.Min(DutyCatalog.DailyCap(_day), n);
         }
 
@@ -551,7 +551,7 @@ namespace NightDuty
             if (_active != null) return true;
             if (minute < 0f) return false;
 
-            DutyDef log = DutyCatalog.Find("W5");
+            DutyDef log = DutyCatalog.Find("130004");
             if (log != null && log.OnDay(_day) && !_signed && !_finished.Contains(log.Id) && minute < NightClock.Call2) return true;
 
             if (minute >= NightClock.JudgingEnd || _issued >= DutyCatalog.DailyCap(_day)) return false;
@@ -608,7 +608,7 @@ namespace NightDuty
             }
 
             // 57차: 가까운 셋 중 하나 — 늘 같은 지시가 먼저 나오지 않게.
-            return open[_rng.Next(Math.Min(3, open.Count))].Value;
+            return open[_rng.Next(Math.Min(global::NightDuty.DesignData.SettingInt(390186), open.Count))].Value;   // DT 390186 가까운 N개 중 무작위
         }
 
         /// <summary>디버그·연출: 그 지시를 지금 낸다(진행 중인 지시가 있으면 false).</summary>
@@ -652,7 +652,7 @@ namespace NightDuty
         }
 
         /// <summary>근무일지 지시 ID.</summary>
-        public const string LogDutyId = "W5";
+        public const string LogDutyId = "130004";
 
         /// <summary>103차 QA 4회: 근무일지(W5)가 다른 지시와 따로 열려 있는지.</summary>
         public bool LogOpen

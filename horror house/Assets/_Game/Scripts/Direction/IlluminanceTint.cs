@@ -8,7 +8,7 @@ namespace NightDuty
     /// </summary>
     public static class IlluminanceTint
     {
-        private static readonly float[] AmountByBand = { 0f, 0.08f, 0.16f, 0.26f, 0.36f };
+        private static float[] AmountByBand => DesignData.FxSeries(420201, 5, "천장 등 붉은 섞음");   // DT Fx 420201~420205
 
         /// <summary>붉은 쪽 색(빨강 · 초록 · 파랑).</summary>
         public const float R = 1f;
@@ -30,7 +30,7 @@ namespace NightDuty
         /// <summary>일부 등만 붉어지거나 깜빡이기 시작하는 구간(구간 4 붉은 화면의 예고).</summary>
         public const Band AccentFrom = Band.Band3;
 
-        private static readonly float[] AccentShareByBand = { 0f, 0f, 0f, 0.25f, 0.4f };
+        private static float[] AccentShareByBand => DesignData.FxSeries(420201, 5, "깜빡이는 등 비율");   // DT Fx 420201~420205
 
         /// <summary>그 공간 등 <paramref name="lamps"/>개 중 붉어지거나 깜빡일 등 수 — 구간 3 4분의 1 · 구간 4 5분의 2(등이 있으면 적어도 하나).</summary>
         public static int AccentCount(int lamps, Band band)

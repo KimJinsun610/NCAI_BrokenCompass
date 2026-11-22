@@ -89,7 +89,7 @@ namespace NightDuty.Tests
         {
             StringAssert.Contains("인체 모형", FixedMobStare.SourceName(FixedMobStare.SourcePrefix + FinalCues.HallFigureTarget));
             StringAssert.Contains("사람 나무", FixedMobStare.SourceName(FixedMobStare.SourcePrefix + FinalCues.H1Object));
-            Assert.IsNull(FixedMobStare.SourceName("G1"));
+            Assert.IsNull(FixedMobStare.SourceName("110034"));
             Assert.IsNull(FixedMobStare.SourceName(null));
         }
 
@@ -171,7 +171,7 @@ namespace NightDuty.Tests
         [Test]
         public void S1_점검_문구는_정면을_보는_인체_모형이다()
         {
-            Assert.AreEqual("과학실 인체 모형이 정면을 향하는지 확인해주십시오.", InspectionCatalog.Find("S-1").TabletLine);   // 76차 민 문구
+            Assert.AreEqual("과학실 인체 모형이 정면을 향하는지 확인해주십시오.", InspectionCatalog.Find("135012").TabletLine);   // 76차 민 문구
         }
     }
 }

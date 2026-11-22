@@ -153,55 +153,55 @@ namespace NightDuty
     public sealed class TensionDirector
     {
         /// <summary>헛예고 뒤 다시 시도까지(초).</summary>
-        public const float FalseRetry = 20f;
+        public static float FalseRetry => global::NightDuty.DesignData.Setting(390154);   // DT 390154 헛예고 뒤 재시도까지(+헛예고 길이)
 
         /// <summary>수칙 단서 사이 최소 간격(초).</summary>
-        public const float RuleGap = 20f;
+        public static float RuleGap => global::NightDuty.DesignData.Setting(390155);   // DT 390155 수칙 단서 사이 최소 간격
 
         /// <summary>가짜 놀람 간격 최소~최대(초).</summary>
-        public const float FakeGapMin = 30f;   // 57차: 60~150 → 45~110 · 59차(밤 15분 → 10분): × 2/3 → 30~75
+        public static float FakeGapMin => global::NightDuty.DesignData.Setting(390156);   // DT 390156 가짜 놀람 간격 최소 — 57차: 60~150 → 45~110 · 59차(밤 15분 → 10분): × 2/3 → 30~75
 
         /// <summary>가짜 놀람 간격 최대(초).</summary>
-        public const float FakeGapMax = 75f;
+        public static float FakeGapMax => global::NightDuty.DesignData.Setting(390157);   // DT 390157 가짜 놀람 간격 최대
 
         /// <summary>판정이 열린(00:16) 뒤 첫 가짜 놀람까지 최소(초, 2일차부터). 50차: 4~14초 → 25~50초(「첫날부터 도배」).</summary>
-        public const float FirstFakeMin = 17f;   // 59차: 25~50 → 17~34(밤 10분)
+        public static float FirstFakeMin => global::NightDuty.DesignData.Setting(390158);   // DT 390158 판정 시작 뒤 첫 가짜 놀람 최소 — 59차: 25~50 → 17~34(밤 10분)
 
         /// <summary>판정이 열린 뒤 첫 가짜 놀람까지 최대(초).</summary>
-        public const float FirstFakeMax = 34f;
+        public static float FirstFakeMax => global::NightDuty.DesignData.Setting(390159);   // DT 390159 첫 가짜 놀람 최대
 
         /// <summary>같은 가짜 놀람의 밤당 상한.</summary>
-        public const int FakePerId = 2;
+        public static int FakePerId => global::NightDuty.DesignData.SettingInt(390160);   // DT 390160 같은 가짜 놀람 밤당 상한
 
         /// <summary>슬롯 끝 몇 분 전부터 방아쇠를 「그 공간에 있기만 하면」으로 완화하는지(게임 분).</summary>
-        public const float LastCallMinutes = 10f;   // 67차(밤 05:00): 10 → 12(게임 분 ×1.25) · 88차(밤 04:00): 12 → 10
+        public static float LastCallMinutes => global::NightDuty.DesignData.Setting(390161);   // DT 390161 슬롯 끝 10분 전부터 방아쇠 완화 — 67차(밤 05:00): 10 → 12(게임 분 ×1.25) · 88차(밤 04:00): 12 → 10
 
         /// <summary>디버그 강제 실행에서 존재형 조우의 길이(초).</summary>
         public const float ForcedPresenceSeconds = 60f;
 
         /// <summary>104차 순서대로 여는 밤: 첫 조우를 열 수 있는 밤 시각(게임 분, 00:30).</summary>
-        public const float SeqFirstMinute = 30f;
+        public static float SeqFirstMinute => global::NightDuty.DesignData.Setting(390162);   // DT 390162 순차 밤 첫 조우 가능 시각
 
         /// <summary>104차 순서대로 여는 밤: 앞 조우가 끝난 뒤 다음 조우를 열기까지 쉬는 실제 초(옛 휴지 40~60초 · 강도 간격 60~80초 대신). 사용자: 「10~40초 무작위」.</summary>
-        public const float SeqRestMin = 10f;
+        public static float SeqRestMin => global::NightDuty.DesignData.Setting(390163);   // DT 390163 순차 밤 조우 사이 휴식 최소
 
         /// <inheritdoc cref="SeqRestMin"/>
-        public const float SeqRestMax = 40f;
+        public static float SeqRestMax => global::NightDuty.DesignData.Setting(390164);   // DT 390164 순차 밤 조우 사이 휴식 최대
 
         /// <summary>옛 이름(시험) — 쉬는 시간의 최솟값.</summary>
-        public const float SeqRestSeconds = SeqRestMin;
+        public static float SeqRestSeconds => SeqRestMin;
 
         /// <summary>104차: 방아쇠 조건이 갖춰진 뒤 시작까지 기다리는 실제 초(무작위) — 들어서자마자 터지지 않게(응시 순간 조우·디버그 강제는 그대로).</summary>
-        public const float SeqArmMin = 1.5f;
+        public static float SeqArmMin => global::NightDuty.DesignData.Setting(390165);   // DT 390165 방아쇠 조건 뒤 시작까지 최소
 
         /// <inheritdoc cref="SeqArmMin"/>
-        public const float SeqArmMax = 6f;
+        public static float SeqArmMax => global::NightDuty.DesignData.Setting(390166);   // DT 390166 방아쇠 조건 뒤 시작까지 최대
 
         /// <summary>104차 순서대로 여는 밤: 유도 지시 뒤 이만큼(초) 지나면 방아쇠를 푼다(머묾·걸음·채널 조건 → 그 공간에 있기만 하면).</summary>
-        public const float SeqLenientSeconds = 25f;
+        public static float SeqLenientSeconds => global::NightDuty.DesignData.Setting(390167);   // DT 390167 유도 지시 뒤 방아쇠 완화
 
         /// <summary>104차 순서대로 여는 밤: 존재형 조우(사람 나무)가 머무는 실제 초 — 옛: 슬롯 끝까지(순서를 막지 않게 따로 센다).</summary>
-        public const float SeqPresenceSeconds = 90f;
+        public static float SeqPresenceSeconds => global::NightDuty.DesignData.EncounterValue(120011, "Presence_Sec");   // DT Encounter 120011 사람 나무 존재 시간
 
         /// <summary>가짜 놀람 목록.</summary>
         public static readonly string[] FakeScares = { "fake.locker.rattle", "fake.locker.row", "fake.flashlight.flicker", FakeBugs, FakeGlimpse };
@@ -219,7 +219,31 @@ namespace NightDuty
         /// 61차(민: 「1일차에 사다리 근무 지시와 함께 바퀴벌레가 등장 — 바퀴벌레는 교실에서, 시체 연출이 등장할 때만 시체와 함께」):
         /// 벌레 떼 가짜 놀람을 끈다. 바퀴벌레는 시체 낙하(<c>DirectionStage.CorpseRoaches</c>)에만 나온다. 디버그 강제는 그대로.
         /// </summary>
-        public static bool FakeBugsEnabled = false;
+        public static bool FakeBugsEnabled = FakeUsed(FakeBugs);   // 기본값 DT Fx 421205 「사용」
+
+        /// <summary>가짜 놀람 DT 행(Fx 4212xx, Asset_Name = 놀람 ID). 없으면 0.</summary>
+        private static uint FakeRowId(string id)
+        {
+            DesignData.Ensure();
+            foreach (var r in InstructionDT.DT.Fx.All)
+                if (r.ID >= 421201 && r.ID <= 421299 && r.Asset_Name == id) return r.ID;
+            return 0;
+        }
+
+        /// <summary>DT 「사용(1=예)」. 표에 없으면 켬.</summary>
+        private static bool FakeUsed(string id)
+        {
+            uint row = FakeRowId(id);
+            return row == 0 || DesignData.FxOn(row, "사용(1=예)");
+        }
+
+        /// <summary>DT 「시작 일차」. 표에 없거나 쓰지 않는 놀람(시작 일차 빈칸)이면 1.</summary>
+        public static int FakeStartDay(string id)
+        {
+            uint row = FakeRowId(id);
+            if (row == 0 || !FakeUsed(id)) return 1;
+            return DesignData.FxInt(row, "시작 일차");
+        }
 
         /// <summary>벌레 떼가 떨어질 수 있는 방(정규화 전): 1-3 교실(뒤 창고 포함) · 화장실 · 도서관.</summary>
         public static readonly SpaceId[] BugSpaces = { SpaceId.Classroom_1_3, SpaceId.Toilet, SpaceId.Library };
@@ -296,10 +320,18 @@ namespace NightDuty
         public bool SightGated { get; set; }
 
         /// <summary>61차: 세운 대역을 이만큼(초) 못 보면 거두고 다시 기다린다.</summary>
-        public const float PresentMaxSeconds = 40f;
+        public static float PresentMaxSeconds => global::NightDuty.DesignData.Setting(390152);   // DT 390152 세운 대역을 이만큼 못 보면 거둠
 
         /// <summary>61차: 거둔 뒤 다시 시도까지(초).</summary>
-        public const float PresentRetrySeconds = 15f;
+        public static float PresentRetrySeconds => global::NightDuty.DesignData.Setting(390153);   // DT 390153 거둔 뒤 재시도
+
+        /// <summary>전조 길이(초) 범위 — 헛예고·진짜 전조 모두.</summary>
+        public static float ForeshadowMin => global::NightDuty.DesignData.Setting(390148);   // DT 390148
+        public static float ForeshadowMax => global::NightDuty.DesignData.Setting(390149);   // DT 390149
+
+        /// <summary>헛예고 확률(청각 구간 3 이상이면 High).</summary>
+        public static float FalseForeshadowChance => global::NightDuty.DesignData.Setting(390150);   // DT 390150
+        public static float FalseForeshadowChanceHigh => global::NightDuty.DesignData.Setting(390151);   // DT 390151
 
         /// <summary>
         /// 61차(민: 「교실 안쪽에서 시체 떨어지는 건, 플레이어가 그 안쪽에서 나오면서 플레이어 쪽으로 떨어지게」): 켜면 시체 낙하(응시 방아쇠)를
@@ -315,13 +347,13 @@ namespace NightDuty
         public bool GazeTargetReportMode { get; set; }
 
         /// <summary>104차: 보고 키를 누른 뒤 이만큼(초) 안이면 방아쇠로 친다.</summary>
-        public const float ReportHoldWindow = 0.6f;
+        public static float ReportHoldWindow => global::NightDuty.DesignData.Setting(390168);   // DT 390168 보고 키 뒤 시체 낙하 방아쇠 창
 
         /// <summary>104차: 보고로 건 시체 낙하의 전조(초) — 먼지·삐걱이 들리자마자 떨어진다.</summary>
-        public const float ReportForeshadow = 0.25f;
+        public static float ReportForeshadow => global::NightDuty.DesignData.Setting(390169);   // DT 390169 보고로 건 시체 낙하 전조
 
         /// <summary>104차: 보고로 건 시체 낙하 뒤 이만큼(초) 보고를 받지 않는다(보고 「도중」에 떨어지게 — 놀란 뒤 다시 누르면 된다).</summary>
-        public const float ReportInterruptSeconds = 1.8f;
+        public static float ReportInterruptSeconds => global::NightDuty.DesignData.Setting(390170);   // DT 390170 시체 낙하 뒤 보고 중단
 
         private string _reportHoldId = string.Empty;
         private float _reportHoldAt = -100f;
@@ -331,7 +363,7 @@ namespace NightDuty
         private float _reportedAt = -100f;
 
         /// <summary>104차: 보고한 뒤 이만큼(초) 안이면 「보고로 시작」 방아쇠로 친다(<see cref="EncounterScript.ReportTriggerItem"/>).</summary>
-        public const float ReportedWindow = 2f;
+        public static float ReportedWindow => global::NightDuty.DesignData.Setting(390171);   // DT 390171 보고 뒤 「보고로 시작」 방아쇠 창
 
         /// <summary>104차: 플레이어가 그 점검 항목을 보고했다(NightRun.ReportInspection — 항목 ID <c>C-1</c>).</summary>
         public void NoteReported(string itemId)
@@ -571,7 +603,7 @@ namespace NightDuty
         // ── 10단계: 점검과 맞물린 단서 · 회피 불가 역설 ──────────────────
 
         /// <summary>「나가라」 신호형 수칙(S2·L2·T1) — 평소에는 그 공간 점검을 끝냈거나 그날 그 공간 점검이 없을 때만 울린다(최종 기획서 「밤중 발동」).</summary>
-        public static readonly string[] ExitSignalRules = { "S2", "L2", "T1" };
+        public static readonly string[] ExitSignalRules = { "110012", "110023", "110016" };
 
         /// <summary>그 공간에 아직 보고하지 않은 점검이 있는지(NightRun이 넣는다). null이면 「나가라」 문을 걸지 않는다(옛 동작·시험).</summary>
         public Func<SpaceId, bool> InspectionPendingIn { get; set; }
@@ -1056,10 +1088,10 @@ namespace NightDuty
             // 57차: 슬롯이 얼마 안 남았거나 이월된 실행은 헛예고로 속이지 않는다(진짜를 놓치게 된다).
             if (!r.Forced && !Sequential && r.FalseCount == 0 && !r.CarriedOver && _minute < winTo - LastCallMinutes * 2f)   // 104차: 순서대로 여는 밤은 헛예고 없이(목격 보장)
             {
-                float pFalse = (auditoryShown >= Band.Band3 ? 0.4f : 0.3f) * DirectorMoods.FalseScale(Mood);
+                float pFalse = (auditoryShown >= Band.Band3 ? FalseForeshadowChanceHigh : FalseForeshadowChance) * DirectorMoods.FalseScale(Mood);
                 if (_rng.NextDouble() < pFalse)
                 {
-                    float d = Range(1f, 8f) * scale;
+                    float d = Range(ForeshadowMin, ForeshadowMax) * scale;
                     r.FalseCount++;
                     r.RetryAt = Now + d + FalseRetry;
                     r.Rearmed = true;   // 57차: 다시 시도할 때는 그 방에 있기만 하면
@@ -1069,7 +1101,7 @@ namespace NightDuty
                 }
             }
 
-            float length = r.Forced ? 2f : Range(1f, 8f) * scale;
+            float length = r.Forced ? 2f : Range(ForeshadowMin, ForeshadowMax) * scale;
             if (_restarts > 0 && r.Def.Intensity >= 4 && _seenHigh.Contains(r.Def.Id)) length *= 0.5f;   // 이미 본 강도 4↑의 전조는 절반.
             r.State = EncounterRunState.Foreshadow;
             r.PhaseEnds = Now + length;
@@ -1454,7 +1486,8 @@ namespace NightDuty
         /// </summary>
         private bool FakeAllowedHere(string id)
         {
-            if (id == FakeGlimpse) return _day >= 2 && !Busy;
+            if (_day < FakeStartDay(id)) return false;   // DT Fx 4212xx 시작 일차(먼 몹 2일차)
+            if (id == FakeGlimpse) return !Busy;
             if (id != FakeBugs) return true;
             if (!FakeBugsEnabled) return false;   // 61차: 벌레 떼는 가짜 놀람으로 내지 않는다
             if (Array.IndexOf(BugSpaces, _exact) < 0 || Now - _spaceSince < BugDwellSeconds) return false;

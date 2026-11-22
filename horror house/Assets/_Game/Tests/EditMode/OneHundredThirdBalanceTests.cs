@@ -62,7 +62,7 @@ namespace NightDuty.Tests
                     NightProgram p = Night(d, a, day);
                     foreach (SlotEncounter s in p.Slots) Assert.AreNotEqual(ProgramCatalog.CctvPerson, s.Encounter.Id, "슬롯을 차지하지 않는다");
                     bool here = p.HasEncounter(ProgramCatalog.CctvPerson);
-                    Assert.AreEqual(here, p.Has("K1"), "K1과 함께 — " + p.Report);
+                    Assert.AreEqual(here, p.Has("110029"), "K1과 함께 — " + p.Report);
                     if (here) shown++;
                     Assert.AreEqual(day == d.CctvDay, here, day + "일차 — " + p.Report);
                 }
@@ -107,11 +107,11 @@ namespace NightDuty.Tests
             Assert.IsFalse(ParadoxPlanner.TamperOpen(5, 0));
 
             ParadoxPlanner p = new ParadoxPlanner(new System.Random(3));
-            List<RuleDef> deck = new List<RuleDef> { ProgramCatalog.Rule("H2"), ProgramCatalog.Rule("G1") };
+            List<RuleDef> deck = new List<RuleDef> { ProgramCatalog.Rule("110002"), ProgramCatalog.Rule("110034") };
             p.Plan(1, Band.Band0, deck);
             ParadoxPlan day3 = p.Plan(3, Band.Band1, deck);
-            Assert.AreEqual("H2", day3.Tampered);
-            Assert.AreEqual(ParadoxCatalog.Subtle(ProgramCatalog.Rule("H2").Text), day3.TamperText, "구간 1이면 미세 변조");
+            Assert.AreEqual("110002", day3.Tampered);
+            Assert.AreEqual(ParadoxCatalog.Subtle(ProgramCatalog.Rule("110002").Text), day3.TamperText, "구간 1이면 미세 변조");
         }
 
         [Test]
@@ -121,7 +121,7 @@ namespace NightDuty.Tests
             for (int seed = 0; seed < 100; seed++)
             {
                 ParadoxPlanner p = new ParadoxPlanner(new System.Random(seed));
-                List<RuleDef> deck = new List<RuleDef> { ProgramCatalog.Rule("H2"), ProgramCatalog.Rule("C4"), ProgramCatalog.Rule("S5") };
+                List<RuleDef> deck = new List<RuleDef> { ProgramCatalog.Rule("110002"), ProgramCatalog.Rule("110008"), ProgramCatalog.Rule("110015") };
                 p.Plan(1, Band.Band0, deck);
                 string first = p.Plan(4, Band.Band2, deck).Tampered;
                 string second = p.Plan(5, Band.Band2, deck).Tampered;
@@ -137,11 +137,11 @@ namespace NightDuty.Tests
             for (int seed = 0; seed < 50; seed++)
             {
                 DutyDispatcher d = new DutyDispatcher(3, null, 5, null, new System.Random(seed));
-                d.RecentlyIssued = id => id == "W17" || id == "W2";
+                d.RecentlyIssued = id => id == "130007" || id == "130001";
                 DutyDef pick = d.Pick();
                 Assert.IsNotNull(pick);
-                Assert.AreNotEqual("W17", pick.Id);
-                Assert.AreNotEqual("W2", pick.Id);
+                Assert.AreNotEqual("130007", pick.Id);
+                Assert.AreNotEqual("130001", pick.Id);
             }
 
             DutyDispatcher all = new DutyDispatcher(3, null, 5, null, new System.Random(1));
@@ -204,14 +204,14 @@ namespace NightDuty.Tests
         [Test]
         public void C6_교실_24분_수칙은_실제_1분()
         {
-            RuleDef c6 = ProgramCatalog.Rule("C6");
+            RuleDef c6 = ProgramCatalog.Rule("110010");
             Assert.IsNotNull(c6);
             Assert.AreEqual("교실에 24분 넘게 머물지 마십시오.", c6.Text);
             Assert.AreEqual(FearAxis.Layout, c6.Axis);
             Assert.IsTrue(c6.IsStandalone, "혼자 서는 수칙 — 채움에 쓴다");
             Assert.AreEqual(60f, ProgramCatalog.ClassroomDwellRealSeconds, 0.001f, "게임 24분 = 실제 60초");
 
-            FinalFixture f = new FinalFixture("C6");
+            FinalFixture f = new FinalFixture("110010");
             f.Enter(SpaceId.Classroom).Wait(30f).Exit(SpaceId.Classroom).Enter(SpaceId.Classroom).Wait(59f);
             Assert.AreEqual(0, f.Value(FearAxis.Layout), "나갔다 들어오면 다시 센다");
             f.Wait(1.1f);
@@ -315,15 +315,15 @@ namespace NightDuty.Tests
         [Test]
         public void 경비실_공실_채널_수칙은_조도()
         {
-            Assert.AreEqual(FearAxis.Illuminance, ProgramCatalog.Rule("K2").Axis, "화면 불빛 — 경비실 수칙이 모두 청각이던 것");
-            Assert.AreEqual(FearAxis.Auditory, ProgramCatalog.Rule("K3").Axis, "기획서 축 분류 규칙 그대로");
+            Assert.AreEqual(FearAxis.Illuminance, ProgramCatalog.Rule("110030").Axis, "화면 불빛 — 경비실 수칙이 모두 청각이던 것");
+            Assert.AreEqual(FearAxis.Auditory, ProgramCatalog.Rule("110031").Axis, "기획서 축 분류 규칙 그대로");
         }
 
         [Test]
         public void C6_머문_시간은_판정을_쉬는_동안의_드나듦을_건너_이어지지_않는다()
         {
             float limit = ProgramCatalog.ClassroomDwellRealSeconds;
-            FinalFixture f = new FinalFixture("C6");
+            FinalFixture f = new FinalFixture("110010");
             f.Enter(SpaceId.Classroom).Wait(limit - 10f);
             f.Book.Dispatch(JudgeSignal.OfSpace(SignalKind.SpaceExited, SpaceId.Classroom), false);   // 이완 구간에 복도로 나갔다가
             f.Book.Dispatch(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Classroom), false);  // 다시 들어옴
@@ -336,7 +336,7 @@ namespace NightDuty.Tests
         [Test]
         public void K3_판정을_쉬는_동안_머물기만_했으면_이어서_센다()
         {
-            FinalFixture f = new FinalFixture("K3");
+            FinalFixture f = new FinalFixture("110031");
             f.Enter(SpaceId.SecurityRoom).Wait(40f);
             f.Book.Dispatch(JudgeSignal.Tick(30f), false);   // 나가지 않고 쉼
             f.Wait(5.1f);
@@ -383,7 +383,7 @@ namespace NightDuty.Tests
         [Test]
         public void 회피_불가_둘째_조우는_재시작해도_제_슬롯으로_돌아가지_않는다()
         {
-            NightProgram program = new NightProgram(3, new[] { new SlotEncounter(EncounterSlot.A, ProgramCatalog.Encounter(ProgramCatalog.Footsteps), false) }, new List<RuleDef> { ProgramCatalog.Rule("H3") }, string.Empty);
+            NightProgram program = new NightProgram(3, new[] { new SlotEncounter(EncounterSlot.A, ProgramCatalog.Encounter(ProgramCatalog.Footsteps), false) }, new List<RuleDef> { ProgramCatalog.Rule("110003") }, string.Empty);
             TensionDirector d = new TensionDirector(program, 3, 0, new System.Random(1));
             d.SetUnavoidable(UnavoidableCatalog.Find("S5xH3"));
             d.Observe(JudgeSignal.OfSpace(SignalKind.SpaceEntered, SpaceId.Corridor));
@@ -402,8 +402,8 @@ namespace NightDuty.Tests
             InspectionBoard b = new InspectionBoard();
             b.Begin(new InspectionPlan(2, new[]
             {
-                new InspectionAssignment(InspectionCatalog.Find("K-1"), false, Band.Band0, false),
-                new InspectionAssignment(InspectionCatalog.Find("S-1"), false, Band.Band0, false),
+                new InspectionAssignment(InspectionCatalog.Find("135025"), false, Band.Band0, false),
+                new InspectionAssignment(InspectionCatalog.Find("135012"), false, Band.Band0, false),
             }, SpaceId.None, string.Empty), true);
             Assert.AreEqual(2, b.RemainingCount);
             Assert.AreEqual(1, b.RemainingCountExcept(SpaceId.ScienceRoom));
@@ -413,11 +413,11 @@ namespace NightDuty.Tests
         [Test]
         public void G1과_G3은_역설_변조_검은_줄이_겨누지_않는다()
         {
-            Assert.IsTrue(ParadoxPlanner.Excluded("G1"), "103차 QA 4회(사용자 결정)");
+            Assert.IsTrue(ParadoxPlanner.Excluded("110034"), "103차 QA 4회(사용자 결정)");
             Assert.IsTrue(ParadoxPlanner.Excluded(ProgramCatalog.FinaleBlankRule));
             Assert.IsTrue(ParadoxPlanner.Excluded(ProgramCatalog.ReverseReportRule));
             Assert.IsTrue(ParadoxPlanner.Excluded(ProgramCatalog.FinaleRule));
-            Assert.IsFalse(ParadoxPlanner.Excluded("G4"));
+            Assert.IsFalse(ParadoxPlanner.Excluded("110035"));
         }
 
         [Test]
@@ -454,32 +454,32 @@ namespace NightDuty.Tests
         {
             DutyDispatcher d = new DutyDispatcher(3, s => 0f, 5);
             DutyEvent ev;
-            Assert.IsTrue(d.Force("W4", out ev));
+            Assert.IsTrue(d.Force("130003", out ev));
             Assert.IsTrue(d.Tick(new DutyInput { Minute = NightClock.RelaxStart + 1f, Dt = 0.1f, SinceInspection = 100f }, out ev), "옛: W4가 열려 있으면 W5가 아예 안 나갔다");
-            Assert.AreEqual(DutyCatalog.Find("W5"), ev.Def);
+            Assert.AreEqual(DutyCatalog.Find("130004"), ev.Def);
             Assert.AreEqual(DutyOutcome.Issued, ev.Outcome);
-            Assert.AreEqual("W4", d.Active.Id, "진행 중이던 지시는 그대로");
+            Assert.AreEqual("130003", d.Active.Id, "진행 중이던 지시는 그대로");
             Assert.IsTrue(d.LogOpen);
             Assert.IsFalse(d.Tick(new DutyInput { Minute = NightClock.RelaxStart + 2f, Dt = 0.1f, SinceInspection = 100f }, out ev), "한 번만");
             Assert.IsTrue(d.NoteSigned(out ev));
             Assert.AreEqual(DutyOutcome.Done, ev.Outcome);
-            Assert.AreEqual("W5", ev.Def.Id);
-            Assert.AreEqual("W4", d.Active.Id);
+            Assert.AreEqual("130004", ev.Def.Id);
+            Assert.AreEqual("130003", d.Active.Id);
 
             DutyDispatcher ended = new DutyDispatcher(3, s => 0f, 5);
-            Assert.IsTrue(ended.Force("W15", out ev));
+            Assert.IsTrue(ended.Force("130009", out ev));
             Assert.IsTrue(ended.Tick(new DutyInput { Minute = NightClock.RelaxStart + 1f, Dt = 0.1f, SinceInspection = 100f }, out ev), "따로 연 W5");
             Assert.IsTrue(ended.NotePicked(DutyCatalog.LibraryBookTarget, out ev), "진행 중이던 줍기 지시를 이완 구간에 끝냄");
             Assert.IsNull(ended.Active);
             Assert.IsFalse(ended.Tick(new DutyInput { Minute = NightClock.RelaxStart + 2f, Dt = 0.1f, SinceInspection = 100f }, out ev), "103차 QA 4회: 서명 안내를 두 번 내지 않는다");
 
             DutyDispatcher late = new DutyDispatcher(3, s => 0f, 5);
-            Assert.IsTrue(late.Force("W4", out ev));
+            Assert.IsTrue(late.Force("130003", out ev));
             late.Tick(new DutyInput { Minute = NightClock.RelaxStart + 1f, Dt = 0.1f, SinceInspection = 100f }, out ev);
             Assert.IsFalse(late.Tick(new DutyInput { Minute = NightClock.Call2, Dt = 0.1f, SinceInspection = 100f }, out ev), "서명 못 하면 호출 2에 조용히 닫힌다");
-            Assert.IsTrue(late.Finished("W5"));
+            Assert.IsTrue(late.Finished("130004"));
             Assert.IsFalse(late.LogOpen);
-            Assert.AreEqual("W4", late.Active.Id);
+            Assert.AreEqual("130003", late.Active.Id);
         }
 
         [Test]

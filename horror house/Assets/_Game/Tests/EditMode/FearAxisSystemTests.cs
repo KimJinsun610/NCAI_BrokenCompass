@@ -43,7 +43,7 @@ namespace NightDuty.Tests
             axes.Terminated += c => terminated++;
 
             axes.Apply(FearAxis.Trust, 99, "setup", SpaceId.None);
-            Assert.IsTrue(axes.Apply(FearAxis.Trust, 2, "H1", SpaceId.Corridor));
+            Assert.IsTrue(axes.Apply(FearAxis.Trust, 2, "110001", SpaceId.Corridor));
             Assert.IsFalse(axes.Apply(FearAxis.Trust, 4, "H6", SpaceId.Corridor), "100 이후 신뢰는 더 오르지 않는다");
 
             Assert.AreEqual(100, axes.GetValue(FearAxis.Trust));
@@ -161,7 +161,7 @@ namespace NightDuty.Tests
                 }
             };
 
-            axes.Apply(FearAxis.Trust, 30, "H1", SpaceId.Corridor);
+            axes.Apply(FearAxis.Trust, 30, "110001", SpaceId.Corridor);
             resolver.BroadcastAll();
 
             Assert.AreEqual(0, trustEvents);

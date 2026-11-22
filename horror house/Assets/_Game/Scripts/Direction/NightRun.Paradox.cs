@@ -22,7 +22,7 @@ namespace NightDuty
         /// 104차(사용자: 「수칙에서 _? 같은 기호들이 공개되는 것도 없애주라」): 안전한 읽기 보상으로 수칙 빈칸(<c>_?</c> · <c>?_?</c> · <c>!_</c>)을 해독하는지 — 기본 끔(가림표는 끝까지 그대로).
         /// 안전한 읽기의 다른 보상(그 공간 이상 여부 알림)은 그대로다.
         /// </summary>
-        public static bool BlankDecodingEnabled { get; set; }
+        public static bool BlankDecodingEnabled { get; set; } = global::NightDuty.DesignData.SettingBool(390007);   // DT 390007 빈칸 해독 — 기본값만 DT
 
         /// <summary>80차: 빈칸을 해독했다(수칙 ID). 태블릿 글은 이미 고쳐져 있다.</summary>
         public static event Action<string> BlankDecoded;
@@ -143,7 +143,7 @@ namespace NightDuty
         }
 
         /// <summary>역설 문자를 따라 그 수칙을 어겼을 때 오는 답장(51차).</summary>
-        public const string ParadoxAck = "확인되었습니다.";
+        public static string ParadoxAck => DesignData.Msg(140020);
 
         private static bool _paradoxAcked;
         private static bool _paradoxEnded;
@@ -153,7 +153,7 @@ namespace NightDuty
         /// 104차(사용자: 「역설이었던 건 명확하게 끝나고 나타나기 — 역설 지시는 해당 역설이 종료되면 태블릿이 지지직거리면서 사라지게」): 문자를 받은 뒤
         /// 안전한 읽기도 어김도 없이 이만큼(판정 초) 지나면 그 역설도 끝난 것으로 본다(문자가 영영 남지 않게).
         /// </summary>
-        public const float ParadoxLingerSeconds = 120f;
+        public static float ParadoxLingerSeconds => global::NightDuty.DesignData.Setting(390088);   // DT 390088 역설 문자 자동 종료
 
         /// <summary>오늘 역설이 끝났는지(받은 문자가 사라졌는지).</summary>
         public static bool ParadoxEndedTonight

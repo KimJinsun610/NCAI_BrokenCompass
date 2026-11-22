@@ -131,16 +131,16 @@ public sealed class HumanTreeGrowth : MonoBehaviour
     public const float TrunkRadius = 0.32f;
 
     /// <summary>103차: 이 일차부터 선다.</summary>
-    public const int AppearDay = 3;
+    public static int AppearDay => global::NightDuty.DesignData.SettingInt(390234);   // DT 390234
 
     /// <summary>103차: 배치 축이 이 값(구간 1 문턱) 이상일 때만 선다.</summary>
-    public const int AppearLayout = 25;
+    public static int AppearLayout => global::NightDuty.DesignData.SettingInt(390235);   // DT 390235
 
     /// <summary>나타날 때(배치 축 <see cref="AppearLayout"/>) 키(m). 103차: 0.5 → 1.5.</summary>
-    public const float MinLength = 1.5f;
+    public static float MinLength => DesignData.Fx(421801, "등장 시 키(m)");   // DT Fx 421801
 
     /// <summary>배치 축 100일 때 키(m) — 천장(현관 4m) 가까이까지.</summary>
-    public const float MaxLength = 3.5f;
+    public static float MaxLength => DesignData.Fx(421801, "배치 100일 때 키(m)");   // DT Fx 421801
 
     /// <summary>
     /// 104차 D(배치 연출 1단계 — 「돌아보니 커졌다」): 자라는 것은 <b>안 보는 사이 한 번에</b> — 보고 있는 동안은 자라지 않고, 시야에서 벗어나면 그 축 값의 키로 바로 맞춘다.
@@ -149,7 +149,7 @@ public sealed class HumanTreeGrowth : MonoBehaviour
     public const bool GrowWhileUnseen = true;
 
     /// <summary>104차 A: 배치 구간이 이 이상인 밤에 나무 얼굴들이 고개를 돌려 플레이어를 본다(<see cref="TreeHeads"/>). 4일차 하한(구간 2)부터 누구나.</summary>
-    public const int HeadsBand = 2;
+    public static int HeadsBand => global::NightDuty.DesignData.BandLevel(390231);   // DT 390231 (구간 ID)
 
     /// <summary>움츠러드는 빠르기(m/초) — 재시작으로 축이 내려갔을 때.</summary>
     public const float ShrinkSpeed = 0.5f;

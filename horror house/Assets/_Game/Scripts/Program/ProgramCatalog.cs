@@ -141,27 +141,27 @@ namespace NightDuty
     public static class ProgramCatalog
     {
         // ── 조우 ID ─────────────────────────────────────────────
-        public const string BoySeated = "E.BoySeated";
-        public const string BoyBang = "E.BoyBang";
-        public const string ToiletGirl = "E.ToiletGirl";
-        public const string Footsteps = "E.Footsteps";
+        public const string BoySeated = "120001";
+        public const string BoyBang = "120002";
+        public const string ToiletGirl = "120003";
+        public const string Footsteps = "120004";
 
         /// <summary>104차(사용자): 뒤에서 따라오는 발소리(2일차 청각 조우) — 수칙 H5. 뒤돌아봄 2번이면 위반, 10초 무시하거나 멈추면 소리가 사라진다.</summary>
-        public const string FollowSteps = "E.FollowSteps";
-        public const string CallingVoice = "E.CallingVoice";
-        public const string YellowFace = "E.YellowFace";
-        public const string HallEndFigure = "E.HallEndFigure";
-        public const string ModelRush = "E.ModelRush";
-        public const string ScienceBlackout = "E.ScienceBlackout";
-        public const string ToiletBlackout = "E.ToiletBlackout";
-        public const string PeopleTree = "E.PeopleTree";
-        public const string CeilingLegs = "E.CeilingLegs";
-        public const string PhantomDoor = "E.PhantomDoor";
-        public const string SuitMan = "E.SuitMan";
-        public const string CctvPerson = "E.CctvPerson";
+        public const string FollowSteps = "120016";
+        public const string CallingVoice = "120005";
+        public const string YellowFace = "120006";
+        public const string HallEndFigure = "120007";
+        public const string ModelRush = "120008";
+        public const string ScienceBlackout = "120009";
+        public const string ToiletBlackout = "120010";
+        public const string PeopleTree = "120011";
+        public const string CeilingLegs = "120012";
+        public const string PhantomDoor = "120013";
+        public const string SuitMan = "120014";
+        public const string CctvPerson = "120015";
 
         /// <summary>2일차 첫 역설이 겨누는 수칙(C2 — 소년이 앉은 뒤 「교실에 남은 학생이 있습니다. 지금 확인하십시오.」, 눈으로만).</summary>
-        public const string FirstParadoxRule = "C2";
+        public const string FirstParadoxRule = "110006";
 
         /// <summary>104차: 첫 역설(C2)이 나오는 날 — 고정 편성(<see cref="ProgramDirector.FixedSchedule"/>)은 소년 머리 박기 날(4일차), 옛 편성은 2일차.</summary>
         public static int FirstParadoxDay
@@ -172,7 +172,7 @@ namespace NightDuty
         /// <summary>
         /// 편성하지 않는 수칙(정의는 남겨 둔다 — 판정기·역설 표·시험이 참조). 60차 민: 「교실의 판서 근무 수칙은 폐기해줘. 별로인 것 같아」 → C1.
         /// </summary>
-        public static readonly string[] Retired = { "C1", "T3", "T5", "L5", "C5" };   // 79차 민: 「S4 T3 합침」·「T5 폐기」·「L5 폐기」 · 104차(사용자: 「C5는 폐기 — 너무 애매해」) → 없던 문 조우도 함께 빠짐(IsEncounterRetired)
+        public static readonly string[] Retired = RuleIdsWhere(r => r.State_ID != ActiveState);   // DT 상태 「폐기」(C1·C5·T3·T5·L5)   // 79차 민: 「S4 T3 합침」·「T5 폐기」·「L5 폐기」 · 104차(사용자: 「C5는 폐기 — 너무 애매해」) → 없던 문 조우도 함께 빠짐(IsEncounterRetired)
 
         /// <summary>편성하지 않는 수칙인지.</summary>
         public static bool IsRetired(string ruleId)
@@ -190,16 +190,16 @@ namespace NightDuty
         }
 
         /// <summary>5일차 경비실 고정 수칙(04:00 뒤에만 판정).</summary>
-        public const string FinaleRule = "K4";
+        public const string FinaleRule = "110032";
 
         /// <summary>5일차 태블릿에만 보이는 공통 수칙(판정 없음). 피날레 「들어왔다」에서 빈칸이 채워진다.</summary>
-        public const string FinaleBlankRule = "G3";
+        public const string FinaleBlankRule = "110036";
 
         /// <summary>빈칸이 채워진 G3 문구(최종 기획서: 빈칸은 「당신」).</summary>
         public const string FinaleBlankFilled = "이 수칙서와 태블릿 공지가 다를 경우 당신을 따르십시오.";
 
         /// <summary>역보고 수칙(회차당 최대 2번).</summary>
-        public const string ReverseReportRule = "T4";
+        public const string ReverseReportRule = "110019";
 
         /// <summary>회차당 역보고 수칙 배정 한도.</summary>
         public const int ReverseReportPerRun = 2;
@@ -211,7 +211,7 @@ namespace NightDuty
         public const int ClassroomDwellGameMinutes = 24;
 
         /// <summary>C6 판정 시간(실제 초) — 문구의 게임 분을 실제 초로 바꾼 값(60초).</summary>
-        public const float ClassroomDwellRealSeconds = ClassroomDwellGameMinutes * 60f / NightClock.GameSecondsPerRealSecond;
+        public static float ClassroomDwellRealSeconds => ClassroomDwellGameMinutes * 60f / NightClock.GameSecondsPerRealSecond;
 
         /// <summary>2026-11-06(1·2일차 밤이 길다): 그날 배속으로 바꾼 C6 판정 시간(1일차 90 · 2일차 75 · 그 뒤 60초) — 문구 「24분」은 그대로 맞는다.</summary>
         public static float ClassroomDwellRealSecondsFor(int day)
@@ -220,7 +220,7 @@ namespace NightDuty
         }
 
         /// <summary>하루 손전등 수칙 한도.</summary>
-        public const int FlashlightPerDay = 3;
+        public static int FlashlightPerDay => global::NightDuty.DesignData.SettingInt(390063);   // DT 390063 손전등 수칙 하루 한도
 
         private static KeyValuePair<FearAxis, Band> Need(FearAxis axis, Band band)
         {
@@ -232,72 +232,149 @@ namespace NightDuty
         private const FearAxis L = FearAxis.Layout;
         private const FearAxis T = FearAxis.Trust;
 
-        private static readonly RuleDef[] Rules =
+        /// <summary>DT 수칙 종류 — 위협(520202) · 장식 문구(520205, 가짜 수칙 — <see cref="FakeRuleCatalog"/>).</summary>
+        private const uint ThreatKind = 520202, DecorKind = 520205;
+
+        /// <summary>DT 수칙 상태 — 사용(510201). 그 밖(폐기)은 <see cref="Retired"/>.</summary>
+        private const uint ActiveState = 510201;
+
+        /// <summary>수칙 → 묶인 조우. 조우 키는 아직 코드(Encounter 단계에서 표로 옮김).</summary>
+        private static readonly Dictionary<string, string> BoundOf = new Dictionary<string, string>(StringComparer.Ordinal)
         {
-            new RuleDef("H1", SpaceId.Corridor, L, true, "복도의 미분류 물체에 다가가지 마십시오.", boundEncounter: PeopleTree),   // 2026-10-01: 사람 나무가 없으면 피할 물체가 없다
-            new RuleDef("H2", SpaceId.Corridor, L, true, "열린 문은 열린 채로 두십시오."),
-            new RuleDef("H3", SpaceId.Corridor, A, true, "발소리가 들리면 가까운 방으로 대피하십시오.", isThreat: true, isWaitType: true, boundEncounter: Footsteps),
-            new RuleDef("H4", SpaceId.Corridor, A, true, "뒤에서 부르면 돌아보지 마십시오.", isThreat: true, boundEncounter: CallingVoice),
-            new RuleDef("H5", SpaceId.Corridor, A, true, "인기척이 느껴질 때 무작정 뒤돌아 보시면 안됩니다.", boundEncounter: FollowSteps),
-
-            new RuleDef("C1", SpaceId.Classroom, A, true, "교실은 판서가 끝난 뒤에 들어가십시오.", isWaitType: true),   // 57차 민: 앞에 「교실」을 밝힘
-            new RuleDef("C2", SpaceId.Classroom, A, true, "교실의 _? 는 무시하십시오.", boundEncounter: BoyBang),   // 52차 민: 앉은 소년과 묶음(C2 + C3 + 소년) — 3초 바라보면 책상에 머리를 박는다
-            new RuleDef("C3", SpaceId.Classroom, A, true, "수업 종이 울리면 정지하십시오.", isThreat: true, isWaitType: true, boundEncounter: BoySeated),   // 103차(민): 옛 「수업 중에 움직이지 마십시오.」
-            new RuleDef("C4", SpaceId.Classroom, I, true, "초록 불빛 아래에서는 손전등을 끄십시오.", usesFlashlight: true),   // 52차 민: 늘 켜고 다니니 「끄라」로 — 등은 맵 어딘가 하나(RedLightSpot). 66차 민: 「조도 축이 오르면 전체 조명이 붉어지니 수칙의 빨간 불빛은 초록으로」
-            new RuleDef("C5", SpaceId.Classroom, L, true, "교실의 문은 모두 부서져 있습니다. 성한 문으로는 나가지 마십시오.", boundEncounter: PhantomDoor),
-            new RuleDef("C6", SpaceId.Classroom, L, true, "교실에 " + ClassroomDwellGameMinutes + "분 넘게 머물지 마십시오."),   // 103차(사용자 채택): 교실의 혼자 서는 배치 수칙 — 게임 24분 = 실제 1분
-
-            new RuleDef("S1", SpaceId.ScienceRoom, L, true, "과학실은 통로가 아닙니다. 통로로 사용하지 마십시오."),
-            new RuleDef("S2", SpaceId.ScienceRoom, A, true, "깨지는 소리가 나면 과학실을 나가 다시 오지 마십시오."),
-            new RuleDef("S3", SpaceId.ScienceRoom, I, true, "인체 모형에는 빛을 비추지 마십시오.", usesFlashlight: true),
-            new RuleDef("S4", SpaceId.ScienceRoom, I, true, "정전 중에는 손전등을 켜지 마십시오.", usesFlashlight: true, boundEncounter: ScienceBlackout),   // 79차 민: T3 합침 — 과학실·화장실 소등 모두, 3초 유예 · 103차 맞춤법: 키지 → 켜지
-            new RuleDef("S5", SpaceId.ScienceRoom, I, true, "복도 끝에 _?이 서 있으면 빛을 끄고 기다리십시오.", isThreat: true, usesFlashlight: true, isWaitType: true, boundEncounter: HallEndFigure),
-
-            new RuleDef("T1", SpaceId.Toilet, A, true, "화장실에서 물이 다 내려가기 전에 나오십시오."),   // 79차 민
-            new RuleDef("T2", SpaceId.Toilet, L, true, "사용 중인 칸은 열지 마십시오."),
-            new RuleDef("T3", SpaceId.Toilet, I, true, "정전 시에는 기다리십시오.", isThreat: true, usesFlashlight: true, isWaitType: true, boundEncounter: ToiletBlackout),
-            new RuleDef("T4", SpaceId.Toilet, L, true, "변기는 정상입니다.", boundEncounter: ToiletGirl),
-            new RuleDef("T5", SpaceId.Toilet, I, true, "불이 켜진 칸이 있으면 당신도 불을 켜십시오.", usesFlashlight: true),
-            new RuleDef("T7", SpaceId.Toilet, L, true, "화장실 거울을 3초 이상 보지 마십시오."),   // 79차 민 채택
-
-            new RuleDef("L1", SpaceId.Library, A, true, "쓰러진 책장 곁에 서지 마십시오."),
-            new RuleDef("L2", SpaceId.Library, A, true, "책장 넘기는 소리가 들리면, 도서관 점검 시간은 끝났습니다. 나가십시오.", isWaitType: true),
-            new RuleDef("L3", SpaceId.Library, I, true, "도서관 ?_? 을 계속 비추십시오.", isThreat: true, usesFlashlight: true, boundEncounter: YellowFace),
-            new RuleDef("L4", SpaceId.Library, L, true, "상자에서 떨어져 걸으십시오."),
-            new RuleDef("L5", SpaceId.Library, A, true, "창밖에 먼저 인사하지 마십시오. 눈길도, 빛도 인사입니다.", isThreat: true, boundEncounter: SuitMan),
-            new RuleDef("L6", SpaceId.Library, I, true, "도서관에서는 손전등을 천장으로 향하지 마십시오.", usesFlashlight: true),   // 79차 민 채택
-            new RuleDef("L7", SpaceId.Library, L, true, "도서관에서는 뒷걸음질하지 마십시오."),   // 80차 민 채택(새 수칙 B — 역설 없음)
-
-            new RuleDef("K1", SpaceId.SecurityRoom, L, true, "화면 속 !_ 이 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.", boundEncounter: CctvPerson),   // 2026-10-29 김진선님: 문구 「눈을 떼지」 · 2026-11-09 판정도 — 사람이 지나가기 전 CCTV를 그만보면(E·Esc·S) 위반(채널 넘김은 보지 않음, 공포 연출 동안 채널은 잠김)
-            new RuleDef("K2", SpaceId.SecurityRoom, I, true, "공실 채널은 오래 보지 마십시오."),   // 103차 편성 균형: 청각 → 조도(화면 불빛 — 경비실 수칙이 모두 청각이던 것)
-            new RuleDef("K3", SpaceId.SecurityRoom, A, true, "서명 시간 외에는 경비실에 오래 머물지 마십시오."),
-            new RuleDef("K4", SpaceId.SecurityRoom, L, false, "근무 종료 후에는 경비실을 나가지 마십시오."),
-            new RuleDef("K5", SpaceId.SecurityRoom, A, true, "경비실 전화는 세 번 울린 뒤에 받으십시오."),   // 79차 민 채택
-
-            new RuleDef("G1", SpaceId.None, A, true, "복도에서는 뛰지 마십시오."),
-            new RuleDef("G4", SpaceId.None, L, true, "태블릿을 보면서 걷지 마십시오."),   // 79차 민 채택 — 짝수 날(2·4일차)에 공통 수칙으로 · 103차: 한때 조도로 옮겼다가 편성 균형(밤마다 감각 세 축 보장) 뒤 미숙 포획의 52%가 조도라 원래 배치로
-            new RuleDef("G3", SpaceId.None, L, false, "이 수칙서와 태블릿 공지가 다를 경우 [　　]을 따르십시오.")
+            { "110001", PeopleTree },      // H1 — 2026-10-01: 사람 나무가 없으면 피할 물체가 없다
+            { "110003", Footsteps },       // H3
+            { "110004", CallingVoice },    // H4
+            { "110037", FollowSteps },     // H5
+            { "110006", BoyBang },         // C2 — 52차 민: 앉은 소년과 묶음(C2 + C3 + 소년)
+            { "110007", BoySeated },       // C3
+            { "110009", PhantomDoor },     // C5
+            { "110014", ScienceBlackout }, // S4
+            { "110015", HallEndFigure },   // S5
+            { "110018", ToiletBlackout },  // T3
+            { "110019", ToiletGirl },      // T4
+            { "110024", YellowFace },      // L3
+            { "110026", SuitMan },         // L5
+            { "110029", CctvPerson },      // K1
         };
 
-        private static readonly EncounterDef[] Encounters =
+        /// <summary>DT 3단계: 수칙은 Rule_Table(장식 문구 제외)에서 읽는다 — 문구·공간·축·위협·손전등·대기형. 정본은 xlsx.</summary>
+        private static readonly RuleDef[] Rules = BuildRules();
+
+        private static RuleDef[] BuildRules()
         {
-            new EncounterDef(BoySeated, "소년 착석", A, SpaceId.Classroom, "C3", 1, "boy", new[] { Need(A, Band.Band0) }),
-            new EncounterDef(BoyBang, "소년 머리 박기", A, SpaceId.Classroom, "C2", 4, "boy", new[] { Need(A, Band.Band2), Need(L, Band.Band2) }, true, "C3"),
-            new EncounterDef(ToiletGirl, "화장실 여자아이", A, SpaceId.Toilet, "T4", 2, "girl", new[] { Need(A, Band.Band1) }),
-            new EncounterDef(Footsteps, "달려오는 발소리", A, SpaceId.Corridor, "H3", 3, "footsteps", new[] { Need(A, Band.Band1) }),   // 103차(모든 조우 목격): 청각 2 → 1 — 3일차 위협 수칙 0장이던 것
-            new EncounterDef(FollowSteps, "따라오는 발소리", A, SpaceId.Corridor, "H5", 2, "footsteps", new[] { Need(A, Band.Band0) }),
-            new EncounterDef(CallingVoice, "부르는 목소리", A, SpaceId.Corridor, "H4", 2, "voice", new[] { Need(A, Band.Band3) }),
-            new EncounterDef(YellowFace, "노란 얼굴", I, SpaceId.Library, "L3", 3, "duck", new[] { Need(I, Band.Band1) }),
-            new EncounterDef(HallEndFigure, "복도 끝에 선 자", I, SpaceId.ScienceRoom, "S5", 3, "dummy", new[] { Need(I, Band.Band2) }),   // 70차: 인체 모형, 모형 급습 전날(ProgramDirector 날짜 사슬)
-            new EncounterDef(ModelRush, "모형 급습", I, SpaceId.ScienceRoom, "S5", 5, "dummy", new[] { Need(I, Band.Band3), Need(L, Band.Band2) }, true),
-            new EncounterDef(ScienceBlackout, "과학실 소등", I, SpaceId.ScienceRoom, "S4", 3, "science.dark", new[] { Need(I, Band.Band1) }),   // 103차(민: 「모든 조우 연출을 목격」): 조도 2 → 1 — 4·5일차는 과학실 칸을 S5가 차지해 회차에 한 번도 안 나오던 것
-            new EncounterDef(ToiletBlackout, "화장실 소등", I, SpaceId.Toilet, "S4", 3, "toilet.dark", new[] { Need(I, Band.Band1) }),
-            new EncounterDef(PeopleTree, "사람 나무", L, SpaceId.Corridor, "H1", 3, "tree", new[] { Need(L, Band.Band2) }),
-            new EncounterDef(CeilingLegs, "시체 낙하", L, SpaceId.Classroom, string.Empty, 2, "boy", new[] { Need(L, Band.Band1) }),   // 103차(사용자): 강도 3 → 2 · 배치 2 → 1 — 늘 2일차(ProgramDirector.CorpseDayTo)   // 52차: 대응 수칙 없음(사다리 점검 중 놀람만 — 예고하는 수칙을 두지 않는다)
-            new EncounterDef(PhantomDoor, "없던 문", L, SpaceId.Classroom, "C5", 2, "door", new[] { Need(L, Band.Band2) }),
-            new EncounterDef(SuitMan, "창밖 노란 얼굴", I, SpaceId.Library, "", 3, "duck", new[] { Need(I, Band.Band1) }),   // 84차(민: 「창밖의 노란 얼굴 조우가 도서관 노란 얼굴 조우의 빌드업」): 노란 얼굴 전날(날짜 사슬) · 85차(민: 「L3는 문쪽 조우일 때만」): 대응 수칙 없음
-            new EncounterDef(CctvPerson, "CCTV에만 보이는 사람", L, SpaceId.SecurityRoom, "K1", 2, "blackman", new KeyValuePair<FearAxis, Band>[0])
+            List<InstructionDT.RuleRow> rows = RuleRows();
+            RuleDef[] list = new RuleDef[rows.Count];
+            for (int i = 0; i < rows.Count; i++)
+            {
+                InstructionDT.RuleRow r = rows[i];
+                string id = r.ID.ToString();
+                string bound;
+                BoundOf.TryGetValue(id, out bound);
+                list[i] = new RuleDef(id, global::NightDuty.DesignData.SpaceOf(r.Space_ID), r.Axis_ID == 0 ? L : global::NightDuty.DesignData.AxisOf(r.Axis_ID), r.Axis_ID != 0, r.Text,
+                    isThreat: r.Kind_ID == ThreatKind, usesFlashlight: r.Is_Flashlight, isWaitType: r.Is_Wait, boundEncounter: bound ?? string.Empty);
+            }
+
+            return list;
+        }
+
+        /// <summary>판정 수칙 행(표 순서, 장식 문구 제외). H5(110037, 표 끝에 추가)는 옛 순서대로 H4 뒤.</summary>
+        internal static List<InstructionDT.RuleRow> RuleRows()
+        {
+            global::NightDuty.DesignData.Ensure();
+            List<InstructionDT.RuleRow> rows = new List<InstructionDT.RuleRow>();
+            foreach (InstructionDT.RuleRow r in InstructionDT.DT.Rule.All)
+                if (r.Kind_ID != DecorKind) rows.Add(r);
+            int h5 = rows.FindIndex(r => r.ID == 110037), h4 = rows.FindIndex(r => r.ID == 110004);
+            if (h5 >= 0 && h4 >= 0 && h5 != h4 + 1)
+            {
+                InstructionDT.RuleRow t = rows[h5];
+                rows.RemoveAt(h5);
+                rows.Insert(rows.FindIndex(r => r.ID == 110004) + 1, t);
+            }
+
+            return rows;
+        }
+
+        /// <summary>장식 문구 행(가짜 수칙, 표 순서).</summary>
+        internal static List<InstructionDT.RuleRow> DecorRows()
+        {
+            global::NightDuty.DesignData.Ensure();
+            List<InstructionDT.RuleRow> rows = new List<InstructionDT.RuleRow>();
+            foreach (InstructionDT.RuleRow r in InstructionDT.DT.Rule.All)
+                if (r.Kind_ID == DecorKind) rows.Add(r);
+            return rows;
+        }
+
+        /// <summary>표의 칸이 참인 수칙 ID(표 순서).</summary>
+        internal static string[] RuleIdsWhere(Func<InstructionDT.RuleRow, bool> pick)
+        {
+            List<string> ids = new List<string>();
+            foreach (InstructionDT.RuleRow r in RuleRows())
+                if (pick(r)) ids.Add(r.ID.ToString());
+            return ids.ToArray();
+        }
+
+        /// <summary>조우의 몹(대역) 이름과 편성 조건 띠 — 표에 칸이 없어 코드에 둔다.</summary>
+        private static readonly Dictionary<string, KeyValuePair<string, KeyValuePair<FearAxis, Band>[]>> CastOf = new Dictionary<string, KeyValuePair<string, KeyValuePair<FearAxis, Band>[]>>(StringComparer.Ordinal)
+        {
+            { BoySeated, Cast("boy", Need(A, Band.Band0)) },
+            { BoyBang, Cast("boy", Need(A, Band.Band2), Need(L, Band.Band2)) },
+            { ToiletGirl, Cast("girl", Need(A, Band.Band1)) },
+            { Footsteps, Cast("footsteps", Need(A, Band.Band1)) },   // 103차: 청각 2 → 1
+            { FollowSteps, Cast("footsteps", Need(A, Band.Band0)) },
+            { CallingVoice, Cast("voice", Need(A, Band.Band3)) },
+            { YellowFace, Cast("duck", Need(I, Band.Band1)) },
+            { HallEndFigure, Cast("dummy", Need(I, Band.Band2)) },
+            { ModelRush, Cast("dummy", Need(I, Band.Band3), Need(L, Band.Band2)) },
+            { ScienceBlackout, Cast("science.dark", Need(I, Band.Band1)) },
+            { ToiletBlackout, Cast("toilet.dark", Need(I, Band.Band1)) },
+            { PeopleTree, Cast("tree", Need(L, Band.Band2)) },
+            { CeilingLegs, Cast("boy", Need(L, Band.Band1)) },
+            { PhantomDoor, Cast("door", Need(L, Band.Band2)) },
+            { SuitMan, Cast("duck", Need(I, Band.Band1)) },
+            { CctvPerson, Cast("blackman") },
         };
+
+        private static KeyValuePair<string, KeyValuePair<FearAxis, Band>[]> Cast(string mob, params KeyValuePair<FearAxis, Band>[] needs)
+        {
+            return new KeyValuePair<string, KeyValuePair<FearAxis, Band>[]>(mob, needs);
+        }
+
+        /// <summary>DT 3단계: 조우는 Encounter_Table에서 읽는다 — 이름·축·수칙 공간·대응 수칙 1·2·강도·겹침. 정본은 xlsx.</summary>
+        private static readonly EncounterDef[] Encounters = BuildEncounters();
+
+        private static EncounterDef[] BuildEncounters()
+        {
+            List<InstructionDT.EncounterRow> rows = EncounterRows();
+            EncounterDef[] list = new EncounterDef[rows.Count];
+            for (int i = 0; i < rows.Count; i++)
+            {
+                InstructionDT.EncounterRow r = rows[i];
+                string id = r.ID.ToString();
+                KeyValuePair<string, KeyValuePair<FearAxis, Band>[]> cast;
+                if (!CastOf.TryGetValue(id, out cast)) throw new InvalidOperationException("DT Encounter " + id + " 몹·조건 띠가 코드(CastOf)에 없음");
+                list[i] = new EncounterDef(id, r.Name, global::NightDuty.DesignData.AxisOf(r.Main_Axis_ID), global::NightDuty.DesignData.SpaceOf(r.Rule_Space_ID),
+                    r.Rule_1_ID == 0 ? string.Empty : r.Rule_1_ID.ToString(), (int)r.Intensity, cast.Key, cast.Value, r.Is_Cross, r.Rule_2_ID == 0 ? string.Empty : r.Rule_2_ID.ToString());
+            }
+
+            return list;
+        }
+
+        /// <summary>조우 행(표 순서). 따라오는 발소리(120016, 표 끝에 추가)는 옛 순서대로 달려오는 발소리 뒤.</summary>
+        internal static List<InstructionDT.EncounterRow> EncounterRows()
+        {
+            global::NightDuty.DesignData.Ensure();
+            List<InstructionDT.EncounterRow> rows = new List<InstructionDT.EncounterRow>(InstructionDT.DT.Encounter.All);
+            int f = rows.FindIndex(r => r.ID == 120016);
+            if (f >= 0)
+            {
+                InstructionDT.EncounterRow t = rows[f];
+                rows.RemoveAt(f);
+                rows.Insert(rows.FindIndex(r => r.ID == 120004) + 1, t);
+            }
+
+            return rows;
+        }
 
         private static readonly Dictionary<string, RuleDef> RuleIndex = IndexRules();
         private static readonly Dictionary<string, EncounterDef> EncounterIndex = IndexEncounters();

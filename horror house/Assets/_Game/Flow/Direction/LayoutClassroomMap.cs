@@ -10,11 +10,11 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class LayoutClassroomMap : LayoutRoomMap
 {
-    public static readonly int[] Clocks = { 0, 1, 2, 4, 6 };
-    public static readonly int[] Boards = { 0, 0, 1, 2, 3 };
-    public static readonly int[] Desks = { 0, 0, 1, 2, 4 };
-    public static readonly int[] Chairs = { 0, 1, 2, 3, 5 };
-    public static readonly int[] Drips = { 0, 1, 2, 3, 5 };
+    public static int[] Clocks => global::NightDuty.DesignData.LayoutCounts(410006);   // DT Layout_Prop 410006
+    public static int[] Boards => global::NightDuty.DesignData.LayoutCounts(410007);   // DT Layout_Prop 410007
+    public static int[] Desks => global::NightDuty.DesignData.LayoutCounts(410008);   // DT Layout_Prop 410008
+    public static int[] Chairs => global::NightDuty.DesignData.LayoutCounts(410009);   // DT Layout_Prop 410009
+    public static int[] Drips => global::NightDuty.DesignData.LayoutCounts(410010);   // DT Layout_Prop 410010
 
     /// <summary>검수용 — 0~4로 구간을 강제(−1이면 실제 연출 구간).</summary>
     public static int DebugBand = -1;

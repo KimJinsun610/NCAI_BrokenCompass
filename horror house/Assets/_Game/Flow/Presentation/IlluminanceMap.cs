@@ -230,7 +230,7 @@ public sealed class IlluminanceMap : MonoBehaviour
     /// </summary>
     public static int LeftOffFor(Band corridorBand)
     {
-        return Mathf.Clamp((int)corridorBand, 0, 4);
+        return Mathf.RoundToInt(DesignData.FxSeries(420201, 5, "좌측 복도 소등 개수")[Mathf.Clamp((int)corridorBand, 0, 4)]);   // DT Fx 420201~420205
     }
 
     // ─────────────────────────────── 설치 ───────────────────────────────

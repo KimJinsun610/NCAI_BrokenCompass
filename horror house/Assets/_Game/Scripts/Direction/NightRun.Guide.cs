@@ -15,7 +15,7 @@ namespace NightDuty
     public static partial class NightRun
     {
         /// <summary>조우가 남았으면 이 시각(게임 분, 03:30)에서 밤 시계를 붙든다 — 판정 끝(03:32) 전이라 지시·판정은 그대로 돈다.</summary>
-        public const float HoldMinute = NightClock.JudgingEnd - 2f;
+        public static float HoldMinute => global::NightDuty.DesignData.Setting(390031);   // DT 390031 조우가 남았으면 03:30에서 시계 정지 (옛 계산: JudgingEnd − 2)
 
         /// <summary>앞선 지시(그 공간 점검 등)가 있는 조우가 그 지시 뒤 이만큼(실제 초) 시작하지 않으면 유도 문자를 보낸다(마지막 수단).</summary>
         public const float GuideGraceSeconds = 45f;
@@ -91,7 +91,7 @@ namespace NightDuty
                 foreach (InspectionItem item in InspectionCatalog.InSpace(kv.Key))
                 {
                     if (have >= kv.Value) break;
-                    if (rows.Exists(r => r.Id == item.Id) || IsBuiltInLeadItem(item.Id, reverse) || (reverse && item.Id == "T-2")) continue;
+                    if (rows.Exists(r => r.Id == item.Id) || IsBuiltInLeadItem(item.Id, reverse) || (reverse && item.Id == "135019")) continue;
                     rows.Add(new InspectionAssignment(item, false, Band.Band0, false));
                     have++;
                     changed = true;
@@ -103,7 +103,7 @@ namespace NightDuty
 
         private static bool IsBuiltInLeadItem(string itemId, bool reverse)
         {
-            return itemId == "C-3" || itemId == "L-2" || (reverse && itemId == InspectionCatalog.ReverseReportItem);
+            return itemId == "135009" || itemId == "135023" || (reverse && itemId == InspectionCatalog.ReverseReportItem);
         }
 
         /// <summary>밤 시작 — 순서대로 여는 밤에 조우마다 그 공간 점검 하나를 묶는다(CCTV 사람은 K-1을 먼저).</summary>
@@ -241,24 +241,16 @@ namespace NightDuty
         /// <summary>그 조우의 유도 문자(공간 이름만 — 무엇이 나오는지는 말하지 않는다).</summary>
         public static string GuideText(string encounterId)
         {
-            switch (encounterId)
+            // DT 3단계: Encounter_Table Guide_Message_ID(따라오는 발소리는 달려오는 발소리와 같은 140011). 칸이 비면 140019 「순찰을 계속해주십시오.」
+            uint id;
+            if (uint.TryParse(encounterId, out id))
             {
-                case ProgramCatalog.CeilingLegs: return "교실 안쪽 사다리를 다시 확인해주십시오.";
-                case ProgramCatalog.ScienceBlackout: return "과학실을 순찰해주십시오.";
-                case ProgramCatalog.ToiletBlackout: return "화장실을 순찰해주십시오.";
-                case ProgramCatalog.ToiletGirl: return "화장실을 순찰해주십시오.";
-                case ProgramCatalog.SuitMan: return "도서관 입구 맞은편 창의 블라인드를 확인해주십시오.";
-                case ProgramCatalog.Footsteps: return "복도를 한 바퀴 순찰해주십시오.";
-                case ProgramCatalog.FollowSteps: return "복도를 한 바퀴 순찰해주십시오.";
-                case ProgramCatalog.CallingVoice: return "복도를 순찰해주십시오.";
-                case ProgramCatalog.PeopleTree: return "복도를 순찰해주십시오.";
-                case ProgramCatalog.CctvPerson: return "경비실 CCTV 화면을 확인해주십시오.";
-                case ProgramCatalog.BoyBang: return "1-3 교실을 순찰해주십시오.";
-                case ProgramCatalog.HallEndFigure: return "복도 끝 비상구 쪽을 확인해주십시오.";
-                case ProgramCatalog.ModelRush: return "복도 끝 비상구 쪽을 확인해주십시오.";
-                case ProgramCatalog.YellowFace: return "도서관을 순찰해주십시오.";
-                default: return "순찰을 계속해주십시오.";
+                DesignData.Ensure();
+                InstructionDT.EncounterRow row = InstructionDT.DT.Encounter.Get(id);
+                if (row != null && row.Guide_Message_ID != 0) return DesignData.Msg(row.Guide_Message_ID);
             }
+
+            return DesignData.Msg(140019);
         }
 
         /// <summary>그 조우에 앞선 지시(점검 항목·근무 지시)가 있는지 — 있으면 그것을 먼저 내고 유도 문자는 늦춘다.</summary>
@@ -310,7 +302,7 @@ namespace NightDuty
         {
             if (r == null || r.Script == null) return string.Empty;
             if (r.Script.AfterOrder.Length > 0) return r.Script.AfterOrder;
-            if (r.Def.Id == ProgramCatalog.CeilingLegs && SequentialCorpseLead) return "C-3";
+            if (r.Def.Id == ProgramCatalog.CeilingLegs && SequentialCorpseLead) return "135009";
             string item;
             return s_leadItems.TryGetValue(r.Def.Id, out item) ? item : string.Empty;   // 104차: 그 공간 점검
         }

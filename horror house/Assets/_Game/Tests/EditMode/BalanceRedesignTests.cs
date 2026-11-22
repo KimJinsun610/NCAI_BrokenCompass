@@ -146,7 +146,7 @@ namespace NightDuty.Tests
     {
         private static DutyLogEntry Entry(RuleVerdict verdict, bool instructed)
         {
-            return new DutyLogEntry(1, "H1", SpaceId.Corridor, "테스트 본문", verdict, instructed);
+            return new DutyLogEntry(1, "110001", SpaceId.Corridor, "테스트 본문", verdict, instructed);
         }
 
         [Test]

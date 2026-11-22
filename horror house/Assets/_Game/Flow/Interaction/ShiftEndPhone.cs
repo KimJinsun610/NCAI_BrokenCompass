@@ -21,10 +21,17 @@ public sealed class ShiftEndPhone : MonoBehaviour
     private const float ConfirmSeconds = 3f;
 
     /// <summary>점검이 남아 끝낼 수 없을 때의 안내(59차 민: 「조기 퇴근도 『지시가 아직 끝나지 않았습니다.』 정도로」 — 남은 수는 알려 주지 않는다).</summary>
-    public const string LockedLine = "지시가 아직 끝나지 않았습니다.";
+    public static string LockedLine => DesignData.Msg(140035);
 
     /// <summary>104차: 지시는 다 마쳤지만 그날 조우가 남아 아직 끝낼 수 없을 때(<see cref="NightRun.EncountersPending"/>) — 무엇이 남았는지는 말하지 않는다.</summary>
-    public const string PatrolLine = "아직 근무 시간입니다. 순찰을 계속하십시오.";
+    public static string PatrolLine => DesignData.Msg(140036);
+
+    /// <summary>[E] 안내 두 단계 — DT 문구 「첫 안내 → 한 번 더」를 나눈다(140037 조기 퇴근 · 140038 피날레).</summary>
+    private static string PromptStep(uint id, bool armed)
+    {
+        var parts = DesignData.Msg(id).Split(new[] { " → " }, System.StringSplitOptions.None);
+        return armed && parts.Length > 1 ? parts[1] : parts[0];
+    }
 
     /// <summary>점검이 남아 끝낼 수 없을 때의 외곽선 진하기(끝낼 수 있으면 1).</summary>
     private const float LockedOutline = 0.35f;
@@ -107,7 +114,7 @@ public sealed class ShiftEndPhone : MonoBehaviour
 
         IsReady = true;
         InteractionOutline.Request(transform);
-        ClaimPrompt(IsArmed ? "[E] 한 번 더 — 근무를 종료합니다" : "[E] 근무 종료 보고", true);
+        ClaimPrompt(PromptStep(140037, IsArmed), true);
 
 #if ENABLE_LEGACY_INPUT_MANAGER
         if (Input.GetKeyDown(interactKey))
@@ -137,7 +144,7 @@ public sealed class ShiftEndPhone : MonoBehaviour
 
         IsReady = true;
         InteractionOutline.Request(transform);
-        ClaimPrompt(IsArmed ? "[E] 한 번 더 — 퇴근합니다" : "[E] 퇴근하기", true);
+        ClaimPrompt(PromptStep(140038, IsArmed), true);
 
 #if ENABLE_LEGACY_INPUT_MANAGER
         if (Input.GetKeyDown(interactKey))

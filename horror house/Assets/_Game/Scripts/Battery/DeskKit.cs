@@ -22,7 +22,7 @@
         /// <summary>그날 책상에 물품을 놓는지(1일차만).</summary>
         public static bool ForDay(int day)
         {
-            return day <= 1;
+            return global::NightDuty.DesignData.Day(day).Desk_Flashlight > 0;   // DT Day_Table.Desk_Flashlight(1일차)
         }
 
         /// <summary>그날 책상을 만든다.</summary>

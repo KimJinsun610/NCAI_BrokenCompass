@@ -21,7 +21,7 @@ public static class InspectionAnomalyPropsBuilder
     /// <summary>항목별 이상 연출 프리팹(김진선님 폴더 — 경로가 바뀌면 여기만 고친다).</summary>
     private static readonly string[,] EventPrefabs =
     {
-        { "H-2", "Assets/3.2 Programmer_Kim/03 Prefebs/04 Horror/Bloody/HorrorEvent_BloodyFountain.prefab" },
+        { "135002", "Assets/3.2 Programmer_Kim/03 Prefebs/04 Horror/Bloody/HorrorEvent_BloodyFountain.prefab" },
     };
 
     [MenuItem("야간근무/연출/점검 이상 소품 표 다시 만들기")]
@@ -127,7 +127,7 @@ public static class InspectionAnomalyPropsBuilder
     /// <summary>66차: 대역 소품이 필요한 항목 — [옮김] 틀과 S-4 지구본(정적 배칭이라 대역이 돈다).</summary>
     public static bool NeedsProxy(InspectionItem item)
     {
-        return item.Template == AnomalyTemplate.Move || item.Id == "S-4";
+        return item.Template == AnomalyTemplate.Move || item.Id == "135015";
     }
 
     private static bool Has(JudgeTarget t, string id)

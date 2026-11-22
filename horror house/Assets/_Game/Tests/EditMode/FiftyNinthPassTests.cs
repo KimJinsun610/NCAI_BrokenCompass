@@ -54,7 +54,7 @@ namespace NightDuty.Tests
 
             public Rig GazeLadder(float seconds)
             {
-                string ladder = InspectionCatalog.TargetPrefix + "C-3";
+                string ladder = InspectionCatalog.TargetOf("135009");
                 int n = UnityEngine.Mathf.RoundToInt(seconds * 10f);
                 for (int i = 0; i < n; i++) Send(JudgeSignal.Gaze(ladder, 0.1f)).Wait(0.1f);
                 return this;
@@ -129,7 +129,7 @@ namespace NightDuty.Tests
         {
             System.Type phone = System.Type.GetType("ShiftEndPhone, Assembly-CSharp");   // Flow는 시험 어셈블리가 참조하지 않는다
             Assert.IsNotNull(phone);
-            Assert.AreEqual("지시가 아직 끝나지 않았습니다.", phone.GetField("LockedLine").GetValue(null));
+            Assert.AreEqual("지시가 아직 끝나지 않았습니다.", phone.GetProperty("LockedLine").GetValue(null));
             Assert.IsNull(typeof(NightRun).GetField("FinalOrderNotice"), "77차(민): 「마지막 지시입니다…」 안내 폐기");
             Assert.IsFalse(NightRun.IsFinalOrder(null));
         }

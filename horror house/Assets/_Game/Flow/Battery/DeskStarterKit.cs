@@ -20,7 +20,7 @@ public sealed class DeskStarterKit : MonoBehaviour
     public const float Reach = 2.1f;
 
     /// <summary>손전등 옅은 외곽선이 보이는 거리(m).</summary>
-    public const float HintRange = 6f;   // 66차 민: 「눈에 띄게」 — 경비실 어디서든
+    public static float HintRange => DesignData.Fx(421002, "책상 손전등 외곽선 거리(m)");   // DT Fx 421002 —   // 66차 민: 「눈에 띄게」 — 경비실 어디서든
 
     /// <summary>
     /// 손전등 소품 원본(씬 경로 — 복제해 책상에 둔다). 둘 다 벤더 프리팹 <c>Flashlight_ON</c>의 씬 인스턴스.
@@ -37,7 +37,7 @@ public sealed class DeskStarterKit : MonoBehaviour
 
     private const float DeskY = 2.11f;
     private const float AimSlack = 0.12f;
-    private const float NoticeSeconds = 2.8f;
+    private static float NoticeSeconds => DesignData.Fx(421002, "책상 안내 문구 표시(초)");   // DT Fx 421002
 
     private GameObject _flashlight;
     private GameObject[] _batteries;

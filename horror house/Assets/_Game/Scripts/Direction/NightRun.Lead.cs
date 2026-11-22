@@ -15,7 +15,7 @@ namespace NightDuty
     public static partial class NightRun
     {
         /// <summary>조우 앞 지시가 슬롯보다 이만큼(게임 분) 먼저 나간다(변기 지시와 같은 간격).</summary>
-        public const float LeadMinutes = ToiletOrderLeadMinutes;
+        public static float LeadMinutes => ToiletOrderLeadMinutes;   // DT 390189
 
         /// <summary>창밖 노란 얼굴을 이만큼(초) 이어서 보면 달아난다(민: 「응시를 2초 이상 하면 도망감」).</summary>
         public const float WindowFleeSeconds = 2f;
@@ -83,7 +83,7 @@ namespace NightDuty
             }
 
             // 104차: 고정 편성 밤의 시체 낙하 — 사다리 점검(C-3)을 묶어 두었다가 그 차례에 낸다(옛: 아무 때나 나간 C-3을 이미 보고해 시체가 오지 않던 것).
-            if (program.Sequential && program.HasEncounter(ProgramCatalog.CeilingLegs) && plan.Find("C-3") != null) Board.Hold("C-3");
+            if (program.Sequential && program.HasEncounter(ProgramCatalog.CeilingLegs) && plan.Find("135009") != null) Board.Hold("135009");
         }
 
         /// <summary>묶어 둔 조우 앞 점검 항목을 슬롯 <see cref="LeadMinutes"/>분 앞에 단독 지시로 낸다(한 번).</summary>

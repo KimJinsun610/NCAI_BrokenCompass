@@ -90,7 +90,7 @@ namespace NightDuty.Tests
             Assert.AreEqual(Deltas.RuleViolation, got.Auditory);
             Assert.AreEqual(0, got.Layout, "어기지 않은 축은 0 그대로다");
             Assert.AreEqual(0, got.Illuminance, "어기지 않은 축은 0 그대로다");
-            Assert.AreEqual("G1", got.Results[0].RuleId);
+            Assert.AreEqual("110034", got.Results[0].RuleId);
             Assert.AreEqual(FinalOutcome.Violated, got.Results[0].Outcome);
             Assert.AreEqual("0:41", DaySummary.FormatMinutes(got.ViolationMinutes[0]));
             Assert.IsNull(got.ImprintAxis);
@@ -127,12 +127,12 @@ namespace NightDuty.Tests
             NightRun.InspectionPlanOverride = (day, shown) => new InspectionPlan(day,
                 new[]
                 {
-                    new InspectionAssignment(InspectionCatalog.Find("H-2"), false, Band.Band0, false),
-                    new InspectionAssignment(InspectionCatalog.Find("H-1"), false, Band.Band0, false)
+                    new InspectionAssignment(InspectionCatalog.Find("135002"), false, Band.Band0, false),
+                    new InspectionAssignment(InspectionCatalog.Find("135001"), false, Band.Band0, false)
                 },
                 SpaceId.None, string.Empty);
             NightRun.BeginNight(1, () => _clock);
-            Assert.IsTrue(NightRun.ReportInspection("H-2", false).Accepted);
+            Assert.IsTrue(NightRun.ReportInspection("135002", false).Accepted);
 
             DaySummary summary = NightRun.BuildSummary();
             Assert.AreEqual(1, summary.PatrolDone);
@@ -155,7 +155,7 @@ namespace NightDuty.Tests
                 Assert.AreEqual(i + 1, log[i].Number);
                 Assert.AreEqual(deck[i].Id, log[i].RuleId);
                 Assert.AreEqual(deck[i].Text, log[i].PlayerText);
-                if (log[i].RuleId == "G1")
+                if (log[i].RuleId == "110034")
                 {
                     Assert.AreEqual(RuleVerdict.Violated, log[i].Verdict);
                     Assert.IsTrue(log[i].Struck, "어긴 수칙");

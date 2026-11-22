@@ -68,7 +68,7 @@ namespace NightDuty
         /// <summary>66차(민: 「처음 손전등은 배터리 수치가 0이게」): 다 닳은 채로 — 1일차 책상 손전등. 책상 배터리를 주워 R로 갈아야 켜진다.</summary>
         public void StartEmpty()
         {
-            Charge = 0f;
+            Charge = global::NightDuty.DesignData.Setting(390256);   // DT 390256 1일차 시작 충전량
         }
 
         /// <summary>66차(민: 「배터리는 일차가 바뀔 때 100%가 되지 않아 — 이전 배터리 상태가 계속 이월」): 전날 충전량·예비를 그대로 이어받는다.</summary>

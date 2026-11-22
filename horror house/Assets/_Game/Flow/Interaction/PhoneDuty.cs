@@ -10,10 +10,10 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class PhoneDuty : MonoBehaviour
 {
-    public const float FirstDelayMin = 8f;
-    public const float FirstDelayMax = 18f;
-    public const float RingSeconds = 30f;
-    public const float RetrySeconds = 20f;
+    public static float FirstDelayMin => global::NightDuty.DesignData.Setting(390190);   // DT 390190 W19 첫 울림 최소
+    public static float FirstDelayMax => global::NightDuty.DesignData.Setting(390191);   // DT 390191 W19 첫 울림 최대
+    public static float RingSeconds => global::NightDuty.DesignData.Setting(390192);   // DT 390192 W19 울림 길이
+    public static float RetrySeconds => global::NightDuty.DesignData.Setting(390193);   // DT 390193 그친 뒤 재울림
 
     private float _ringAt = -1f;
     private bool _wasRinging;

@@ -3,6 +3,7 @@
     "rootNamespace": "NightDuty.Tests",
     "references": [
         "NightDuty.Core",
+        "InstructionDT",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

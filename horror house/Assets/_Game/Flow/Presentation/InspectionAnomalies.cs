@@ -26,19 +26,33 @@ public sealed class InspectionAnomalies : MonoBehaviour
     public static bool PhotosensitiveSafe;
 
     /// <summary>빛 이상의 후광 링(최종 기획서 접근성: 색과 함께 정적인 모양 단서).</summary>
-    public static bool HaloRing = false;   // 53차 민(C-2 램프 스크린샷): 「UI처럼 보인다」 — 빛 이상 후광 링을 모두 끈다(49차 S-2에 이어)
+    public static bool HaloRing
+    {
+        get { return s_haloRing ?? DesignData.FxOn(420606, "[빛] 이상 후광(1=켬)"); }   // 기본값 DT Fx 420606
+        set { s_haloRing = value; }
+    }
+
+    private static bool? s_haloRing;
+
+    // 53차 민(C-2 램프 스크린샷): 「UI처럼 보인다」 — 빛 이상 후광 링을 모두 끈다(49차 S-2에 이어)   // 53차 민(C-2 램프 스크린샷): 「UI처럼 보인다」 — 빛 이상 후광 링을 모두 끈다(49차 S-2에 이어)
 
     /// <summary>
     /// 66차 실시간 조작(민 피드백 6단계 「실시간 조작」 — 원문이 남아 있지 않아 이렇게 읽었다): 그날 늦게 열리는 공간(호출 2)의 이상은 밤 시작에 세우지 않고,
     /// 그 점검이 열린 뒤 플레이어가 보지 않고 4m 넘게 떨어져 있을 때 세운다 — 앞서 지나가며 본 정상 모습이 나중에 바뀌어 있다. 판정(편성)은 그대로다. 끄면 옛 동작.
     /// </summary>
-    public static bool LiveTamper = true;
+    public static bool LiveTamper = global::NightDuty.DesignData.SettingBool(390009);   // DT 390009 늦은 공간 이상을 안 볼 때 세움 — 기본값만 DT
 
     /// <summary>실시간 조작을 기다리는 동안 플레이어와 떨어져 있어야 하는 거리(m).</summary>
-    public const float TamperMinDistance = 4f;
+    public static float TamperMinDistance => global::NightDuty.DesignData.Setting(390219);   // DT 390219 안 보고 이만큼 떨어지면 이상을 세움
 
     /// <summary>[빛] 이상의 세기 배수(53차 민: 「빛과 관련된 점검 물품들은 빛이 아주 약하게」).</summary>
-    public static float LightAnomalyScale = 0.3f;
+    public static float LightAnomalyScale
+    {
+        get { return s_lightAnomalyScale ?? DesignData.Fx(420606, "[빛] 이상 세기(배)"); }   // 기본값 DT Fx 420606
+        set { s_lightAnomalyScale = value; }
+    }
+
+    private static float? s_lightAnomalyScale;
 
     private static readonly float[] SpreadWidthByBand = { 0f, 0.6f, 0.45f, 1.2f, 2.4f };
 
@@ -191,7 +205,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
     /// </summary>
     public Action Preview(string itemId, Band band)
     {
-        if (IsApplied(itemId) || itemId == "K-1" || itemId == TrashCanKick.ItemId) return null;   // 65차: H-4는 다가갈 때 걷어차이는 사건이라 한 컷 미리 보기가 없다
+        if (IsApplied(itemId) || itemId == "135025" || itemId == TrashCanKick.ItemId) return null;   // 65차: H-4는 다가갈 때 걷어차이는 사건이라 한 컷 미리 보기가 없다
         Look look = Build(itemId, band);
         if (look == null) return null;
         return () => Remove(look);
@@ -234,7 +248,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 for (int i = 0; i < rows.Count; i++)
                 {
                     if (!rows[i].IsAnomaly) continue;
-                    if (LiveTamper && rows[i].IsLate && AnomalyLook.HasLook(rows[i].Item) && rows[i].Id != "K-1")
+                    if (LiveTamper && rows[i].IsLate && AnomalyLook.HasLook(rows[i].Item) && rows[i].Id != "135025")
                     {
                         _pending.Add(rows[i]);   // 66차: 실시간 조작 — 점검이 열린 뒤 보지 않을 때 세운다
                         continue;
@@ -267,7 +281,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
         {
             Look look = _looks[i];
             for (int f = 0; f < look.Flickers.Count; f++) Tick(look.Flickers[f]);
-            if (look.ItemId == "K-1") TickWalker(look);
+            if (look.ItemId == "135025") TickWalker(look);
             if (look.Spin != null) look.Spin.RotateAround(look.SpinPivot, Vector3.up, look.SpinSpeed * Time.deltaTime);
         }
     }
@@ -406,7 +420,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
         if (!AnomalyLook.HasLook(item)) return null;
 
         Look look = new Look { ItemId = itemId, Band = band };
-        if (itemId == "K-1")
+        if (itemId == "135025")
         {
             look.Walker = new Walker();
             return look;
@@ -425,7 +439,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
         bool ok = true;
         switch (itemId)
         {
-            case "H-1":
+            case "135001":
             {
                 Vector3 at = new Vector3(b.center.x, b.max.y - 0.1f, b.center.z) + Flat(prop.forward) * (b.extents.z + 0.015f);
                 // 53차 플레이 점검: 범위 0.3m 점광원은 벽에 테두리가 또렷한 초록 원판을 그렸다(「UI 같은 원」) — 범위를 넓히고 세기를 1/10로 해 번지게.
@@ -434,7 +448,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 Halo(look, b, new Color(0.5f, 1f, 0.6f));
                 break;
             }
-            case "C-2":
+            case "135008":
             {
                 Vector3 at = new Vector3(b.center.x, b.max.y - 0.1f, b.center.z) + Flat(prop.forward) * 0.1f;
                 Light l = Glow(look, at, new Color(1f, 0.78f, 0.5f), 2.6f, 1.6f * glow, 0.08f);
@@ -442,7 +456,7 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 Halo(look, b, new Color(1f, 0.8f, 0.5f));
                 break;
             }
-            case "S-2":
+            case "135013":
             {
                 // 49차: 후광 링을 뺐다(민: 「UI스러운 원」) — 바닥 조명이 실험대를 조금 더 넓게 비추고, 접안렌즈 끝에 작은 빛점 하나.
                 Color cold = new Color(0.82f, 0.9f, 1f);
@@ -455,13 +469,13 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 AddFlicker(look, null, eye, band, seed);
                 break;
             }
-            case "T-3":
+            case "135020":
                 Mirror(look, prop, b, band, glow);
                 break;
-            case "L-2":
+            case "135023":
                 Blind(look, prop, jt.transform, b, glow);
                 break;
-            case "S-1":
+            case "135012":
             {
                 Vector3 p = prop.position;
                 Quaternion r = prop.rotation;
@@ -472,17 +486,17 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 });
                 break;
             }
-            case "C-1":
+            case "135007":
                 ok = PlantOddPlace(look, prop, jt.transform, b, band);   // 52차: 책상 위 · 천장에 거꾸로 · 벽에 옆으로
                 break;
-            case "L-1":
+            case "135022":
                 ok = ChairOut(look, prop, jt.transform, band);
                 break;
-            case "H-2":
+            case "135002":
                 // 44차: 김진선님 「피 식수대」(HorrorEvent_BloodyFountain) — 물이 고이고 떨어지다가, 앞에 다가서면 8초에 걸쳐 검붉게 변한다. 없으면 옛 절차 물.
                 if (!FountainEvent(look, prop, b, band)) Water(look, prop, b, band, Flat(prop.forward), new Color(0.015f, 0.02f, 0.025f, 0.8f), 0.25f, false);
                 break;
-            case "T-1":
+            case "135018":
             {
                 // 61차(민: 「소녀가 칸에 들어간 뒤 변기에 핏물·머리카락」 — 진선님 에셋): 김진선님 핏물·머리카락 변기를 겹친다. 없으면 옛 절차 물·머리카락.
                 GameObject blood = ToiletBowls.Blood(prop);
@@ -498,11 +512,11 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 Hair(look, prop, b, band);
                 break;
             }
-            case "C-3":
+            case "135009":
                 ok = HideProp(look, prop, jt.transform);   // 51차: 사다리가 없다(점검 기준점만 남는다)
                 if (ok) EmptyMark(look, prop, b);   // 65차(민: 「사다리 없는 자리에서 없다고 보고할 수 있도록」): 빈자리에 자국 — 외곽선이 그려지고 [없음]으로 보고
                 break;
-            case "H-4":
+            case "135004":
             {
                 // 65차: 쓰레기통 — 복도에서 다가가 보면 누가 걷어찬 듯 날아간다(TrashCanKick). 정상이면 아무 일 없음.
                 TrashCanKick kick = TrashCanKick.Active;
@@ -514,35 +528,35 @@ public sealed class InspectionAnomalies : MonoBehaviour
                 break;
             }
             // ── 66차(민: 「점검은 안 겹칠수록 좋아 — 점검 항목을 추가해도 돼」) 새 항목. 대상은 RuntimeInspectTargets가 근무 중에 세운다 ──
-            case "C-4":
+            case "135010":
                 ok = FallToFloor(look, prop, jt.transform, b, 0.45f);   // 시계가 벽에서 떨어져 바닥에(66차 플레이 점검: 둥근 시계는 돌려도 티가 안 났다)
                 break;
-            case "S-6":
+            case "135017":
                 ok = TiltOnWall(look, prop, jt.transform, b, band);   // 세계 지도가 기울거나 세로로·거꾸로
                 if (ok) HideTwin(look, RuntimeInspectTargets.MapTwinPath);   // 같은 자리에 겹친 두 번째 지도
                 break;
-            case "C-5":
+            case "135011":
                 ok = TurnAboutUp(look, prop, jt.transform, b, band <= Band.Band1 ? 135f : 180f);   // 교사 의자가 교실 쪽으로 돌아앉음
                 break;
-            case "K-2":
+            case "135026":
                 ok = TurnOneChair(look, band);   // 경비실 의자 둘 중 하나가 돌아앉음
                 break;
-            case "S-4":
+            case "135015":
                 ok = SpinGlobe(look, prop, jt.transform, b, band);   // 지구본이 혼자 돈다
                 break;
-            case "S-5":
+            case "135016":
                 ok = GlowFlasks(look, glow, band);   // 선반 플라스크 유리가 붉게 빛나며 깜빡임
                 break;
-            case "T-5":
+            case "135021":
                 ok = FallToFloor(look, prop, jt.transform, b, 0.55f);   // 수건이 바닥에 떨어져 있다
                 break;
-            case "L-5":
+            case "135024":
                 ok = StandUp(look, prop, jt.transform, b);   // 쓰러져 있던 쓰레기통이 세워져 있다(66차 플레이 점검: 씬의 도서관 쓰레기통은 원래 누워 있다)
                 break;
-            case "K-3":
+            case "135027":
                 ok = TipOver(look, prop, jt.transform, b);   // 화분이 쓰러져 있다
                 break;
-            case "H-6":
+            case "135006":
                 ok = BenchOut(look, prop, jt.transform, b, band);   // 벤치 한쪽 끝이 벽에서 떨어져 복도로 돌아 나옴
                 break;
             default:

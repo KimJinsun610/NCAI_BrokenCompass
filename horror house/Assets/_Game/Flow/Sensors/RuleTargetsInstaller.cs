@@ -59,7 +59,7 @@ public sealed class RuleTargetsInstaller : MonoBehaviour
         {
             if (t.gameObject.scene != scene || t.PrimaryId != FinalCues.L1Shelf) continue;
             Transform prop = t.transform.parent != null ? t.transform.parent : t.transform;
-            if (ParadoxLure.Attach(prop.gameObject, "L1", 0f) != null) n++;
+            if (ParadoxLure.Attach(prop.gameObject, "110022", 0f) != null) n++;
         }
 
         return n;

@@ -1088,11 +1088,11 @@ public sealed partial class DevModePanel
     {
         switch (ruleId)
         {
-            case "H1": return FinalCues.H1Object;
-            case "L1": return FinalCues.L1Shelf;
-            case "L4": return FinalCues.L4Box;
-            case "S1": return FinalCues.S1Center;
-            case "S3": return FinalCues.ModelTarget;
+            case "110001": return FinalCues.H1Object;
+            case "110022": return FinalCues.L1Shelf;
+            case "110025": return FinalCues.L4Box;
+            case "110011": return FinalCues.S1Center;
+            case "110013": return FinalCues.ModelTarget;
             default: return string.Empty;
         }
     }
@@ -1556,36 +1556,36 @@ public sealed partial class DevModePanel
     {
         switch (id)
         {
-            case "H1": return "사람 나무(미분류 물체) 1.2m 안에 들어가면 위반";
-            case "H2": return "저절로 열린 문을 닫으면 위반(열림을 봐야 시작)";
-            case "H3": return "발소리 6초 안에 방으로 피해 2초 숨기";
-            case "H4": return "부르는 목소리 쪽으로 돌아보면 위반";
-            case "C1": return "분필 소리 동안 교실에 들어가면 위반";
-            case "C2": return "앉은 소년을 3초 바라보면 위반 → 머리 박기";
-            case "C3": return "소년이 앉은 뒤 종이 울릴 때까지 움직이면 위반";
-            case "C4": return "초록 등 아래에서 손전등을 켜 두면 위반";
-            case "C5": return "없던 문 앞 구역에 들어가면 위반";
-            case "S1": return "과학실 테이프 가운데를 가로지르면 위반";
-            case "S2": return "유리 깨짐 뒤 10초 안에 과학실을 나가고 다시 들어가지 않기";
-            case "S3": return "인체 모형을 1.5초 비추면 위반 → 다음 날 급습 예약";
-            case "S4": return "과학실 소등 동안 어두운 구역에서 손전등을 끄면 위반";
-            case "S5": return "복도 끝 형체 → 3초 안에 손전등을 끄고 가만히(과학실·복도)";
-            case "T1": return "물 내림 뒤 8초 안에 화장실 나가기";
-            case "T2": return "사용 중인 칸 구역에 들어가면 위반";
-            case "T3": return "화장실 정전 → 3초 안에 손전등을 끄고 가만히";
-            case "T4": return "소녀를 봤으면 변기 칸을 [정상]으로(역보고)";
-            case "T5": return "불 켜진 칸 앞에서 손전등을 3초 넘게 끄면 위반";
-            case "L1": return "기울어진 책장 1.5m 안에 3초 머물면 위반";
-            case "L2": return "책장 넘김 뒤 10초 안에 도서관 나가기";
-            case "L3": return "노란 얼굴을 2초 비추기(빛을 떼면 위반)";
-            case "L4": return "상자 1.5m 안에 들어가면 위반";
-            case "L5": return "창밖 남자를 2초 바라보면 위반";
-            case "K1": return "CCTV 사람이 지나가는 동안 채널을 넘기면 위반";
-            case "K2": return "빈 방 채널을 3초 보면 위반";
-            case "K3": return "경비실에 45초 넘게 머물면 위반";
-            case "G1": return "1초 넘게 달리면 위반";
-            case "G3": return "판정 없음(5일차 표시)";
-            case "K4": return "피날레(5일차)";
+            case "110001": return "사람 나무(미분류 물체) 1.2m 안에 들어가면 위반";
+            case "110002": return "저절로 열린 문을 닫으면 위반(열림을 봐야 시작)";
+            case "110003": return "발소리 6초 안에 방으로 피해 2초 숨기";
+            case "110004": return "부르는 목소리 쪽으로 돌아보면 위반";
+            case "110005": return "분필 소리 동안 교실에 들어가면 위반";
+            case "110006": return "앉은 소년을 3초 바라보면 위반 → 머리 박기";
+            case "110007": return "소년이 앉은 뒤 종이 울릴 때까지 움직이면 위반";
+            case "110008": return "초록 등 아래에서 손전등을 켜 두면 위반";
+            case "110009": return "없던 문 앞 구역에 들어가면 위반";
+            case "110011": return "과학실 테이프 가운데를 가로지르면 위반";
+            case "110012": return "유리 깨짐 뒤 10초 안에 과학실을 나가고 다시 들어가지 않기";
+            case "110013": return "인체 모형을 1.5초 비추면 위반 → 다음 날 급습 예약";
+            case "110014": return "과학실 소등 동안 어두운 구역에서 손전등을 끄면 위반";
+            case "110015": return "복도 끝 형체 → 3초 안에 손전등을 끄고 가만히(과학실·복도)";
+            case "110016": return "물 내림 뒤 8초 안에 화장실 나가기";
+            case "110017": return "사용 중인 칸 구역에 들어가면 위반";
+            case "110018": return "화장실 정전 → 3초 안에 손전등을 끄고 가만히";
+            case "110019": return "소녀를 봤으면 변기 칸을 [정상]으로(역보고)";
+            case "110020": return "불 켜진 칸 앞에서 손전등을 3초 넘게 끄면 위반";
+            case "110022": return "기울어진 책장 1.5m 안에 3초 머물면 위반";
+            case "110023": return "책장 넘김 뒤 10초 안에 도서관 나가기";
+            case "110024": return "노란 얼굴을 2초 비추기(빛을 떼면 위반)";
+            case "110025": return "상자 1.5m 안에 들어가면 위반";
+            case "110026": return "창밖 남자를 2초 바라보면 위반";
+            case "110029": return "CCTV 사람이 지나가는 동안 채널을 넘기면 위반";
+            case "110030": return "빈 방 채널을 3초 보면 위반";
+            case "110031": return "경비실에 45초 넘게 머물면 위반";
+            case "110034": return "1초 넘게 달리면 위반";
+            case "110036": return "판정 없음(5일차 표시)";
+            case "110032": return "피날레(5일차)";
             default: return string.Empty;
         }
     }
@@ -1621,7 +1621,7 @@ public sealed partial class DevModePanel
 
     private static bool CueEndable(string ruleId)
     {
-        return ruleId == "C4" || RuleTriggers.Find(ruleId) != null;
+        return ruleId == "110008" || RuleTriggers.Find(ruleId) != null;
     }
 
     /// <summary>수칙 하나를 직접 부른다(덱에 넣고 방아쇠).</summary>
@@ -1637,7 +1637,7 @@ public sealed partial class DevModePanel
             return;
         }
 
-        if (ruleId == "C4")
+        if (ruleId == "110008")
         {
             RedLightSpot red = RedLightSpot.Active;
             if (red != null && red.Spot.HasValue)
@@ -1667,7 +1667,7 @@ public sealed partial class DevModePanel
 
     private void EndRuleCall(string ruleId)
     {
-        if (ruleId == "C4")
+        if (ruleId == "110008")
         {
             NightRun.Send(JudgeSignal.CueEnd(FinalCues.RedLight));
             Note("C4 단서 끝");
@@ -1715,7 +1715,7 @@ public sealed partial class DevModePanel
         });
         if (GUILayout.Button("CCTV 다시보기 한 컷")) Later(ShowReplay);
         RedLightSpot red = RedLightSpot.Active;
-        if (red != null && red.Spot.HasValue && GUILayout.Button("초록 등 아래로")) Later(() => CallRule("C4"));
+        if (red != null && red.Spot.HasValue && GUILayout.Button("초록 등 아래로")) Later(() => CallRule("110008"));
         GUILayout.EndHorizontal();
         EndSection();
         DrawCctvSpots();

@@ -91,25 +91,32 @@ namespace NightDuty
 
         private static readonly List<UnavoidableDef> s_all = new List<UnavoidableDef>
         {
-            new UnavoidableDef("S5xH3", true, UnavoidableKind.CrossCue, new[] { "S5", "H3" }, FinalCues.HallEnd, SpaceId.None, null, ProgramCatalog.Footsteps, null,
+            new UnavoidableDef("S5xH3", true, UnavoidableKind.CrossCue, new[] { "110015", "110003" }, FinalCues.HallEnd, SpaceId.None, null, ProgramCatalog.Footsteps, null,
                 "복도에 인원이 둘입니다."),
-            new UnavoidableDef("S2xScience", true, UnavoidableKind.ExitBeforeInspection, new[] { "S2" }, FinalCues.Glass, SpaceId.ScienceRoom, null, null, "S2",
-                "과학실 점검이 끝나지 않았습니다. " + NoReentry),
-            new UnavoidableDef("L2xLibrary", true, UnavoidableKind.ExitBeforeInspection, new[] { "L2" }, FinalCues.Pages, SpaceId.Library, null, null, "L2",
-                "도서관 점검이 끝나지 않았습니다. " + NoReentry),
-            new UnavoidableDef("T1xToilet", true, UnavoidableKind.ExitBeforeInspection, new[] { "T1" }, FinalCues.Flush, SpaceId.Toilet, null, null, "T1",
-                "화장실 점검이 끝나지 않았습니다. " + NoReentry),
-            new UnavoidableDef("T2xT-1", true, UnavoidableKind.CueOnPendingItem, new[] { "T2" }, FinalCues.StallOccupied, SpaceId.Toilet, "T-1", null, "T2",
-                "변기 점검 칸이 사용 중입니다."),
-            new UnavoidableDef("K1xK-1", false, UnavoidableKind.CueOnPendingItem, new[] { "K1" }, FinalCues.CctvPerson, SpaceId.SecurityRoom, "K-1", null, null,
-                "화면에 인원이 잡혔습니다."),
-            new UnavoidableDef("K2xK-1", false, UnavoidableKind.CueOnPendingItem, new[] { "K2" }, FinalCues.EmptyRoom, SpaceId.SecurityRoom, "K-1", null, "K2",
-                "CCTV 점검 시간입니다."),
-            new UnavoidableDef("C2xC-3", false, UnavoidableKind.CueOnPendingItem, new[] { "C2" }, FinalCues.BoySeated, SpaceId.Classroom, "C-3", null, null,
-                "사다리 점검이 끝나지 않았습니다."),   // 51차: 천장 → 사다리(C-3 문구 변경)
-            new UnavoidableDef("H4xT1", false, UnavoidableKind.ChainOnExit, new[] { "H4", "T1" }, FinalCues.Flush, SpaceId.Toilet, null, ProgramCatalog.CallingVoice, null,
+            Trap("S2xScience", "110012", SpaceId.ScienceRoom),   // S2
+            Trap("L2xLibrary", "110023", SpaceId.Library),   // L2
+            Trap("T1xToilet", "110016", SpaceId.Toilet),   // T1
+            Trap("T2xT-1", "110017", SpaceId.Toilet),   // T2
+            Trap("K1xK-1", "110029", SpaceId.SecurityRoom),   // K1
+            Trap("K2xK-1", "110030", SpaceId.SecurityRoom),   // K2
+            Trap("C2xC-3", "110006", SpaceId.Classroom),   // C2   // 51차: 천장 → 사다리(C-3 문구 변경)
+            new UnavoidableDef("H4xT1", false, UnavoidableKind.ChainOnExit, new[] { "110004", "110016" }, FinalCues.Flush, SpaceId.Toilet, null, ProgramCatalog.CallingVoice, null,
                 "복도에 육성이 감지되었습니다.")
         };
+
+        /// <summary>
+        /// DT 3단계: 수칙 하나짜리 회피 불가 쌍은 Rule_Table 함정 칸(Trap_Kind_ID · Trap_Is_Real · Trap_Text · Trap_Cue_ID · Trap_Task_ID · Trap_Gate)에서 만든다.
+        /// 두 수칙이 엮인 쌍(S5xH3 · H4xT1)은 표에 칸이 없어 코드에 둔다. 쌍 ID(「S2xScience」 등)는 표시·로그용 이름이다.
+        /// </summary>
+        private static UnavoidableDef Trap(string id, string ruleId, SpaceId space)
+        {
+            global::NightDuty.DesignData.Ensure();
+            InstructionDT.RuleRow r = InstructionDT.DT.Rule.Get(uint.Parse(ruleId));
+            if (r == null || r.Trap_Kind_ID == 0) throw new InvalidOperationException("DT Rule " + ruleId + " 함정 칸 없음");
+            UnavoidableKind kind = r.Trap_Kind_ID == 520701 ? UnavoidableKind.ExitBeforeInspection : UnavoidableKind.CueOnPendingItem;   // 520701 점검 전 퇴실 · 520702 남은 점검 항목 단서
+            return new UnavoidableDef(id, r.Trap_Is_Real, kind, new[] { ruleId }, global::NightDuty.DesignData.Label(r.Trap_Cue_ID), space,
+                r.Trap_Task_ID == 0 ? null : r.Trap_Task_ID.ToString(), null, r.Trap_Gate ? ruleId : null, r.Trap_Text);
+        }
 
         /// <summary>표 전체.</summary>
         public static IReadOnlyList<UnavoidableDef> All

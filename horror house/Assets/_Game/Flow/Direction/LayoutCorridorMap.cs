@@ -30,19 +30,19 @@ public sealed class LayoutCorridorMap : MonoBehaviour
     public const string DripPath = "LayoutProps/blood_drip";
 
     /// <summary>구간(0~4)별 없던 문 수(막힌 문·열린 문 포함).</summary>
-    public static readonly int[] Doors = { 0, 2, 4, 7, 12 };
+    public static int[] Doors => global::NightDuty.DesignData.LayoutCounts(410001);   // DT Layout_Prop 410001
 
     /// <summary>그중 벽돌로 막힌 문.</summary>
-    public static readonly int[] Walled = { 0, 0, 1, 2, 3 };
+    public static int[] Walled => global::NightDuty.DesignData.LayoutCounts(410002);   // DT Layout_Prop 410002
 
     /// <summary>그중 살짝 열려 안이 새카만 문.</summary>
-    public static readonly int[] Ajar = { 0, 0, 0, 1, 2 };
+    public static int[] Ajar => global::NightDuty.DesignData.LayoutCounts(410003);   // DT Layout_Prop 410003
 
     /// <summary>천장 핏방울.</summary>
-    public static readonly int[] Drips = { 0, 2, 3, 6, 9 };
+    public static int[] Drips => global::NightDuty.DesignData.LayoutCounts(410004);   // DT Layout_Prop 410004
 
     /// <summary>천장에 거꾸로 붙은 의자.</summary>
-    public static readonly int[] Chairs = { 0, 0, 0, 2, 5 };
+    public static int[] Chairs => global::NightDuty.DesignData.LayoutCounts(410005);   // DT Layout_Prop 410005
 
     /// <summary>문 순서 중 벽돌 문·열린 문 자리(아래 구간 것이 위 구간에서도 같은 모양이게 순서로 정한다).</summary>
     private static readonly int[] WalledSlots = { 3, 5, 9 };

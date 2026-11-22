@@ -1,0 +1,6 @@
+﻿ID,Encounter_Count,Window_1_Segment_ID,Window_2_Segment_ID,Window_3_Segment_ID,Window_4_Segment_ID
+uint,uint,uint,uint,uint,uint
+350001,1,340005,,,
+350002,2,340003,340005,,
+350003,3,340003,340005,340006,
+350004,4,340003,340003,340005,340006

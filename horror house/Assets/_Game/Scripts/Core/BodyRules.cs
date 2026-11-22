@@ -19,13 +19,26 @@ namespace NightDuty
     public static class BodyRules
     {
         /// <summary>층 경계(이 값부터 층 1·2·3·4).</summary>
-        public static readonly int[] TierFloors = { 25, 50, 75, 90 };
+        public static readonly int[] TierFloors = Ints(DesignData.FxSeries(420801, 4, "층 하한(생존 수치)"));   // DT Fx 420801~420804
 
         /// <summary>경계 신호를 내는 생존 수치.</summary>
-        public static readonly int[] Boundaries = { 70, 85 };
+        public static readonly int[] Boundaries = { DesignData.FxInt(420805, "경계 신호 1(생존 수치)"), DesignData.FxInt(420805, "경계 신호 2(생존 수치)") };   // DT Fx 420805
+
+        /// <summary>DT 층별 줄(1~4층) — 층 0은 기본값.</summary>
+        private static float TierValue(string name, int tier, float none)
+        {
+            return tier >= 1 && tier <= 4 ? DesignData.FxSeries(420801, 4, name)[tier - 1] : none;
+        }
+
+        private static int[] Ints(float[] values)
+        {
+            int[] a = new int[values.Length];
+            for (int i = 0; i < a.Length; i++) a[i] = (int)Math.Round(values[i]);
+            return a;
+        }
 
         /// <summary>재시작 뒤 붙잡힌 축이 한 층 약하게 시작하는 시간(초).</summary>
-        public const float RestartWeakSeconds = 30f;
+        public static float RestartWeakSeconds => DesignData.Fx(420805, "재시작 뒤 약하게(초)");   // DT Fx 420805
 
         /// <summary>생존 수치의 층(0~4).</summary>
         public static int Tier(int value)
@@ -62,64 +75,44 @@ namespace NightDuty
         /// <summary>청각 층의 심박(bpm). 층 0이면 0(들리지 않음).</summary>
         public static int HeartRate(int tier)
         {
-            switch (tier)
-            {
-                case 1: return 62;
-                case 2: return 72;
-                case 3: return 86;
-                case 4: return 104;
-                default: return 0;
-            }
+            return (int)Math.Round(TierValue("[청각] 심박(bpm)", tier, 0f));   // DT Fx 4208xx — 심박 소리 키(body.heart.N)는 이 값으로 정해진 파일이 있어야 한다
         }
 
         /// <summary>귀 먹먹함이 깔리는지(청각 층 2부터 — 위 층은 아래 층의 소리에 더해진다).</summary>
         public static bool EarPressure(int tier)
         {
-            return tier >= 2;
+            return tier >= DesignData.FxInt(420805, "[청각] 귀 먹먹함 시작 층");
         }
 
         /// <summary>이명이 깔리는지(청각 층 3부터).</summary>
         public static bool Tinnitus(int tier)
         {
-            return tier >= 3;
+            return tier >= DesignData.FxInt(420805, "[청각] 이명 시작 층");
         }
 
         /// <summary>화면이 박동에 맞춰 흔들리는지(청각 층 4).</summary>
         public static bool PulseShake(int tier)
         {
-            return tier >= 4;
+            return tier >= DesignData.FxInt(420805, "[청각] 화면 박동 흔들림 시작 층");
         }
 
         /// <summary>청각 층의 먼 숨 주기(초, 53차부터 실제 간격은 <c>BodyMeter</c>가 55~120초로 늘림). 층 0이면 0(들리지 않음). 56차에 조도에서 청각으로 옮겼다 — 숨은 소리다.</summary>
         public static float BreathInterval(int tier)
         {
-            switch (tier)
-            {
-                case 1: return 10f;
-                case 2: return 8f;
-                case 3: return 6f;
-                case 4: return 4.5f;
-                default: return 0f;
-            }
+            return TierValue("[청각] 먼 숨 주기(초)", tier, 0f);   // DT Fx 4208xx
         }
 
         /// <summary>눈 깜빡임 한 번(초) — 화면이 잠깐 감긴다.</summary>
-        public const float BlinkSeconds = 0.12f;
+        public static float BlinkSeconds => DesignData.Fx(420805, "눈 깜빡임 한 번(초)");   // DT Fx 420805
 
         /// <summary>경계 신호의 느린 깜빡임(초).</summary>
-        public const float SlowBlinkSeconds = 0.6f;
+        public static float SlowBlinkSeconds => DesignData.Fx(420805, "경계 신호 느린 깜빡임(초)");   // DT Fx 420805
 
         /// <summary>조도 층의 눈 깜빡임 간격(초, 최소·최대). 층 0이면 둘 다 0(깜빡이지 않음). 층이 오를수록 잦아진다(56차).</summary>
         public static void BlinkGap(int tier, out float min, out float max)
         {
-            switch (tier)
-            {
-                case 1: min = 70f; max = 110f; return;
-                case 2: min = 40f; max = 70f; return;
-                case 3: min = 22f; max = 40f; return;
-                case 4: min = 10f; max = 20f; return;
-                default: min = 0f; max = 0f; return;
-            }
+            min = TierValue("[조도] 깜빡임 간격 최소(초)", tier, 0f);   // DT Fx 4208xx
+            max = TierValue("[조도] 깜빡임 간격 최대(초)", tier, 0f);
         }
 
         /// <summary>깜빡임 중 화면 가림 정도(0~1). <paramref name="t"/>는 0~1 진행 — 40% 감고 20% 머물고 40% 뜬다.</summary>
@@ -134,28 +127,19 @@ namespace NightDuty
         /// <summary>배치 층의 발소리 에코 횟수.</summary>
         public static int EchoCount(int tier)
         {
-            switch (tier)
-            {
-                case 1: return 1;
-                case 2: return 2;
-                case 3:
-                case 4: return 3;
-                default: return 0;
-            }
+            return (int)Math.Round(TierValue("[배치] 발소리 에코 횟수", tier, 0f));   // DT Fx 4208xx
         }
 
         /// <summary>배치 층의 잔향 배율(에코 간격이 이만큼 늘어난다).</summary>
         public static float EchoSpread(int tier)
         {
-            if (tier >= 3) return 1.3f;
-            if (tier == 2) return 1.15f;
-            return 1f;
+            return TierValue("[배치] 에코 간격 배율", Math.Min(tier, 4), 1f);   // DT Fx 4208xx(층 0은 1)
         }
 
         /// <summary>에코가 한 박 늦게 걸어오는지(배치 층 4 — 누가 뒤에서 따라 걷는 것처럼).</summary>
         public static bool EchoLate(int tier)
         {
-            return tier >= 4;
+            return tier >= DesignData.FxInt(420805, "[배치] 에코가 한 박 늦는 층");
         }
     }
 }

@@ -8,7 +8,7 @@ namespace NightDuty.Tests
         [Test]
         public void 쓰레기통은_복도_배치_켬_항목이고_문구는_민_그대로()
         {
-            InspectionItem item = InspectionCatalog.Find("H-4");
+            InspectionItem item = InspectionCatalog.Find("135004");
             Assert.IsNotNull(item);
             Assert.AreEqual(SpaceId.Corridor, item.Space);
             Assert.AreEqual(FearAxis.Auditory, item.Axis);   // 103차 축 균형: 배치 → 청각(걷어차이는 소리)
@@ -21,7 +21,7 @@ namespace NightDuty.Tests
         public void 반납_상자는_점검에서_빠지고_biology_책_줍기_지시가_된다()
         {
             Assert.IsNull(InspectionCatalog.Find("L-3"));
-            DutyDef d = DutyCatalog.Find("W15");
+            DutyDef d = DutyCatalog.Find("130009");
             Assert.IsNotNull(d);
             Assert.AreEqual(DutyKind.Pickup, d.Kind);
             Assert.AreEqual(DutyCatalog.LibraryBookTarget, d.Target);
@@ -38,7 +38,7 @@ namespace NightDuty.Tests
             Assert.IsFalse(disp.Wants(DutyCatalog.LibraryBookTarget), "지시 전에는 줍기를 바라지 않는다");
             Assert.IsFalse(disp.NotePicked(DutyCatalog.LibraryBookTarget, out ev));
 
-            Assert.IsTrue(disp.Force("W15", out ev));
+            Assert.IsTrue(disp.Force("130009", out ev));
             Assert.AreEqual(DutyOutcome.Issued, ev.Outcome);
             Assert.IsTrue(disp.Wants(DutyCatalog.LibraryBookTarget));
             Assert.IsFalse(disp.Wants("duty.other"));
@@ -46,8 +46,8 @@ namespace NightDuty.Tests
             Assert.IsFalse(disp.NotePicked("duty.other", out ev), "다른 물건은 아니다");
             Assert.IsTrue(disp.NotePicked(DutyCatalog.LibraryBookTarget, out ev));
             Assert.AreEqual(DutyOutcome.Done, ev.Outcome);
-            Assert.AreEqual("W15", ev.Def.Id);
-            Assert.IsTrue(disp.Finished("W15"));
+            Assert.AreEqual("130009", ev.Def.Id);
+            Assert.IsTrue(disp.Finished("130009"));
             Assert.IsFalse(disp.Wants(DutyCatalog.LibraryBookTarget));
         }
 
@@ -74,7 +74,7 @@ namespace NightDuty.Tests
 
                 foreach (System.Collections.Generic.KeyValuePair<string, int> kv in n)
                 {
-                    if (kv.Key == "K-1") continue;   // 경비실은 항목이 하나뿐
+                    if (kv.Key == "135025") continue;   // 경비실은 항목이 하나뿐
                     Assert.LessOrEqual(kv.Value, 3, "시드 " + seed + " " + kv.Key);
                 }
 
@@ -85,16 +85,16 @@ namespace NightDuty.Tests
         [Test]
         public void 사다리는_있음_없음으로_보고하고_나머지는_정상_이상()
         {
-            Assert.AreEqual("없음", InspectionCatalog.ReportWord("C-3", true));
-            Assert.AreEqual("있음", InspectionCatalog.ReportWord("C-3", false));
-            Assert.AreEqual("이상", InspectionCatalog.ReportWord("H-1", true));
-            Assert.AreEqual("정상", InspectionCatalog.ReportWord("H-1", false));
+            Assert.AreEqual("없음", InspectionCatalog.ReportWord("135009", true));
+            Assert.AreEqual("있음", InspectionCatalog.ReportWord("135009", false));
+            Assert.AreEqual("이상", InspectionCatalog.ReportWord("135001", true));
+            Assert.AreEqual("정상", InspectionCatalog.ReportWord("135001", false));
         }
 
         [Test]
         public void 블라인드_문구는_어느_블라인드인지_말한다()
         {
-            StringAssert.Contains("입구 맞은편", InspectionCatalog.Find("L-2").TabletLine);
+            StringAssert.Contains("입구 맞은편", InspectionCatalog.Find("135023").TabletLine);
         }
 
         [Test]
@@ -102,9 +102,9 @@ namespace NightDuty.Tests
         {
             DutyDispatcher disp = new DutyDispatcher(1, null, 5);
             DutyEvent ev;
-            Assert.IsTrue(disp.Force("W2", out ev));   // 77차: W7 폐기
+            Assert.IsTrue(disp.Force("130001", out ev));   // 77차: W7 폐기
             Assert.IsFalse(disp.NotePicked(DutyCatalog.LibraryBookTarget, out ev));
-            Assert.AreEqual("W2", disp.Active.Id);
+            Assert.AreEqual("130001", disp.Active.Id);
         }
     }
 }

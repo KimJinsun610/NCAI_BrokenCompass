@@ -58,12 +58,42 @@ namespace NightDuty
             {
                 RuleSO card = _displayDeck[i];
                 if (card == null || card.CardId != ProgramCatalog.FinaleBlankRule) continue;
-                card.Configure(new RuleSO.Config { CardId = card.CardId, Space = card.Space, PlayerText = ProgramCatalog.FinaleBlankFilled, HowTo = card.HowTo });
+                card.Configure(new RuleSO.Config { CardId = card.CardId, Space = card.Space, PlayerText = ProgramCatalog.FinaleBlankFilledText, HowTo = card.HowTo });
                 FinaleBlankFilled = true;
                 return true;
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// 2026-11-22(로컬라이징): 언어가 바뀌면 태블릿 수칙 카드 글을 지금 언어로 다시 쓴다 — 판정 수칙(변조·검은 줄·해독·얼룩 포함)·1일차 장식 줄·G3.
+        /// 판정과 편성은 건드리지 않는다(글만). 끝나면 <see cref="EventBus.TabletTextChanged"/>로 태블릿이 다시 읽는다.
+        /// </summary>
+        public static void RelocalizeTablet()
+        {
+            if (_displayDeck.Count == 0) return;
+            if (_program != null) RefreshRuleCards();
+            for (int i = 0; i < _displayDeck.Count; i++)
+            {
+                RuleSO card = _displayDeck[i];
+                if (card == null) continue;
+                string text = null;
+                if (card.CardId == ProgramCatalog.FinaleBlankRule)
+                {
+                    RuleDef g3 = ProgramCatalog.Rule(ProgramCatalog.FinaleBlankRule);
+                    text = FinaleBlankFilled ? ProgramCatalog.FinaleBlankFilledText : (g3 != null ? g3.ShownText : null);
+                }
+                else
+                {
+                    text = FakeRuleCatalog.TextOf(card.CardId);
+                }
+
+                if (text == null || card.PlayerText == text) continue;
+                card.Configure(new RuleSO.Config { CardId = card.CardId, Space = card.Space, PlayerText = text, HowTo = card.HowTo });
+            }
+
+            EventBus.RaiseTabletTextChanged();
         }
 
         private static void FinaleObserve(in JudgeSignal signal)

@@ -246,6 +246,18 @@ NightRun.RequestEndNight ─▶ 수칙·점검 정산 ─▶ DaySummary ─▶ E
 - 옮긴 범위·남은 범위는 인수인계서 §6. 아직 옮기지 않은 값은 코드가 정본입니다. DT 값과 최종 기획서가 다르면 사용자에게 확인합니다.
 - `DesignDataTests`: 코드가 가리키는 설정 ID가 DT에 모두 있는지, DT를 바꾸면 코드가 따라가는지 확인합니다. 내보내기 뒤 EditMode를 돌리십시오.
 
+### 4.8 로컬라이징(영어) — 한국어가 정본
+
+- 언어 값·번역 조회는 Core의 `Loc`(`Scripts/Data/Loc.cs`). Flow의 `GameLanguage`가 값을 넣습니다(Core→Flow 참조 금지 그대로). **플레이 중 전환을 지원합니다** — `Loc.Changed`에 태블릿이 다시 그립니다.
+- **화면에 나가는 글은 `Loc`를 거칩니다.** DT 글은 `Loc.Dt(ID, "칸", 한국어)`(수칙 `RuleDef.ShownText`, 지시 `DutyDef.Order`·점검 `InspectionItem.TabletLine`, 문자 `DesignData.Msg`), 코드 글은 **`Loc.T("키", "한국어")`를 한 줄에 글자 그대로** — 도구가 소스에서 이 모양을 찾습니다. 판정·기록·로그는 한국어 원문(`RuleDef.Text` 등)을 씁니다.
+- 태블릿에 남는 문자는 `ParadoxMessage`에 **다시 만드는 함수(`Source`)**를 함께 보냅니다. 완성된 글만 보내면 언어를 바꿔도 그 문자는 그대로 남습니다.
+- 영어는 `DesignData/Localization/EN.csv`(번역 담당) → 메뉴 `Tools/DT/번역 목록 갱신 (EN)` → `Assets/Resources/Localization/EN.csv`. **사본을 손으로 고치지 마십시오.** 영어가 없거나 원문(KO_원문)이 지금 한국어와 다르면 한국어로 보입니다. DT를 다시 내보냈으면 이 메뉴도 돌립니다.
+- 번역 대상 DT 칸은 `LocTable.Columns` 한 곳. **`Fx_Table`의 `Param_N_Name`은 코드가 키로 찾으므로 번역 대상이 아닙니다.**
+- **씬·프리팹·에셋·CSV에 저장된 글**(계약서·결과창 라벨·오프닝/엔딩 자막·로딩 팁 등)은 원문 자체가 키(`Loc.K(한국어)`, 키 `ko.`+해시)입니다. 도구가 빌드 씬과 그 의존 프리팹·에셋의 문자열 칸을 Unity가 읽은 값 그대로 모읍니다(제외 목록 `LocalizationSync.SkipFields` — 이름·메모·효과음 이름·가짜 데이터). **씬 파일은 고치지 않습니다.** 원문을 고치면 새 키가 됩니다.
+- 씬에 박힌 라벨·한 번 만드는 안내는 `LocTextSwapper`(Flow, 자동 설치)가 번역표의 한↔영 쌍으로 실행 중에 바꿉니다(0.25초마다 + 씬 열림·언어 전환 순간). 계속 바뀌는 글(자막·태블릿·안내 띠)은 쓰는 코드가 직접 `Loc`를 거칩니다 — 바꿈 장치에만 맡기면 한 틈 한국어가 보입니다.
+- 번역 목록 메뉴는 씬을 잠깐 열어 읽느라 오래 걸려 **다음 에디터 틱에 돕니다** — CLI로 부를 때 에디터 창이 뒤에 있으면 돌지 않으니 `editor_focus` 후 `Temp/LocalizationSyncReport.txt`를 확인합니다.
+- 빈칸·변조본은 언어 무관 같은 논리(DT 해독문 칸 · 언어별 변조본). 용어·문체는 `../Docs/Claude outputs/로컬라이징_용어집_EN.md`, 진행은 `로컬라이징_영어번역_작업목록.md`.
+
 ---
 
 ## 5. 구현 규칙과 함정

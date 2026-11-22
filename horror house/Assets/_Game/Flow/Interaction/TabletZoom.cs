@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using NightDuty;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -98,7 +99,7 @@ public sealed class TabletZoom : MonoBehaviour
     public const KeyCode SwitchTabKey = KeyCode.Tab;
 
     /// <summary>74차: 태블릿 아래 조작 안내 줄의 키 이름 「Mouse0」을 바꿀 말(90차부터 키가 Tab이라 TabletDocument가 「Tab」을 그대로 적는다 — 옛 값이 남은 경우만).</summary>
-    public const string SwitchTabLabel = "좌클릭";
+    public static string SwitchTabLabel => Loc.T("hint.lmb", "좌클릭");
 
     /// <summary>61차 들기 제한 규칙 상태(검수용).</summary>
     public NightDuty.TabletLimit Limit

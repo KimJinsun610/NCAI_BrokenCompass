@@ -73,13 +73,13 @@ public sealed class DeskStarterKit : MonoBehaviour
     }
 
     /// <summary>손전등을 아직 줍지 않았을 때의 안내.</summary>
-    public const string NoFlashlightText = "손전등이 없습니다 — 경비실 책상을 확인하십시오";
+    public static string NoFlashlightText => Loc.T("battery.noflashlight", "손전등이 없습니다 — 경비실 책상을 확인하십시오");
 
     /// <summary>104차: 예비도 책상 배터리도 없을 때 — 그 밤 남은 배터리가 있으면.</summary>
-    public const string EmptySearchText = "손전등 배터리가 비었습니다 — 서랍·사물함·책장·탁자에서 배터리를 찾으십시오 (경비실 지도에 표시)";
+    public static string EmptySearchText => Loc.T("battery.empty.search", "손전등 배터리가 비었습니다 — 서랍·사물함·책장·탁자에서 배터리를 찾으십시오 (경비실 지도에 표시)");
 
     /// <summary>104차: 예비도 책상 배터리도 없고 그 밤 놓인 배터리도 다 주웠을 때.</summary>
-    public const string EmptyNoneLeftText = "손전등 배터리가 비었습니다 — 오늘 밤 남은 배터리가 없습니다";
+    public static string EmptyNoneLeftText => Loc.T("battery.empty.none", "손전등 배터리가 비었습니다 — 오늘 밤 남은 배터리가 없습니다");
 
     /// <summary>
     /// 66차: 다 닳은 손전등 — 예비가 있으면 R, 없으면 책상 배터리를 안내. 104차(사용자: 「빈 손전등 안내도 추가해줘」): 둘 다 없으면
@@ -97,8 +97,8 @@ public sealed class DeskStarterKit : MonoBehaviour
         FlashlightBattery b = NightRun.Battery;
         if (b == null || !b.IsEmpty) return null;
         if (!NightRun.HasFlashlight) return NoFlashlightText;   // 2026-11-09 QA: 1일차 배터리를 손전등보다 먼저 주우면 「[R] 갈아 끼우기」가 떴다
-        if (b.Spare > 0) return "[R] 배터리 갈아 끼우기";
-        if (NightRun.DeskKit != null && NightRun.DeskKit.BatteryOnDesk) return "손전등 배터리가 비어 있습니다 — 책상 위 배터리를 주우십시오";
+        if (b.Spare > 0) return Loc.T("battery.swap", "[R] 배터리 갈아 끼우기");
+        if (NightRun.DeskKit != null && NightRun.DeskKit.BatteryOnDesk) return Loc.T("battery.empty.desk", "손전등 배터리가 비어 있습니다 — 책상 위 배터리를 주우십시오");
         BatteryPlan plan = NightRun.BatteryPlan;
         return plan != null && plan.Remaining <= 0 ? EmptyNoneLeftText : EmptySearchText;
     }
@@ -107,7 +107,7 @@ public sealed class DeskStarterKit : MonoBehaviour
     public static void ShowStillCharged()
     {
         FlashlightBattery b = NightRun.Battery;
-        Notice("배터리가 아직 충분합니다" + (b != null ? " (" + Mathf.RoundToInt(b.Charge * 100f) + "%)" : string.Empty));
+        Notice(Loc.T("battery.still", "배터리가 아직 충분합니다") + (b != null ? " (" + Mathf.RoundToInt(b.Charge * 100f) + "%)" : string.Empty));
     }
 
     /// <summary>104차: 짧은 알림 한 줄(소등 중 배터리 갈기 막힘 등).</summary>
@@ -234,7 +234,7 @@ public sealed class DeskStarterKit : MonoBehaviour
         PlayerInteractor.SuppressThisFrame();
         InteractionOutline.Request(aimed.transform);
         bool full = !isLight && NightRun.Battery != null && NightRun.Battery.PocketFull;
-        ClaimPrompt(isLight ? "[E] 손전등 줍기" : (full ? BatteryStash.FullText : "[E] 배터리 줍기"), !full);
+        ClaimPrompt(isLight ? Loc.T("prompt.flashlight.pickup", "[E] 손전등 줍기") : (full ? BatteryStash.FullText : BatteryStash.PromptText), !full);
 
 #if ENABLE_LEGACY_INPUT_MANAGER
         if (!full && Input.GetKeyDown(KeyCode.E)) Pick(isLight, isLight ? null : aimed);

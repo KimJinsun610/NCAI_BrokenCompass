@@ -217,7 +217,7 @@ namespace NightDuty
                 if (_paradox.Sent && result.RuleId == _paradox.RuleId && !_paradoxAcked)
                 {
                     _paradoxAcked = true;
-                    EventBus.RaiseMessageSent(new ParadoxMessage("paradox.ack." + result.RuleId, result.RuleId, _paradox.Space, ParadoxAck, CurrentMinute()));
+                    EventBus.RaiseMessageSent(new ParadoxMessage("paradox.ack." + result.RuleId, result.RuleId, _paradox.Space, ParadoxAck, CurrentMinute(), () => ParadoxAck));
                 }
 
                 if (result.RuleId == _paradox.RuleId) EndParadox("어김");
@@ -261,7 +261,8 @@ namespace NightDuty
                     Debug.Log("[NightRun] 역설 문자 " + id + " (" + _paradox.Pattern + "): " + _paradox.Message);
                     _paradoxEnded = false;
                     _paradoxLive = 0f;
-                    EventBus.RaiseMessageSent(new ParadoxMessage("paradox." + id, id, _paradox.Space, _paradox.Message, CurrentMinute()));
+                    ParadoxRun sentRun = _paradox;   // 2026-11-22: 다음 역설이 오면 _paradox가 바뀐다 — 보낸 그 문자를 다시 그리게 붙잡아 둔다
+                    EventBus.RaiseMessageSent(new ParadoxMessage("paradox." + id, id, _paradox.Space, sentRun.ShownMessage, CurrentMinute(), () => sentRun.ShownMessage));
             OrdersNoteMessage();
                     break;
 

@@ -1,3 +1,4 @@
+using NightDuty;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -60,7 +61,9 @@ public sealed class EndingCredits
 
         Transform labelT = FindDeep(Instance.transform, EndingLabelName);
         TMPro.TMP_Text label = labelT != null ? labelT.GetComponent<TMPro.TMP_Text>() : null;
-        if (label != null) label.text = string.Format(LabelFormat, ending);
+        // 2026-11-22: 기본 서식(코드 값)은 코드 키로, 인스펙터에서 바꾼 서식은 원문 키로 번역
+        string format = LabelFormat == "엔딩 {0}" ? Loc.T("credits.ending", "엔딩 {0}") : Loc.K(LabelFormat);
+        if (label != null) label.text = string.Format(format, ending);
 
         Button quit = Instance.GetComponentInChildren<Button>(true);
         TMPro.TMP_Text quitLabel = quit != null ? quit.GetComponentInChildren<TMPro.TMP_Text>(true) : null;

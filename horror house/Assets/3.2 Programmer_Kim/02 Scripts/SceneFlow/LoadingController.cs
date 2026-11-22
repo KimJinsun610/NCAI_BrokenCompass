@@ -1,3 +1,4 @@
+using NightDuty;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -106,7 +107,7 @@ public class LoadingController : MonoBehaviour
 
         if (tipText != null)
         {
-            tipText.text = tip.Text ?? string.Empty;
+            tipText.text = Loc.K(tip.Text) ?? string.Empty;   // 2026-11-22: 팁은 번역표에서(CSV는 한국어 그대로)
         }
 
         if (tipImage == null) tipImage = FindTipImage();

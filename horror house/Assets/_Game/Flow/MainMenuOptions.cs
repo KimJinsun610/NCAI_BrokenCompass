@@ -128,6 +128,7 @@ public sealed class MainMenuOptions : MonoBehaviour
         if (_label != null)
         {
             _label.textWrappingMode = TextWrappingModes.NoWrap;
+            GameLanguage.InheritOriginal(_quitLabel, _label);   // QUIT이 이미 한글 글꼴이어도 영어로 돌아올 글꼴은 QUIT의 원래 글꼴
             RefreshLabel();
             if (_quitLabel != null) _label.alpha = _quitLabel.alpha;
             GameLanguage.Changed += RefreshLabel;

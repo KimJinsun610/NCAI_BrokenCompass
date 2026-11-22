@@ -346,7 +346,7 @@ public sealed class InspectionSensor : MonoBehaviour
         {
             _readiness.Remove(id);
             SetFocus(string.Empty);
-            _lastResult = "[" + ReportWord(id, anomaly) + "]" + (revising ? "으로 바꿈" : " 보고함");
+            _lastResult = string.Format(revising ? Loc.T("inspect.changed", "[{0}]으로 바꿈") : Loc.T("inspect.reported", "[{0}] 보고함"), ReportWord(id, anomaly));
             _lastResultUntil = Time.unscaledTime + 1.5f;
         }
 
@@ -392,13 +392,13 @@ public sealed class InspectionSensor : MonoBehaviour
             if (_focus.Length > 0)
             {
                 InspectionItem item = InspectionCatalog.Find(_focus);
-                string name = item != null ? item.Name : _focus;
+                string name = item != null ? item.ShownName : _focus;
                 InspectionState st = NightRun.Inspections != null ? NightRun.Inspections.StateOf(_focus) : InspectionState.Pending;
                 string ok = ReportWord(_focus, false);
                 string bad = ReportWord(_focus, true);
                 if (st == InspectionState.Pending) text = name + "    [" + normalKey + "] " + ok + "   [" + anomalyKey + "] " + bad;
-                else if (st == InspectionState.ReportedAnomaly) text = name + " — [" + bad + "] 보고함    [" + normalKey + "] " + ok + "으로 바꾸기";   // 60차 정정
-                else text = name + " — [" + ok + "] 보고함    [" + anomalyKey + "] " + bad + "으로 바꾸기";
+                else if (st == InspectionState.ReportedAnomaly) text = name + " — " + string.Format(Loc.T("inspect.revise", "[{0}] 보고함    [{1}] {2}으로 바꾸기"), bad, normalKey, ok);   // 60차 정정
+                else text = name + " — " + string.Format(Loc.T("inspect.revise", "[{0}] 보고함    [{1}] {2}으로 바꾸기"), ok, anomalyKey, bad);
                 progress = _hold > 0f ? HoldProgress : 0f;
             }
             else if (Time.unscaledTime < _lastResultUntil)

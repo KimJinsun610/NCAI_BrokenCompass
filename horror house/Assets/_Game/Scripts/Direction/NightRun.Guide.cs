@@ -372,7 +372,8 @@ namespace NightDuty
             if (r.GuidedAt < 0f) r.GuidedAt = _tension.Now;
             string text = GuideText(r.Def.Id);
             UnityEngine.Debug.Log("[NightRun] 조우 유도 — " + r.Def.Id + " · " + text + " (기다림: " + r.Waiting + ")");
-            EventBus.RaiseDutySent(new ParadoxMessage(state.CardId + "." + DutyOutcome.Issued, state.CardId, r.Script.Space, text, minute));
+            string encounterId = r.Def.Id;
+            EventBus.RaiseDutySent(new ParadoxMessage(state.CardId + "." + DutyOutcome.Issued, state.CardId, r.Script.Space, text, minute, () => GuideText(encounterId)));   // 2026-11-22: 언어 전환 때 다시 그림
             if (_tension != null) _tension.Pacer.Impulse(PacerImpulse.Order);
         }
     }

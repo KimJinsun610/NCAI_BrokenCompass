@@ -1,0 +1,404 @@
+﻿Key,상태,KO_원문,EN,현재_KO,출처,메모
+110001.Text,완료,복도의 미분류 물체에 다가가지 마십시오.,Do not approach unclassified objects in the hallway.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110001.Variant_Text,완료,복도의 미분 류 물체 에게? 다가 가라. 다가 가 라 다가 가 다가,Unclass ified objects in the hall way to? Ap proach. Ap pro ach ap pro ap,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110001.Paradox_Text,완료,복도의 중앙을 지금 확인하십시오.,Check the center of the hallway now.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110002.Text,완료,열린 문은 열린 채로 두십시오.,Leave open doors open.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110002.Variant_Text,완료,열린 문 은 열린 문입니다. 열린 문 열린 문 열린 문. 열린 채로 두십 시 ㅇ ㅗ ㅗ,Open doors are open doors. Open door open door open door. Leave them o p e n n,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110002.Paradox_Text,완료,저절로 열린 문이 있습니다. 지금 확인하십시오.,A door has opened by itself. Check it now.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110003.Text,완료,발소리가 들리면 가까운 방으로 대피하십시오.,"If you hear footsteps, take shelter in the nearest room.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110003.Variant_Text,완료,발소리 가 들리면? 문을 열 어 라. 열어 주 십시 오 열어 주세요 열어 줘 줘,If you hear foot steps? Open the door. Please o pen it please open it open it open,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110003.Paradox_Text,완료,"인원이 확인되면, 대기하십시오.","If personnel are confirmed, stand by.",,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110004.Text,완료,뒤에서 부르면 돌아보지 마십시오.,"If someone calls you from behind, do not turn around.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110005.Text,완료,교실은 판서가 끝난 뒤에 들어가십시오.,Enter the classroom only after the writing on the board has stopped.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110005.Variant_Text,완료,판서 가 끝나 기 전 에는? 들어 와 라. 아직 쓰 고 있 다 다 다,Be fore the writ ing stops? Come in. Still writ ing ing ing,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110005.Paradox_Text,완료,교실에서 소리가 나면 즉시 점검하십시오.,"If there is a sound in the classroom, inspect it immediately.",,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110006.Text,완료,교실의 _? 는 무시하십시오.,Ignore the _? in the classroom.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110006.Variant_Text,완료,교실 의 _? 는 무시 대상 입니 다.,The _? in the class room is to be ig nored.,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110006.Paradox_Text,완료,교실 소음의 원인을 응시해주십시오.,Please look directly at the source of the noise in the classroom.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110006.Blank_Answer,완료,소녀,girl,,Rule_Table.Blank_Answer,초안 2026-11-22 (Claude) — 확정 필요
+110006.Blank_Decoded,완료,교실의 소녀는 무시하십시오.,Ignore the girl in the classroom.,,Rule_Table.Blank_Decoded,초안 2026-11-22 (Claude) — 확정 필요
+110006.Blank_Decoded_Variant,완료,교실 의 소녀는 무시 대상 입니 다.,The girl in the class room is to be ig nored.,,Rule_Table.Blank_Decoded_Variant,초안 2026-11-22 (Claude) — 확정 필요
+110006.Trap_Text,완료,사다리 점검이 끝나지 않았습니다.,The stepladder inspection is not complete.,,Rule_Table.Trap_Text,초안 2026-11-22 (Claude) — 확정 필요
+110007.Text,완료,수업 종이 울리면 정지하십시오.,"When the class bell rings, stand still.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110007.Variant_Text,완료,수업 종 이 울 리 울리 면 면 정 지 하 ㅅ ㅣ ㅂ ㅅ ㅣ ㅇ ㅗ .,"When the class bell ri rings rings, st and st i l l l .",,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110008.Text,완료,초록 불빛 아래에서는 손전등을 끄십시오.,Turn off your flashlight under green light.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110008.Variant_Text,완료,초록 불빛 아래 손전 등 은 켜 켜 켜 켜 라. 켜지 마. 켜. 켜지마 지마,Under green light the flash light on on on on. Do not turn it on. On. Don't don't,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110008.Paradox_Text,완료,조명에 이상이 있을 시 손전등으로 확인해주십시오.,"If there is a problem with the lighting, please check it with your flashlight.",,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110009.Text,완료,교실의 문은 모두 부서져 있습니다. 성한 문으로는 나가지 마십시오.,All classroom doors are broken. Do not leave through an intact door.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110009.Variant_Text,완료,성한 문 으로 나 가 라. 나가 라 라 라. 교실 의 문 은 부서 졌 졌 졌 다,Leave through the in tact door. Leave leave leave. The class room doors are bro ken ken ken,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110010.Text,완료,교실에 24분 넘게 머물지 마십시오.,Do not stay in the classroom for more than 24 minutes.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110010.Variant_Text,완료,교실 에? 24분 24분 24분 넘게. 머물 러 라. 아직 안 끝 났 다,In the class room? 24 minutes 24 minutes 24 minutes more. Stay. It is not o ver yet,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110011.Text,완료,과학실은 통로가 아닙니다. 통로로 사용하지 마십시오.,The science lab is not a passage. Do not use it as one.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110011.Variant_Text,완료,과학 실 은 통로 입 니 까?. 아니 오 오 오. 통로 다 다,Is the sci ence lab a pass age?. No o o o. It is a pass age age,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110011.Paradox_Text,완료,반대편 문이 열렸습니다. 지금 점검하십시오.,The door on the opposite side has opened. Inspect it now.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110012.Text,완료,깨지는 소리가 나면 과학실을 나가 다시 오지 마십시오.,"If you hear something break, leave the science lab and do not come back.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110012.Variant_Text,완료,깨지는 소리 가 나 면? 과학실 을 나 가 가 가. 다시 오 지 마 마 마,If some thing breaks? Leave the science lab lab lab. Do not come back back back,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110012.Paradox_Text,완료,지금 과학실의 훼손 물품을 점검하십시오.,Inspect the damaged items in the science lab now.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110012.Trap_Text,완료,과학실 점검이 끝나지 않았습니다. 금일 재입실은 불가합니다.,The science lab inspection is not complete. Re-entry is not permitted today.,,Rule_Table.Trap_Text,초안 2026-11-22 (Claude) — 확정 필요
+110013.Text,완료,인체 모형에는 빛을 비추지 마십시오.,Do not shine light on the anatomical model.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110014.Text,완료,정전 중에는 손전등을 켜지 마십시오.,Do not turn on your flashlight during a power outage.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110014.Variant_Text,완료,정전 중 에 는 손전 등 을? 켜 켜 켜. 켜 지 마 십 시 ㅇ ㅗ,Dur ing a power out age the flash light? On on on. Do not turn it o n n,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110015.Text,완료,복도 끝에 _?이 서 있으면 빛을 끄고 기다리십시오.,"If your _? is standing at the end of the hallway, turn off your light and wait.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110015.Variant_Text,완료,복도 끝 에 _?이 서 있습니까?. 끄고 기다리 십시오.,Is your _? stand ing at the end of the hall way?. Turn it off and wait.,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110015.Paradox_Text,완료,복도 끝 출구를 즉시 확인하십시오.,Check the exit at the end of the hallway immediately.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110015.Blank_Answer,완료,선임,senior,,Rule_Table.Blank_Answer,초안 2026-11-22 (Claude) — 확정 필요
+110015.Blank_Decoded,완료,복도 끝에 선임이 서 있으면 빛을 끄고 기다리십시오.,"If your senior is standing at the end of the hallway, turn off your light and wait.",,Rule_Table.Blank_Decoded,초안 2026-11-22 (Claude) — 확정 필요
+110015.Blank_Decoded_Variant,완료,복도 끝 에 선임이 서 있습니까?. 끄고 기다리 십시오.,Is your senior stand ing at the end of the hall way?. Turn it off and wait.,,Rule_Table.Blank_Decoded_Variant,초안 2026-11-22 (Claude) — 확정 필요
+110016.Text,완료,화장실에서 물이 다 내려가기 전에 나오십시오.,Leave the restroom before the toilet finishes flushing.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110016.Variant_Text,완료,화장실 에서 물 이? 다 내려 가 기 전 에. 나오 십 시 오. 안 에 있 다 있 다,Be fore the toi let? fin ishes flush ing. Come out. It is in side side,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110016.Paradox_Text,완료,변기 수압을 점검해주십시오.,Please inspect the toilet water pressure.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110016.Trap_Text,완료,화장실 점검이 끝나지 않았습니다. 금일 재입실은 불가합니다.,The restroom inspection is not complete. Re-entry is not permitted today.,,Rule_Table.Trap_Text,초안 2026-11-22 (Claude) — 확정 필요
+110017.Text,완료,사용 중인 칸은 열지 마십시오.,Do not open an occupied stall.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110017.Variant_Text,완료,사용 중 인 칸 은? 열 어 라. 열 어 열 어 열 어 열 어 줘,The oc cu pied stall? O pen it. O pen o pen o pen open it for me,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110017.Trap_Text,완료,변기 점검 칸이 사용 중입니다.,The toilet stall under inspection is occupied.,,Rule_Table.Trap_Text,초안 2026-11-22 (Claude) — 확정 필요
+110018.Text,완료,정전 시에는 기다리십시오.,"During a power outage, wait.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110019.Text,완료,변기는 정상입니다.,The toilets are normal.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110020.Text,완료,불이 켜진 칸이 있으면 당신도 불을 켜십시오.,"If a stall has its light on, turn yours on too.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110021.Text,완료,화장실 거울을 3초 이상 보지 마십시오.,Do not look into the restroom mirror for more than 3 seconds.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110021.Variant_Text,완료,화장실 거울 을? 3초 이상. 보 라. 거울 속 이 보 인 다 다 다,The rest room mir ror? More than 3 sec onds. Look. You can see in side it it it,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110021.Paradox_Text,완료,거울에 얼룩이 있습니다. 지금 확인하십시오.,There is a stain on the mirror. Check it now.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110022.Text,완료,쓰러진 책장 곁에 서지 마십시오.,Do not stand next to the fallen bookshelf.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110022.Variant_Text,완료,쓰러진 책 장 곁 에 서 라 서 서 서 서 서 서 십 시 ㅇ ㅗ,Stand next to the fal len book shelf stand stand stand stand stand p l e a s e,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110022.Paradox_Text,완료,도서관 무너진 가구들을 점검해주십시오.,Please inspect the collapsed furniture in the library.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110023.Text,완료,"책장 넘기는 소리가 들리면, 도서관 점검 시간은 끝났습니다. 나가십시오.","If you hear pages turning, library inspection hours are over. Leave.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110023.Variant_Text,완료,종이 넘기 는 소 리 가 들 리 면? 열람 은 끝 나 지 않 는 다 다 다,If you hear pa ges turn ing? Read ing is not o ver ver ver,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110023.Trap_Text,완료,도서관 점검이 끝나지 않았습니다. 금일 재입실은 불가합니다.,The library inspection is not complete. Re-entry is not permitted today.,,Rule_Table.Trap_Text,초안 2026-11-22 (Claude) — 확정 필요
+110024.Text,완료,도서관 ?_? 을 계속 비추십시오.,Keep your light on the library ?_?.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110024.Variant_Text,완료,도서관 ?_? 을 계속 비추 십니까? 예.,Are you keep ing your light on the library ?_?? Yes.,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110024.Blank_Answer,완료,담당자,attendant,,Rule_Table.Blank_Answer,초안 2026-11-22 (Claude) — 확정 필요
+110024.Blank_Decoded,완료,도서관 담당자를 계속 비추십시오.,Keep your light on the library attendant.,,Rule_Table.Blank_Decoded,초안 2026-11-22 (Claude) — 확정 필요
+110024.Blank_Decoded_Variant,완료,도서관 담당자를 계속 비추 십니까? 예.,Are you keep ing your light on the library attendant? Yes.,,Rule_Table.Blank_Decoded_Variant,초안 2026-11-22 (Claude) — 확정 필요
+110025.Text,완료,상자에서 떨어져 걸으십시오.,Keep your distance from the boxes as you walk.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110025.Variant_Text,완료,상자 에서 떨 어 져 걸 으 십 시 오? 상자 안 에 있 다 있 다,Keep your dis tance from the box es as you walk? It is in the box box,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110026.Text,완료,"창밖에 먼저 인사하지 마십시오. 눈길도, 빛도 인사입니다.",Do not greet what is outside the window first. A glance is a greeting. So is light.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110027.Text,완료,도서관에서는 손전등을 천장으로 향하지 마십시오.,"In the library, do not point your flashlight at the ceiling.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110027.Variant_Text,완료,도서관 에서는? 천장 을 비 춰 라. 천장 을. 천장 을 천장 을 천장,In the li brary? Light the ceil ing. The ceil ing. The ceiling the ceiling the ceil,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110027.Paradox_Text,완료,천장에 누수 흔적이 있습니다. 지금 비추십시오.,There are signs of a leak on the ceiling. Shine your light on it now.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110028.Text,완료,도서관에서는 뒷걸음질하지 마십시오.,Do not walk backward in the library.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110029.Text,완료,화면 속 !_ 이 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.,Do not look away from the CCTV until the !_ on screen has passed.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110029.Blank_Answer,완료,사망자,deceased,,Rule_Table.Blank_Answer,초안 2026-11-22 (Claude) — 확정 필요
+110029.Blank_Decoded,완료,화면 속 사망자가 지나갈 때까지 CCTV에서 눈을 떼지 마십시오.,Do not look away from the CCTV until the deceased on screen has passed.,,Rule_Table.Blank_Decoded,초안 2026-11-22 (Claude) — 확정 필요
+110029.Trap_Text,완료,화면에 인원이 잡혔습니다.,Personnel have been detected on screen.,,Rule_Table.Trap_Text,초안 2026-11-22 (Claude) — 확정 필요
+110030.Text,완료,공실 채널은 오래 보지 마십시오.,Do not watch the VACANT channel for long.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110030.Variant_Text,완료,공실 채널 은? 오래. 보 라. 거기 있 다 다 다 다,The VA CANT channel? For long. Watch. It is there there there there,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110030.Paradox_Text,완료,공실 CAM{0}에 움직임이 있습니다. 즉시 확인하십시오.,Motion detected on VACANT CAM{0}. Check it immediately.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110030.Trap_Text,완료,CCTV 점검 시간입니다.,It is time for the CCTV inspection.,,Rule_Table.Trap_Text,초안 2026-11-22 (Claude) — 확정 필요
+110031.Text,완료,서명 시간 외에는 경비실에 오래 머물지 마십시오.,"Except when signing the log, do not stay long in the security office.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110031.Variant_Text,완료,서명 시간 외 에는? 경비실 에 오래 머물 러. 라. 나 가 지 마 ㅅ ㅣ ㅇ ㅗ,Ex cept when sign ing? Stay long in the se cur ity office. Do. Do not l e a v e,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110031.Paradox_Text,완료,복도에 위험 신고가 있습니다. 즉시 CCTV로 확인하십시오.,A hazard has been reported in the hallway. Check it on the CCTV immediately.,,Rule_Table.Paradox_Text,초안 2026-11-22 (Claude) — 확정 필요
+110032.Text,완료,근무 종료 후에는 경비실을 나가지 마십시오.,"After your shift ends, do not leave the security office.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110033.Text,완료,경비실 전화는 세 번 울린 뒤에 받으십시오.,Answer the security office phone only after it rings three times.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110033.Variant_Text,완료,경비실 전화 는? 세 번. 울 리 기 전 에 받 아 라. 받 아. 받 아 받 아,The se cur ity office phone? Three times. An swer be fore it rings. An swer. An swer an swer,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110034.Text,완료,복도에서는 뛰지 마십시오.,Do not run in the hallway.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110035.Text,완료,태블릿을 보면서 걷지 마십시오.,Do not walk while looking at the tablet.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110035.Variant_Text,완료,태블릿 을 보 면서? 걷 어 라. 걷 어 걷 어 보 지 마 마,While look ing at the tab let? Walk. Walk walk do not look look,,Rule_Table.Variant_Text,초안 2026-11-22 (Claude) — 확정 필요
+110036.Text,완료,이 수칙서와 태블릿 공지가 다를 경우 [　　]을 따르십시오.,"If this rulebook and the tablet notices differ, the decision is [　　].",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110036.Blank_Answer,완료,당신,yours,,Rule_Table.Blank_Answer,초안 2026-11-22 (Claude) — 확정 필요
+110036.Blank_Decoded,완료,이 수칙서와 태블릿 공지가 다를 경우 당신을 따르십시오.,"If this rulebook and the tablet notices differ, the decision is yours.",,Rule_Table.Blank_Decoded,초안 2026-11-22 (Claude) — 확정 필요
+115001.Text,완료,근무는 개인입니다. 변수는 없습니다.,You work alone. There are no variables.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+115002.Text,완료,퇴근 후 이 수칙서를 기억할 필요는 없습니다.,You do not need to remember this rulebook after your shift.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+115003.Text,완료,어제의 근무자와 오늘의 근무자는 같은 사람입니다.,Yesterday's guard and today's guard are the same person.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+115004.Text,완료,오늘 밤은 평소와 같습니다.,Tonight is the same as always.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+115005.Text,완료,당신의 이름은 출근부에 이미 적혀 있습니다.,Your name is already in the attendance register.,,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+110037.Text,완료,인기척이 느껴질 때 무작정 뒤돌아 보시면 안됩니다.,"When you sense a presence, you must not turn around without thinking.",,Rule_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130001.Text,완료,도서관을 순찰해주십시오.,Please patrol the library.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130001.Done_Reply,완료,도서관 순찰이 기록되었습니다.,Library patrol has been logged.,,Task_Table.Done_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130001.Missed_Reply,완료,도서관 순찰 기록이 없습니다.,No record of a library patrol.,,Task_Table.Missed_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130002.Text,완료,교실을 순찰해주십시오.,Please patrol the classroom.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130002.Done_Reply,완료,교실 순찰이 기록되었습니다.,Classroom patrol has been logged.,,Task_Table.Done_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130002.Missed_Reply,완료,교실 순찰 기록이 없습니다.,No record of a classroom patrol.,,Task_Table.Missed_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130003.Text,완료,열어 둔 문들을 정리해주십시오.,Please close the doors that have been left open.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130003.Done_Reply,완료,문 정리가 기록되었습니다.,Door closing has been logged.,,Task_Table.Done_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130003.Missed_Reply,완료,문 정리 기록이 없습니다.,No record of door closing.,,Task_Table.Missed_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130004.Text,완료,경비실 근무일지에 서명해주십시오.,Please sign the duty log in the security office.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130004.Done_Reply,완료,근무일지 서명이 기록되었습니다.,Duty log signature has been logged.,,Task_Table.Done_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130004.Missed_Reply,완료,근무일지 서명 기록이 없습니다.,No record of a duty log signature.,,Task_Table.Missed_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130005.Text,완료,경비실 전화가 울리면 받아주십시오.,Please answer the security office phone when it rings.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130005.Done_Reply,완료,통화가 기록되었습니다.,The call has been logged.,,Task_Table.Done_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130005.Missed_Reply,완료,통화 기록이 없습니다.,No record of the call.,,Task_Table.Missed_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130006.Text,완료,과학실에 두고 간 출입 카드를 경비실 열쇠함에 넣어주십시오.,Please put the access card left in the science lab into the key cabinet in the security office.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130006.Done_Reply,완료,출입 카드 반납이 기록되었습니다.,Access card return has been logged.,,Task_Table.Done_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130006.Missed_Reply,완료,출입 카드 반납 기록이 없습니다.,No record of the access card return.,,Task_Table.Missed_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130007.Text,완료,교실 교탁 서랍 출입 카드를 경비실 열쇠함에 넣어주십시오.,Please put the access card from the teacher's desk drawer in the classroom into the key cabinet in the security office.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130007.Done_Reply,완료,출입 카드 회수가 기록되었습니다.,Access card retrieval has been logged.,,Task_Table.Done_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130007.Missed_Reply,완료,출입 카드 회수 기록이 없습니다.,No record of the access card retrieval.,,Task_Table.Missed_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130008.Text,완료,복도 끝 비상구 앞에서 손전등을 세 번 깜빡여주십시오.,Please flash your flashlight three times in front of the emergency exit at the end of the hallway.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130008.Done_Reply,완료,비상구 신호가 기록되었습니다.,Emergency exit signal has been logged.,,Task_Table.Done_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130008.Missed_Reply,완료,비상구 신호 기록이 없습니다.,No record of the emergency exit signal.,,Task_Table.Missed_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130009.Text,완료,도서관 안쪽 책상에 있는 biology 책을 습득하세요.,Please retrieve the biology book from the desk at the back of the library.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+130009.Done_Reply,완료,biology 책 습득이 기록되었습니다.,Biology book retrieval has been logged.,,Task_Table.Done_Reply,초안 2026-11-22 (Claude) — 확정 필요
+130009.Missed_Reply,완료,biology 책 습득 기록이 없습니다.,No record of the biology book retrieval.,,Task_Table.Missed_Reply,초안 2026-11-22 (Claude) — 확정 필요
+135001.Text,완료,화장실 쪽 복도 소화기가 빛나지 않는지 확인해주십시오.,Please check that the fire extinguisher in the hallway by the restroom is not glowing.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135002.Text,완료,과학실 쪽 복도 식수대의 상태를 보고해주십시오.,Please report the condition of the drinking fountain in the hallway by the science lab.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135003.Text,완료,경비실 문 옆 알림종이 조용한지 확인해주십시오.,Please check that the alarm bell next to the security office door is silent.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135004.Text,완료,도서관 문 옆 복도 쓰레기통이 제자리에 있는지 확인해주십시오.,Please check that the hallway trash can next to the library door is in place.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135005.Text,완료,도서관 옆 복도 스피커가 조용한지 확인해주십시오.,Please check that the hallway speaker next to the library is silent.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135006.Text,완료,화장실 쪽 복도 벤치가 벽에 붙어 있는지 확인해주십시오.,Please check that the hallway bench by the restroom is against the wall.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135007.Text,완료,교실 창가 화분이 제자리에 있는지 확인해주십시오.,Please check that the potted plant by the classroom window is in place.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135008.Text,완료,교실 책상 램프가 꺼져 있는지 확인해주십시오.,Please check that the classroom desk lamp is off.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135009.Text,완료,교실 안쪽에 작은 사다리가 있는지 확인해주십시오.,Please check that there is a small stepladder at the back of the classroom.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135010.Text,완료,교실 시계가 제자리에 있는지 확인해주십시오.,Please check that the classroom clock is in place.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135011.Text,완료,교실 교사 의자가 교탁 쪽을 보는지 확인해주십시오.,Please check that the teacher's chair in the classroom is facing the teacher's desk.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135012.Text,완료,과학실 인체 모형이 정면을 향하는지 확인해주십시오.,Please check that the anatomical model in the science lab is facing forward.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135013.Text,완료,과학실 현미경이 꺼져 있는지 확인해주십시오.,Please check that the microscope in the science lab is off.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135014.Text,완료,과학실 개수대 수도꼭지가 조용한지 확인해주십시오.,Please check that the sink faucet in the science lab is silent.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135015.Text,완료,과학실 지구본이 멈춰 있는지 확인해주십시오.,Please check that the globe in the science lab is still.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135016.Text,완료,과학실 선반의 플라스크의 상태를 보고해주십시오.,Please report the condition of the flask on the science lab shelf.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135017.Text,완료,과학실 세계 지도가 반듯한지 확인해주십시오.,Please check that the world map in the science lab is straight.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135018.Text,완료,화장실 3번 칸 변기의 상태를 보고해주십시오.,Please report the condition of the toilet in stall 3 of the restroom.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135019.Text,완료,화장실 빈 칸의 상태를 보고해주십시오.,Please report the condition of the empty stall in the restroom.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135020.Text,완료,화장실 거울 쪽 조명의 상태를 보고해주십시오.,Please report the condition of the light by the restroom mirror.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135021.Text,완료,화장실 세면대 옆 칸막이에 수건이 걸려 있는지 확인해주십시오.,Please check that a towel is hanging on the partition next to the restroom sink.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135022.Text,완료,도서관 입구에서 가장 가까운 의자가 책상 안에 들어가 있는지 확인해주십시오.,Please check that the chair closest to the library entrance is pushed in under the desk.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135023.Text,완료,도서관 입구 맞은편 창 블라인드 둘이 내려져 있는지 확인해주십시오.,Please check that both blinds on the window across from the library entrance are down.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135024.Text,완료,도서관 쓰레기통이 바닥에 누워 있는지 확인해주십시오.,Please check that the library trash can is lying on the floor.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135025.Text,완료,CCTV 모든 채널이 정상인지 확인해주십시오.,Please check that all CCTV channels are normal.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135026.Text,완료,경비실 접이식 의자 둘이 같은 쪽을 보는지 확인해주십시오.,Please check that the two folding chairs in the security office are facing the same way.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+135027.Text,완료,경비실 화분이 똑바로 서 있는지 확인해주십시오.,Please check that the potted plant in the security office is standing upright.,,Task_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140001.Text,완료,[정시] 근무 종료까지 3시간,[HOURLY] 3 hours until end of shift,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140002.Text,완료,[정시] 근무 종료까지 2시간,[HOURLY] 2 hours until end of shift,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140003.Text,완료,[정시] 근무 종료까지 1시간,[HOURLY] 1 hour until end of shift,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140004.Text,완료,[근무] 모든 지시를 마쳤습니다. 경비실 전화로 퇴근하십시오.,[SHIFT] All instructions are complete. Use the security office phone to clock out.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140005.Text,완료,지시한 점검 {0}건의 보고가 늦어지고 있습니다. 확인 후 보고 바랍니다.,Reports for {0} assigned inspection(s) are overdue. Please check and report.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140006.Text,완료,교실 안쪽 사다리를 다시 확인해주십시오.,Please check the stepladder at the back of the classroom again.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140007.Text,완료,과학실을 순찰해주십시오.,Please patrol the science lab.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140008.Text,완료,화장실을 순찰해주십시오.,Please patrol the restroom.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140009.Text,완료,화장실을 순찰해주십시오.,Please patrol the restroom.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140010.Text,완료,도서관 입구 맞은편 창의 블라인드를 확인해주십시오.,Please check the blinds on the window across from the library entrance.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140011.Text,완료,복도를 한 바퀴 순찰해주십시오.,Please make one full round of the hallway.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140012.Text,완료,복도를 순찰해주십시오.,Please patrol the hallway.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140013.Text,완료,복도를 순찰해주십시오.,Please patrol the hallway.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140014.Text,완료,경비실 CCTV 화면을 확인해주십시오.,Please check the CCTV monitor in the security office.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140015.Text,완료,1-3 교실을 순찰해주십시오.,Please patrol Classroom 1-3.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140016.Text,완료,복도 끝 비상구 쪽을 확인해주십시오.,Please check the emergency exit at the end of the hallway.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140017.Text,완료,복도 끝 비상구 쪽을 확인해주십시오.,Please check the emergency exit at the end of the hallway.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140018.Text,완료,도서관을 순찰해주십시오.,Please patrol the library.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140019.Text,완료,순찰을 계속해주십시오.,Please continue your patrol.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140020.Text,완료,확인되었습니다.,Confirmed.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140021.Text,완료,근무 시간이 종료되었습니다.,Your shift has ended.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140022.Text,완료,창밖에..?..?//..ㅁ....ㅜ/ㅅ../??......,outside..?..?//..w....n/d../??......,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140023.Text,완료,들여보내줘,let me in,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140024.Text,완료,들어왔다,i'm in,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140025.Text,완료,내가 보여?,can you see me?,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140026.Text,완료,이제 보이는 구나,so now you can see,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140027.Text,완료,현 폐교 내 확인되지 않는 이상현상 확인 됨,Unverified anomalous activity confirmed at the closed school site,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140028.Text,완료,확인됨,Confirmed,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140029.Text,완료,조치 예정,Action pending,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140030.Text,완료,계약 해지,Contract terminated,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140031.Text,완료,인수인계가 진행됩니다.,Handover in progress.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140032.Text,완료,인수인계 | 진행 | 인수인계가 진행됩니다. | 진행됩니다 | 근무지 이탈 불가,Handover | In progress | Handover in progress. | Proceeding | You may not leave your post,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140033.Text,완료,"근무 종료, 철거가 예정대로 진행됩니다.",Shift over. Demolition will proceed as scheduled.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140034.Text,완료,근무가 종료 되었습니다. 전화를 통해 퇴근하십시오,Your shift has ended. Use the phone to clock out,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140035.Text,완료,지시가 아직 끝나지 않았습니다.,Your instructions are not yet complete.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140036.Text,완료,아직 근무 시간입니다. 순찰을 계속하십시오.,Your shift is not over yet. Continue your patrol.,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140037.Text,완료,[E] 근무 종료 보고 → [E] 한 번 더 — 근무를 종료합니다,[E] Report end of shift → [E] Press again — End your shift,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+140038.Text,완료,[E] 퇴근하기 → [E] 한 번 더 — 퇴근합니다,[E] Clock out → [E] Press again — Clock out,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
+230001.Final_Text,완료,"근무 종료, 철거가 예정대로 진행됩니다.",Shift over. Demolition will proceed as scheduled.,,Ending_Table.Final_Text,초안 2026-11-22 (Claude) — 확정 필요
+credits.ending,완료,엔딩 {0},Ending {0},,Assets/3.2 Programmer_Kim/02 Scripts/GameFlow/EndingCredits.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.tab.rules,완료,근무 수칙,Duty Rules,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.tab.messages,완료,메시지,Messages,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.inbox,완료,수신 메시지,Inbox,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.count,완료,{0} 항목,{0} items,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.sender,완료,발신 {0},From {0},,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.issued,완료,발행 {0},Issued {0},,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.day,완료,근무일 {0} / {1},Day {0} / {1},,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.points,완료,순찰 지점 {0}곳,{0} patrol points,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.scroll,완료,휠 : 스크롤,Wheel : Scroll,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.norules,완료,오늘 배정된 수칙이 없습니다.,No rules have been assigned today.,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.nomessages,완료,수신된 메시지가 없습니다.,No messages received.,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.battery.pickup,완료,[E] 배터리 줍기,[E] Pick Up Battery,,Assets/_Game/Flow/Battery/BatteryStash.cs,초안 2026-11-22 (Claude) — 확정 필요
+battery.full,완료,예비 배터리가 가득 찼습니다,Spare batteries full,,Assets/_Game/Flow/Battery/BatteryStash.cs,초안 2026-11-22 (Claude) — 확정 필요
+battery.noflashlight,완료,손전등이 없습니다 — 경비실 책상을 확인하십시오,No flashlight — check the desk in the security office,,Assets/_Game/Flow/Battery/DeskStarterKit.cs,초안 2026-11-22 (Claude) — 확정 필요
+battery.empty.search,완료,손전등 배터리가 비었습니다 — 서랍·사물함·책장·탁자에서 배터리를 찾으십시오 (경비실 지도에 표시),"Flashlight battery is empty — search drawers, lockers, bookshelves and tables for batteries (marked on the security office map)",,Assets/_Game/Flow/Battery/DeskStarterKit.cs,초안 2026-11-22 (Claude) — 확정 필요
+battery.empty.none,완료,손전등 배터리가 비었습니다 — 오늘 밤 남은 배터리가 없습니다,Flashlight battery is empty — no batteries left tonight,,Assets/_Game/Flow/Battery/DeskStarterKit.cs,초안 2026-11-22 (Claude) — 확정 필요
+battery.swap,완료,[R] 배터리 갈아 끼우기,[R] Replace Battery,,Assets/_Game/Flow/Battery/DeskStarterKit.cs,초안 2026-11-22 (Claude) — 확정 필요
+battery.empty.desk,완료,손전등 배터리가 비어 있습니다 — 책상 위 배터리를 주우십시오,Flashlight battery is empty — pick up the battery on the desk,,Assets/_Game/Flow/Battery/DeskStarterKit.cs,초안 2026-11-22 (Claude) — 확정 필요
+battery.still,완료,배터리가 아직 충분합니다,Battery still has enough charge,,Assets/_Game/Flow/Battery/DeskStarterKit.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.flashlight.pickup,완료,[E] 손전등 줍기,[E] Pick Up Flashlight,,Assets/_Game/Flow/Battery/DeskStarterKit.cs,초안 2026-11-22 (Claude) — 확정 필요
+battery.swaplocked,완료,정전 중에는 배터리를 갈 수 없습니다,Cannot replace batteries during a power outage,,Assets/_Game/Flow/Battery/FlashlightPower.cs,초안 2026-11-22 (Claude) — 확정 필요
+cctv.enter,완료,[E] CCTV 보기,[E] View CCTV,,Assets/_Game/Flow/Cctv/CctvSystem.cs,초안 2026-11-22 (Claude) — 확정 필요
+cctv.view,완료,[A] [D] 채널 넘기기    [E] 그만 보기,[A] [D] Switch Channel    [E] Stop Viewing,,Assets/_Game/Flow/Cctv/CctvSystem.cs,초안 2026-11-22 (Claude) — 확정 필요
+cctv.vacant,완료,공실,VACANT,,Assets/_Game/Flow/Cctv/CctvSystem.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.book.pickup,완료,[E] biology 책 줍기,[E] Pick Up Biology Book,,Assets/_Game/Flow/Direction/DutyStage.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.card.insert,완료,[E] 출입 카드 넣기,[E] Insert Access Card,,Assets/_Game/Flow/Interaction/DutyCards.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.card.pickup,완료,[E] 출입 카드 줍기,[E] Pick Up Access Card,,Assets/_Game/Flow/Interaction/DutyCards.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.logbook,완료,[E] 근무일지 서명,[E] Sign Duty Log,,Assets/_Game/Flow/Interaction/DutyLogBook.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.pickup,완료,[E] 줍기,[E] Pick Up,,Assets/_Game/Flow/Interaction/DutyPickupItem.cs,초안 2026-11-22 (Claude) — 확정 필요
+lure.done,완료,점검했습니다.,Inspected.,,Assets/_Game/Flow/Interaction/ParadoxLure.cs,초안 2026-11-22 (Claude) — 확정 필요
+lure.holding,완료,"점검 중… ","Inspecting… ",,Assets/_Game/Flow/Interaction/ParadoxLure.cs,초안 2026-11-22 (Claude) — 확정 필요
+lure.hold,완료,[E 길게] 점검,[Hold E] Inspect,,Assets/_Game/Flow/Interaction/ParadoxLure.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.phone.answer,완료,[E] 전화 받기,[E] Answer Phone,,Assets/_Game/Flow/Interaction/PhoneRinger.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.locked,완료,잠겨 있습니다,Locked,,Assets/_Game/Flow/Interaction/PlayerInteractor.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.close,완료,닫기,Close,,Assets/_Game/Flow/Interaction/PlayerInteractor.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.door.close,완료,문 닫기,Close Door,,Assets/_Game/Flow/Interaction/PlayerInteractor.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.open,완료,열기,Open,,Assets/_Game/Flow/Interaction/PlayerInteractor.cs,초안 2026-11-22 (Claude) — 확정 필요
+prompt.door.open,완료,문 열기,Open Door,,Assets/_Game/Flow/Interaction/PlayerInteractor.cs,초안 2026-11-22 (Claude) — 확정 필요
+hint.lmb,완료,좌클릭,Left Click,,Assets/_Game/Flow/Interaction/TabletZoom.cs,초안 2026-11-22 (Claude) — 확정 필요
+credits.title,완료,[제작지원],[Special Thanks],,Assets/_Game/Flow/MainMenuCredits.cs,초안 2026-11-22 (Claude) — 확정 필요
+reveal.anomaly,완료,확인 필요,Needs checking,,Assets/_Game/Flow/NightDutyResultMapper.cs,초안 2026-11-22 (Claude) — 확정 필요
+reveal.clear,완료,이상 없음,No anomaly,,Assets/_Game/Flow/NightDutyResultMapper.cs,초안 2026-11-22 (Claude) — 확정 필요
+result.note.checked,완료,확인함 → {0},Checked → {0},,Assets/_Game/Flow/NightDutyResultMapper.cs,초안 2026-11-22 (Claude) — 확정 필요
+result.mark.instructed,완료,지시를 따름,Followed instructions,,Assets/_Game/Flow/NightDutyResultMapper.cs,초안 2026-11-22 (Claude) — 확정 필요
+result.mark.unavoidable,완료,불가피,Unavoidable,,Assets/_Game/Flow/NightDutyResultMapper.cs,초안 2026-11-22 (Claude) — 확정 필요
+hint.move,완료,이동,Move,,Assets/_Game/Flow/Presentation/ControlHints.cs,초안 2026-11-22 (Claude) — 확정 필요
+hint.interact,완료,상호작용,Interact,,Assets/_Game/Flow/Presentation/ControlHints.cs,초안 2026-11-22 (Claude) — 확정 필요
+hint.flashlight,완료,손전등,Flashlight,,Assets/_Game/Flow/Presentation/ControlHints.cs,초안 2026-11-22 (Claude) — 확정 필요
+hint.rmb,완료,우클릭,Right Click,,Assets/_Game/Flow/Presentation/ControlHints.cs,초안 2026-11-22 (Claude) — 확정 필요
+hint.tablet,완료,태블릿 들기,Raise Tablet,,Assets/_Game/Flow/Presentation/ControlHints.cs,초안 2026-11-22 (Claude) — 확정 필요
+hint.switch,완료,메시지 / 수칙 전환,Switch Messages / Rules,,Assets/_Game/Flow/Presentation/ControlHints.cs,초안 2026-11-22 (Claude) — 확정 필요
+result.inspect.title,완료,금일 점검,Today's Inspections,,Assets/_Game/Flow/Presentation/ResultInspectionNotes.cs,초안 2026-11-22 (Claude) — 확정 필요
+result.inspect.none,완료,점검 없음,No inspections,,Assets/_Game/Flow/Presentation/ResultInspectionNotes.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.intro.title,완료,지시 사항을 확인하시오.,Check your instructions.,,Assets/_Game/Flow/Presentation/TabletIntroCallout.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.intro.tab,완료,TAB - 메시지/수칙 전환,TAB - Switch Messages/Rules,,Assets/_Game/Flow/Presentation/TabletIntroCallout.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.intro.rmb,완료,우클릭 - 태블릿 내리기,Right Click - Lower Tablet,,Assets/_Game/Flow/Presentation/TabletIntroCallout.cs,초안 2026-11-22 (Claude) — 확정 필요
+inspect.changed,완료,[{0}]으로 바꿈,Changed to [{0}],,Assets/_Game/Flow/Sensors/InspectionSensor.cs,초안 2026-11-22 (Claude) — 확정 필요
+inspect.reported,완료,[{0}] 보고함,[{0}] Reported,,Assets/_Game/Flow/Sensors/InspectionSensor.cs,초안 2026-11-22 (Claude) — 확정 필요
+inspect.revise,완료,[{0}] 보고함    [{1}] {2}으로 바꾸기,[{0}] Reported    [{1}] Change to {2},,Assets/_Game/Flow/Sensors/InspectionSensor.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.hour.end,완료,[정시] 근무 종료,[HOURLY] End of shift,,Assets/_Game/Flow/TabletBridge.cs,초안 2026-11-22 (Claude) — 확정 필요
+duty.trust,완료,근무 평가에 반영되었습니다.,This has been reflected in your performance review.,,Assets/_Game/Scripts/Duty/DutyCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
+duty.until,완료,{0}까지,By {0},,Assets/_Game/Scripts/Duty/DutyCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
+inspect.word.absent,완료,없음,Absent,,Assets/_Game/Scripts/Inspection/InspectionCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
+inspect.word.present,완료,있음,Present,,Assets/_Game/Scripts/Inspection/InspectionCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
+inspect.word.abnormal,완료,이상,Abnormal,,Assets/_Game/Scripts/Inspection/InspectionCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
+inspect.word.normal,완료,정상,Normal,,Assets/_Game/Scripts/Inspection/InspectionCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
+unavoidable.S5xH3,완료,복도에 인원이 둘입니다.,There are two people in the hallway.,,Assets/_Game/Scripts/Paradox/UnavoidableCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
+unavoidable.H4xT1,완료,복도에 육성이 감지되었습니다.,A human voice has been detected in the hallway.,,Assets/_Game/Scripts/Paradox/UnavoidableCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135001,완료,소화기,Fire extinguisher,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135002,완료,식수대,Drinking fountain,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135003,완료,알림종,Alarm bell,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135004,완료,복도 쓰레기통,Hallway trash can,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135005,완료,스피커,Speaker,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135006,완료,벤치,Bench,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135007,완료,교실 화분,Classroom plant,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135008,완료,책상 램프,Desk lamp,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135009,완료,사다리,Stepladder,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135010,완료,시계,Clock,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135011,완료,교사 의자,Teacher's chair,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135012,완료,인체 모형,Anatomical model,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135013,완료,현미경,Microscope,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135014,완료,개수대,Sink,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135015,완료,지구본,Globe,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135016,완료,플라스크,Flask,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135017,완료,세계 지도,World map,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135018,완료,변기,Toilet,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135020,완료,거울,Mirror,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135021,완료,수건,Towel,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135022,완료,도서관 의자,Library chair,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135023,완료,블라인드,Blinds,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135024,완료,도서관 쓰레기통,Library trash can,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135025,완료,CCTV 전 채널,All CCTV channels,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135026,완료,접이식 의자,Folding chairs,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+inspect.name.135027,완료,경비실 화분,Security office plant,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
+ko.1a0d2e73,완료,마우스 우클릭으로 태블릿을 올리고 내릴 수 있다.,Right-click to raise and lower the tablet.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.5bc9bf59,완료,Tab 키를 누르면 태블릿의 근무수칙과 문자함 탭을 전환할 수 있다.,Press Tab to switch between the Rules and Messages tabs on the tablet.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.d12fb3bd,완료,마우스 좌클릭으로 손전등을 켜고 끌 수 있다.,Left-click to turn the flashlight on and off.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.c3d2693c,완료,근무수칙은 매일 바뀐다. 출근하면 수칙서부터 읽어 두자.,The duty rules change every day. Read the rulebook first when you clock in.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.ba6434c3,완료,경비실에 숨어 있는다고 안전한 것은 아니다.,Hiding in the security office does not make you safe.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.d4a9f96e,완료,태블릿이 울리면 문자함을 확인하자. 업무 호출이 왔을 수 있다.,"When the tablet buzzes, check your messages. It may be a work call.",,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.245a68a3,완료,어제 정상이던 것이 오늘도 정상이라는 보장은 없다.,What was normal yesterday is not guaranteed to be normal today.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.cc6fff1d,완료,수칙은 끝까지 읽자. 마지막 한 줄이 가장 중요할 수 있다.,Read the rules to the end. The last line may matter most.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.38ee6685,완료,"무언가 이상하다면, 먼저 수칙을 떠올리자.","If something feels wrong, remember the rules first.",,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.3b0e9669,완료,들리는 것을 모두 믿지는 말자.,Do not trust everything you hear.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.3e2cda9c,완료,손전등이 언제나 당신 편인 것은 아니다.,Your flashlight is not always on your side.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.54ca500c,완료,확실하지 않다면 한 번 더 보고 보고하자.,"If you are not sure, look again before you report.",,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.341d4573,완료,도망갔다던 경비원의 퇴실 기록은 확인되지 않았다.,No exit record was found for the guard who supposedly ran away.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.b69f6718,완료,이전 경비원이 마지막으로 응답한 시각은 03:58이었다.,The previous guard last responded at 03:58.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.7886c3ad,완료,과학실에서 확인한 모형은 학교의 자산 목록에 없었다.,The model found in the science lab was not on the school's asset list.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.8810ed7b,완료,이전 근무자의 기록은 두 번째 관측에서 멈춰 있었다.,The previous guard's records stop at the second observation.,,Assets/0. Main/06 Data/LoadingTips.csv,초안 2026-11-22 (Claude) — 확정 필요
+ko.22950771,완료,엔딩 1,Ending 1,,Assets/0. Main/01 Scene/HUD_EndingCredits_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.be947ae1,완료,금일 근무 지침,Today's Guidelines,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.58fc2db2,완료,근무일 1일차 / 5,Day 1 / 5,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.d08f841b,완료,"본 지침 미준수로 발생한 사고 및 신체적 손상에 대해
+회사는 책임지지 않습니다.","The Company accepts no liability for accidents or physical harm
+resulting from failure to follow these guidelines.",,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.ca52ee3a,완료,계약 잔여 4일,4 days left on contract,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.d43192af,완료,없음,None,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.04fce54b,완료,특이사항,Remarks,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.7e9116d8,완료,확인,Confirm,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.fa190c81,완료,근무 시간 00:00–05:00,Shift hours 00:00–05:00,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.09f234c4,완료,순찰 지점 4곳,4 patrol points,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.c1e524db,완료,지침 문구,Guideline text,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.2e7497b3,완료,근무일 {0}일차 / {1},Day {0} / {1},,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · DutyLogView.dayFormat,초안 2026-11-22 (Claude) — 확정 필요
+ko.fa323894,완료,근무 시간 00:00–04:00,Shift hours 00:00–04:00,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · DutyLogView.hoursLabel,초안 2026-11-22 (Claude) — 확정 필요
+ko.d7a2f048,완료,계약 잔여 {0}일,{0} days left on contract,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · DutyLogView.remainingFormat,초안 2026-11-22 (Claude) — 확정 필요
+ko.43df3a99,완료,야간 근무 일지,Night Duty Log,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.ade2fec2,완료,스크롤 : 페이지 넘김 | Q : 화면 전환,Scroll : Turn page | Q : Switch screen,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.8eee602e,완료,새 메시지 도착,New Message,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TabletAlarm.alarmMessage,초안 2026-11-22 (Claude) — 확정 필요
+ko.c3e27d5c,완료,새 지시 도착,New Instruction,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.ef897af2,완료,근무수칙,Duty Rules,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.0f127dce,완료,수칙 본문,Rule text,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.ed9263b5,완료,<b>근무수칙</b>   <color=#4C5D66>수행 지침</color>,<b>Duty Rules</b>   <color=#4C5D66>Guidelines</color>,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.8512c8b3,완료,시설관리팀,Facilities Management,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TabletDocument.senderName,초안 2026-11-22 (Claude) — 확정 필요
+ko.5036515d,완료,본 지침 미준수로 발생한 사고 및 심리적 손상에 대해 회사는 책임지지 않습니다.,The Company accepts no liability for accidents or psychological harm resulting from failure to follow these guidelines.,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TabletDocument.disclaimer,초안 2026-11-22 (Claude) — 확정 필요
+ko.83367b3c,완료,복도,HALLWAY,,Assets/_Game/Resources/CctvConfig.asset · CctvConfigSO.channels.Array.data[0].label,초안 2026-11-22 (Claude) — 확정 필요
+ko.bf425071,완료,교실,CLASSROOM,,Assets/_Game/Resources/CctvConfig.asset · CctvConfigSO.channels.Array.data[1].label,초안 2026-11-22 (Claude) — 확정 필요
+ko.2728f986,완료,과학실,SCIENCE LAB,,Assets/_Game/Resources/CctvConfig.asset · CctvConfigSO.channels.Array.data[2].label,초안 2026-11-22 (Claude) — 확정 필요
+ko.d3ef4942,완료,화장실,RESTROOM,,Assets/_Game/Resources/CctvConfig.asset · CctvConfigSO.channels.Array.data[3].label,초안 2026-11-22 (Claude) — 확정 필요
+ko.1eeac3a7,완료,도서관,LIBRARY,,Assets/_Game/Resources/CctvConfig.asset · CctvConfigSO.channels.Array.data[4].label,초안 2026-11-22 (Claude) — 확정 필요
+ko.7645835c,완료,"로딩중입니다 ","Loading ",,Assets/0. Main/01 Scene/LoadingScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.36b2122e,완료,"W A S D 로 이동하고, 마우스로 주변을 둘러봅니다.",Use W A S D to move and the mouse to look around.,,Assets/0. Main/01 Scene/LoadingScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.493a58bd,완료,안녕하세요. 현장관리팀 파견 담당자입니다.,Hello. This is the dispatch coordinator from Site Management.,,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[0].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.7234f62f,완료,지원하신 야간 근무 건으로 연락드렸습니다.,I'm calling about the night shift you applied for.,,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[1].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.b2e4ee1a,완료,이번 현장은 철거를 닷새 앞둔 폐교입니다.,"This site is a closed school, five days before demolition.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[2].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.ceb9fd2d,완료,"사전에 안내드린 대로, 철거 전 시설 점검이 필요한 장소입니다.","As we mentioned beforehand, the facility needs to be inspected before demolition.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[3].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.54e46028,완료,철거 전까지 야간에 건물 상태를 점검하고 기록할 인원이 필요합니다.,We need someone to inspect and record the building's condition at night until it's demolished.,,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[4].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.f8d8eabc,완료,이전 근무자는 개인 사정으로 근무를 이어가지 못하게 되었습니다.,The previous guard was unable to continue for personal reasons.,,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[5].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.62347b9c,완료,"자정부터 1층을 순찰하고, 지정된 대상을 점검해 태블릿으로 보고해 주시면 됩니다.","Starting at midnight, you'll patrol the first floor, inspect the assigned items, and report on the tablet.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[6].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.4bba7794,완료,근무 중에는 태블릿으로 점검표와 문자가 전달됩니다.,"During your shift, checklists and messages will be sent to the tablet.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[7].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.e0fa529d,완료,계약서를 보내드리겠습니다.,I'll send over the contract.,,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[8].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.659d0231,완료,단순 점검 업무라 어려운 일은 없으실 겁니다.,"It's simple inspection work, so it shouldn't be difficult.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[9].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.73829b3e,완료,"그럼 첫날 밤, 잘 부탁드립니다.","Well then, we're counting on you for the first night.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[10].caption,초안 2026-11-22 (Claude) — 확정 필요
+ko.67ff6dcd,완료,F키 눌러서 건너뛰기,Hold F to skip,,Assets/0. Main/01 Scene/OpeningScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.99d79392,완료,파견 근무 계약서,Temporary Assignment Contract,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.a7fbc17f,완료,"<b>제1조 (근무)</b> 
+<margin-left=1.4em>철거 전 5일간, 매일 00:00부터 04:00까지 폐교 1층을 <nobr>순찰한다.</nobr></margin>
+<b>제2조 (업무)</b> 
+<margin-left=1.4em>점검 대상을 확인하고 태블릿으로 [정상] 또는 [이상]을 <nobr>보고한다.</nobr></margin>
+<b>제3조 (연락)</b><margin-left=1.4em>회사의 지시는 태블릿 메세지로 전달되며, 회사가 보낸 메세지는 정상적으로 발송된다.</margin>
+<b>제4조 (안전)</b><margin-left=1.4em>근무 중 생긴 상해와 정신적 변화에 관하여 회사는 책임지지 않는다.</margin>
+<b>제5조 (기밀)</b> 
+<margin-left=1.4em>근무자는 현장에서 보고 들은 내용을 외부에 누설하지 않는다.</margin>
+<b>제6조 (근무자)</b> 
+<margin-left=1.4em>근무자는 근무 시간 동안 근무지를 이탈할 수  <nobr>없다.</nobr></margin>
+<b>제7조 (해지)</b> 
+<margin-left=1.4em>근무자가 근무를 이어갈 수 없는 경우,
+회사는 계약을 해지하고 근무기간 만큼 보상을 <nobr>지급한다.</nobr>","<b>Article 1 (Duty)</b> 
+<margin-left=1.4em>For the 5 days before demolition, the worker shall patrol the first floor of the closed school every day from 00:00 to <nobr>04:00.</nobr></margin>
+<b>Article 2 (Tasks)</b> 
+<margin-left=1.4em>The worker shall check the inspection items and report [Normal] or [Abnormal] on the <nobr>tablet.</nobr></margin>
+<b>Article 3 (Communication)</b><margin-left=1.4em>Company instructions are delivered as tablet messages, and all messages sent by the Company are sent through normal channels.</margin>
+<b>Article 4 (Safety)</b><margin-left=1.4em>The Company accepts no responsibility for injury or mental changes sustained during the shift.</margin>
+<b>Article 5 (Confidentiality)</b> 
+<margin-left=1.4em>The worker shall not disclose anything seen or heard on site.</margin>
+<b>Article 6 (Worker)</b> 
+<margin-left=1.4em>The worker may not leave the post during working <nobr>hours.</nobr></margin>
+<b>Article 7 (Termination)</b> 
+<margin-left=1.4em>If the worker is unable to continue the shift,
+the Company shall terminate the contract and pay compensation for the period <nobr>worked.</nobr>",,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.e4a402a9,완료,여기에 서명 (인),Sign here,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.e1ec0e55,완료,출근하기,Clock In,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.df68308e,완료,DAY {0} — 근무 종료,DAY {0} — SHIFT COMPLETE,,Assets/0. Main/01 Scene/ResultScene.unity · ResultController.completedTitleFormat,초안 2026-11-22 (Claude) — 확정 필요
+ko.b8e7e04e,완료,DAY {0} — 근무 중단,DAY {0} — SHIFT TERMINATED,,Assets/0. Main/01 Scene/ResultScene.unity · ResultController.diedTitleFormat,초안 2026-11-22 (Claude) — 확정 필요
+ko.e46bddee,완료,순찰률 {0}/{1} · 위반 {2}건 · 충돌 처리 {3}/{4},Patrol {0}/{1} · Violations {2} · Conflicts handled {3}/{4},,Assets/0. Main/01 Scene/ResultScene.unity · ResultController.statsFormat,초안 2026-11-22 (Claude) — 확정 필요
+ko.43fd17ff,완료,다음 근무,Next Shift,,Assets/0. Main/01 Scene/ResultScene.unity · ResultController.nextDayLabel,초안 2026-11-22 (Claude) — 확정 필요
+ko.f780d5e9,완료,처음부터,Restart,,Assets/0. Main/01 Scene/ResultScene.unity · ResultController.restartLabel,초안 2026-11-22 (Claude) — 확정 필요
+ko.fe514be8,완료,현장관리팀 파견 담당자입니다.,This is the dispatch coordinator from Site Management.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.callLines.Array.data[0].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.14532736,완료,"닷새 동안 단순 점검 업무였지만, 고생 많으셨습니다.","It was just five days of simple inspection work, but thank you for all your effort.",,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.callLines.Array.data[1].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.1d5440c4,완료,뒤를 돌아보지 마십시오.,Do not look behind you.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.buildUpLines.Array.data[0].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.2d81baed,완료,부르는 소리에 대답하지 마십시오.,Do not answer when something calls you.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.buildUpLines.Array.data[1].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.a3796fb3,완료,손전등을 끄십시오.,Turn off your flashlight.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.buildUpLines.Array.data[2].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.32bf73ed,완료,계속 비추십시오.,Keep your light on it.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.buildUpLines.Array.data[3].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.8ce53da6,완료,멈추십시오.,Stop.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.buildUpLines.Array.data[4].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.87c9adcd,완료,대답하지 마십시오.,Do not answer.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.buildUpLines.Array.data[5].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.7980738e,완료,돌아보지 마십시오.,Do not turn around.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.buildUpLines.Array.data[6].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.800ff17f,완료,경비실을 나가지 마십시오.,Do not leave the security office.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.buildUpLines.Array.data[7].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.c02d59ca,완료,……규칙 말씀이십니까?,"……Rules, you say?",,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.afterLines.Array.data[0].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.f996961b,완료,저희는 규칙을… 보낸 적이 없…,We never… sent any rul…,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.afterLines.Array.data[1].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.de11fdc0,완료,▒▓░█ㅂㄴㅈㅇ낸보뵈냄,▒▓░█qxzjkvwy,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.breakGlyphs,초안 2026-11-22 (Claude) — 확정 필요
+ko.7ab9e9d1,완료,고생하셨습니다.,Thank you for your hard work.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.cleanLines.Array.data[0].text,초안 2026-11-22 (Claude) — 확정 필요
+ko.dac23031,완료,인수인계,Handover,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.tabletCursorText,초안 2026-11-22 (Claude) — 확정 필요
+ko.1a869791,완료,인수인계가 진행됩니다.,Handover in progress.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.tabletText,초안 2026-11-22 (Claude) — 확정 필요
+ko.474d244a,완료,철거는 예정대로 진행되었습니다.,Demolition proceeded as scheduled.,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.departureText,초안 2026-11-22 (Claude) — 확정 필요
+ko.19a651a0,완료,"퇴근 확인: ","Clocked out: ",,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.headcountPrefix,초안 2026-11-22 (Claude) — 확정 필요
+ko.881297db,완료,1명,1 person,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.headcountBefore,초안 2026-11-22 (Claude) — 확정 필요
+ko.f7ff40f0,완료,2명,2 people,,Assets/0. Main/01 Scene/SuccessEnding.unity · SuccessEndingSequence.headcountAfter,초안 2026-11-22 (Claude) — 확정 필요

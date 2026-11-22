@@ -59,11 +59,11 @@ namespace NightDuty
             return Find(ruleId) != null;
         }
 
-        /// <summary>그 수칙 빈칸의 해독 낱말(없으면 null).</summary>
+        /// <summary>그 수칙 빈칸의 해독 낱말(없으면 null). 2026-11-22: 지금 언어로.</summary>
         public static string Word(string ruleId)
         {
             Entry e = Find(ruleId);
-            return e != null ? e.Word : null;
+            return e != null ? Loc.Dt(ruleId, "Blank_Answer", e.Word) : null;
         }
 
         /// <summary>그 수칙 글의 빈칸을 해독한 글. 빈칸 수칙이 아니거나 글이 비면 그대로.</summary>
@@ -71,6 +71,27 @@ namespace NightDuty
         {
             Entry e = Find(ruleId);
             if (e == null || string.IsNullOrEmpty(text)) return text;
+
+            // 2026-11-22(로컬라이징): 언어와 무관한 같은 논리 — 해독된 문장 전체가 DT 칸에 있다.
+            // 원문이면 Blank_Decoded, 변조본이면 Blank_Decoded_Variant(그 언어의 글끼리 맞춰 본다).
+            global::NightDuty.DesignData.Ensure();
+            InstructionDT.RuleRow r = InstructionDT.DT.Rule.Get(uint.Parse(ruleId));
+            if (r != null)
+            {
+                if (text == Loc.Dt(ruleId, "Text", r.Text) && !string.IsNullOrEmpty(r.Blank_Decoded)) return Loc.Dt(ruleId, "Blank_Decoded", r.Blank_Decoded);
+                if (!string.IsNullOrEmpty(r.Variant_Text) && text == Loc.Dt(ruleId, "Variant_Text", r.Variant_Text) && !string.IsNullOrEmpty(r.Blank_Decoded_Variant))
+                {
+                    return Loc.Dt(ruleId, "Blank_Decoded_Variant", r.Blank_Decoded_Variant);
+                }
+
+                // 그 밖의 글(미세 변조 「…?.」 등): 한국어가 아니면 가림표를 그 언어의 해독 낱말로 바꾼다(영어는 관사를 가림표 밖에 두므로 조사 처리가 없다).
+                if (!Loc.IsKorean && !string.IsNullOrEmpty(r.Blank_Mark) && text.IndexOf(r.Blank_Mark, StringComparison.Ordinal) >= 0)
+                {
+                    return text.Replace(r.Blank_Mark, Loc.Dt(ruleId, "Blank_Answer", r.Blank_Answer));
+                }
+            }
+
+            // 한국어: 가림표 + 조사를 받침에 맞는 낱말 + 조사로(옛 방식 — 위 두 칸에 없는 글만).
             foreach (KeyValuePair<string, string> swap in e.Swaps)
             {
                 if (text.IndexOf(swap.Key, StringComparison.Ordinal) >= 0) return text.Replace(swap.Key, swap.Value);

@@ -68,7 +68,7 @@ public sealed class ParadoxLure : MonoBehaviour
     {
         if (_doneShownUntil > Time.time)
         {
-            if (Aimed()) Claim("점검했습니다.", false);
+            if (Aimed()) Claim(Loc.T("lure.done", "점검했습니다."), false);
             else ReleasePrompt();
             return;
         }
@@ -95,7 +95,7 @@ public sealed class ParadoxLure : MonoBehaviour
             return;
         }
 
-        Claim(_held > 0f ? "점검 중… " + Mathf.RoundToInt(_held / HoldSeconds * 100f) + "%" : "[E 길게] 점검", true);
+        Claim(_held > 0f ? Loc.T("lure.holding", "점검 중… ") + Mathf.RoundToInt(_held / HoldSeconds * 100f) + "%" : Loc.T("lure.hold", "[E 길게] 점검"), true);
     }
 
     private bool Aimed()

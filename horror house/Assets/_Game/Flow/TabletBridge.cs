@@ -73,7 +73,10 @@ public sealed class TabletBridge : MonoBehaviour
     private readonly Dictionary<string, string> _orderTexts = new Dictionary<string, string>();
     private readonly Dictionary<string, string> _dutyMessages = new Dictionary<string, string>();   // 문자 ID → 지시 ID(W1~W6)
     private readonly Dictionary<string, string> _dutyIssued = new Dictionary<string, string>();   // 74차: 지시 ID → 그 지시 문자 ID(완료하면 그 문자에 취소선)
-    private readonly Dictionary<string, string> _dutyIssuedText = new Dictionary<string, string>();
+    private readonly Dictionary<string, System.Func<string>> _dutyIssuedSource = new Dictionary<string, System.Func<string>>();   // 2026-11-22: 지시 문자 ID → 본문을 지금 언어로 만드는 함수(옛 _dutyIssuedText)
+
+    /// <summary>2026-11-22(로컬라이징): 메시지함 문자 ID → 본문을 지금 언어로 다시 만드는 함수. 언어가 바뀌면 이것으로 받은 문자를 다시 그린다.</summary>
+    private readonly Dictionary<string, System.Func<string>> _live = new Dictionary<string, System.Func<string>>();
     private readonly Dictionary<int, string> _hourMessages = new Dictionary<int, string>();   // 103차 후속: 정시 → 그 알림 문자 ID   // 74차: 지시 문자 ID → 본문
     private TabletMessageList _hooked;
 
@@ -178,6 +181,7 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.FinalRuleSettled += OnFinalRuleSettled;
         EventBus.HourStruck += OnHourStruck;
         EventBus.ParadoxEnded += OnParadoxEnded;
+        Loc.Changed += OnLanguageChanged;
     }
 
     private void OnDisable()
@@ -192,6 +196,7 @@ public sealed class TabletBridge : MonoBehaviour
         EventBus.FinalRuleSettled -= OnFinalRuleSettled;
         EventBus.HourStruck -= OnHourStruck;
         EventBus.ParadoxEnded -= OnParadoxEnded;
+        Loc.Changed -= OnLanguageChanged;
         if (_hooked != null) _hooked.MessageReceived -= OnAnyMessage;
         _hooked = null;
 
@@ -484,12 +489,15 @@ public sealed class TabletBridge : MonoBehaviour
         string pid = message.ParadoxId ?? string.Empty;
         if (pid.EndsWith("." + DutyOutcome.Done))
         {
-            string issued, issuedText;
-            if (message.CardId != null && _dutyIssued.TryGetValue(message.CardId, out issued) && _dutyIssuedText.TryGetValue(issued, out issuedText) && Contains(issued))
+            string issued;
+            System.Func<string> issuedSource;
+            if (message.CardId != null && _dutyIssued.TryGetValue(message.CardId, out issued) && _dutyIssuedSource.TryGetValue(issued, out issuedSource) && Contains(issued))
             {
                 // 103차 후속: 신뢰가 오른 완료(회차에 두 번만 — NightRun.TrustLinesPerRun)는 취소선 아래에 「근무 평가에 반영되었습니다.」를 덧붙인다(옛: 코어가 붙여도 화면에 안 보였다).
-                string trust = message.Text.Contains(DutyCatalog.TrustLine) ? "\n" + DutyCatalog.TrustLine : string.Empty;
-                messages.Add(issued, NightRun.StrikeOpen + issuedText + NightRun.StrikeClose + trust, NoTime);   // 같은 ID — 본문만 고친다(알람 없음)
+                bool trust = message.Text.Contains(DutyCatalog.TrustLineText);   // 2026-11-22: 보낸 순간의 언어 글로 본다
+                System.Func<string> struck = () => NightRun.StrikeOpen + issuedSource() + NightRun.StrikeClose + (trust ? "\n" + DutyCatalog.TrustLineText : string.Empty);
+                messages.Add(issued, struck(), NoTime);   // 같은 ID — 본문만 고친다(알람 없음)
+                _live[issued] = struck;
             }
 
             return;
@@ -502,18 +510,71 @@ public sealed class TabletBridge : MonoBehaviour
         {
             messages.Remove(previous);
             _dutyMessages.Remove(previous);
-            _dutyIssuedText.Remove(previous);
+            _dutyIssuedSource.Remove(previous);
+            _live.Remove(previous);
         }
 
         _messageSerial++;
         string id = message.ParadoxId + "." + _messageSerial;
         messages.Add(id, message.Text, Now());
         _dutyMessages[id] = message.CardId;
+        System.Func<string> source = SourceOf(message);
+        _live[id] = source;
         if (pid.EndsWith("." + DutyOutcome.Issued) && message.CardId != null)
         {
             _dutyIssued[message.CardId] = id;
-            _dutyIssuedText[id] = message.Text;
+            _dutyIssuedSource[id] = source;
         }
+    }
+
+    /// <summary>2026-11-22: 문자를 지금 언어로 다시 만드는 함수 — 보낸 쪽이 주지 않았으면 보낸 글 그대로.</summary>
+    private static System.Func<string> SourceOf(ParadoxMessage message)
+    {
+        if (message.Source != null) return message.Source;
+        string text = message.Text;
+        return () => text;
+    }
+
+    /// <summary>
+    /// 2026-11-22(로컬라이징 — 사용자: 「플레이 중에 언어 변환이 가능해야」): 언어가 바뀌면 태블릿 글을 그 자리에서 다시 그린다.
+    /// 수칙 카드(코어가 다시 씀) → 점검 지시 문자(다시 만듦) → 받은 문자(<see cref="_live"/>의 함수로). 받은 시각·읽음 표시·알람은 그대로다.
+    /// </summary>
+    private void OnLanguageChanged()
+    {
+        NightRun.RelocalizeTablet();
+        if (!Bind() || messages == null) return;
+
+        SyncChecklist(true);
+        SyncOrders();
+
+        List<string> gone = new List<string>();
+        foreach (KeyValuePair<string, System.Func<string>> kv in _live)
+        {
+            TabletMessageList.Message m = Find(kv.Key);
+            if (m == null)
+            {
+                gone.Add(kv.Key);
+                continue;
+            }
+
+            string text = kv.Value();
+            if (string.IsNullOrEmpty(text) || text == m.text) continue;
+            messages.Add(kv.Key, text, m.receivedMinutes, m.color);   // 같은 ID — 본문만 고친다(알람 없음)
+        }
+
+        for (int i = 0; i < gone.Count; i++) _live.Remove(gone[i]);
+        ReloadDocuments();
+    }
+
+    private TabletMessageList.Message Find(string id)
+    {
+        IReadOnlyList<TabletMessageList.Message> list = messages.Messages;
+        for (int i = 0; i < list.Count; i++)
+        {
+            if (list[i].id == id) return list[i];
+        }
+
+        return null;
     }
 
     /// <summary>67차(민: 「1시간마다 알림을 주면 좋겠어」): 정시 알림 한 통 — 「[정시] 02:00 · 근무 종료까지 3시간」. 늘 새 번호라 알람이 울린다.</summary>
@@ -523,13 +584,15 @@ public sealed class TabletBridge : MonoBehaviour
         int left = NightClock.ShiftEnd / 60 - hour;
         _messageSerial++;
         // 92차: 받은 시각이 앞에 찍히므로 본문에서 시각은 뺀다(「02:00  [정시] 근무 종료까지 2시간」).
-        string text = left >= 1 && left <= 3 ? DesignData.Msg(140004u - (uint)left) : "[정시] 근무 종료";   // DT 140001~140003(남은 3·2·1시간). 0시간 분기는 HourMarks에 04:00이 없어 나오지 않음
+        System.Func<string> build = () => left >= 1 && left <= 3 ? DesignData.Msg(140004u - (uint)left) : Loc.T("tablet.hour.end", "[정시] 근무 종료");   // DT 140001~140003(남은 3·2·1시간). 0시간 분기는 HourMarks에 04:00이 없어 나오지 않음
+        string text = build();
         // 103차 후속: 00:00 재시작이면 같은 정시가 다시 울려 두 통이 됐다 — 그 정시의 옛 알림을 지우고 새로 넣는다.
         string old;
         if (_hourMessages.TryGetValue(hour, out old) && Contains(old)) messages.Remove(old);
         string id = "clock.hour." + hour + "." + _messageSerial;
         messages.Add(id, text, hour * 60);
         _hourMessages[hour] = id;
+        _live[id] = build;   // 2026-11-22: 언어 전환 때 다시 그림
     }
 
     private void OnMessageSent(ParadoxMessage message)
@@ -541,6 +604,7 @@ public sealed class TabletBridge : MonoBehaviour
         string id = "paradox." + message.ParadoxId + "." + _messageSerial;
         // 92차(민: 「근무 메시지에서 타임스탬프는 찍혀있도록」): 받은 시각을 앞에 찍는다(74차 「시각 없음」을 되돌림).
         messages.Add(id, message.Text, Now());
+        if (message.Source != null) _live[id] = message.Source;   // 2026-11-22: 언어 전환 때 다시 그림
         if (message.ParadoxId == "paradox." + message.CardId)
         {
             List<string> ids;

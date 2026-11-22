@@ -1,3 +1,4 @@
+using NightDuty;
 using TMPro;
 using UnityEngine.Serialization;
 using UnityEngine;
@@ -184,8 +185,8 @@ public class TabletAlarm : MonoBehaviour
     /// <summary>알람 줄에 띄울 글자. 개수가 있으면 「새 메시지 도착 (3)」처럼 붙인다.</summary>
     private string AlarmLabel()
     {
-        if (_pending <= 0 || string.IsNullOrEmpty(countFormat)) return alarmMessage;
-        return alarmMessage + string.Format(countFormat, _pending);
+        if (_pending <= 0 || string.IsNullOrEmpty(countFormat)) return Loc.K(alarmMessage);
+        return Loc.K(alarmMessage) + string.Format(countFormat, _pending);
     }
 
     private void Update()

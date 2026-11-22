@@ -17,7 +17,7 @@ using UnityEngine.SceneManagement;
 [DisallowMultipleComponent]
 public sealed class ResultInspectionNotes : MonoBehaviour
 {
-    private const string Label = "금일 점검";
+    private static string Label => Loc.T("result.inspect.title", "금일 점검");
     private const string WrongColor = "#B3261E";
     private const float BoxHeight = 78f;
 
@@ -118,7 +118,7 @@ public sealed class ResultInspectionNotes : MonoBehaviour
     /// <summary>「소화기 정확 · 식수대 놓침 · …」 — 틀린 것은 붉게.</summary>
     public static string Format(List<KeyValuePair<InspectionItem, LedgerMark>> rows)
     {
-        if (rows == null || rows.Count == 0) return "점검 없음";
+        if (rows == null || rows.Count == 0) return Loc.T("result.inspect.none", "점검 없음");
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
         for (int i = 0; i < rows.Count; i++)
         {

@@ -624,8 +624,37 @@ namespace NightDuty.SuccessEnding
             StopCallAudio();
         }
 
+        /// <summary>
+        /// 2026-11-22(로컬라이징): 시작할 때 자막·안내 글을 지금 언어로 바꿔 둔다(실행 중 값만 — 씬에는 한국어 그대로).
+        /// 번역은 번역표(DesignData/Localization/EN.csv)의 원문 키(Loc.K). 깨짐 글자(breakGlyphs)도 언어별 값.
+        /// </summary>
+        private void LocalizeTexts()
+        {
+            LocalizeLines(callLines);
+            LocalizeLines(buildUpLines);
+            LocalizeLines(afterLines);
+            LocalizeLines(cleanLines);
+            breakGlyphs = Loc.K(breakGlyphs);
+            tabletCursorText = Loc.K(tabletCursorText);
+            tabletText = Loc.K(tabletText);
+            departureText = Loc.K(departureText);
+            headcountPrefix = Loc.K(headcountPrefix);
+            headcountBefore = Loc.K(headcountBefore);
+            headcountAfter = Loc.K(headcountAfter);
+        }
+
+        private static void LocalizeLines(List<EndingLine> lines)
+        {
+            if (lines == null) return;
+            foreach (EndingLine l in lines)
+            {
+                if (l != null) l.text = Loc.K(l.text);
+            }
+        }
+
         private IEnumerator Run()
         {
+            LocalizeTexts();
             int jump = jumpLevel; jumpLevel = 0;
             Finished = false;
             startTime = clock = seqTime;

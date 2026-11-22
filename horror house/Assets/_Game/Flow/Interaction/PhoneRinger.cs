@@ -24,7 +24,7 @@ public sealed class PhoneRinger : MonoBehaviour
     public const float BreathMinDistance = 2f;
 
     /// <summary>받기 안내.</summary>
-    public const string AnswerLine = "[E] 전화 받기";
+    public static string AnswerLine => Loc.T("prompt.phone.answer", "[E] 전화 받기");
 
     /// <summary>80차: 벨 볼륨(표 값보다 작으면 이 값).</summary>
     public const float BellVolume = 1f;

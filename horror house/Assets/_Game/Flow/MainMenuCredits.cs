@@ -1,3 +1,4 @@
+using NightDuty;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -22,7 +23,7 @@ public sealed class MainMenuCredits : MonoBehaviour
     public const string ButtonLabel = "Thanks for...";
 
     /// <summary>팝업 제목.</summary>
-    public const string Title = "[제작지원]";
+    public static string Title => NightDuty.Loc.T("credits.title", "[제작지원]");
 
     /// <summary>닫기 버튼 글자.</summary>
     public const string CloseLabel = "close";

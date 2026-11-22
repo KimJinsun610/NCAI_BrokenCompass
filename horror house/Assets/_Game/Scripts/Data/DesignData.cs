@@ -235,7 +235,10 @@ namespace NightDuty
         }
 
         /// <summary>Message_Table 문구(Text). 문구의 정본은 xlsx — 코드에 같은 문장을 다시 적지 마십시오.</summary>
-        public static string Msg(uint id) => MessageRow(id).Text;
+        public static string Msg(uint id) => MsgText(MessageRow(id));
+
+        /// <summary>2026-11-22: Message_Table 행의 글을 지금 언어로(<see cref="Loc"/> — 한국어면 그대로).</summary>
+        public static string MsgText(MessageRow row) => row == null ? string.Empty : Loc.Dt(row.ID, "Text", row.Text);
 
         /// <summary>여러 문구 칸(「a | b | c」)을 나눈다.</summary>
         public static string[] MsgParts(uint id) => Msg(id).Split(new[] { " | " }, System.StringSplitOptions.None);

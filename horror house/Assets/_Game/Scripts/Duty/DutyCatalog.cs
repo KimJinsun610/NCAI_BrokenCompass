@@ -56,13 +56,26 @@ namespace NightDuty
         public readonly FearAxis Axis;
 
         /// <summary>지시 본문(머리글 뒤).</summary>
-        public readonly string Order;
+        public string Order
+        {
+            get { return Loc.Dt(Id, "Text", _order); }   // 2026-11-22: 지금 언어 글(정본은 DT Task_Table 한국어)
+        }
 
         /// <summary>완료 답장(뒤에 시각이 붙는다).</summary>
-        public readonly string Done;
+        public string Done
+        {
+            get { return Loc.Dt(Id, "Done_Reply", _done); }
+        }
 
         /// <summary>미완료 답장.</summary>
-        public readonly string Missed;
+        public string Missed
+        {
+            get { return Loc.Dt(Id, "Missed_Reply", _missed); }
+        }
+
+        private readonly string _order;
+        private readonly string _done;
+        private readonly string _missed;
 
         /// <summary>기한(실제 초). 0이면 제한 없음(67차 ②: W2·W4·W5·W15). 조우 중에도 흐른다(태블릿 시계 마감과 맞게).</summary>
         public readonly float Seconds;
@@ -110,9 +123,9 @@ namespace NightDuty
             Kind = kind;
             Space = space;
             Axis = axis;
-            Order = order;
-            Done = done;
-            Missed = missed;
+            _order = order;
+            _done = done;
+            _missed = missed;
             Seconds = seconds;
             _days = days ?? new int[0];
         }
@@ -296,6 +309,18 @@ namespace NightDuty
         /// <summary>103차: 완료 답장 끝에 붙는 근무 평가 줄(신뢰가 올랐을 때).</summary>
         public const string TrustLine = "근무 평가에 반영되었습니다.";
 
+        /// <summary>2026-11-22: <see cref="TrustLine"/>의 지금 언어 글(화면에 붙일 때 이것을 쓴다).</summary>
+        public static string TrustLineText
+        {
+            get { return Loc.T("duty.trust", "근무 평가에 반영되었습니다."); }
+        }
+
+        /// <summary>2026-11-22: 마감 「HH:MM까지」의 서식(지금 언어). {0} = 시각.</summary>
+        public static string UntilFormat
+        {
+            get { return Loc.T("duty.until", "{0}까지"); }
+        }
+
         /// <summary><see cref="LimitSeconds"/>를 게임 분으로(48분).</summary>
         public static float LimitGameMinutes
         {
@@ -312,7 +337,7 @@ namespace NightDuty
         public static string DeadlineText(float issuedMinute, float seconds, int day)
         {
             float due = issuedMinute + seconds * NightClock.GameSecondsPerRealSecondFor(day) / 60f;
-            return Clock((int)Math.Ceiling(due - 0.0001f)) + "까지";
+            return string.Format(UntilFormat, Clock((int)Math.Ceiling(due - 0.0001f)));
         }
 
         /// <summary>67차(민: 「제한시간이 존재하고, 명시되면 좋겠어」): 「제한 1분 15초」. 0 이하면 빈 문자열.</summary>
@@ -351,7 +376,7 @@ namespace NightDuty
         {
             string text = OrderText(def, day);
             if (def == null || issuedMinute < 0f || TimeLimitsEnabled) return text;
-            if (def.Kind == DutyKind.LogSign) return text + "\n" + Clock(NightClock.Call2) + "까지";
+            if (def.Kind == DutyKind.LogSign) return text + "\n" + string.Format(UntilFormat, Clock(NightClock.Call2));
             if (def.Id == "130008") return text + "\n" + DeadlineText(issuedMinute, EffectiveSeconds(def), day);
             return text;
         }

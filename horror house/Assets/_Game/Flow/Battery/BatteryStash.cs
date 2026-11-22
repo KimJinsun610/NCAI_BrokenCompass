@@ -32,10 +32,10 @@ public sealed class BatteryStash : MonoBehaviour
     public const float Reach = 2.1f;
 
     /// <summary>안내 줄.</summary>
-    public const string PromptText = "[E] 배터리 줍기";
+    public static string PromptText => Loc.T("prompt.battery.pickup", "[E] 배터리 줍기");
 
     /// <summary>주머니가 찼을 때의 안내 줄.</summary>
-    public const string FullText = "예비 배터리가 가득 찼습니다";
+    public static string FullText => Loc.T("battery.full", "예비 배터리가 가득 찼습니다");
 
     private const float AimSlack = 0.1f;
 

@@ -48,7 +48,7 @@ namespace NightDuty
             if (_shiftReadyAnnounced) return;
             _shiftReadyAnnounced = true;
             if (_duties == null) return;   // [근무 지시]가 없는 밤(옛 시험)은 점검 지시의 「마지막 지시」 안내로 충분하다
-            EventBus.RaiseDutySent(new ParadoxMessage(ShiftReadyId, ShiftReadyId, SpaceId.SecurityRoom, ShiftReadyText, CurrentMinute()));
+            EventBus.RaiseDutySent(new ParadoxMessage(ShiftReadyId, ShiftReadyId, SpaceId.SecurityRoom, ShiftReadyText, CurrentMinute(), () => ShiftReadyText));
         }
 
         /// <summary>밤 편성 뒤(재시작 제외) 지시기를 만든다.</summary>
@@ -193,28 +193,30 @@ namespace NightDuty
             DutyDef d = ev.Def;
             if (d == null) return;
             int minute = CurrentMinute();
-            string text;
+            int day = Day;
+            System.Func<string> build;   // 2026-11-22: 언어가 바뀌면 태블릿이 이 함수로 다시 그린다
             switch (ev.Outcome)
             {
                 case DutyOutcome.Issued:
-                    text = DutyCatalog.MessageText(d, Day, minute);   // 67차: 마감 「HH:MM까지」
+                    build = () => DutyCatalog.MessageText(d, day, minute);   // 67차: 마감 「HH:MM까지」
                     if (d.Kind != DutyKind.LogSign) NoteInstruction(true);   // 67차: 점검 지시와 번갈아
                     if (_tension != null) _tension.Pacer.Impulse(PacerImpulse.Order);
                     break;
                 case DutyOutcome.Done:
                     CampNoteDone();   // 104차: 지시를 하나 끝내면 경비실 체류 0으로
                     if (!ev.Tainted && _axes != null) LowerByDuty(d);   // 103차: 축마다 밤당 −6까지
-                    text = DutyCatalog.DoneText(d, Day, minute);
-                    if (!ev.Tainted && GrantDutyTrust(d) > 0 && TakeTrustLine()) text += "\n" + DutyCatalog.TrustLine;   // 103차 · 103차 후속(사용자: 「매번 뜨면 정신없다 — 중간에 한 2회 정도」)
+                    bool trust = !ev.Tainted && GrantDutyTrust(d) > 0 && TakeTrustLine();   // 103차 · 103차 후속(사용자: 「매번 뜨면 정신없다 — 중간에 한 2회 정도」)
+                    build = () => DutyCatalog.DoneText(d, day, minute) + (trust ? "\n" + DutyCatalog.TrustLineText : string.Empty);
                     break;
                 default:
                     if (DutyCatalog.TimeLimitsEnabled) AddWarning(1, "duty." + d.Id);   // 103차: 다시 건 제한(W19·W21)은 넘겨도 경고 없음 — 신뢰 보상만 없다
-                    text = DutyCatalog.MissedText(d);
+                    build = () => DutyCatalog.MissedText(d);
                     break;
             }
 
+            string text = build();
             Debug.Log("[NightRun] 근무 지시 " + ev + " — " + text);
-            EventBus.RaiseDutySent(new ParadoxMessage("duty." + d.Id + "." + ev.Outcome, d.Id, d.Space, text, minute));
+            EventBus.RaiseDutySent(new ParadoxMessage("duty." + d.Id + "." + ev.Outcome, d.Id, d.Space, text, minute, build));
         }
 
         /// <summary>103차(축 균형): 그 밤 지시로 축마다 내려간 양(상한 <see cref="DutyCatalog.ReliefCapPerAxis"/>).</summary>
@@ -284,7 +286,7 @@ namespace NightDuty
             _stallNagSerial++;
             string nag = string.Format(StallNagText, backlog);
             Debug.Log("[NightRun] 점검 독촉 — " + nag);
-            EventBus.RaiseDutySent(new ParadoxMessage("inspection.nag." + _stallNagSerial, null, SpaceId.None, nag, CurrentMinute()));
+            EventBus.RaiseDutySent(new ParadoxMessage("inspection.nag." + _stallNagSerial, null, SpaceId.None, nag, CurrentMinute(), () => string.Format(StallNagText, backlog)));
             if (_tension != null) _tension.Pacer.Impulse(PacerImpulse.Order);
         }
 

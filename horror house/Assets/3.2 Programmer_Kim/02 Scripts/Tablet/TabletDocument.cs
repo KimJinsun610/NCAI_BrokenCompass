@@ -282,8 +282,8 @@ public class TabletDocument : MonoBehaviour
     {
         switch (tab)
         {
-            case Tab.Rules: return "근무 수칙";
-            default: return "메시지";
+            case Tab.Rules: return Loc.T("tablet.tab.rules", "근무 수칙");
+            default: return Loc.T("tablet.tab.messages", "메시지");
         }
     }
 
@@ -411,7 +411,7 @@ public class TabletDocument : MonoBehaviour
 
         if (sectionTitleText != null)
         {
-            sectionTitleText.text = _tab == Tab.Messages ? "수신 메시지" : TabName(_tab);
+            sectionTitleText.text = _tab == Tab.Messages ? Loc.T("tablet.inbox", "수신 메시지") : TabName(_tab);
         }
 
         if (bodyText != null)
@@ -427,10 +427,10 @@ public class TabletDocument : MonoBehaviour
         if (countText != null)
         {
             int count = ItemCount;
-            countText.text = count > 0 ? count + " 항목" : string.Empty;
+            countText.text = count > 0 ? string.Format(Loc.T("tablet.count", "{0} 항목"), count) : string.Empty;
         }
 
-        if (disclaimerText != null) disclaimerText.text = disclaimer;
+        if (disclaimerText != null) disclaimerText.text = Loc.K(disclaimer);
 
         RenderHintLine();
     }
@@ -444,13 +444,13 @@ public class TabletDocument : MonoBehaviour
     /// <summary>발신 · 문서번호 · 발행 시각.</summary>
     private void RenderDocumentHeader()
     {
-        if (senderText != null) senderText.text = "발신 " + senderName;
+        if (senderText != null) senderText.text = string.Format(Loc.T("tablet.sender", "발신 {0}"), Loc.K(senderName));
 
         if (documentText == null) return;
 
         // 문서번호는 일차를 두 자리로 붙인다(1일차 → NS-217-01).
         string number = documentPrefix + "-" + _loadedDay.ToString("00");
-        documentText.text = number + " · 발행 " + IssueTimeText();
+        documentText.text = number + " · " + string.Format(Loc.T("tablet.issued", "발행 {0}"), IssueTimeText());
     }
 
     /// <summary>근무일 · 근무 시간 범위 · 순찰 지점 수.</summary>
@@ -458,9 +458,9 @@ public class TabletDocument : MonoBehaviour
     {
         if (dutyBarText == null) return;
 
-        string day = "근무일 " + _loadedDay + " / " + GameSession.FinalDay;
+        string day = string.Format(Loc.T("tablet.day", "근무일 {0} / {1}"), _loadedDay, GameSession.FinalDay);
         string range = ShiftRangeText();
-        string points = "순찰 지점 " + patrolPointCount + "곳";
+        string points = string.Format(Loc.T("tablet.points", "순찰 지점 {0}곳"), patrolPointCount);
 
         dutyBarText.text = string.IsNullOrEmpty(range)
             ? day + "   " + points
@@ -518,7 +518,7 @@ public class TabletDocument : MonoBehaviour
         string tabHint = KeyLabel(switchTabKey) + " : " + TabName(NextTab(_tab));
         bool canScroll = _totalLines > visibleLines;
 
-        hintText.text = canScroll ? "휠 : 스크롤   " + tabHint : tabHint;
+        hintText.text = canScroll ? Loc.T("tablet.scroll", "휠 : 스크롤") + "   " + tabHint : tabHint;
     }
 
     /// <summary>KeyCode를 화면에 적기 좋은 짧은 이름으로 바꾼다.</summary>
@@ -559,7 +559,7 @@ public class TabletDocument : MonoBehaviour
 
     private string BuildRules()
     {
-        if (_rules.Count == 0) return "오늘 배정된 수칙이 없습니다.";
+        if (_rules.Count == 0) return Loc.T("tablet.norules", "오늘 배정된 수칙이 없습니다.");
 
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
         for (int i = 0; i < _rules.Count; i++)
@@ -582,7 +582,7 @@ public class TabletDocument : MonoBehaviour
     /// <summary>수신 시각 + 본문. 발신자는 적지 않고 최신순으로 쌓는다.</summary>
     private string BuildMessages()
     {
-        if (messageList == null || messageList.Count == 0) return "수신된 메시지가 없습니다.";
+        if (messageList == null || messageList.Count == 0) return Loc.T("tablet.nomessages", "수신된 메시지가 없습니다.");
 
         System.Text.StringBuilder sb = new System.Text.StringBuilder();
         IReadOnlyList<TabletMessageList.Message> list = messageList.Messages;

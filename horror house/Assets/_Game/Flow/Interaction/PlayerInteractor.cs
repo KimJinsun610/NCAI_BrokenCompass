@@ -48,7 +48,7 @@ public sealed class PlayerInteractor : MonoBehaviour
     private static float DefaultReach => global::NightDuty.DesignData.Setting(390307);   // DT 390307 문·수납 조작 거리
 
     /// <summary>기획에 없는 문, 그리고 열쇠가 필요한 문에 띄우는 한 줄.</summary>
-    private const string SealedPrompt = "잠겨 있습니다";
+    private static string SealedPrompt => Loc.T("prompt.locked", "잠겨 있습니다");
 
     /// <summary>
     /// 조준선의 굵기(m). <b>0이면 안 됩니다</b> — 여닫이 두 짝 사이의 실틈으로 레이가 빠져나가
@@ -238,11 +238,11 @@ public sealed class PlayerInteractor : MonoBehaviour
                 return;   // 멀어지면 스스로 닫히는 문이다. 「닫기」를 권하지 않는다.
             }
 
-            _prompt = "[" + interactKey + "] " + (storage ? "닫기" : "문 닫기");
+            _prompt = "[" + interactKey + "] " + (storage ? Loc.T("prompt.close", "닫기") : Loc.T("prompt.door.close", "문 닫기"));
         }
         else
         {
-            _prompt = "[" + interactKey + "] " + (storage ? "열기" : "문 열기");
+            _prompt = "[" + interactKey + "] " + (storage ? Loc.T("prompt.open", "열기") : Loc.T("prompt.door.open", "문 열기"));
         }
 
         _actionable = true;

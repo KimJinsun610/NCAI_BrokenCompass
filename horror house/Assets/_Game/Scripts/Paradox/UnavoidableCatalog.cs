@@ -68,6 +68,23 @@ namespace NightDuty
         }
 
         /// <summary>쌍의 수칙인지.</summary>
+        /// <summary>
+        /// 2026-11-22: 문자의 지금 언어 글. 함정 쌍은 DT Rule Trap_Text, 교차·연쇄 두 쌍은 코드 글(번역 키 unavoidable.{Id}).
+        /// 한국어면 <see cref="Message"/>와 같다(시험이 지킨다).
+        /// </summary>
+        public string ShownMessage
+        {
+            get
+            {
+                switch (Id)
+                {
+                    case "S5xH3": return Loc.T("unavoidable.S5xH3", "복도에 인원이 둘입니다.");
+                    case "H4xT1": return Loc.T("unavoidable.H4xT1", "복도에 육성이 감지되었습니다.");
+                    default: return Rules.Length > 0 ? Loc.Dt(Rules[0], "Trap_Text", Message) : Message;
+                }
+            }
+        }
+
         public bool Has(string ruleId)
         {
             return ruleId != null && Array.IndexOf(Rules, ruleId) >= 0;

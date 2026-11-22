@@ -76,9 +76,22 @@ namespace NightDuty
         public string DisplayTextOf(string ruleId)
         {
             if (ruleId == null) return null;
-            if (ruleId == Tampered) return TamperText;
-            if (ruleId == Blacked) return BlackedText;
+            if (ruleId == Tampered) return Loc.IsKorean ? TamperText : ShownTamper();
+            if (ruleId == Blacked) return BlackedText;   // 먹색 막대 — 언어와 무관
             return null;
+        }
+
+        /// <summary>
+        /// 2026-11-22: 변조본을 지금 언어로. 편성 때 한국어로 정한 글이 붕괴형(DT 변조본)인지 미세 변조(원문 + 「?」)인지 보고 같은 방식으로 다시 만든다.
+        /// 논리는 언어와 무관하다 — 붕괴형은 언어별로 써 둔 변조본, 미세 변조는 그 언어의 원문에 같은 규칙.
+        /// </summary>
+        private string ShownTamper()
+        {
+            ParadoxEntry entry = ParadoxCatalog.Find(Tampered);
+            if (entry != null && entry.HasVariant && TamperText == entry.Variant) return entry.ShownVariant;
+            RuleDef def = ProgramCatalog.Rule(Tampered);
+            if (def != null && TamperText == ParadoxCatalog.Subtle(def.Text)) return ParadoxCatalog.Subtle(def.ShownText);
+            return TamperText;
         }
     }
 

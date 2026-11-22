@@ -1,4 +1,5 @@
-﻿using TMPro;
+﻿using NightDuty;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -20,8 +21,8 @@ using UnityEngine.UI;
 public sealed class TabletIntroCallout : MonoBehaviour
 {
     public const int Day = 1;
-    public const string Title = "지시 사항을 확인하시오.";
-    public static readonly string[] Lines = { "TAB - 메시지/수칙 전환", "우클릭 - 태블릿 내리기" };
+    public static string Title => Loc.T("tablet.intro.title", "지시 사항을 확인하시오.");
+    public static string[] Lines => new[] { Loc.T("tablet.intro.tab", "TAB - 메시지/수칙 전환"), Loc.T("tablet.intro.rmb", "우클릭 - 태블릿 내리기") };
 
     /// <summary>태블릿을 못 찾거나 확대가 안 될 때 기다리는 한도(실제 초).</summary>
     public const float GiveUpSeconds = 10f;

@@ -134,15 +134,23 @@ namespace NightDuty
             }
         }
 
-        /// <summary>문자 본문.</summary>
+        /// <summary>문자 본문(한국어 정본 — 기록·로그·시험).</summary>
         public string Message
         {
-            get
-            {
-                if (_entry == null) return string.Empty;
-                if (_entry.RuleId == "110030") return string.Format(_entry.Message, (_plan.EmptyRoomChannel + 1).ToString("00"));
-                return _entry.Message;
-            }
+            get { return Fill(_entry == null ? null : _entry.Message); }
+        }
+
+        /// <summary>2026-11-22: 문자 본문의 지금 언어 글. 번역은 {0}을 채우기 <b>전</b> 글로 찾는다(K2 「CAM{0}」).</summary>
+        public string ShownMessage
+        {
+            get { return Fill(_entry == null ? null : _entry.ShownMessage); }
+        }
+
+        private string Fill(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return string.Empty;
+            if (_entry.RuleId == "110030") return string.Format(text, (_plan.EmptyRoomChannel + 1).ToString("00"));
+            return text;
         }
 
         /// <summary>

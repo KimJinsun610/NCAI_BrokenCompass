@@ -1,3 +1,4 @@
+using NightDuty;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -500,7 +501,7 @@ public class OpeningController : MonoBehaviour
     private void SetCaption(string text)
     {
         if (caption == null) return;
-        caption.text = text != null ? text : string.Empty;
+        caption.text = text != null ? Loc.K(text) : string.Empty;   // 2026-11-22: 자막은 번역표에서(씬에는 한국어 그대로)
         caption.gameObject.SetActive(!string.IsNullOrEmpty(text));
     }
 }

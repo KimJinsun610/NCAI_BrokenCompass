@@ -26,6 +26,14 @@ public sealed class TabletGlyphGlitch : MonoBehaviour
 
     private static readonly string[] Pool = { "ㅁ", "ㅅ", "ㅇ", "ㅗ", "ㅓ", "ㅣ", "ㅠ", "?", "#", "잉", "뢰", "퀴", "꿻", "ㅂㅂ", "…" };
 
+    /// <summary>2026-11-22: 영어일 때의 깨진 글자 — 자모·괴이 음절 대신 낱글자·기호(같은 느낌, 영어 글꼴에 있는 글자).</summary>
+    private static readonly string[] LatinPool = { "q", "x", "z", "j", "?", "#", "%", "&", "vv", "/", "rn", "…" };
+
+    private static string[] CurrentPool
+    {
+        get { return Loc.IsKorean ? Pool : LatinPool; }
+    }
+
     /// <summary>한 번에 깨질 글자 수.</summary>
     public static int CountFor(Band band, float progress)
     {
@@ -181,7 +189,8 @@ public sealed class TabletGlyphGlitch : MonoBehaviour
         if (spots.Count == 0) return false;
 
         int at = spots[Random.Range(0, spots.Count)];
-        string next = cur.Substring(0, at) + Pool[Random.Range(0, Pool.Length)] + cur.Substring(at + 1);
+        string[] pool = CurrentPool;
+        string next = cur.Substring(0, at) + pool[Random.Range(0, pool.Length)] + cur.Substring(at + 1);
 
         if (hit == null)
         {

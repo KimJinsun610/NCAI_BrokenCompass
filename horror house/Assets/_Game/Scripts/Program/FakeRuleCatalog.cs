@@ -61,7 +61,14 @@
         public static string ForDay(int day, int k = 0)
         {
             int i = IndexFor(day, k);
-            return i >= 0 ? Lines[i] : null;
+            return i >= 0 ? Loc.Dt(_ids[i], "Text", Lines[i]) : null;   // 2026-11-22: 지금 언어 글(한국어면 그대로)
+        }
+
+        /// <summary>2026-11-22: 그 장식 줄 ID의 지금 언어 글(언어를 바꿀 때 태블릿 카드를 다시 쓴다). 장식 줄이 아니면 null.</summary>
+        public static string TextOf(string id)
+        {
+            int i = _ids == null || id == null ? -1 : System.Array.IndexOf(_ids, id);
+            return i >= 0 ? Loc.Dt(_ids[i], "Text", Lines[i]) : null;
         }
 
         /// <summary>그날 k번째 가짜 수칙의 표시 ID(「F1」…). 없으면 null.</summary>

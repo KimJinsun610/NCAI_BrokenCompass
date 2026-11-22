@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using NightDuty;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -24,11 +25,11 @@ public sealed class ControlHints : MonoBehaviour
     /// <summary>안내 줄(키 글자들, 설명).</summary>
     public static readonly string[][] Rows =
     {
-        new[] { "W", "A", "S", "D", "이동" },
-        new[] { "E", "상호작용" },
-        new[] { "좌클릭", "손전등" },
-        new[] { "우클릭", "태블릿 들기" },
-        new[] { "Tab", "메시지 / 수칙 전환" },
+        new[] { "W", "A", "S", "D", Loc.T("hint.move", "이동") },
+        new[] { "E", Loc.T("hint.interact", "상호작용") },
+        new[] { Loc.T("hint.lmb", "좌클릭"), Loc.T("hint.flashlight", "손전등") },
+        new[] { Loc.T("hint.rmb", "우클릭"), Loc.T("hint.tablet", "태블릿 들기") },
+        new[] { "Tab", Loc.T("hint.switch", "메시지 / 수칙 전환") },
     };
 
     // 옛 그림에서 잰 자리(1920×1080 기준, 화면 왼쪽 위 원점, 아래로 −).

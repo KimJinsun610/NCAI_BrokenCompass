@@ -142,7 +142,7 @@ namespace NightDuty
             if (Day >= FinaleWatch.Day)
             {
                 RuleDef g3 = ProgramCatalog.Rule(ProgramCatalog.FinaleBlankRule);
-                if (g3 != null) _displayDeck.Add(DisplayCard(g3.Id, g3.Space, g3.Text, string.Empty));
+                if (g3 != null) _displayDeck.Add(DisplayCard(g3.Id, g3.Space, g3.ShownText, string.Empty));
             }
         }
 

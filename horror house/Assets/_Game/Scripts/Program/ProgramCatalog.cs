@@ -24,6 +24,12 @@ namespace NightDuty
         /// <summary>태블릿 문구(공문 말투 한 문장).</summary>
         public readonly string Text;
 
+        /// <summary>2026-11-22: 태블릿에 보일 글 — <see cref="Text"/>(한국어 정본)의 지금 언어 글. 판정·기록은 <see cref="Text"/>를 쓴다.</summary>
+        public string ShownText
+        {
+            get { return Loc.Dt(Id, "Text", Text); }
+        }
+
         /// <summary>위협 수칙(어기면 +20만, 지키면 신뢰 +3만).</summary>
         public readonly bool IsThreat;
 
@@ -197,6 +203,12 @@ namespace NightDuty
 
         /// <summary>빈칸이 채워진 G3 문구(최종 기획서: 빈칸은 「당신」).</summary>
         public const string FinaleBlankFilled = "이 수칙서와 태블릿 공지가 다를 경우 당신을 따르십시오.";
+
+        /// <summary>2026-11-22: 채워진 G3의 지금 언어 글 — DT G3 행 Blank_Decoded의 번역(한국어면 <see cref="FinaleBlankFilled"/>).</summary>
+        public static string FinaleBlankFilledText
+        {
+            get { return Loc.Dt(FinaleBlankRule, "Blank_Decoded", FinaleBlankFilled); }
+        }
 
         /// <summary>역보고 수칙(회차당 최대 2번).</summary>
         public const string ReverseReportRule = "110019";

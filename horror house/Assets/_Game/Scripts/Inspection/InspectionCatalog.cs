@@ -40,7 +40,24 @@ namespace NightDuty
         public readonly AnomalyTemplate Template;
 
         /// <summary>점검표 문구 — 76차부터 민 문구(「~의 상태 보고.」·「~인지 확인.」). 옛 52~67차는 정상 상태를 단정하는 문장이었다.</summary>
-        public readonly string TabletLine;
+        /// <summary>2026-11-22: 화면(점검 안내 띠)에 보일 짧은 이름 — 지금 언어(번역 키 inspect.name.{Id}, 목록은 LocTable.FromCatalogs). 기록·개발 패널은 <see cref="Name"/>.</summary>
+        public string ShownName
+        {
+            get { return Loc.T(NameKey(Id), Name); }
+        }
+
+        /// <summary>짧은 이름의 번역 키.</summary>
+        public static string NameKey(string id)
+        {
+            return "inspect.name." + id;
+        }
+
+        public string TabletLine
+        {
+            get { return Loc.Dt(Id, "Text", _tabletLine); }   // 2026-11-22: 지금 언어 글(정본은 DT Task_Table 한국어)
+        }
+
+        private readonly string _tabletLine;
 
         /// <summary>항목을 만든다.</summary>
         public InspectionItem(string id, string name, SpaceId space, FearAxis axis, AnomalyTemplate template, string tabletLine)
@@ -50,7 +67,7 @@ namespace NightDuty
             Space = space;
             Axis = axis;
             Template = template;
-            TabletLine = tabletLine;
+            _tabletLine = tabletLine;
         }
 
         /// <summary>씬의 점검 대상 ID(<c>inspect.H-1</c>). 센서·연출이 이 ID로 대상을 찾는다.</summary>
@@ -180,8 +197,8 @@ namespace NightDuty
         /// </summary>
         public static string ReportWord(string itemId, bool anomaly)
         {
-            if (itemId == "135009") return anomaly ? "없음" : "있음";
-            return anomaly ? "이상" : "정상";
+            if (itemId == "135009") return anomaly ? Loc.T("inspect.word.absent", "없음") : Loc.T("inspect.word.present", "있음");
+            return anomaly ? Loc.T("inspect.word.abnormal", "이상") : Loc.T("inspect.word.normal", "정상");
         }
 
         /// <summary>ID로 찾는다. 없으면 null.</summary>

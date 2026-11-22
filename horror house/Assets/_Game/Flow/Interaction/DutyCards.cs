@@ -217,7 +217,7 @@ public sealed class DutyCards : MonoBehaviour
         {
             Transform outline = KeyBoxOutline();
             if (outline != null) InteractionOutline.Request(outline);
-            ClaimPrompt("[E] 출입 카드 넣기");
+            ClaimPrompt(Loc.T("prompt.card.insert", "[E] 출입 카드 넣기"));
             if (Pressed()) Deliver();
             return;
         }
@@ -227,7 +227,7 @@ public sealed class DutyCards : MonoBehaviour
             s_cardAimFrame = Time.frameCount;
             PlayerInteractor.SuppressThisFrame();   // 102차: [E]가 서랍을 같이 닫지 않게
             InteractionOutline.Request(_card.transform);
-            ClaimPrompt("[E] 출입 카드 줍기");
+            ClaimPrompt(Loc.T("prompt.card.pickup", "[E] 출입 카드 줍기"));
             if (Pressed()) Take();
             return;
         }

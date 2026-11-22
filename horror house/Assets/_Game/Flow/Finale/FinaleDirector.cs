@@ -170,31 +170,33 @@ public sealed class FinaleDirector : MonoBehaviour
         Active = this;
         ApplyDesignData();
         Phase = "대기";
+        Loc.Changed += ApplyDesignData;   // 2026-11-22: 언어가 바뀌면 다음 문자부터 그 언어로(이미 보낸 문자는 그대로)
     }
 
     /// <summary>DT Message_Table에서 문구·시간을 읽는다. 표에 칸이 없는 값(바뀌는 시간 2초·정지 0.2초·K4 3초·글자 색)은 코드 값.</summary>
     private void ApplyDesignData()
     {
-        var ret = DesignData.MessageRow(140021); shiftOverNotice = ret.Text; fadeSeconds = ret.Delay_Sec; noticeSeconds = ret.Show_Sec;
+        var ret = DesignData.MessageRow(140021); shiftOverNotice = DesignData.MsgText(ret); fadeSeconds = ret.Delay_Sec; noticeSeconds = ret.Show_Sec;
         openingNotice = DesignData.Msg(140022);
-        var letIn = DesignData.MessageRow(140023); letInLine = letIn.Text; letInInterval = letIn.Repeat_Interval_Sec;
+        var letIn = DesignData.MessageRow(140023); letInLine = DesignData.MsgText(letIn); letInInterval = letIn.Repeat_Interval_Sec;
         letInMorphSeconds = DesignData.Fx(421603, "괴이문자→「들여보내줘」 바뀜(초)");   // DT Fx 421603
         letInHoldSeconds = Mathf.Max(0f, letIn.Repeat_Duration_Sec - letInMorphSeconds);   // 응시 창 4.5초 = 바뀌는 시간 + 온전한 시간
-        var came = DesignData.MessageRow(140024); cameIn = came.Text; seenClearDelay = came.Delay_Sec;
-        var s2 = DesignData.MessageRow(140025); seenLines = new[] { s2.Text, DesignData.Msg(140026) }; cameInLineGap = s2.Delay_Sec;
-        var b1 = DesignData.MessageRow(140027); incidentLine = b1.Text; beforeBurstSeconds = b1.Delay_Sec;
-        var b2 = DesignData.MessageRow(140028); confirmedLine = b2.Text; seenLineGap = b2.Delay_Sec; burstInterval = b2.Repeat_Interval_Sec; confirmedSeconds = b2.Repeat_Duration_Sec;
-        var b3 = DesignData.MessageRow(140029); actionLine = b3.Text; actionSeconds = b3.Repeat_Duration_Sec;
+        var came = DesignData.MessageRow(140024); cameIn = DesignData.MsgText(came); seenClearDelay = came.Delay_Sec;
+        var s2 = DesignData.MessageRow(140025); seenLines = new[] { DesignData.MsgText(s2), DesignData.Msg(140026) }; cameInLineGap = s2.Delay_Sec;
+        var b1 = DesignData.MessageRow(140027); incidentLine = DesignData.MsgText(b1); beforeBurstSeconds = b1.Delay_Sec;
+        var b2 = DesignData.MessageRow(140028); confirmedLine = DesignData.MsgText(b2); seenLineGap = b2.Delay_Sec; burstInterval = b2.Repeat_Interval_Sec; confirmedSeconds = b2.Repeat_Duration_Sec;
+        var b3 = DesignData.MessageRow(140029); actionLine = DesignData.MsgText(b3); actionSeconds = b3.Repeat_Duration_Sec;
         terminatedLine = DesignData.Msg(140030);
         handoverLine = DesignData.Msg(140031);
         var b6 = DesignData.MessageRow(140032); chaosLines = DesignData.MsgParts(140032); chaosInterval = b6.Repeat_Interval_Sec; chaosSeconds = b6.Repeat_Duration_Sec;
-        var fin = DesignData.MessageRow(140033); finalLine = fin.Text; finalLineSeconds = fin.Show_Sec;
+        var fin = DesignData.MessageRow(140033); finalLine = DesignData.MsgText(fin); finalLineSeconds = fin.Show_Sec;
         blackSilenceSeconds = Mathf.Max(0f, fin.Delay_Sec - freezeSeconds);   // 정지 0.2초 + 검은 화면 2초 = 2.2초
         checkoutNotice = DesignData.Msg(140034);
     }
 
     private void OnDisable()
     {
+        Loc.Changed -= ApplyDesignData;
         NightRun.Finale.Violation -= OnViolation;
         NightRun.Finale.CloseGazeWindow();
         DisarmDoors();
@@ -769,8 +771,12 @@ public sealed class FinaleDirector : MonoBehaviour
     private static readonly int[] WeirdMedials = { 3, 7, 10, 11, 14, 15, 16, 19 };              // ㅒ ㅖ ㅙ ㅚ ㅝ ㅞ ㅟ ㅢ
     private static readonly int[] WeirdFinals = { 3, 5, 6, 9, 10, 11, 12, 13, 14, 15, 18, 27 }; // ㄳ ㄵ ㄶ ㄺ ㄻ ㄼ ㄽ ㄾ ㄿ ㅀ ㅄ ㅎ
 
+    /// <summary>2026-11-22: 영어일 때 괴이문자 — 겹받침 음절 대신 낱글자·기호(「let me in」으로 바뀌어 간다).</summary>
+    private const string WeirdLatin = "qxzjkvwyh#%&?/";
+
     private char WeirdChar(TMP_FontAsset font)
     {
+        if (!Loc.IsKorean) return WeirdLatin[_rng.Next(WeirdLatin.Length)];
         for (int guard = 0; guard < 40; guard++)
         {
             int ini = WeirdInitials[_rng.Next(WeirdInitials.Length)];

@@ -201,11 +201,11 @@ public class ResultController : MonoBehaviour
 
         if (titleText != null)
         {
-            titleText.text = string.Format(died ? diedTitleFormat : completedTitleFormat, summary.Day);
+            titleText.text = string.Format(Loc.K(died ? diedTitleFormat : completedTitleFormat), summary.Day);
         }
         if (statsText != null)
         {
-            statsText.text = string.Format(statsFormat,
+            statsText.text = string.Format(Loc.K(statsFormat),
                 summary.PatrolDone, summary.PatrolTotal, summary.Violations,
                 summary.ConflictsHandled, summary.ConflictsTotal);
         }
@@ -224,7 +224,7 @@ public class ResultController : MonoBehaviour
         // 사망 → 처음부터 / 근무 완료 → 다음 근무 / 마지막 날 완료 → 메인으로만
         bool showNext = died || summary.Day < GameSession.FinalDay;
         if (nextButton != null) nextButton.gameObject.SetActive(showNext);
-        if (nextLabel != null) nextLabel.text = died ? restartLabel : nextDayLabel;
+        if (nextLabel != null) nextLabel.text = Loc.K(died ? restartLabel : nextDayLabel);
     }
 
     private void PrepareHidden()

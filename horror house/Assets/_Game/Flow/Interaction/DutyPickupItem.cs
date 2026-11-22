@@ -52,7 +52,7 @@ public sealed class DutyPickupItem : MonoBehaviour
     {
         _target = target ?? string.Empty;
         _dutyId = dutyId ?? string.Empty;
-        _prompt = string.IsNullOrEmpty(prompt) ? "[E] 줍기" : prompt;
+        _prompt = string.IsNullOrEmpty(prompt) ? Loc.T("prompt.pickup", "[E] 줍기") : prompt;
         Renderer[] all = GetComponentsInChildren<Renderer>(true);
         System.Collections.Generic.List<Renderer> shown = new System.Collections.Generic.List<Renderer>(all.Length);
         for (int i = 0; i < all.Length; i++)

@@ -1,3 +1,4 @@
+using NightDuty;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -81,12 +82,12 @@ public class DutyLogView : MonoBehaviour
     {
         int day = result.Summary.Day;
 
-        SetText(dayText, string.Format(dayFormat, day, finalDay));
-        SetText(hoursText, hoursLabel);
-        SetText(patrolText, patrolLabel);
-        SetText(specialNotesText, specialNotes);
-        SetText(disclaimerText, disclaimer);
-        SetText(remainingText, string.Format(remainingFormat, Mathf.Max(0, finalDay - day)));
+        SetText(dayText, string.Format(Loc.K(dayFormat), day, finalDay));
+        SetText(hoursText, Loc.K(hoursLabel));
+        SetText(patrolText, Loc.K(patrolLabel));
+        SetText(specialNotesText, Loc.K(specialNotes));
+        SetText(disclaimerText, Loc.K(disclaimer));
+        SetText(remainingText, string.Format(Loc.K(remainingFormat), Mathf.Max(0, finalDay - day)));
 
         BuildRows(result.LogLines);
 

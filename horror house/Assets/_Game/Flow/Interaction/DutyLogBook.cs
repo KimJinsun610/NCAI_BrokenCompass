@@ -20,7 +20,7 @@ public sealed class DutyLogBook : MonoBehaviour
     public const float Reach = 1.6f;
 
     /// <summary>안내 줄.</summary>
-    public const string PromptText = "[E] 근무일지 서명";
+    public static string PromptText => Loc.T("prompt.logbook", "[E] 근무일지 서명");
 
     /// <summary>서명 소리 키(연출 소리 표). 103차: 표에 넣음. 104차: 판서 소리 전용 클립 `SFX_CLASS_DutySign`(0.82초, 분필 획 넷).</summary>
     public const string SoundKey = "duty.sign";

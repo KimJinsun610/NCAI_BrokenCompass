@@ -64,7 +64,15 @@ public static class GameLanguage
         s_current = lang;
         PlayerPrefs.SetInt(Key, (int)lang);
         PlayerPrefs.Save();
+        NightDuty.Loc.Set((NightDuty.TextLang)(int)lang);   // 2026-11-22: 코어(수칙·지시·문자) 글도 같은 언어로 — 태블릿이 그 자리에서 다시 그린다
         if (Changed != null) Changed();
+    }
+
+    /// <summary>2026-11-22: 첫 씬 전에 저장된 언어를 코어(<see cref="NightDuty.Loc"/>)에 넣는다 — 코어는 Flow를 모른다.</summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void PushToCore()
+    {
+        Load();
     }
 
     /// <summary>그 언어를 가리키는 칸의 글자(자기 언어로 — 「한국어」·「English」).</summary>
@@ -156,6 +164,25 @@ public static class GameLanguage
         }
     }
 
+    /// <summary>
+    /// 복제한 글자(<paramref name="copy"/>)가 원본(<paramref name="source"/>)이 처음 가졌던 글꼴·가로 배율을 기억하게 한다.
+    /// 2026-11-22 김진선님: 「영어 버전 메인의 OPTIONS만 폰트가 다르다」 — QUIT이 이미 한글 글꼴로 바뀐 뒤에 복제하면
+    /// 복제본은 한글 글꼴을 원래 글꼴로 기억해, 영어로 돌아와도 그대로 남았다(가로도 0.95가 한 번 더 곱해졌다).
+    /// 원본을 아직 본 적이 없으면 원본의 지금 값이 곧 처음 값이다.
+    /// </summary>
+    public static void InheritOriginal(TMP_Text source, TMP_Text copy)
+    {
+        if (source == null || copy == null) return;
+
+        TMP_FontAsset font;
+        if (!s_originalFont.TryGetValue(source, out font)) font = source.font;
+        s_originalFont[copy] = font;
+
+        float x;
+        if (!s_originalScaleX.TryGetValue(source, out x)) x = source.rectTransform.localScale.x;
+        s_originalScaleX[copy] = x;
+    }
+
     private static readonly System.Collections.Generic.Dictionary<TMP_Text, TMP_FontAsset> s_originalFont =
         new System.Collections.Generic.Dictionary<TMP_Text, TMP_FontAsset>();
 
@@ -214,5 +241,6 @@ public static class GameLanguage
         s_loaded = true;
         int raw = PlayerPrefs.GetInt(Key, (int)Default);
         s_current = raw == (int)Lang.English ? Lang.English : Lang.Korean;
+        NightDuty.Loc.Set((NightDuty.TextLang)(int)s_current);
     }
 }

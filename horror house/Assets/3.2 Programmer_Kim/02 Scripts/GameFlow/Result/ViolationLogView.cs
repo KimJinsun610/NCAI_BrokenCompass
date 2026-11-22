@@ -1,3 +1,4 @@
+using NightDuty;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -30,18 +31,18 @@ public class ViolationLogView : MonoBehaviour
         int count = times != null ? times.Length : 0;
         if (count == 0)
         {
-            AddRow(emptyText);
+            AddRow(Loc.K(emptyText));
             return;
         }
 
         int shown = count > maxRows ? maxRows - 1 : count;
         for (int i = 0; i < shown; i++)
         {
-            AddRow(string.Format(rowFormat, times[i]));
+            AddRow(string.Format(Loc.K(rowFormat), times[i]));
         }
         if (shown < count)
         {
-            AddRow(string.Format(overflowFormat, count - shown));
+            AddRow(string.Format(Loc.K(overflowFormat), count - shown));
         }
     }
 

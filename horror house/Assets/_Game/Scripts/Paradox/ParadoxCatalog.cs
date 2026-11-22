@@ -66,6 +66,18 @@ namespace NightDuty
         {
             get { return !string.IsNullOrEmpty(Variant); }
         }
+
+        /// <summary>2026-11-22: 역설 문자의 지금 언어 글(DT Rule Paradox_Text). 한국어면 <see cref="Message"/>.</summary>
+        public string ShownMessage
+        {
+            get { return Loc.Dt(RuleId, "Paradox_Text", Message); }
+        }
+
+        /// <summary>2026-11-22: 변조본의 지금 언어 글(DT Rule Variant_Text). 한국어면 <see cref="Variant"/>.</summary>
+        public string ShownVariant
+        {
+            get { return Loc.Dt(RuleId, "Variant_Text", Variant); }
+        }
     }
 
     /// <summary>

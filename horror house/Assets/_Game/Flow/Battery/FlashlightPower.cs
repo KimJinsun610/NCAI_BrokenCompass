@@ -86,7 +86,7 @@ public sealed class FlashlightPower : MonoBehaviour
     }
 
     /// <summary>104차: 소등 중 R을 눌렀을 때 알림.</summary>
-    public const string SwapLockedText = "정전 중에는 배터리를 갈 수 없습니다";
+    public static string SwapLockedText => Loc.T("battery.swaplocked", "정전 중에는 배터리를 갈 수 없습니다");
 
     /// <summary>
     /// 104차(사용자: 「소등되면 손전등도 잠깐 동안 꺼지도록 · 배터리 충전 키를 눌러도 충전 안 되도록 실수 예방」): 소등 연출이 부른다 —

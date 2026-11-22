@@ -39,8 +39,8 @@ public sealed class CctvSystem : MonoBehaviour
     /// <summary>조준선 굵기(m). <see cref="PlayerInteractor"/>와 같다.</summary>
     private const float AimRadius = 0.06f;
 
-    private const string EnterPrompt = "[E] CCTV 보기";
-    private const string ViewPrompt = "[A] [D] 채널 넘기기    [E] 그만 보기";
+    private static string EnterPrompt => Loc.T("cctv.enter", "[E] CCTV 보기");
+    private static string ViewPrompt => Loc.T("cctv.view", "[A] [D] 채널 넘기기    [E] 그만 보기");
 
     private static readonly Plane[] s_planes = new Plane[6];
     private static CctvSystem s_active;
@@ -249,7 +249,7 @@ public sealed class CctvSystem : MonoBehaviour
             return string.Empty;
         }
 
-        return config.Channels[index].label;
+        return Loc.K(config.Channels[index].label);   // 2026-11-22: 채널 이름(CctvConfig.asset)도 번역표에서
     }
 
     /// <summary>채널 카메라. 연출이 화각 안에 무엇을 둘지 계산할 때 쓴다. 범위 밖이면 null.</summary>
@@ -824,7 +824,7 @@ public sealed class CctvSystem : MonoBehaviour
 
         string name = _asciiLabels ? string.Empty : ChannelLabel(_channel);
         // 50차: 그날의 빈 방 채널(K2)에는 「공실」 표지 — 수칙 「공실 채널은 오래 보지 마십시오.」의 방아쇠가 화면에 보이게.
-        if (NightRun.EmptyRoomChannel >= 0 && NightRun.EmptyRoomChannel == _channel) name = _asciiLabels ? "VACANT" : (name.Length > 0 ? name + " · 공실" : "공실");
+        if (NightRun.EmptyRoomChannel >= 0 && NightRun.EmptyRoomChannel == _channel) name = _asciiLabels ? "VACANT" : (name.Length > 0 ? name + " · " + Loc.T("cctv.vacant", "공실") : Loc.T("cctv.vacant", "공실"));
         string clock = ClockText();
         bool rec = Mathf.Repeat(Time.time, 1f) < 0.5f;
 

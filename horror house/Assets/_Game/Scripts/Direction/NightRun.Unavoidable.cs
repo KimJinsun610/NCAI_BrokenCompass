@@ -103,7 +103,7 @@ namespace NightDuty
                 case UnavoidableStep.Staged:
                     _paradoxPlanner.MarkUnavoidable(def);
                     Debug.Log("[NightRun] 회피 불가 역설 " + def + ": " + def.Message);
-                    EventBus.RaiseMessageSent(new ParadoxMessage("unavoidable." + def.Id, def.Rules[0], def.Space, def.Message, CurrentMinute()));
+                    EventBus.RaiseMessageSent(new ParadoxMessage("unavoidable." + def.Id, def.Rules[0], def.Space, def.ShownMessage, CurrentMinute(), () => def.ShownMessage));
                     OrdersNoteMessage();
                     if (!string.IsNullOrEmpty(def.ChainEncounter) && _tension != null) _tension.ChainEncounter(def.ChainEncounter);
                     break;
@@ -207,7 +207,7 @@ namespace NightDuty
         private static string RuleCardText(RuleDef def, ParadoxPlan paradox)
         {
             if (_voidRules.Contains(def.Id)) return string.Empty;   // 57차: 조우가 끝내 오지 않은 수칙은 태블릿에서 뺀다(빈 글 = 카드 숨김)
-            string text = ShownRuleText(def.Id, paradox.DisplayTextOf(def.Id) ?? def.Text);   // 80차: 해독한 빈칸
+            string text = ShownRuleText(def.Id, paradox.DisplayTextOf(def.Id) ?? def.ShownText);   // 80차: 해독한 빈칸 · 2026-11-22: 지금 언어 글
             FinalJudge judge = _finalBook != null ? _finalBook.Judge(def.Id) : null;
             // 51차(민: 「태블릿에 수칙을 어긴 게 표시되지 않았으면」): 위반 얼룩을 쓰지 않는다. 위반은 현장 반응·몸·근무일지로만 안다.
             if (ShowViolationStain && judge != null && judge.Violated) text = "<mark=" + ViolationStain + ">" + text + "</mark>";

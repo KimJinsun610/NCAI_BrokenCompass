@@ -355,7 +355,7 @@ ko.e0fa529d,완료,계약서를 보내드리겠습니다.,I'll send over the con
 ko.659d0231,완료,단순 점검 업무라 어려운 일은 없으실 겁니다.,"It's simple inspection work, so it shouldn't be difficult.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[9].caption,초안 2026-11-22 (Claude) — 확정 필요
 ko.73829b3e,완료,"그럼 첫날 밤, 잘 부탁드립니다.","Well then, we're counting on you for the first night.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[10].caption,초안 2026-11-22 (Claude) — 확정 필요
 ko.67ff6dcd,완료,F키 눌러서 건너뛰기,Hold F to skip,,Assets/0. Main/01 Scene/OpeningScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
-ko.99d79392,완료,파견 근무 계약서,Assignment Contract,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-24 (Claude) — 계약서 칸에 맞게 줄임 · 확정 필요
+ko.99d79392,완료,파견 근무 계약서,Assignment Contract,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-24 (Claude) — 계약서 칸에 맞게 줄임 → 뉘앙스 보정(2026-11-24) · 확정 필요
 ko.a7fbc17f,완료,"<b>제1조 (근무)</b> 
 <margin-left=1.4em>철거 전 5일간, 매일 00:00부터 04:00까지 폐교 1층을 <nobr>순찰한다.</nobr></margin>
 <b>제2조 (업무)</b> 
@@ -369,18 +369,18 @@ ko.a7fbc17f,완료,"<b>제1조 (근무)</b>
 <b>제7조 (해지)</b> 
 <margin-left=1.4em>근무자가 근무를 이어갈 수 없는 경우,
 회사는 계약을 해지하고 근무기간 만큼 보상을 <nobr>지급한다.</nobr>","<b>Article 1 (Duty)</b> 
-<margin-left=1.4em>Patrol the first floor nightly, 00:00 to 04:00, for the 5 days before <nobr>demolition.</nobr></margin>
+<margin-left=1.4em>Patrol the first floor of the closed school nightly, 00:00 to 04:00, for the 5 days before <nobr>demolition.</nobr></margin>
 <b>Article 2 (Tasks)</b> 
 <margin-left=1.4em>Check inspection items and report [Normal] or [Abnormal] on the <nobr>tablet.</nobr></margin>
-<b>Article 3 (Contact)</b><margin-left=1.4em>Company instructions arrive as tablet messages, and all Company messages are sent normally.</margin>
-<b>Article 4 (Safety)</b><margin-left=1.4em>The Company is not liable for injury or mental change on duty.</margin>
+<b>Article 3 (Contact)</b><margin-left=1.4em>Company instructions arrive as tablet messages, and messages from the Company are delivered normally.</margin>
+<b>Article 4 (Safety)</b><margin-left=1.4em>The Company bears no responsibility for any injury or psychological change incurred on duty.</margin>
 <b>Article 5 (Secrecy)</b> 
-<margin-left=1.4em>Do not disclose anything seen or heard on site.</margin>
+<margin-left=1.4em>The Worker shall not disclose anything seen or heard on site to outside parties.</margin>
 <b>Article 6 (Worker)</b> 
-<margin-left=1.4em>Do not leave the post during working <nobr>hours.</nobr></margin>
+<margin-left=1.4em>The Worker may not leave the post during working <nobr>hours.</nobr></margin>
 <b>Article 7 (Termination)</b> 
-<margin-left=1.4em>If the worker cannot continue,
-the Company ends the contract and pays for days <nobr>worked.</nobr>",,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-24 (Claude) — 계약서 칸에 맞게 줄임 · 확정 필요
+<margin-left=1.4em>If the Worker is unable to continue,
+the Company shall terminate the contract and pay compensation for the period <nobr>served.</nobr>",,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-24 (Claude) — 계약서 칸에 맞게 줄임 → 뉘앙스 보정(2026-11-24) · 확정 필요
 ko.e4a402a9,완료,여기에 서명 (인),Sign here,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
 ko.e1ec0e55,완료,출근하기,Clock In,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
 ko.df68308e,완료,DAY {0} — 근무 종료,DAY {0} — SHIFT COMPLETE,,Assets/0. Main/01 Scene/ResultScene.unity · ResultController.completedTitleFormat,초안 2026-11-22 (Claude) — 확정 필요

@@ -124,7 +124,7 @@ public sealed class ResultInspectionNotes : MonoBehaviour
         {
             if (i > 0) sb.Append("  ·  ");
             // 「반납 상자 미완료」가 줄 끝에서 갈라지지 않게 — TMP는 한글 사이를 공백 없이도 끊으므로(47차: 「변기 / 미완료」) 항목 하나를 <nobr>로 묶는다.
-            sb.Append("<nobr>").Append(rows[i].Key.Name.Replace(' ', '\u00A0')).Append('\u00A0');
+            sb.Append("<nobr>").Append(rows[i].Key.ShownName.Replace(' ', '\u00A0')).Append('\u00A0');
             string label = InspectionLedger.Label(rows[i].Value);
             if (rows[i].Value == LedgerMark.Correct) sb.Append(label);
             else sb.Append("<color=").Append(WrongColor).Append('>').Append(label).Append("</color>");

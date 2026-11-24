@@ -73,9 +73,57 @@ public sealed class MapBoardYouAreHere : MonoBehaviour
             return;
         }
 
+        if (_shownLang != (int)Loc.Current) ApplyLanguage(FindPaper(gameObject.scene));
         if (Time.unscaledTime < _nextSync) return;
         _nextSync = Time.unscaledTime + SyncSeconds;
         SyncBatteries(FindPaper(gameObject.scene));
+    }
+
+    // ── 2026-11-24 로컬라이징: 영어 지도 ─────────────────────────
+
+    /// <summary>영어 지도 그림(Resources) — <c>MapBoardAgingBuilder</c>가 <c>Map_EN.png</c>를 한국어 지도와 같은 낡힘으로 굽는다. 크기·배치가 같아 방 사각형·배터리 자리는 그대로 쓴다.</summary>
+    public const string EnglishMapResource = "MapBoard/Map_EN_Aged";
+
+    /// <summary>영어 지도의 현재 위치 점 — 「SECURITY OFFICE」 두 줄 이름표가 한국어보다 커서 이름표 위 빈 바닥으로 올린다(이름표 위 끝 약 287px · 방 안쪽 위 끝 약 258px).</summary>
+    public static readonly Vector2 SecurityRoomUvEnglish = new Vector2(0.344f, 0.502f);
+
+    /// <summary>그 언어의 현재 위치 점 자리.</summary>
+    public static Vector2 YouAreHereUv(TextLang lang)
+    {
+        return lang == TextLang.English ? SecurityRoomUvEnglish : SecurityRoomUv;
+    }
+
+    private int _shownLang = -1;
+    private Texture _koreanMap;
+
+    /// <summary>
+    /// 지금 언어의 지도 그림으로 바꾸고 현재 위치 점을 옮긴다. 김진선님 머티리얼·프리팹은 그대로 — 이 인스턴스 재질(<see cref="Brighten"/>)의 그림만 바꾼다.
+    /// 영어 그림이 없으면 한국어 그대로.
+    /// </summary>
+    private void ApplyLanguage(Transform paper)
+    {
+        _shownLang = (int)Loc.Current;
+        if (paper == null) return;
+        MeshRenderer r = paper.GetComponent<MeshRenderer>();
+        if (r == null || r.sharedMaterial == null) return;
+        Material m = r.material;   // 인스턴스(Brighten이 이미 만듦)
+        if (_koreanMap == null) _koreanMap = m.HasProperty("_BaseMap") ? m.GetTexture("_BaseMap") : m.mainTexture;
+        Texture english = Loc.Current == TextLang.English ? Resources.Load<Texture2D>(EnglishMapResource) : null;
+        Texture tex = english != null ? english : _koreanMap;
+        if (m.HasProperty("_BaseMap")) m.SetTexture("_BaseMap", tex);
+        if (m.HasProperty("_MainTex")) m.SetTexture("_MainTex", tex);
+        if (m.HasProperty("_EmissionMap")) m.SetTexture("_EmissionMap", tex);
+
+        Transform holder = paper.parent != null ? paper.parent : paper;
+        Transform dot = holder.Find(DotName);
+        if (dot != null) dot.position = DotPosition(paper, YouAreHereUv(english != null ? TextLang.English : TextLang.Korean));
+    }
+
+    /// <summary>지도 종이 위 UV 자리에서 종이 앞으로 <see cref="Lift"/>만큼 띄운 점의 위치.</summary>
+    private static Vector3 DotPosition(Transform paper, Vector2 uv)
+    {
+        Vector3 surface = paper.TransformPoint(new Vector3(uv.x - 0.5f, uv.y - 0.5f, 0f));
+        return surface + paper.TransformDirection(Vector3.back).normalized * Lift;   // Quad 앞면은 −Z
     }
 
     // ── 80차: 손전등 없이도 보이는 지도 · 배터리 자리 ─────────────────────────

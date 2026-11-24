@@ -256,6 +256,9 @@ NightRun.RequestEndNight ─▶ 수칙·점검 정산 ─▶ DaySummary ─▶ E
 - **씬·프리팹·에셋·CSV에 저장된 글**(계약서·결과창 라벨·오프닝/엔딩 자막·로딩 팁 등)은 원문 자체가 키(`Loc.K(한국어)`, 키 `ko.`+해시)입니다. 도구가 빌드 씬과 그 의존 프리팹·에셋의 문자열 칸을 Unity가 읽은 값 그대로 모읍니다(제외 목록 `LocalizationSync.SkipFields` — 이름·메모·효과음 이름·가짜 데이터). **씬 파일은 고치지 않습니다.** 원문을 고치면 새 키가 됩니다.
 - 씬에 박힌 라벨·한 번 만드는 안내는 `LocTextSwapper`(Flow, 자동 설치)가 번역표의 한↔영 쌍으로 실행 중에 바꿉니다(0.25초마다 + 씬 열림·언어 전환 순간). 계속 바뀌는 글(자막·태블릿·안내 띠)은 쓰는 코드가 직접 `Loc`를 거칩니다 — 바꿈 장치에만 맡기면 한 틈 한국어가 보입니다.
 - 번역 목록 메뉴는 씬을 잠깐 열어 읽느라 오래 걸려 **다음 에디터 틱에 돕니다** — CLI로 부를 때 에디터 창이 뒤에 있으면 돌지 않으니 `editor_focus` 후 `Temp/LocalizationSyncReport.txt`를 확인합니다.
+- **EditMode 시험은 한국어로 돕니다**(`Tests/EditMode/LocalizationTestSetup.cs`가 시작 때 고정, 에디터는 플레이를 끄면 `Loc`를 한국어로 되돌림). 이 PC에 저장된 언어가 English여도 시험 문구 대조는 한국어입니다.
+- **영어는 길어서 한 줄을 나눠 쓰는 UI가 겹치기 쉽습니다.** 태블릿 탭 줄·안내 줄은 `TabletDocument.RenderHintLine`이 폭을 재서 넘치면 스크롤 안내를 뺍니다. 계약서 본문은 `ContractBodyFit`(Flow, 서명 칸이 있는 씬에 자동 설치)이 서명 칸 위까지만 오도록 넘칠 때만 글자를 줄입니다. 왼쪽 위 키 안내(`ControlHints`)는 언어가 바뀌면 다시 그려 키캡 폭을 새 글자에 맞춥니다 — **한 번 만들어 크기를 잰 UI는 화면 글자만 바꾸면(LocTextSwapper) 칸이 안 맞습니다**, 그런 UI는 `Loc.Changed`에서 다시 만드십시오. 새 UI 문구를 번역할 때는 플레이 모드에서 `TMP_Text.GetPreferredValues`로 폭을 재 확인합니다.
+- **그림 속 글은 언어별 그림입니다.** 경비실 벽 지도: 영어 원본 `Map_EN.png`(한국어 `Map_KR.png`와 같은 크기·배치여야 함 — 점·배터리 자리를 그대로 씀) → 메뉴 `Tools/Programmer_Kim/Map Board/Build Aged Map (EN only)` → `Resources/MapBoard/Map_EN_Aged.png`. 바꾸는 쪽은 `MapBoardYouAreHere.ApplyLanguage`(인스턴스 재질만, 프리팹 그대로).
 - 빈칸·변조본은 언어 무관 같은 논리(DT 해독문 칸 · 언어별 변조본). 용어·문체는 `../Docs/Claude outputs/로컬라이징_용어집_EN.md`, 진행은 `로컬라이징_영어번역_작업목록.md`.
 
 ---

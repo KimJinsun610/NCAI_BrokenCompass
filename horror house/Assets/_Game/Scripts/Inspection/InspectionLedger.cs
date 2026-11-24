@@ -48,10 +48,10 @@ namespace NightDuty
         {
             switch (mark)
             {
-                case LedgerMark.Correct: return "정확";
-                case LedgerMark.FalseReport: return "오보";
-                case LedgerMark.Missed: return "놓침";
-                default: return "미완료";
+                case LedgerMark.Correct: return Loc.T("ledger.correct", "정확");   // 2026-11-22: 결과창 「금일 점검」 — 지금 언어
+                case LedgerMark.FalseReport: return Loc.T("ledger.false", "오보");
+                case LedgerMark.Missed: return Loc.T("ledger.missed", "놓침");
+                default: return Loc.T("ledger.unfinished", "미완료");
             }
         }
 

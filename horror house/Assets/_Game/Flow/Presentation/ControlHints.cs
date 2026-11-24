@@ -23,14 +23,39 @@ public sealed class ControlHints : MonoBehaviour
     private const string GuideImageName = "info_text";
 
     /// <summary>안내 줄(키 글자들, 설명).</summary>
-    public static readonly string[][] Rows =
+    /// 2026-11-24: 지금 언어로 매번 만든다 — 키캡 폭을 그 언어 글자에 맞춰 재야 해서(영어 「Left Click」이 한국어 폭 칸을 넘쳤다).
+    public static string[][] Rows
     {
-        new[] { "W", "A", "S", "D", Loc.T("hint.move", "이동") },
-        new[] { "E", Loc.T("hint.interact", "상호작용") },
-        new[] { Loc.T("hint.lmb", "좌클릭"), Loc.T("hint.flashlight", "손전등") },
-        new[] { Loc.T("hint.rmb", "우클릭"), Loc.T("hint.tablet", "태블릿 들기") },
-        new[] { "Tab", Loc.T("hint.switch", "메시지 / 수칙 전환") },
-    };
+        get
+        {
+            return new[]
+            {
+                new[] { "W", "A", "S", "D", Loc.T("hint.move", "이동") },
+                new[] { "E", Loc.T("hint.interact", "상호작용") },
+                new[] { Loc.T("hint.lmb", "좌클릭"), Loc.T("hint.flashlight", "손전등") },
+                new[] { Loc.T("hint.rmb", "우클릭"), Loc.T("hint.tablet", "태블릿 들기") },
+                new[] { "Tab", Loc.T("hint.switch", "메시지 / 수칙 전환") },
+            };
+        }
+    }
+
+    private void OnEnable()
+    {
+        Loc.Changed += Rebuild;
+    }
+
+    private void OnDisable()
+    {
+        Loc.Changed -= Rebuild;
+    }
+
+    /// <summary>2026-11-24: 언어가 바뀌면 안내를 지우고 다음 프레임에 그 언어로 다시 그린다(키캡 폭·설명 위치를 새 글자에 맞춤).</summary>
+    private void Rebuild()
+    {
+        if (_root == null) return;
+        Destroy(_root.gameObject);
+        _root = null;
+    }
 
     // 옛 그림에서 잰 자리(1920×1080 기준, 화면 왼쪽 위 원점, 아래로 −).
     private const float Left = 58f;
@@ -164,9 +189,10 @@ public sealed class ControlHints : MonoBehaviour
         group.blocksRaycasts = false;
 
         TMP_FontAsset font = PickFont(hud);
-        for (int r = 0; r < Rows.Length; r++)
+        string[][] rows = Rows;
+        for (int r = 0; r < rows.Length; r++)
         {
-            string[] row = Rows[r];
+            string[] row = rows[r];
             float y = -(Top + r * RowStep);
             float x = Left;
             for (int k = 0; k < row.Length - 1; k++)

@@ -195,7 +195,7 @@
 140038.Text,완료,[E] 퇴근하기 → [E] 한 번 더 — 퇴근합니다,[E] Clock out → [E] Press again — Clock out,,Message_Table.Text,초안 2026-11-22 (Claude) — 확정 필요
 230001.Final_Text,완료,"근무 종료, 철거가 예정대로 진행됩니다.",Shift over. Demolition will proceed as scheduled.,,Ending_Table.Final_Text,초안 2026-11-22 (Claude) — 확정 필요
 credits.ending,완료,엔딩 {0},Ending {0},,Assets/3.2 Programmer_Kim/02 Scripts/GameFlow/EndingCredits.cs,초안 2026-11-22 (Claude) — 확정 필요
-tablet.tab.rules,완료,근무 수칙,Duty Rules,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.tab.rules,완료,근무 수칙,Rules,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-23 (Claude) — 태블릿 한 줄 폭에 맞춤 · 확정 필요
 tablet.tab.messages,완료,메시지,Messages,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
 tablet.inbox,완료,수신 메시지,Inbox,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
 tablet.count,완료,{0} 항목,{0} items,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
@@ -203,7 +203,9 @@ tablet.sender,완료,발신 {0},From {0},,Assets/3.2 Programmer_Kim/02 Scripts/T
 tablet.issued,완료,발행 {0},Issued {0},,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
 tablet.day,완료,근무일 {0} / {1},Day {0} / {1},,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
 tablet.points,완료,순찰 지점 {0}곳,{0} patrol points,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
-tablet.scroll,완료,휠 : 스크롤,Wheel : Scroll,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
+tablet.keyhint,완료,{0} : {1},{0}: {1},,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-23 (Claude) — 태블릿 한 줄 폭에 맞춤 · 확정 필요
+tablet.hint,완료,{0}   {1},{0}  {1},,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-23 (Claude) — 태블릿 한 줄 폭에 맞춤 · 확정 필요
+tablet.scroll,완료,휠 : 스크롤,Wheel: Scroll,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-23 (Claude) — 태블릿 한 줄 폭에 맞춤 · 확정 필요
 tablet.norules,완료,오늘 배정된 수칙이 없습니다.,No rules have been assigned today.,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
 tablet.nomessages,완료,수신된 메시지가 없습니다.,No messages received.,,Assets/3.2 Programmer_Kim/02 Scripts/Tablet/TabletDocument.cs,초안 2026-11-22 (Claude) — 확정 필요
 prompt.battery.pickup,완료,[E] 배터리 줍기,[E] Pick Up Battery,,Assets/_Game/Flow/Battery/BatteryStash.cs,초안 2026-11-22 (Claude) — 확정 필요
@@ -261,6 +263,10 @@ inspect.word.absent,완료,없음,Absent,,Assets/_Game/Scripts/Inspection/Inspec
 inspect.word.present,완료,있음,Present,,Assets/_Game/Scripts/Inspection/InspectionCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
 inspect.word.abnormal,완료,이상,Abnormal,,Assets/_Game/Scripts/Inspection/InspectionCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
 inspect.word.normal,완료,정상,Normal,,Assets/_Game/Scripts/Inspection/InspectionCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
+ledger.correct,완료,정확,Correct,,Assets/_Game/Scripts/Inspection/InspectionLedger.cs,초안 2026-11-23 (Claude) — 태블릿 한 줄 폭에 맞춤 · 확정 필요
+ledger.false,완료,오보,False report,,Assets/_Game/Scripts/Inspection/InspectionLedger.cs,초안 2026-11-23 (Claude) — 태블릿 한 줄 폭에 맞춤 · 확정 필요
+ledger.missed,완료,놓침,Missed,,Assets/_Game/Scripts/Inspection/InspectionLedger.cs,초안 2026-11-23 (Claude) — 태블릿 한 줄 폭에 맞춤 · 확정 필요
+ledger.unfinished,완료,미완료,Incomplete,,Assets/_Game/Scripts/Inspection/InspectionLedger.cs,초안 2026-11-23 (Claude) — 태블릿 한 줄 폭에 맞춤 · 확정 필요
 unavoidable.S5xH3,완료,복도에 인원이 둘입니다.,There are two people in the hallway.,,Assets/_Game/Scripts/Paradox/UnavoidableCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
 unavoidable.H4xT1,완료,복도에 육성이 감지되었습니다.,A human voice has been detected in the hallway.,,Assets/_Game/Scripts/Paradox/UnavoidableCatalog.cs,초안 2026-11-22 (Claude) — 확정 필요
 inspect.name.135001,완료,소화기,Fire extinguisher,,InspectionCatalog.Name,초안 2026-11-22 (Claude) — 확정 필요
@@ -322,14 +328,14 @@ ko.2e7497b3,완료,근무일 {0}일차 / {1},Day {0} / {1},,Assets/0. Main/01 Sc
 ko.fa323894,완료,근무 시간 00:00–04:00,Shift hours 00:00–04:00,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · DutyLogView.hoursLabel,초안 2026-11-22 (Claude) — 확정 필요
 ko.d7a2f048,완료,계약 잔여 {0}일,{0} days left on contract,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · DutyLogView.remainingFormat,초안 2026-11-22 (Claude) — 확정 필요
 ko.43df3a99,완료,야간 근무 일지,Night Duty Log,,Assets/0. Main/01 Scene/HUD_Result_Design.prefab · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.8512c8b3,완료,시설관리팀,Facilities Management,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TabletDocument.senderName,초안 2026-11-22 (Claude) — 확정 필요
+ko.5036515d,완료,본 지침 미준수로 발생한 사고 및 심리적 손상에 대해 회사는 책임지지 않습니다.,The Company accepts no liability for accidents or psychological harm resulting from failure to follow these guidelines.,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TabletDocument.disclaimer,초안 2026-11-22 (Claude) — 확정 필요
 ko.ade2fec2,완료,스크롤 : 페이지 넘김 | Q : 화면 전환,Scroll : Turn page | Q : Switch screen,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
 ko.8eee602e,완료,새 메시지 도착,New Message,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TabletAlarm.alarmMessage,초안 2026-11-22 (Claude) — 확정 필요
 ko.c3e27d5c,완료,새 지시 도착,New Instruction,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
-ko.ef897af2,완료,근무수칙,Duty Rules,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
-ko.0f127dce,완료,수칙 본문,Rule text,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
 ko.ed9263b5,완료,<b>근무수칙</b>   <color=#4C5D66>수행 지침</color>,<b>Duty Rules</b>   <color=#4C5D66>Guidelines</color>,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
-ko.8512c8b3,완료,시설관리팀,Facilities Management,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TabletDocument.senderName,초안 2026-11-22 (Claude) — 확정 필요
-ko.5036515d,완료,본 지침 미준수로 발생한 사고 및 심리적 손상에 대해 회사는 책임지지 않습니다.,The Company accepts no liability for accidents or psychological harm resulting from failure to follow these guidelines.,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TabletDocument.disclaimer,초안 2026-11-22 (Claude) — 확정 필요
+ko.0f127dce,완료,수칙 본문,Rule text,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.ef897af2,완료,근무수칙,Duty Rules,,Assets/3.2 Programmer_Kim/03 Prefebs/01 UI/HUD_Tablet_ver2.prefab · TextMeshPro.m_text,초안 2026-11-22 (Claude) — 확정 필요
 ko.83367b3c,완료,복도,HALLWAY,,Assets/_Game/Resources/CctvConfig.asset · CctvConfigSO.channels.Array.data[0].label,초안 2026-11-22 (Claude) — 확정 필요
 ko.bf425071,완료,교실,CLASSROOM,,Assets/_Game/Resources/CctvConfig.asset · CctvConfigSO.channels.Array.data[1].label,초안 2026-11-22 (Claude) — 확정 필요
 ko.2728f986,완료,과학실,SCIENCE LAB,,Assets/_Game/Resources/CctvConfig.asset · CctvConfigSO.channels.Array.data[2].label,초안 2026-11-22 (Claude) — 확정 필요
@@ -349,7 +355,7 @@ ko.e0fa529d,완료,계약서를 보내드리겠습니다.,I'll send over the con
 ko.659d0231,완료,단순 점검 업무라 어려운 일은 없으실 겁니다.,"It's simple inspection work, so it shouldn't be difficult.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[9].caption,초안 2026-11-22 (Claude) — 확정 필요
 ko.73829b3e,완료,"그럼 첫날 밤, 잘 부탁드립니다.","Well then, we're counting on you for the first night.",,Assets/0. Main/01 Scene/OpeningScene.unity · OpeningController.slides.Array.data[10].caption,초안 2026-11-22 (Claude) — 확정 필요
 ko.67ff6dcd,완료,F키 눌러서 건너뛰기,Hold F to skip,,Assets/0. Main/01 Scene/OpeningScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
-ko.99d79392,완료,파견 근무 계약서,Temporary Assignment Contract,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+ko.99d79392,완료,파견 근무 계약서,Assignment Contract,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-24 (Claude) — 계약서 칸에 맞게 줄임 · 확정 필요
 ko.a7fbc17f,완료,"<b>제1조 (근무)</b> 
 <margin-left=1.4em>철거 전 5일간, 매일 00:00부터 04:00까지 폐교 1층을 <nobr>순찰한다.</nobr></margin>
 <b>제2조 (업무)</b> 
@@ -363,18 +369,18 @@ ko.a7fbc17f,완료,"<b>제1조 (근무)</b>
 <b>제7조 (해지)</b> 
 <margin-left=1.4em>근무자가 근무를 이어갈 수 없는 경우,
 회사는 계약을 해지하고 근무기간 만큼 보상을 <nobr>지급한다.</nobr>","<b>Article 1 (Duty)</b> 
-<margin-left=1.4em>For the 5 days before demolition, the worker shall patrol the first floor of the closed school every day from 00:00 to <nobr>04:00.</nobr></margin>
+<margin-left=1.4em>Patrol the first floor nightly, 00:00 to 04:00, for the 5 days before <nobr>demolition.</nobr></margin>
 <b>Article 2 (Tasks)</b> 
-<margin-left=1.4em>The worker shall check the inspection items and report [Normal] or [Abnormal] on the <nobr>tablet.</nobr></margin>
-<b>Article 3 (Communication)</b><margin-left=1.4em>Company instructions are delivered as tablet messages, and all messages sent by the Company are sent through normal channels.</margin>
-<b>Article 4 (Safety)</b><margin-left=1.4em>The Company accepts no responsibility for injury or mental changes sustained during the shift.</margin>
-<b>Article 5 (Confidentiality)</b> 
-<margin-left=1.4em>The worker shall not disclose anything seen or heard on site.</margin>
+<margin-left=1.4em>Check inspection items and report [Normal] or [Abnormal] on the <nobr>tablet.</nobr></margin>
+<b>Article 3 (Contact)</b><margin-left=1.4em>Company instructions arrive as tablet messages, and all Company messages are sent normally.</margin>
+<b>Article 4 (Safety)</b><margin-left=1.4em>The Company is not liable for injury or mental change on duty.</margin>
+<b>Article 5 (Secrecy)</b> 
+<margin-left=1.4em>Do not disclose anything seen or heard on site.</margin>
 <b>Article 6 (Worker)</b> 
-<margin-left=1.4em>The worker may not leave the post during working <nobr>hours.</nobr></margin>
+<margin-left=1.4em>Do not leave the post during working <nobr>hours.</nobr></margin>
 <b>Article 7 (Termination)</b> 
-<margin-left=1.4em>If the worker is unable to continue the shift,
-the Company shall terminate the contract and pay compensation for the period <nobr>worked.</nobr>",,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
+<margin-left=1.4em>If the worker cannot continue,
+the Company ends the contract and pays for days <nobr>worked.</nobr>",,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-24 (Claude) — 계약서 칸에 맞게 줄임 · 확정 필요
 ko.e4a402a9,완료,여기에 서명 (인),Sign here,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
 ko.e1ec0e55,완료,출근하기,Clock In,,Assets/0. Main/01 Scene/ContractScene.unity · TextMeshProUGUI.m_text,초안 2026-11-22 (Claude) — 확정 필요
 ko.df68308e,완료,DAY {0} — 근무 종료,DAY {0} — SHIFT COMPLETE,,Assets/0. Main/01 Scene/ResultScene.unity · ResultController.completedTitleFormat,초안 2026-11-22 (Claude) — 확정 필요

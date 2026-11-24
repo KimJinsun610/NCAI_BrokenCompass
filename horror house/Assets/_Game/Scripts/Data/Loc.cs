@@ -64,6 +64,24 @@ namespace NightDuty
             s_pairsFrom = null;
         }
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// 2026-11-23: 플레이를 끄면 에디터는 한국어(정본)로 돌아온다 — 도메인 리로드 없이 플레이를 끄면 플레이 중 언어(저장된 English 등)가
+        /// 에디터에 남아 EditMode 시험·도구가 영어로 돌았다.
+        /// </summary>
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void HookPlayModeExit()
+        {
+            UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeChanged;
+        }
+
+        private static void OnPlayModeChanged(UnityEditor.PlayModeStateChange change)
+        {
+            if (change == UnityEditor.PlayModeStateChange.EnteredEditMode) s_current = TextLang.Korean;
+        }
+#endif
+
         /// <summary>언어를 바꾼다. 같으면 아무 일도 없다.</summary>
         public static void Set(TextLang lang)
         {

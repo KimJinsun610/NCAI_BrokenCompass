@@ -515,11 +515,24 @@ public class TabletDocument : MonoBehaviour
     {
         if (hintText == null) return;
 
-        string tabHint = KeyLabel(switchTabKey) + " : " + TabName(NextTab(_tab));
+        string tabHint = string.Format(Loc.T("tablet.keyhint", "{0} : {1}"), KeyLabel(switchTabKey), TabName(NextTab(_tab)));
         bool canScroll = _totalLines > visibleLines;
 
-        hintText.text = canScroll ? Loc.T("tablet.scroll", "휠 : 스크롤") + "   " + tabHint : tabHint;
+        string full = canScroll ? string.Format(Loc.T("tablet.hint", "{0}   {1}"), Loc.T("tablet.scroll", "휠 : 스크롤"), tabHint) : tabHint;
+
+        // 2026-11-22(로컬라이징): 탭 줄(왼쪽 정렬)과 안내 줄(오른쪽 정렬)은 같은 한 줄을 나눠 쓴다.
+        // 글이 길어 둘이 겹치면(영어 등) 스크롤 안내를 빼고 탭 안내만 남긴다.
+        if (canScroll && tabText != null && full != tabHint)
+        {
+            float room = hintText.rectTransform.rect.width - tabText.GetPreferredValues(tabText.text).x - MinHintGap;
+            if (hintText.GetPreferredValues(full).x > room) full = tabHint;
+        }
+
+        hintText.text = full;
     }
+
+    /// <summary>탭 줄과 안내 줄 사이에 남길 최소 틈(글자 칸 단위 — 한국어 기본 배치에서 실제 틈은 약 15).</summary>
+    private const float MinHintGap = 3f;
 
     /// <summary>KeyCode를 화면에 적기 좋은 짧은 이름으로 바꾼다.</summary>
     private static string KeyLabel(KeyCode key)

@@ -22,6 +22,11 @@ public static class MapBoardAgingBuilder
     private const string PrefabPath = "Assets/3.2 Programmer_Kim/03 Prefebs/MapBoard.prefab";
     private const string SourcePath = "Assets/3.2 Programmer_Kim/99 Resources/02 Image/Map_KR.png";
     private const string AgedPath = "Assets/3.2 Programmer_Kim/99 Resources/02 Image/Map_KR_Aged.png";
+
+    // 2026-11-24 로컬라이징: 영어 지도(같은 크기·같은 배치, 방 이름만 영어). 같은 시드로 같은 낡힘을 입혀 Resources에 둔다 —
+    // 영어로 플레이하면 MapBoardYouAreHere가 지도 종이의 그림을 이것으로 바꾼다(프리팹·머티리얼은 한국어 그대로).
+    private const string EnglishSourcePath = "Assets/3.2 Programmer_Kim/99 Resources/02 Image/Map_EN.png";
+    public const string EnglishAgedPath = "Assets/_Game/Resources/MapBoard/Map_EN_Aged.png";
     private const string BackingPath = "Assets/3.2 Programmer_Kim/99 Resources/02 Image/MapBoard_Backing.png";
     private const string MaterialPath = "Assets/3.2 Programmer_Kim/04 Materials/MapBoard_Aged.mat";
     private const string BackingMaterialPath = "Assets/3.2 Programmer_Kim/04 Materials/MapBoard_Backing.mat";
@@ -64,11 +69,27 @@ public static class MapBoardAgingBuilder
         Debug.Log(Build());
     }
 
+    /// <summary>영어 지도만 낡혀 굽는다(프리팹·머티리얼은 건드리지 않음).</summary>
+    [MenuItem("Tools/Programmer_Kim/Map Board/Build Aged Map (EN only)")]
+    public static void BuildEnglishMenu()
+    {
+        Debug.Log(BuildEnglish());
+    }
+
+    /// <summary>영어 지도를 한국어와 같은 낡힘으로 굽는다. 결과 요약을 돌려준다.</summary>
+    public static string BuildEnglish()
+    {
+        return BakeAgedTexture(EnglishSourcePath, EnglishAgedPath) != null
+            ? "[MapBoardAgingBuilder] " + EnglishAgedPath
+            : "[MapBoardAgingBuilder] 영어 지도를 읽지 못했습니다: " + EnglishSourcePath;
+    }
+
     /// <summary>낡은 지도·배경 그림 → 머티리얼 → 프리팹 순서로 만든다. 결과 요약을 돌려준다.</summary>
     public static string Build()
     {
-        Texture2D aged = BakeAgedTexture();
+        Texture2D aged = BakeAgedTexture(SourcePath, AgedPath);
         if (aged == null) return "[MapBoardAgingBuilder] 원본 지도를 읽지 못했습니다: " + SourcePath;
+        string english = BuildEnglish();
         Material map = BuildLitMaterial(MaterialPath, aged);
         Material backing = BuildLitMaterial(BackingMaterialPath, BakeBackingTexture());
         string report = ApplyToPrefab(map, backing);
@@ -79,17 +100,17 @@ public static class MapBoardAgingBuilder
             AssetDatabase.DeleteAsset(OldTintMaterialPath);
             report += " · 갈색 틴트 머티리얼 삭제";
         }
-        return "[MapBoardAgingBuilder] " + AgedPath + " · " + BackingPath + " · " + report;
+        return "[MapBoardAgingBuilder] " + AgedPath + " · " + BackingPath + " · " + report + " · " + english;
     }
 
     // ─────────────────────────────── 지도 ───────────────────────────────
 
-    private static Texture2D BakeAgedTexture()
+    private static Texture2D BakeAgedTexture(string sourcePath, string agedPath)
     {
         // 원본 가져오기 설정(읽기 불가)을 건드리지 않도록 파일을 직접 읽는다.
-        if (!File.Exists(SourcePath)) return null;
+        if (!File.Exists(sourcePath)) return null;
         var src = new Texture2D(2, 2, TextureFormat.RGBA32, false, false);
-        if (!src.LoadImage(File.ReadAllBytes(SourcePath))) return null;
+        if (!src.LoadImage(File.ReadAllBytes(sourcePath))) return null;
 
         int w = src.width, h = src.height;
         Color[] px = src.GetPixels();
@@ -120,7 +141,7 @@ public static class MapBoardAgingBuilder
         }
         wear.Scratch(px, rng, ScratchCount);   // ⑦ 긁힘
 
-        return SaveTexture(px, w, h, AgedPath);
+        return SaveTexture(px, w, h, agedPath);
     }
 
     // ─────────────────────────────── 배경 판 ───────────────────────────────
